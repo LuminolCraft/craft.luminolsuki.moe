@@ -606,3 +606,123 @@ header {
         font-size: 0.9rem;
     }
 }
+
+/* ===== 从 styles.css 整合的响应式样式 ===== */
+
+/* 网站状态信息响应式 */
+@media (max-width: 768px) {
+    .website-status-info {
+        gap: 15px;
+        margin: 20px 0 10px 0;
+    }
+    
+    .status-item {
+        padding: 6px 10px;
+        font-size: 0.85em;
+    }
+}
+
+/* 平板端布局 (1024px) */
+@media (max-width: 1024px) {
+    .hero-content {
+        grid-template-columns: 1fr;
+        gap: 40px;
+        text-align: center;
+    }
+    
+    .hero-title {
+        font-size: 3rem;
+    }
+    
+    .servers-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    /* 平板端团队布局 */
+    .team-card {
+        flex: 0 0 280px;
+        max-width: 280px;
+    }
+}
+
+/* 移动端布局 (768px) - 团队相关样式 */
+@media (max-width: 768px) {
+    /* 移动端团队布局优化 */
+    .team-section {
+        padding: 60px 0;
+    }
+    
+    .team-container {
+        padding: 0 15px;
+    }
+    
+    /* Contributor Cards 移动端响应式 */
+    .contributors-flex {
+        gap: 1rem;
+        justify-content: center;
+    }
+    
+    .contributor-card {
+        width: 100%;
+        max-width: 300px;
+        height: 120px;
+        padding: 0.75rem;
+    }
+    
+    .contributor-layout {
+        gap: 1rem;
+    }
+    
+    .contributor-avatar {
+        width: 50px;
+        height: 50px;
+    }
+    
+    .contributor-name {
+        font-size: 1rem;
+    }
+    
+    .contributor-role {
+        font-size: 0.85rem;
+    }
+    
+    .contributor-github-link {
+        font-size: 0.85rem;
+        margin-top: 0.25rem;
+    }
+    
+    .contributor-github-link .github-icon {
+        width: 14px;
+        height: 14px;
+    }
+    
+    .contributor-links a {
+        width: 24px;
+        height: 24px;
+        font-size: 0.75em;
+    }
+    
+    .subsection-title {
+        font-size: 1.3em;
+    }
+    
+    .subsection-description {
+        font-size: 0.9em;
+    }
+    
+    .section-title {
+        font-size: 2rem;
+    }
+}
+
+/* 小屏幕移动端 (480px) */
+@media (max-width: 480px) {
+    .server-status-card {
+        padding: 20px;
+    }
+    
+    .feature-card,
+    .server-card {
+        padding: 30px 20px;
+    }
+}
