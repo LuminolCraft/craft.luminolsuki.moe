@@ -180,13 +180,25 @@
     
     // 调试命令 - 确保这些函数在所有情况下都可用
     window.debugLite = () => {
-        window.DebugManager.setLiteMode();
-        console.log('🔄 轻量级调试模式已设置，刷新页面以应用更改');
+        // 如果已经是轻量级模式，则关闭；否则开启轻量级模式
+        if (window.DebugManager.debugMode && window.DebugManager.isLiteMode) {
+            window.DebugManager.turnOff();
+            console.log('🔄 调试模式已关闭，刷新页面以应用更改');
+        } else {
+            window.DebugManager.setLiteMode();
+            console.log('🔄 轻量级调试模式已设置，刷新页面以应用更改');
+        }
     };
     
     window.fuckbug = () => {
-        window.DebugManager.setFullMode();
-        console.log('🔄 完整调试模式已设置，刷新页面以应用更改');
+        // 如果已经是完整调试模式，则关闭；否则开启完整模式
+        if (window.DebugManager.debugMode && window.DebugManager.isFullMode) {
+            window.DebugManager.turnOff();
+            console.log('🔄 调试模式已关闭，刷新页面以应用更改');
+        } else {
+            window.DebugManager.setFullMode();
+            console.log('🔄 完整调试模式已设置，刷新页面以应用更改');
+        }
     };
     
     window.debugOff = () => {
