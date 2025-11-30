@@ -6,13 +6,17 @@
 class BackgroundSlider {
     constructor() {
         this.backgroundImages = [
+            'https://imagehosting-ez2.pages.dev/avif/Image_1764466849.avif',
+            'https://imagehosting-ez2.pages.dev/avif/Image_1764467382.avif',
+            'https://imagehosting-ez2.pages.dev/avif/Image_1764468583.avif',
+            'https://imagehosting-ez2.pages.dev/avif/Image_1764468914.avif',
+            'https://imagehosting-ez2.pages.dev/avif/Image_1764392636.avif',
+            'https://imagehosting-ez2.pages.dev/avif/Image_1764468731.avif',
+            'https://imagehosting-ez2.pages.dev/avif/Image_1764465651.avif',
             'https://imagehosting-ez2.pages.dev/images/3cda066bccaefea3eb268d4ca10f018a.webp',
-            'https://imagehosting-ez2.pages.dev/images/Image_585028843869744.webp',
             'https://imagehosting-ez2.pages.dev/images/Image_585018650004905.webp',
             'https://imagehosting-ez2.pages.dev/images/Image_585012522922876.webp',
-            'https://imagehosting-ez2.pages.dev/images/Image_585006053756264.webp',
             'https://imagehosting-ez2.pages.dev/images/Image_585000138805953.webp',
-            'https://imagehosting-ez2.pages.dev/images/Image_584991582604759.webp',
             'https://imagehosting-ez2.pages.dev/images/Image_669234245588716.webp',
             'https://imagehosting-ez2.pages.dev/images/Image_669226165759604.webp',
             'https://imagehosting-ez2.pages.dev/images/Image_669218057352159.webp',
@@ -22,10 +26,7 @@ class BackgroundSlider {
             'https://imagehosting-ez2.pages.dev/images/Image_669192564244096.webp',
             'https://imagehosting-ez2.pages.dev/images/Image_669027140045097.webp',
             'https://imagehosting-ez2.pages.dev/images/Image_585061010780930.webp',
-            'https://imagehosting-ez2.pages.dev/images/Image_585054865315151.webp',
-            'https://imagehosting-ez2.pages.dev/images/Image_585036168830575.webp',
             'https://imagehosting-ez2.pages.dev/images/Image_585018650004905.webp',
-            'https://imagehosting-ez2.pages.dev/images/Image_585006053756264.webp',
             'https://imagehosting-ez2.pages.dev/images/9ae17d2b-8fb3-4f05-8a75-48c40de55bd0.webp',
             'https://imagehosting-ez2.pages.dev/images/Image_669276986426772.webp',
         ];
