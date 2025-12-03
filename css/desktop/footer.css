@@ -1,41 +1,4 @@
-/* Global footer styles - 整合所有页面的footer样式 */
 
-/* Footer波浪颜色变量 */
-:root {
-    /* 基于原配色的现代化方案 */
-    --primary-color: #9e94d8;
-    --primary-gradient: linear-gradient(135deg, #9e94d8 0%, #b6ade6 100%);
-    --secondary-color: #333333;
-    --background-color: #f2eefc;
-    --background-gradient: linear-gradient(135deg, #f2eefc 0%, #e8e2f7 50%, #ddd6f3 100%);
-    --card-bg: rgba(255, 255, 255, 0.8);
-    --card-bg-hover: rgba(255, 255, 255, 0.9);
-    --text-color: #444444;
-    --text-secondary: #666666;
-    --online-color: #00BFA6;
-    --nav-bg: rgba(109, 91, 154, 0.8);
-    --nav-bg-scroll: rgba(109, 91, 154, 0.95);
-    --button-hover: #b6ade6;
-    --accent-color: #f59e0b;
-    --glass-bg: rgba(255, 255, 255, 0.6);
-    --glass-border: rgba(158, 148, 216, 0.3);
-    --shadow-color: rgba(109, 91, 154, 0.2);
-    --shadow-hover: rgba(109, 91, 154, 0.3);
-    --footer-background-color: #1e293b;
-    /* 支持系统主题 */
-    color-scheme: light dark;
-}
-
-
-.dark-theme {
-    --footer-wave-color: #0a0f1c;
-}
-
-@media (prefers-color-scheme: dark) {
-    :root:not(.dark-theme) {
-        --footer-wave-color: #0a0f1c;
-    }
-}
 
 /* Footer过渡区域 - 首页专用 */
 .footer-transition-section {
@@ -73,7 +36,7 @@
 /* 系统深色主题Footer过渡区域适配 */
 @media (prefers-color-scheme: dark) {
     :root:not(.dark-theme) .footer-transition-section {
-        background: var(--background-color) !important;
+        background: var(--background-color) ;
     }
 }
 
@@ -288,21 +251,21 @@ footer p {
 /* Dark scheme auto (only footer-related) */
 @media (prefers-color-scheme: dark) {
     :root:not(.dark-theme) footer {
-        background: linear-gradient(135deg, #0a0f1c 0%, #1a1f2e 100%) !important;
-        border-top: 1px solid rgba(71, 85, 105, 0.3) !important;
+        background: linear-gradient(135deg, #0a0f1c 0%, #1a1f2e 100%) ;
+        border-top: 1px solid rgba(71, 85, 105, 0.3) ;
     }
     :root:not(.dark-theme) .footer-column h3 {
-        color: #c4b5fd !important;
+        color: #c4b5fd ;
     }
     :root:not(.dark-theme) .footer-column a {
-        color: #cbd5e1 !important;
+        color: #cbd5e1 ;
     }
     :root:not(.dark-theme) .footer-column a:hover {
-        color: #c4b5fd !important;
+        color: #c4b5fd ;
     }
     :root:not(.dark-theme) .copyright-info {
-        border-top: 1px solid rgba(71, 85, 105, 0.3) !important;
-        color: #94a3b8 !important;
+        border-top: 1px solid rgba(71, 85, 105, 0.3) ;
+        color: #94a3b8 ;
     }
 }
 

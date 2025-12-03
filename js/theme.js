@@ -18,7 +18,7 @@ class ThemeManager {
      */
     initTheme() {
         const savedTheme = localStorage.getItem('siteTheme');
-        
+               
         if (savedTheme === 'dark') {
             this.setDarkTheme();
         } else if (savedTheme === 'light') {

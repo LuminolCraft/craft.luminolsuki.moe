@@ -1,18 +1,3 @@
-/* 字体资源已移至 css/fonts.css */
-
-:root {
-    --primary-color: #9e94d8;
-    --secondary-color: #333333;
-    --background-color: #f2eefc;
-    --card-bg: #FAFAFA;
-    --text-color: #444444;
-    --online-color: #00BFA6;
-    --nav-bg: rgba(109, 91, 154, 0.8);
-    --nav-bg-scroll: rgba(44, 62, 80, 1);
-    --button-hover: #b6ade6;
-}
-
-/* 导航栏主题切换按钮已移至 navigation.css */
 
 .theme-toggle-btn {
     background: rgba(255, 255, 255, 0.1);
@@ -514,29 +499,7 @@ header {
     }
 }
 
-/* 系统深色主题自动应用 */
-@media (prefers-color-scheme: dark) {
-    :root:not(.dark-theme) {
-        --primary-color: #a78bfa;
-        --secondary-color: #f1f5f9;
-        --background-color: #0f172a;
-        --card-bg: #1e293b;
-        --text-color: #e2e8f0;
-        --nav-bg: rgba(15, 23, 42, 0.8);
-        --nav-bg-scroll: #1e293b;
-    }
-    
-    :root:not(.dark-theme) body {
-        background: var(--background-color) !important;
-        color: var(--text-color) !important;
-    }
-    
-/* 导航栏样式已移至 navigation.css */
-    
-/* Footer系统深色主题样式已移至 footer.css */
-    
-/* 系统深色主题导航链接样式已移至 navigation.css */
-}
+
 
 
 
