@@ -1,20 +1,4 @@
-/* mobile.css - 主页面移动端样式 */
-/* 字体资源已移至 css/fonts.css */
 
-:root {
-    --primary-color:#9e94d8;
-    --secondary-color:#333333;
-    --background-color:#f2eefc;
-    --card-bg:#FAFAFA;
-    --text-color:#444444;
-    --online-color:#00BFA6;
-    --nav-bg:rgba(109, 91, 154, 0.8);
-    --nav-bg-scroll:rgba(44, 62, 80, 1);
-    --button-hover:#b6ade6;
-}
-/* 移动端主页样式 - 从 styles.css 提取 */
-
-/* 网站状态信息移动端样式 */
 .website-status-info {
     gap: 15px;
     margin: 20px 0 10px 0;
@@ -25,7 +9,7 @@
     font-size: 0.85em;
 }
 
-/* 主页英雄区域移动端样式 */
+
 .hero-title {
     font-size: 2.5rem;
 }
@@ -47,7 +31,7 @@
     grid-template-columns: 1fr;
 }
 
-/* 移动端过渡区域样式 */
+
 .transition-section {
     height: 120px;
 }
@@ -56,7 +40,7 @@
     height: 120px;
 }
 
-/* 移动端Footer过渡区域样式 */
+
 .footer-transition-section {
     height: 100px;
 }
@@ -65,7 +49,6 @@
     height: 100px;
 }
 
-/* 移动端团队布局优化 */
 .team-section {
     padding: 60px 0;
 }
@@ -175,30 +158,6 @@
 .theme-toggle-btn:hover i {
     transform: rotate(180deg);
 }
-
-/* 深色主题变量 */
-.dark-theme {
-    --primary-color: #a78bfa;
-    --primary-gradient: linear-gradient(135deg, #a78bfa 0%, #c4b5fd 100%);
-    --secondary-color: #f1f5f9;
-    --background-color: #0f172a;
-    --background-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
-    --card-bg: #1e293b;
-    --card-bg-hover: #334155;
-    --text-color: #e2e8f0;
-    --text-secondary: #cbd5e1;
-    --online-color: #10b981;
-    --nav-bg: rgba(15, 23, 42, 0.8);
-    --nav-bg-scroll: #1e293b;
-    --button-hover: #c4b5fd;
-    --accent-color: #f59e0b;
-    --glass-bg: rgba(30, 41, 59, 0.6);
-    --glass-border: rgba(71, 85, 105, 0.3);
-    --shadow-color: rgba(0, 0, 0, 0.3);
-    --shadow-hover: rgba(0, 0, 0, 0.4);
-}
-
-/* 导航栏样式已移至 navigation.css */
 
 /* 基础重置 */
 * {
@@ -470,75 +429,3 @@ header {
     }
 }
 
-/* 系统深色主题自动应用 */
-@media (prefers-color-scheme: dark) {
-    :root:not(.dark-theme) {
-        --primary-color: #a78bfa;
-        --secondary-color: #f1f5f9;
-        --background-color: #0f172a;
-        --card-bg: #1e293b;
-        --text-color: #e2e8f0;
-        --nav-bg: rgba(15, 23, 42, 0.8);
-        --nav-bg-scroll: #1e293b;
-    }
-    
-    :root:not(.dark-theme) body {
-        background: var(--background-color) !important;
-        color: var(--text-color) !important;
-    }
-    
-/* 导航栏样式已移至 navigation.css */
-    
-    :root:not(.dark-theme) footer {
-        background: linear-gradient(135deg, #0a0f1c 0%, #1a1f2e 100%) !important;
-        border-top: 1px solid rgba(71, 85, 105, 0.3) !important;
-    }
-    
-    :root:not(.dark-theme) .footer-column h3 {
-        color: #c4b5fd !important;
-    }
-    
-    :root:not(.dark-theme) .footer-column a {
-        color: #cbd5e1 !important;
-    }
-    
-    :root:not(.dark-theme) .footer-column a:hover {
-        color: #c4b5fd !important;
-    }
-    
-    :root:not(.dark-theme) .copyright-info {
-        border-top: 1px solid rgba(71, 85, 105, 0.3) !important;
-        color: #94a3b8 !important;
-    }
-    
-    /* 服务器区域深色主题 */
-    :root:not(.dark-theme) .servers-section {
-        background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%) !important;
-    }
-    
-    :root:not(.dark-theme) .server-card {
-        background: rgba(30, 41, 59, 0.8) !important;
-        border: 1px solid rgba(71, 85, 105, 0.3) !important;
-        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3) !important;
-    }
-    
-    :root:not(.dark-theme) .server-card:hover {
-        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4) !important;
-    }
-    
-    :root:not(.dark-theme) .server-status-card {
-        background: rgba(30, 41, 59, 0.6) !important;
-        border: 1px solid rgba(71, 85, 105, 0.3) !important;
-    }
-    
-    /* 系统深色主题下主题切换按钮适配 */
-    :root:not(.dark-theme) .theme-toggle-btn {
-        background: rgba(71, 85, 105, 0.3) !important;
-        border: 1px solid rgba(71, 85, 105, 0.5) !important;
-        color: #e2e8f0 !important;
-    }
-    
-    :root:not(.dark-theme) .theme-toggle-btn:hover {
-        background: rgba(71, 85, 105, 0.5) !important;
-    }
-}

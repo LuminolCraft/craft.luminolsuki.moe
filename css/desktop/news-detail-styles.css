@@ -1,6 +1,3 @@
-/* 字体资源已移至 css/fonts.css */
-
-/* 导航栏主题切换按钮已移至 navigation.css */
 
 .theme-toggle-btn {
     background: rgba(255, 255, 255, 0.1);
@@ -31,32 +28,6 @@
     transform: rotate(180deg);
 }
 
-:root {
-    --primary-color:#9e94d8;
-    --secondary-color:#333333;
-    --background-color:#f2eefc;
-    --card-bg:#FAFAFA;
-    --text-color:#444444;
-    --online-color:#00BFA6;
-    --nav-bg:rgba(109, 91, 154, 0.8);
-    --nav-bg-scroll:#424a55;
-    --button-hover:#b6ade6;
-}
-
-/* 深色主题变量 */
-.dark-theme {
-    --primary-color: #a78bfa;
-    --secondary-color: #f1f5f9;
-    --background-color: #0f172a;
-    --card-bg: #1e293b;
-    --text-color: #e2e8f0;
-    --online-color: #10b981;
-    --nav-bg: rgba(15, 23, 42, 0.8);
-    --nav-bg-scroll: #1e293b;
-    --button-hover: #c4b5fd;
-}
-
-/* 深色主题导航栏样式已移至 navigation.css */
 
 .dark-theme .theme-toggle-btn {
     background: rgba(71, 85, 105, 0.3);
@@ -68,11 +39,6 @@
     background: rgba(71, 85, 105, 0.5);
 }
 
-/* 深色主题导航链接样式已移至 navigation.css */
-
-/* Footer样式已移至 footer.css */
-
-/* 新闻详情页深色主题适配 */
 .dark-theme .news-detail-section {
     background: rgba(30, 41, 59, 0.85);
     border: 1px solid rgba(71, 85, 105, 0.45);
@@ -167,8 +133,8 @@
 
 /* 深色主题 token.tag 样式 */
 .dark-theme .news-content .token.tag {
-    background: none !important;
-    color: #79b8ff !important;
+    background: none ;
+    color: #79b8ff ;
 }
 
 /* 链接深色主题适配 */
@@ -477,40 +443,40 @@ body::after {
 
 /* Prism.js 代码块字体大小调整 */
 .news-content pre[class*="language-"] {
-    font-size: 1.1em !important; /* 确保 Prism.js 代码块字体更大 */
-    line-height: 1.7 !important;
+    font-size: 1.1em ; /* 确保 Prism.js 代码块字体更大 */
+    line-height: 1.7 ;
 }
 
 .news-content pre[class*="language-"] code {
-    font-size: 1.1em !important;
-    line-height: 1.7 !important;
+    font-size: 1.1em ;
+    line-height: 1.7 ;
 }
 
 /* GitHub 风格代码高亮 */
 .news-content pre[class*="language-"] {
-    background: #f6f8fa !important;
-    border: none !important;
-    border-radius: 6px !important;
-    color: #24292e !important;
-    text-shadow: none !important;
+    background: #f6f8fa ;
+    border: none ;
+    border-radius: 6px ;
+    color: #24292e ;
+    text-shadow: none ;
 }
 
 .news-content pre[class*="language-"] code {
-    color: #24292e !important;
-    text-shadow: none !important;
+    color: #24292e ;
+    text-shadow: none ;
 }
 
 /* 深色主题代码块样式 */
 .dark-theme .news-content pre[class*="language-"] {
-    background: #0d1117 !important;
-    border: none !important;
-    color: #e6edf3 !important;
-    text-shadow: none !important;
+    background: #0d1117 ;
+    border: none ;
+    color: #e6edf3 ;
+    text-shadow: none ;
 }
 
 .dark-theme .news-content pre[class*="language-"] code {
-    color: #e6edf3 !important;
-    text-shadow: none !important;
+    color: #e6edf3 ;
+    text-shadow: none ;
 }
 
 /* GitHub 风格语法高亮 */
@@ -518,15 +484,15 @@ body::after {
 .news-content .token.prolog,
 .news-content .token.doctype,
 .news-content .token.cdata {
-    color: #6a737d !important;
+    color: #6a737d ;
 }
 
 
 
 /* 确保 token.tag 没有背景色 */
 .news-content .token.tag {
-    background: none !important;
-    color: #005cc5 !important;
+    background: none ;
+    color: #005cc5 ;
 }
 
 
@@ -538,24 +504,24 @@ body::after {
 .news-content .token.url,
 .news-content .language-css .token.string,
 .news-content .style .token.string {
-    color: #d73a49 !important;
+    color: #d73a49 ;
 }
 
 .news-content .token.atrule,
 .news-content .token.attr-value,
 .news-content .token.keyword {
-    color: #d73a49 !important;
+    color: #d73a49 ;
 }
 
 .news-content .token.function,
 .news-content .token.class-name {
-    color: #6f42c1 !important;
+    color: #6f42c1 ;
 }
 
 .news-content .token.regex,
 .news-content .token.important,
 .news-content .token.variable {
-    color: #e36209 !important;
+    color: #e36209 ;
 }
 
 .news-content code {
@@ -962,8 +928,8 @@ body::after {
     }
     
     :root:not(.dark-theme) body {
-        background: var(--background-color) !important;
-        color: var(--text-color) !important;
+        background: var(--background-color) ;
+        color: var(--text-color) ;
     }
     
 /* 系统深色主题导航栏样式已移至 navigation.css */
@@ -972,8 +938,8 @@ body::after {
     
     /* 新闻详情页深色主题 */
     :root:not(.dark-theme) .news-detail-section {
-        background: rgba(30, 41, 59, 0.85) !important;
-        border: 1px solid rgba(71, 85, 105, 0.45) !important;
+        background: rgba(30, 41, 59, 0.85) ;
+        border: 1px solid rgba(71, 85, 105, 0.45) ;
     }
     
     :root:not(.dark-theme) .news-content h1,
@@ -982,92 +948,92 @@ body::after {
     :root:not(.dark-theme) .news-content h4,
     :root:not(.dark-theme) .news-content h5,
     :root:not(.dark-theme) .news-content h6 {
-        color: #e2e8f0 !important;
+        color: #e2e8f0 ;
     }
     
     :root:not(.dark-theme) .news-content p {
-        color: #cbd5e1 !important;
+        color: #cbd5e1 ;
     }
     
     :root:not(.dark-theme) .news-content ul,
     :root:not(.dark-theme) .news-content ol {
-        color: #cbd5e1 !important;
+        color: #cbd5e1 ;
     }
     
     :root:not(.dark-theme) .news-content blockquote {
-        background: rgba(71, 85, 105, 0.2) !important;
-        border-left: 4px solid #a78bfa !important;
-        color: #cbd5e1 !important;
+        background: rgba(71, 85, 105, 0.2) ;
+        border-left: 4px solid #a78bfa ;
+        color: #cbd5e1 ;
     }
     
     :root:not(.dark-theme) .news-content table {
-        background: rgba(30, 41, 59, 0.5) !important;
-        border: 1px solid rgba(71, 85, 105, 0.3) !important;
+        background: rgba(30, 41, 59, 0.5) ;
+        border: 1px solid rgba(71, 85, 105, 0.3) ;
     }
     
     :root:not(.dark-theme) .news-content th,
     :root:not(.dark-theme) .news-content td {
-        border: 1px solid rgba(71, 85, 105, 0.3) !important;
-        color: #cbd5e1 !important;
+        border: 1px solid rgba(71, 85, 105, 0.3) ;
+        color: #cbd5e1 ;
     }
     
     :root:not(.dark-theme) .news-content th {
-        background: rgba(71, 85, 105, 0.3) !important;
+        background: rgba(71, 85, 105, 0.3) ;
     }
     
     :root:not(.dark-theme) .news-content code {
-        background: rgba(71, 85, 105, 0.3) !important;
-        color: #cbd5e1 !important;
+        background: rgba(71, 85, 105, 0.3) ;
+        color: #cbd5e1 ;
     }
     
     :root:not(.dark-theme) .news-content a {
-        color: #a78bfa !important;
+        color: #a78bfa ;
     }
     
     :root:not(.dark-theme) .news-content a:hover {
-        color: #c4b5fd !important;
+        color: #c4b5fd ;
     }
     
     :root:not(.dark-theme) .news-content a.external-link {
-        color: #60a5fa !important;
+        color: #60a5fa ;
     }
     
     :root:not(.dark-theme) .news-content a.external-link:hover {
-        color: #93c5fd !important;
+        color: #93c5fd ;
     }
     
     /* 图片画廊深色主题 */
     :root:not(.dark-theme) .gallery-section {
-        background: rgba(30, 41, 59, 0.5) !important;
-        border: 1px solid rgba(71, 85, 105, 0.3) !important;
+        background: rgba(30, 41, 59, 0.5) ;
+        border: 1px solid rgba(71, 85, 105, 0.3) ;
     }
     
     :root:not(.dark-theme) .lightbox {
-        background: rgba(0, 0, 0, 0.9) !important;
+        background: rgba(0, 0, 0, 0.9) ;
     }
     
     :root:not(.dark-theme) .lightbox-controls button {
-        background: rgba(71, 85, 105, 0.8) !important;
-        color: #e2e8f0 !important;
+        background: rgba(71, 85, 105, 0.8) ;
+        color: #e2e8f0 ;
     }
     
     :root:not(.dark-theme) .lightbox-controls button:hover {
-        background: rgba(71, 85, 105, 1) !important;
+        background: rgba(71, 85, 105, 1) ;
     }
     
     /* 代码块深色主题 */
     :root:not(.dark-theme) .news-content pre[class*="language-"] {
-        background: #1e293b !important;
-        border: 1px solid rgba(71, 85, 105, 0.3) !important;
+        background: #1e293b ;
+        border: 1px solid rgba(71, 85, 105, 0.3) ;
     }
     
     :root:not(.dark-theme) .news-content pre[class*="language-"] code {
-        color: #e2e8f0 !important;
+        color: #e2e8f0 ;
     }
     
     :root:not(.dark-theme) .news-content .token.tag {
-        background: none !important;
-        color: #79b8ff !important;
+        background: none ;
+        color: #79b8ff ;
     }
     
 /* 系统深色主题导航链接样式已移至 navigation.css */

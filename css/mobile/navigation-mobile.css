@@ -1,77 +1,5 @@
-/* navigation-mobile.css - 移动端导航栏样式 */
-/* 字体资源已移至 css/fonts.css */
 
-/* CSS变量定义 */
-:root {
-    --primary-color: #9e94d8;
-    --secondary-color: #333333;
-    --background-color: #f2eefc;
-    --card-bg: rgba(255, 255, 255, 0.8);
-    --card-bg-hover: rgba(255, 255, 255, 0.9);
-    --text-color: #444444;
-    --text-secondary: #666666;
-    --online-color: #00BFA6;
-    --nav-bg: rgba(109, 91, 154, 0.8);
-    --nav-bg-scroll: rgba(109, 91, 154, 0.95);
-    --button-hover: #b6ade6;
-    --accent-color: #f59e0b;
-    --glass-bg: rgba(255, 255, 255, 0.6);
-    --glass-border: rgba(158, 148, 216, 0.3);
-    --shadow-color: rgba(109, 91, 154, 0.2);
-    --shadow-hover: rgba(109, 91, 154, 0.3);
-    
-    /* 支持系统主题 */
-    color-scheme: light dark;
-}
 
-/* 深色主题变量 */
-.dark-theme {
-    --primary-color: #a78bfa;
-    --secondary-color: #f1f5f9;
-    --background-color: #0f172a;
-    --background-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
-    --card-bg: #1e293b;
-    --card-bg-hover: #334155;
-    --text-color: #e2e8f0;
-    --text-secondary: #cbd5e1;
-    --online-color: #10b981;
-    --nav-bg: rgba(15, 23, 42, 0.8);
-    --nav-bg-scroll: #1e293b;
-    --button-hover: #c4b5fd;
-    --accent-color: #f59e0b;
-    --glass-bg: rgba(30, 41, 59, 0.6);
-    --glass-border: rgba(71, 85, 105, 0.3);
-    --shadow-color: rgba(0, 0, 0, 0.3);
-    --shadow-hover: rgba(0, 0, 0, 0.4);
-}
-
-/* 系统深色主题自动应用 */
-@media (prefers-color-scheme: dark) {
-    :root:not(.dark-theme) {
-        --primary-color: #a78bfa;
-        --secondary-color: #f1f5f9;
-        --background-color: #0f172a;
-        --card-bg: #1e293b;
-        --text-color: #e2e8f0;
-        --nav-bg: rgba(15, 23, 42, 0.8);
-        --nav-bg-scroll: #1e293b;
-        --button-hover: #c4b5fd;
-    }
-    
-    :root:not(.dark-theme) nav {
-        background-color: var(--nav-bg) !important;
-    }
-    
-    :root:not(.dark-theme) nav a {
-        color: #e2e8f0 !important;
-    }
-    
-    :root:not(.dark-theme) nav a:hover {
-        color: var(--button-hover) !important;
-    }
-}
-
-/* 移动端导航栏样式 - 仅在移动端生效 */
 @media (max-width: 896px) {
     /* 汉堡菜单按钮 */
     .menu-button {
@@ -223,6 +151,7 @@
     
     /* 调整导航栏高度 */
     nav {
+        background-color: var(--nav-bg-scroll);
         height: 65px;
         padding: 8px 10px;
     }
@@ -267,34 +196,3 @@
     }
 }
 
-/* 深色主题移动端适配 */
-@media (max-width: 896px) {
-    .dark-theme nav {
-        background-color: var(--nav-bg);
-    }
-    
-    .dark-theme nav.scrolled {
-        background: var(--nav-bg-scroll);
-    }
-    
-    .dark-theme .nav-links.responsive {
-        background: var(--nav-bg-scroll);
-    }
-    
-    .dark-theme .nav-links.responsive a:not(.dropdown-toggle):not(.dropdown-item) {
-        color: #e2e8f0;
-    }
-    
-    .dark-theme .nav-links.responsive .dropdown-toggle {
-        color: #e2e8f0;
-    }
-    
-    .dark-theme .nav-links.responsive .dropdown-item {
-        color: #e2e8f0;
-    }
-    
-    .dark-theme .nav-links.responsive .dropdown-item:hover {
-        background: rgba(71, 85, 105, 0.2);
-        color: var(--button-hover);
-    }
-}

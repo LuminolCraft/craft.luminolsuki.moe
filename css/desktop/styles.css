@@ -1,90 +1,3 @@
-/* 字体资源已移至 css/fonts.css */
-
-:root {
-    /* 基于原配色的现代化方案 */
-    --primary-color: #9e94d8;
-    --primary-gradient: linear-gradient(135deg, #9e94d8 0%, #b6ade6 100%);
-    --secondary-color: #333333;
-    --background-color: #f2eefc;
-    --background-gradient: linear-gradient(135deg, #f2eefc 0%, #e8e2f7 50%, #ddd6f3 100%);
-    --card-bg: rgba(255, 255, 255, 0.8);
-    --card-bg-hover: rgba(255, 255, 255, 0.9);
-    --text-color: #444444;
-    --text-secondary: #666666;
-    --online-color: #00BFA6;
-    --nav-bg: rgba(109, 91, 154, 0.8);
-    --nav-bg-scroll: rgba(109, 91, 154, 0.95);
-    --button-hover: #b6ade6;
-    --accent-color: #f59e0b;
-    --glass-bg: rgba(255, 255, 255, 0.6);
-    --glass-border: rgba(158, 148, 216, 0.3);
-    --shadow-color: rgba(109, 91, 154, 0.2);
-    --shadow-hover: rgba(109, 91, 154, 0.3);
-    
-    /* 支持系统主题 */
-    color-scheme: light dark;
-}
-
-/* 系统深色主题自动应用 */
-@media (prefers-color-scheme: dark) {
-    :root:not(.dark-theme) {
-        --primary-color: #a78bfa;
-        --secondary-color: #f1f5f9;
-        --background-color: #0f172a;
-        --card-bg: #1e293b;
-        --text-color: #e2e8f0;
-        --online-color: #10b981;
-        --nav-bg: rgba(15, 23, 42, 0.8);
-        --nav-bg-scroll: #1e293b;
-        --button-hover: #c4b5fd;
-    }
-    
-    :root:not(.dark-theme) body {
-        background: var(--background-color) !important;
-        color: var(--text-color) !important;
-    }
-    
-/* 导航栏样式已移至 navigation.css */
-    
-    :root:not(.dark-theme) .news-detail-section {
-        background: rgba(30, 41, 59, 0.85) !important;
-        border: 1px solid rgba(71, 85, 105, 0.45) !important;
-    }
-    
-    
-    :root:not(.dark-theme) .copyright-info {
-        border-top: 1px solid rgba(71, 85, 105, 0.3) !important;
-        color: #94a3b8 !important;
-    }
-    
-/* 导航栏样式已移至 navigation.css */
-}
-
-/* 深色主题变量 */
-.dark-theme {
-    --primary-color: #a78bfa;
-    --secondary-color: #f1f5f9;
-    --background-color: #0f172a;
-    --background-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
-    --card-bg: #1e293b;
-    --card-bg-hover: #334155;
-    --text-color: #e2e8f0;
-    --text-secondary: #cbd5e1;
-    --online-color: #10b981;
-    --nav-bg: rgba(15, 23, 42, 0.8);
-    --nav-bg-scroll: #1e293b;
-    --button-hover: #c4b5fd;
-    --accent-color: #f59e0b;
-    --glass-bg: rgba(30, 41, 59, 0.6);
-    --glass-border: rgba(71, 85, 105, 0.3);
-    --shadow-color: rgba(0, 0, 0, 0.3);
-    --shadow-hover: rgba(0, 0, 0, 0.4);
-}
-
-/* 导航栏样式已移至 navigation.css */
-
-/* Footer 在深色主题下的适配 */
-
 
 * {
     margin: 0;
@@ -1048,8 +961,8 @@ header {
 /* 系统深色主题服务器状态卡片适配 */
 @media (prefers-color-scheme: dark) {
     :root:not(.dark-theme) .server-status-card {
-        background: rgba(30, 41, 59, 0.6) !important;
-        border: 1px solid rgba(71, 85, 105, 0.3) !important;
+        background: rgba(30, 41, 59, 0.6) ;
+        border: 1px solid rgba(71, 85, 105, 0.3) ;
     }
 }
 
@@ -1174,11 +1087,11 @@ header {
 /* 系统深色主题过渡区域适配 */
 @media (prefers-color-scheme: dark) {
     :root:not(.dark-theme) .transition-section {
-        background: transparent !important;
+        background: transparent ;
     }
     
     :root:not(.dark-theme) .transition-shape {
-        background: var(--background-color) !important;
+        background: var(--background-color) ;
     }
 }
 
@@ -1375,17 +1288,6 @@ header {
     background: var(--background-gradient);
 }
 
-/* 深色主题服务器区域适配 */
-.dark-theme .servers-section {
-    background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
-}
-
-/* 系统深色主题服务器区域适配 */
-@media (prefers-color-scheme: dark) {
-    :root:not(.dark-theme) .servers-section {
-        background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%) !important;
-    }
-}
 
 .servers-container {
     max-width: 1200px;
@@ -1448,13 +1350,13 @@ header {
 /* 系统深色主题服务器卡片适配 */
 @media (prefers-color-scheme: dark) {
     :root:not(.dark-theme) .server-card {
-        background: rgba(30, 41, 59, 0.8) !important;
-        border: 1px solid rgba(71, 85, 105, 0.3) !important;
-        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3) !important;
+        background: rgba(30, 41, 59, 0.8) ;
+        border: 1px solid rgba(71, 85, 105, 0.3) ;
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3) ;
     }
     
     :root:not(.dark-theme) .server-card:hover {
-        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4) !important;
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4) ;
     }
 }
 

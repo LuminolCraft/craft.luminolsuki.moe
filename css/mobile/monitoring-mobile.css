@@ -1,19 +1,4 @@
-/* monitoring-mobile.css - 监控页面移动端样式 */
-/* 字体资源已移至 css/fonts.css */
 
-:root {
-    --primary-color:#9e94d8;
-    --secondary-color:#333333;
-    --background-color:#f2eefc;
-    --card-bg:#FAFAFA;
-    --text-color:#444444;
-    --online-color:#00BFA6;
-    --nav-bg:rgba(109, 91, 154, 0.8);
-    --nav-bg-scroll:#424a55;
-    --button-hover:#b6ade6;
-}
-
-/* 导航栏样式已移至 navigation-mobile.css */
 
 /* 移动端开发中页面样式 */
 .development-notice {
@@ -96,13 +81,6 @@ nav a {
     transition: color 0.3s;
 }
 
-/* 导航栏样式已移至 navigation-mobile.css */
-
-/* 导航栏样式已移至 navigation-mobile.css */
-}
-/* 导航栏样式已移至 navigation-mobile.css */
-
-
 header {
     padding-top: 200px;
 }
@@ -120,14 +98,8 @@ header {
         padding: 40px 16px;
         margin-top: 12px;
     }
-/* 导航栏样式已移至 navigation-mobile.css */
+
 }
-
-/* 导航栏样式已移至 navigation-mobile.css */
-
-/* 导航栏样式已移至 navigation-mobile.css */
-
-/* 导航栏样式已移至 navigation-mobile.css */
 
 .LuminolMC {
     display: inline-flex;
@@ -210,57 +182,3 @@ header {
     }
 }
 
-/* 系统深色主题自动应用 */
-@media (prefers-color-scheme: dark) {
-    :root:not(.dark-theme) {
-        --primary-color: #a78bfa;
-        --secondary-color: #f1f5f9;
-        --background-color: #0f172a;
-        --card-bg: #1e293b;
-        --text-color: #e2e8f0;
-        --nav-bg: rgba(15, 23, 42, 0.8);
-        --nav-bg-scroll: #1e293b;
-    }
-    
-    :root:not(.dark-theme) body {
-        background: var(--background-color) !important;
-        color: var(--text-color) !important;
-    }
-    
-    :root:not(.dark-theme) nav {
-        background-color: var(--nav-bg) !important;
-    }
-    
-    :root:not(.dark-theme) footer {
-        background: linear-gradient(135deg, #0a0f1c 0%, #1a1f2e 100%) !important;
-        border-top: 1px solid rgba(71, 85, 105, 0.3) !important;
-    }
-    
-    :root:not(.dark-theme) .footer-column h3 {
-        color: #c4b5fd !important;
-    }
-    
-    :root:not(.dark-theme) .footer-column a {
-        color: #cbd5e1 !important;
-    }
-    
-    :root:not(.dark-theme) .footer-column a:hover {
-        color: #c4b5fd !important;
-    }
-    
-    :root:not(.dark-theme) .copyright-info {
-        border-top: 1px solid rgba(71, 85, 105, 0.3) !important;
-        color: #94a3b8 !important;
-    }
-    
-    /* 系统深色主题下主题切换按钮适配 */
-    :root:not(.dark-theme) .theme-toggle-btn {
-        background: rgba(71, 85, 105, 0.3) !important;
-        border: 1px solid rgba(71, 85, 105, 0.5) !important;
-        color: #e2e8f0 !important;
-    }
-    
-    :root:not(.dark-theme) .theme-toggle-btn:hover {
-        background: rgba(71, 85, 105, 0.5) !important;
-    }
-}
