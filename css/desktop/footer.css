@@ -1,6 +1,4 @@
 
-
-/* Footer过渡区域 - 首页专用 */
 .footer-transition-section {
     position: relative;
     background: var(--background-color);
@@ -43,7 +41,7 @@
 /* Footer base */
 footer {
     padding: 60px 20px 30px;
-    background: var(--footer-background-color);
+    background: var(--footer-gradient);
     color: var(--text-color);
     text-align: center;
     position: relative;
@@ -248,25 +246,6 @@ footer p {
     }
 }
 
-/* Dark scheme auto (only footer-related) */
-@media (prefers-color-scheme: dark) {
-    :root:not(.dark-theme) footer {
-        background: linear-gradient(135deg, #0a0f1c 0%, #1a1f2e 100%) ;
-        border-top: 1px solid rgba(71, 85, 105, 0.3) ;
-    }
-    :root:not(.dark-theme) .footer-column h3 {
-        color: #c4b5fd ;
-    }
-    :root:not(.dark-theme) .footer-column a {
-        color: #cbd5e1 ;
-    }
-    :root:not(.dark-theme) .footer-column a:hover {
-        color: #c4b5fd ;
-    }
-    :root:not(.dark-theme) .copyright-info {
-        border-top: 1px solid rgba(71, 85, 105, 0.3) ;
-        color: #94a3b8 ;
-    }
-}
+
 
 

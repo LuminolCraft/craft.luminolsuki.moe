@@ -6,6 +6,7 @@
      --bases-background-gradient:linear-gradient(135deg, #f2eefc 0%, #e8e2f7 50%, #ddd6f3 100%);
      --bases-secondary-color:#333333;
      --bases-section-gradient:linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+     --basses-footer-gradinet:linear-gradient(135deg, #0a0f1c 0%, #1a1f2e 100%);
      --bases-card-bg:rgba(255, 255, 255, 0.8);
      --bases-card-bg-hover:rgba(255, 255, 255, 0.9);
      --bases-text-color:#444444;
@@ -64,6 +65,7 @@
      --shadow-color: var(--bases-shadow-color);
      --shadow-hover: var(--bases-shadow-hover);
      --footer-background-color: var(--bases-footer-background-color);
+     --footer-gradient: var(--basses-footer-gradinet);
  }
  
  @media (prefers-color-scheme: dark) {
