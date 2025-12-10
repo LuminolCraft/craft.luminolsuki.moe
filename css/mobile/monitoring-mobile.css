@@ -26,7 +26,6 @@
     font-size: 1rem;
 }
 
-/* 移动端网站状态信息样式 */
 .website-status-info {
     gap: 15px;
     margin: 20px 0 10px 0;
@@ -85,14 +84,12 @@ header {
     padding-top: 200px;
 }
 
-/* 导航栏样式已移至 navigation-mobile.css */
 
 .logo-and-text {
     display: flex;
     align-items: center;
 }
 
-/* 移动端样式 */
 @media (max-width: 896px) {
     .container {
         padding: 40px 16px;
@@ -170,7 +167,7 @@ header {
 @media (max-width: 896px) {
     .nav-theme-toggle {
         position: absolute;
-        right: 70px; /* 汉堡菜单右边20px + 按钮宽度40px + 间距10px */
+        right: 70px;
         top: 19.4px;
         z-index: 102;
     }

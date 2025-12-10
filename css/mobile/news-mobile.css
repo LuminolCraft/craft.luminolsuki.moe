@@ -23,7 +23,7 @@ body {
     color: var(--text-color);
     line-height: 1.6;    
     animation: none ;
-    /*background: none ;  停止动画，移除此行以保留静态背景 */
+
 }
 
 a {
@@ -61,23 +61,10 @@ nav a {
     transition: color 0.3s;
 }
 
-/* 导航栏样式已移至 navigation-mobile.css */
-
-/* 导航栏样式已移至 navigation-mobile.css */
-
-/* 导航栏样式已移至 navigation-mobile.css */
-
-
-
-/* 导航栏样式已移至 navigation-mobile.css */
-
 .logo-and-text {
     display: flex;
     align-items: center;
 }
-
-/* 导航栏样式已移至 navigation-mobile.css */
-
 
 .LuminolMC {
     display: inline-flex;
@@ -95,14 +82,6 @@ nav a {
 .right-align {
     margin-left: 0;
 }
-
-
-
-
-
-
-
-/* 导航栏样式已移至 navigation-mobile.css */
 
 
 
@@ -125,7 +104,6 @@ nav a {
         border-radius: 12px;
     }
 
-    /* 垂直滚动条样式 for .news-grid */
     .news-grid::-webkit-scrollbar {
         width: 6px;
     }
@@ -170,10 +148,6 @@ nav a {
         background-size: cover;
     }
 
-    /* 无图新闻：移动端也消除额外空白 */
-    /* .news-item.no-image {
-        min-height: auto;
-    } */
     .news-item.no-image .news-content {
         height: auto;
         max-height: 220px;
@@ -187,11 +161,10 @@ nav a {
 
     .news-content {
         height: 100px;
-        overflow-x: auto; /* 启用水平滚动 */
-        overflow-y: auto; /* 保持垂直滚动 */
+        overflow-x: auto;
+        overflow-y: auto;
     }
 
-    /* 垂直滚动条样式 for .news-content */
     .news-content::-webkit-scrollbar {
         width: 4px;
     }
@@ -210,7 +183,6 @@ nav a {
         background: rgba(182, 173, 230, 0.7); 
     }
 
-    /* 水平滚动条样式 for .news-content */
     .news-content::-webkit-scrollbar {
         height: 4px;
     }
@@ -247,7 +219,6 @@ nav a {
         margin: 0 3px;
     }
 
-    /* 置顶新闻样式 */
     .news-item.pinned {
         background-color: var(--card-bg);
         border: 2px solid var(--pinned-border);

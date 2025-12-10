@@ -100,14 +100,3 @@ a {
     transform: translateY(-3px);
     box-shadow: 0 12px 35px rgba(158, 148, 216, 0.4);
 }
-
-/* 移动端样式 */
-/* 移动端样式已移至 monitoring-mobile.css */
-
-/* 移动端细化样式已整合至 monitoring-mobile.css */
-
-/* 网站状态信息样式 */
-/* Website status & footer styles moved to /footer.css */
-
-/* 响应式设计 */
-/* 移动端样式已移至 monitoring-mobile.css */

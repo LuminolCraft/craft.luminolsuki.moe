@@ -4,9 +4,9 @@
  */
 
 // 全局变量 - 避免重复声明
-if (typeof navigationManager === 'undefined') {
-    var navigationManager;
-}
+// if (typeof navigationManager === 'undefined') {
+//     var navigationManager;
+// }
 if (typeof newsManager === 'undefined') {
     var newsManager;
 }
@@ -85,7 +85,7 @@ function initCommonModules() {
     const debug = window.DebugManager ? window.DebugManager.module('main') : debugModule('main');
     
     // 初始化导航管理器
-    navigationManager = new NavigationManager();
+    // navigationManager = new NavigationManager();
     
     // 初始化版本管理器 - 检查是否类已定义
     if (typeof VersionManager !== 'undefined') {
@@ -906,7 +906,7 @@ function initAnimations() {
 // }
 
 // 导出全局变量供其他脚本使用
-window.navigationManager = navigationManager;
+// window.navigationManager = navigationManager;
 window.newsManager = newsManager;
 window.backgroundSlider = backgroundSlider;
 window.versionManager = versionManager;

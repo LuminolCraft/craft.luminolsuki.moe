@@ -1,93 +1,95 @@
 :root{
-     --bases-bg:#f2eefc;
-     --bases-primary:#a78bfa;
-     --bases-primary-gradient:linear-gradient(135deg, #9e94d8 0%, #b6ade6 100%);
-     --bases-background-color:#f2eefc;
-     --bases-background-gradient:linear-gradient(135deg, #f2eefc 0%, #e8e2f7 50%, #ddd6f3 100%);
-     --bases-secondary-color:#333333;
-     --bases-section-gradient:linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
-     --basses-footer-gradinet:linear-gradient(135deg, #0a0f1c 0%, #1a1f2e 100%);
-     --bases-card-bg:rgba(255, 255, 255, 0.8);
-     --bases-card-bg-hover:rgba(255, 255, 255, 0.9);
-     --bases-text-color:#444444;
-     --bases-text-secondary:#666666;
-     --bases-online-dot:#00BFA6;
-     --bases-nav-bg: rgba(109, 91, 154, 0.8);
-     --bases-nav-bg-scroll: rgba(109, 91, 154, 0.95);
-     --bases-button-hover: #b6ade6;
-     --bases-accent-color: #f59e0b;
-     --bases-glass-bg: rgba(255, 255, 255, 0.6);
-     --bases-glass-border: rgba(158, 148, 216, 0.3);
-     --bases-shadow-color: rgba(109, 91, 154, 0.2);
-     --bases-shadow-hover: rgba(109, 91, 154, 0.3);
-     --bases-footer-background-color: #1e293b;
-     
-     --bases-dark-bg:#213555;
-     --bases-dark-primary-color: #a78bfa;
-     --bases-dark-primary-gradient:linear-gradient(135deg, #9e94d8 0%, #b6ade6 100%);
-     --bases-dark-secondary-color: #f1f5f9;
-     --bases-dark-background-color: #213555;
-     --bases-dark-background-gradient: linear-gradient(135deg, #0F1A2E 0%, #1A2D4E 50%, #283e6b 100%);
-     --bases-dark-card-bg: #1e293b;
-     --bases-dark-card-bg-hover: #334155;
-     --bases-dark-text-color: #e2e8f0;
-     --bases-dark-text-secondary: #cbd5e1;
-     --bases-dark-online-color: #10b981;
-     --bases-dark-nav-bg: rgba(15, 23, 42, 0.8);
-     --bases-dark-nav-bg-scroll: #1e293b;
-     --bases-dark-button-hover: #c4b5fd;
-     --bases-dark-accent-color: #f59e0b;
-     --bases-dark-glass-bg: rgba(30, 41, 59, 0.6);
-     --bases-dark-glass-border: rgba(71, 85, 105, 0.3);
-     --bases-dark-shadow-color: rgba(0, 0, 0, 0.3);
-     --bases-dark-shadow-hover: rgba(0, 0, 0, 0.4);
-     
-     
- }
- 
- :root{
-     --background-color: var(--bases-bg);
-     --primary-color: var(--bases-primary);
-     --primary-gradient: var(--bases-primary-gradient);
-     --secondary-color: var(--bases-secondary-color);
-     --background-gradient: var(--bases-background-gradient);
-     --card-bg: var(--bases-card-bg);
-     --card-bg-hover: var(--bases-card-bg-hover);
-     --text-color: var(--bases-text-color);
-     --text-secondary: var(--bases-text-secondary);
-     --online-color: var(--bases-online-dot);
-     --nav-bg: var(--bases-nav-bg);
-     --nav-bg-scroll: var(--bases-nav-bg-scroll);
-     --button-hover: var(--bases-button-hover);
-     --accent-color: var(--bases-accent-color);
-     --glass-bg: var(--bases-glass-bg);
-     --glass-border: var(--bases-glass-border);
-     --shadow-color: var(--bases-shadow-color);
-     --shadow-hover: var(--bases-shadow-hover);
-     --footer-background-color: var(--bases-footer-background-color);
-     --footer-gradient: var(--basses-footer-gradinet);
- }
- 
- @media (prefers-color-scheme: dark) {
-     :root{
-         --background-color:var(--bases-dark-background-color);
-         --primary-color: var(--bases-dark-primary-color);
-         --primary-gradient:var(--bases-dark-primary-gradient);
-         --secondary-color:var(--bases-dark-secondary-color);
-         --background-gradient:var(--bases-dark-background-gradient);
-         --card-bg:var(--bases-dark-card-bg);
-         --card-bg-hover:var(--bases-dark-card-bg-hover);
-         --text-color:var(--bases-dark-text-color);
-         --text-secondary:var(--bases-dark-text-secondary);
-         --online-color:var(--bases-dark-online-color);
-         --nav-bg:var(--bases-dark-nav-bg);
-         --nav-bg-scroll:var(--bases-dark-nav-bg-scroll);
-         --button-hover:var(--bases-dark-button-hover);
-         --accent-color:var(--bases-dark-accent-color);
-         --glass-bgvar-:var(--bases-dark-glass-border);
-         --glass-border:var(--bases-dark-glass-border);
-         --shadow-color:var(--bases-dark-shadow-color);
-         --shadow-hover:var(--bases-dark-shadow-hover);
-         --footer-background-color:var(--bases-dark-footer-background-color);
-     }
- }
+    --bases-bg:#f2eefc;
+    --bases-primary:#a78bfa;
+    --bases-primary-gradient:linear-gradient(135deg, #9e94d8 0%, #b6ade6 100%);
+    --bases-background-color:#f2eefc;
+    --bases-background-gradient:linear-gradient(135deg, #f2eefc 0%, #e8e2f7 50%, #ddd6f3 100%);
+    --bases-secondary-color:#333333;
+    --bases-section-gradient:linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+    --basses-footer-gradinet:linear-gradient(135deg, #0a0f1c 0%, #1a1f2e 100%);
+    --bases-card-bg:rgba(255, 255, 255, 0.8);
+    --bases-card-bg-hover:rgba(255, 255, 255, 0.9);
+    --bases-text-color:#444444;
+    --bases-text-secondary:#666666;
+    --bases-online-dot:#00BFA6;
+    --bases-nav-bg: rgba(109, 91, 154, 0.8);
+    --bases-nav-bg-scroll: rgba(109, 91, 154, 0.95);
+    /* --bases-side-nav-bg */
+    --bases-button-hover: #b6ade6;
+    --bases-accent-color: #f59e0b;
+    --bases-glass-bg: rgba(255, 255, 255, 0.6);
+    --bases-glass-border: rgba(158, 148, 216, 0.3);
+    --bases-shadow-color: rgba(109, 91, 154, 0.2);
+    --bases-shadow-hover: rgba(109, 91, 154, 0.3);
+    --bases-footer-background-color: #0f0f0f;
+    
+    
+    --bases-dark-bg:#17171A;
+    --bases-dark-primary-color: #a78bfa;
+    --bases-dark-primary-gradient:linear-gradient(135deg, #9e94d8 0%, #b6ade6 100%);
+    --bases-dark-secondary-color: #f1f5f9;
+    --bases-dark-background-color: #17171A;
+    --bases-dark-background-gradient: #0f0f00;
+    --bases-dark-card-bg: #545455;
+    --bases-dark-card-bg-hover: #334155;
+    --bases-dark-text-color: #e2e8f0;
+    --bases-dark-text-secondary: #cbd5e1;
+    --bases-dark-online-color: #10b981;
+    --bases-dark-nav-bg: rgba(15, 23, 42, 0.8);
+    --bases-dark-nav-bg-scroll: #1e293b;
+    --bases-dark-button-hover: #c4b5fd;
+    --bases-dark-accent-color: #f59e0b;
+    --bases-dark-glass-bg: rgba(30, 41, 59, 0.6);
+    --bases-dark-glass-border: rgba(71, 85, 105, 0.3);
+    --bases-dark-shadow-color: rgba(0, 0, 0, 0.3);
+    --bases-dark-shadow-hover: rgba(0, 0, 0, 0.4);
+    
+    
+}
+
+:root{
+    --background-color: var(--bases-bg);
+    --primary-color: var(--bases-primary);
+    --primary-gradient: var(--bases-primary-gradient);
+    --secondary-color: var(--bases-secondary-color);
+    --background-gradient: var(--bases-background-gradient);
+    --card-bg: var(--bases-card-bg);
+    --card-bg-hover: var(--bases-card-bg-hover);
+    --text-color: var(--bases-text-color);
+    --text-secondary: var(--bases-text-secondary);
+    --online-color: var(--bases-online-dot);
+    --nav-bg: var(--bases-nav-bg);
+    --nav-bg-scroll: var(--bases-nav-bg-scroll);
+    --button-hover: var(--bases-button-hover);
+    --accent-color: var(--bases-accent-color);
+    --glass-bg: var(--bases-glass-bg);
+    --glass-border: var(--bases-glass-border);
+    --shadow-color: var(--bases-shadow-color);
+    --shadow-hover: var(--bases-shadow-hover);
+    --footer-background-color: var(--bases-footer-background-color);
+    --footer-gradient: var(--basses-footer-gradinet);
+}
+
+@media (prefers-color-scheme: dark) {
+    :root{
+        --background-color:var(--bases-dark-background-color);
+        --primary-color: var(--bases-dark-primary-color);
+        --primary-gradient:var(--bases-dark-primary-gradient);
+        --secondary-color:var(--bases-dark-secondary-color);
+        --background-gradient:var(--bases-dark-background-gradient);
+        --card-bg:var(--bases-dark-card-bg);
+        --card-bg-hover:var(--bases-dark-card-bg-hover);
+        --text-color:var(--bases-dark-text-color);
+        --text-secondary:var(--bases-dark-text-secondary);
+        --online-color:var(--bases-dark-online-color);
+        --nav-bg:var(--bases-dark-nav-bg);
+        --nav-bg-scroll:var(--bases-dark-nav-bg-scroll);
+        --button-hover:var(--bases-dark-button-hover);
+        --accent-color:var(--bases-dark-accent-color);
+        --glass-bgvar-:var(--bases-dark-glass-border);
+        --glass-border:var(--bases-dark-glass-border);
+        --shadow-color:var(--bases-dark-shadow-color);
+        --shadow-hover:var(--bases-dark-shadow-hover);
+        --footer-background-color:var(--bases-dark-background-gradient:);
+    }
+}
