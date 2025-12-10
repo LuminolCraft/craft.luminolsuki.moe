@@ -13,10 +13,10 @@ body {
     line-height: 1.6;
 }
 
-/* 移动端不加载动态背景 */
+
 @media (max-width: 846px) {
     body::before, body::after {
-         content: none; /*阻止渲染 */
+         content: none;
     }
 }
 
@@ -97,13 +97,10 @@ nav a {
     flex-grow: 1; 
 }
 nav > a, nav > .dropdown {
-    /* 将“主页”和“服务器规则”放在 logo-container 之后 */
     order: 1; 
-    /* 调整间距以靠近 logo */
     margin: 0 10px; 
 }
 nav > a:first-of-type, nav > .dropdown:first-of-type {
-    /* 减小“主页”与 logo 的间距 */
     margin-right: 80%;
 }
 .logo-container img {
@@ -174,73 +171,6 @@ nav > a:first-of-type, nav > .dropdown:first-of-type {
     align-items: center;
 }
 
-/* 移动端样式 */
-@media (max-width: 846px) {
-    /* 显示汉堡菜单按钮 */
-    .menu-button {
-        display: block;
-    }
-    
-    /* 移动端主题切换按钮 - 放在汉堡菜单左边 */
-    .nav-theme-toggle {
-        position: absolute;
-        right: 70px; /* 汉堡菜单右边20px + 按钮宽度40px + 间距10px */
-        top: 19.4px;
-        z-index: 102;
-    }
-    
-    .nav-theme-toggle .theme-toggle-btn {
-        width: 35px;
-        height: 35px;
-        font-size: 14px;
-    }
-
-    /* 隐藏导航链接 */
-    .nav-links {
-        display: none;
-    }
-
-    /* 点击汉堡菜单后显示导航链接 */
-    .nav-links.responsive {
-        display: block;
-        position: absolute;
-        top: 100%;
-        left: 0;
-        width: 100%;
-        background-color: var(--nav-bg-scroll);
-    }
-
-    /* 调整导航链接样式 */
-    .nav-links.responsive .dropdown {
-        display: block;
-        width: 100%;
-    }
-
-    .nav-links.responsive .dropdown-toggle {
-        display: block;
-        width: 100%;
-        padding: 15px 20px;
-    }
-
-    .nav-links.responsive .dropdown-menu {
-        position: static;
-        width: 100%;
-        opacity: 1;
-        visibility: visible;
-        transform: none;
-        box-shadow: none;
-        background-color: transparent;
-    }
-
-    .nav-links.responsive .dropdown-item {
-        padding: 10px 20px;
-    }
-
-    /* 隐藏桌面版导航链接 */
-    nav a:not(.logo-and-text) {
-        display: none;
-    }
-}
 
 .LuminolMC {
     display: inline-flex;
@@ -282,7 +212,6 @@ nav > a:first-of-type, nav > .dropdown:first-of-type {
         line-height: 1.2;
     }
 
-    /* 移动端标题样式调整 */
     .news-content h1, .news-detail-section h1 {
         font-size: 1.8em;
         margin: 1.2em 0 0.6em 0;
@@ -308,7 +237,6 @@ nav > a:first-of-type, nav > .dropdown:first-of-type {
         width: 100%;
     }
 
-    /* 无图详情：移动端隐藏图片容器，避免空白 */
     .no-image .news-img {
         display: none;
     }
@@ -319,7 +247,6 @@ nav > a:first-of-type, nav > .dropdown:first-of-type {
         
     }
 
-    /* 移动端列表样式 */
     .news-content ul, .news-content ol {
         padding-left: 1.5em;
         margin: 0.8em 0;
@@ -330,16 +257,14 @@ nav > a:first-of-type, nav > .dropdown:first-of-type {
         font-size: 1.05em;
     }
 
-    /* 移动端代码块样式 */
     .news-content pre {
         padding: 1em;
         margin: 1em 0;
-        font-size: 1em; /* 增大移动端字体大小 */
+        font-size: 1em;
         overflow-x: auto;
         line-height: 1.6;
     }
     
-    /* 移动端 Prism.js 代码块字体大小调整 */
     .news-content pre[class*="language-"] {
         font-size: 1em ;
         line-height: 1.6 ;
@@ -355,7 +280,6 @@ nav > a:first-of-type, nav > .dropdown:first-of-type {
         color: #24292e ;
     }
     
-    /* 移动端代码块工具栏 */
     .code-block-toolbar {
         top: 8px ;
         right: 8px ;
@@ -373,7 +297,6 @@ nav > a:first-of-type, nav > .dropdown:first-of-type {
         font-size: 0.85em;
     }
 
-    /* 移动端表格样式 */
     .news-content table {
         font-size: 0.9em;
         margin: 1em 0;
@@ -384,7 +307,6 @@ nav > a:first-of-type, nav > .dropdown:first-of-type {
         padding: 8px 12px;
     }
 
-    /* 移动端 Markdown 图片样式 */
     .news-content img {
         max-width: 100% ;
         height: auto ;
@@ -394,7 +316,6 @@ nav > a:first-of-type, nav > .dropdown:first-of-type {
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     }
 
-    /* 移动端图片居中 */
     .news-content p img {
         max-width: 100% ;
         height: auto ;
@@ -442,6 +363,6 @@ nav > a:first-of-type, nav > .dropdown:first-of-type {
         font-size: 1.5em;
     }
     #three-canvas-container {
-        height: 100vh; /* 确保移动端适配 */
+        height: 100vh;
     }
 }

@@ -26,26 +26,14 @@
     fill: var(--footer-background-color);
 }
 
-/* 深色主题Footer过渡区域适配 */
-.dark-theme .footer-transition-section {
-    background: var(--background-color);
-}
-
-/* 系统深色主题Footer过渡区域适配 */
-@media (prefers-color-scheme: dark) {
-    :root:not(.dark-theme) .footer-transition-section {
-        background: var(--background-color) ;
-    }
-}
-
 /* Footer base */
 footer {
     padding: 60px 20px 30px;
-    background: var(--footer-gradient);
+    background: var(--footer-background-color);
     color: var(--text-color);
     text-align: center;
     position: relative;
-    margin-top: -2px; /* 消除波浪和footer之间的间隙 */
+    margin-top: -2px;
 }
 footer p {
     text-align: center;
@@ -234,7 +222,6 @@ footer p {
     margin-left: 8px;
 }
 
-/* Responsive tweaks */
 @media (max-width: 846px) {
     .website-status-info {
         gap: 15px;

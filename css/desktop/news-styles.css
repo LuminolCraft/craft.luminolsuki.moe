@@ -134,21 +134,9 @@ a {
     width: 18px;
     height: 18px;
     margin-left: 8px;
-    vertical-align: sub; /* 保持对齐 */
+    vertical-align: sub;
 }
-/* 导航栏样式已移至 navigation.css */
 
-/* 导航栏样式已移至 navigation.css */
-/* 导航栏样式已移至 navigation.css */
-
-/* 移动端样式已移至 news-mobile.css */
-
-/* 移动端样式已移至 news-mobile.css */
-
-
-
-
-/* 导航栏样式已移至 navigation.css */
 .logo {
     width: 100%;
     height: 100%;
@@ -360,7 +348,6 @@ a {
     border-radius: 12px;
 }
 
-/* 垂直滚动条样式 for .news-grid */
 .news-grid::-webkit-scrollbar {
     width: 6px;
 }
@@ -401,10 +388,6 @@ a {
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-/* 无图新闻：与绝对定位按钮的空白 */
-/* .news-item.no-image {
-    min-height: auto;
-} */
 
 .news-item.no-image .news-content {
     height: auto;
@@ -425,16 +408,15 @@ a {
     background-position: center;
 }
 
-/* 新闻内容区域 */
+
 .news-content {
     padding: 24px;
     height: 150px;
-    overflow-x: auto; /* 启用水平滚动 */
-    overflow-y: auto; /* 保持垂直滚动 */
+    overflow-x: auto;
+    overflow-y: auto;
 
 }
 
-/* 垂直滚动条样式 for .news-content */
 .news-content::-webkit-scrollbar {
     width: 4px;
 }
@@ -520,7 +502,7 @@ a {
     font-family: var(--font-primary);
     font-size: 0.95em;
     position: absolute;
-    bottom: 10px; /* 增加底部间距，减少紧贴感 */
+    bottom: 10px;
     left: 50%;
     transform: translateX(-50%);
     transition: all 0.3s;

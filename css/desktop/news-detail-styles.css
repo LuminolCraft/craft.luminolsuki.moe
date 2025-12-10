@@ -62,7 +62,6 @@
     
 }
 
-/* Markdown 内容深色主题适配 */
 .dark-theme .news-content h1,
 .dark-theme .news-content h2,
 .dark-theme .news-content h3,
@@ -97,7 +96,6 @@
     color: #cbd5e1;
 }
 
-/* 表格深色主题适配 */
 .dark-theme .news-content table {
     background: rgba(30, 41, 59, 0.8);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
@@ -116,12 +114,10 @@
     background: rgba(71, 85, 105, 0.2);
 }
 
-/* 分割线深色主题适配 */
 .dark-theme .news-content hr {
     background: linear-gradient(90deg, transparent, #c4b5fd, transparent);
 }
 
-/* 内联代码深色主题适配 */
 .dark-theme .news-content p code,
 .dark-theme .news-content li code,
 .dark-theme .news-content td code,
@@ -131,13 +127,11 @@
     border: 1px solid rgba(196, 181, 253, 0.4);
 }
 
-/* 深色主题 token.tag 样式 */
 .dark-theme .news-content .token.tag {
     background: none ;
     color: #79b8ff ;
 }
 
-/* 链接深色主题适配 */
 .dark-theme .news-content a {
     color: #c4b5fd;
 }
@@ -156,7 +150,6 @@
     border-bottom-color: #3b82f6;
 }
 
-/* 图片画廊深色主题适配 */
 .dark-theme .gallery-section {
     background: rgba(30, 41, 59, 0.9);
 }
@@ -169,7 +162,6 @@
     color: #cbd5e1;
 }
 
-/* 灯箱深色主题适配 */
 .dark-theme .lightbox {
     background: rgba(0, 0, 0, 0.9);
 }
@@ -214,29 +206,12 @@ a {
     text-decoration: none;
 }
 
-
-/* 导航栏样式已移至 navigation.css 和 navigation-mobile.css */
-/* 桌面端导航布局已移至 navigation.css */
-
-/* 移动端汉堡菜单已移至 navigation-mobile.css */
-
-/* 移动端汉堡菜单修复已移至 navigation-mobile.css */
-
-
-
-
-/* 下拉菜单样式已移至 navigation.css */
-
-
-/* 导航栏相关样式已移至 navigation.css */
-
 .news-content a.external-link svg {
     width: 18px;
     height: 18px;
     margin-left: 8px;
-    vertical-align: sub; /* 保持对齐 */
+    vertical-align: sub;
 }
-/* /* 动态酷炫背景：柔和渐变 + 光晕漂移 */
 body::before {
     content: '';
     position: fixed;
@@ -248,7 +223,6 @@ body::before {
     animation: gradientShift 14s ease-in-out infinite alternate;
 }
 
-/* 漂移光晕层（不随滚动位移） */
 body::after {
     content: '';
     position: fixed;
@@ -275,7 +249,6 @@ body::after {
     100% { background-position: 0% 0%, 100% 0%, 50% 100%; }
 }
 
-/* 兼容性：用户偏好减少动画时停用 */
 @media (prefers-reduced-motion: reduce) {
     body::before, body::after {
         animation: none;
@@ -283,14 +256,13 @@ body::after {
 }
 
 
-/* 前景隔离 */
+
 .news-detail-section, .gallery-section, .lightbox {
     position: relative;
     z-index: 1;
-    background: rgba(250, 250, 250, 0.9); /* 90% 不透明，背景可见 */
+    background: rgba(250, 250, 250, 0.9);
 }
 
-/* Markdown 标题样式 */
 .news-content h1, .news-detail-section h1 {
     font-size: 2.2em;
     color: var(--secondary-color);
@@ -338,7 +310,6 @@ body::after {
     font-weight: 600;
 }
 
-/* Markdown 列表样式 */
 .news-content ul, .news-content ol {
     padding-left: 2em;
     margin: 1em 0;
@@ -363,7 +334,6 @@ body::after {
     padding-left: 1.5em;
 }
 
-/* Markdown 强调样式 */
 .news-content strong, .news-detail-section strong {
     color: var(--primary-color);
     font-weight: 700;
@@ -374,7 +344,6 @@ body::after {
     
 }
 
-/* Markdown 引用样式 */
 .news-content blockquote {
     border-left: 4px solid var(--primary-color);
     background: rgba(158, 148, 216, 0.1);
@@ -417,12 +386,11 @@ body::after {
 .news-markdown strong,
 .news-content strong {
     color: var(--primary-color); /* #9e94d8 */
-    font-weight: bold; /* 保持粗体效果 */
+    font-weight: bold;
 }
 
 
 
-/* 代码高亮 - 基础样式，具体高亮由 Prism.js 处理 */
 .news-content pre {
     padding: 1.5em;
     border-radius: 8px;
@@ -436,14 +404,13 @@ body::after {
     background: none;
     padding: 0;
     border: none;
-    font-size: 1.1em; /* 增大字体大小 */
-    line-height: 1.7; /* 增加行高 */
+    font-size: 1.1em;
+    line-height: 1.7;
     font-family: var(--font-mono);
 }
 
-/* Prism.js 代码块字体大小调整 */
 .news-content pre[class*="language-"] {
-    font-size: 1.1em ; /* 确保 Prism.js 代码块字体更大 */
+    font-size: 1.1em ;
     line-height: 1.7 ;
 }
 
@@ -452,7 +419,6 @@ body::after {
     line-height: 1.7 ;
 }
 
-/* GitHub 风格代码高亮 */
 .news-content pre[class*="language-"] {
     background: #f6f8fa ;
     border: none ;
@@ -466,7 +432,6 @@ body::after {
     text-shadow: none ;
 }
 
-/* 深色主题代码块样式 */
 .dark-theme .news-content pre[class*="language-"] {
     background: #0d1117 ;
     border: none ;
@@ -479,7 +444,6 @@ body::after {
     text-shadow: none ;
 }
 
-/* GitHub 风格语法高亮 */
 .news-content .token.comment,
 .news-content .token.prolog,
 .news-content .token.doctype,
@@ -489,7 +453,6 @@ body::after {
 
 
 
-/* 确保 token.tag 没有背景色 */
 .news-content .token.tag {
     background: none ;
     color: #005cc5 ;
@@ -534,7 +497,7 @@ body::after {
 .news-content td code,
 .news-content th code {
     background: rgba(158, 148, 216, 0.15);
-    color: #9e94d8; /* 直接使用颜色值 */
+    color: #9e94d8;
     padding: 3px 8px;
     border-radius: 4px;
     font-size: 0.9em;
@@ -543,7 +506,6 @@ body::after {
     font-family: var(--font-mono);
 }
 
-/* 表格样式 */
 .news-content table {
     width: 100%;
     border-collapse: collapse;
@@ -572,7 +534,6 @@ body::after {
     background: rgba(158, 148, 216, 0.05);
 }
 
-/* 分割线样式 */
 .news-content hr {
     border: none;
     height: 2px;
@@ -580,7 +541,6 @@ body::after {
     margin: 2em 0;
 }
 
-/* 链接样式 */
 .news-content a {
     color: var(--primary-color);
     text-decoration: none;
@@ -595,12 +555,12 @@ body::after {
 
 /* 外链使用浏览器默认蓝色 */
 .news-content a.external-link {
-    color: #0066cc; /* 浏览器默认链接蓝色 */
+    color: #0066cc;
     position: relative;
 }
 
 .news-content a.external-link:hover {
-    color: #004499; /* 悬停时深一点的蓝色 */
+    color: #004499;
     border-bottom-color: #004499;
 }
 
@@ -608,7 +568,6 @@ body::after {
 
 
 
-/* 置顶图标样式 */
 .pinned-icon {
     display: inline-block;
     font-size: 1.2em;
@@ -735,7 +694,6 @@ body::after {
     
 }
 
-/* 图片画廊样式 */
 .gallery-section {
     padding: 20px;
     max-width: 800px;
@@ -825,16 +783,10 @@ body::after {
 
 
 
-/* Footer样式已移至 footer.css */
-
-
-@keyframes fadeIn {/* 页头文字、页头按钮动画 */
+@keyframes fadeIn {
     from { opacity: 0; transform: translateY(15px); }
     to { opacity: 1; transform: translateY(0); }
 }
-
-
-/* Footer链接样式已移至 footer.css */
 
 /* 网站状态信息样式 */
 .website-status-info {
@@ -884,7 +836,6 @@ body::after {
     opacity: 0.9;
 }
 
-/* 可点击的版本状态项样式 */
 #version-status-item {
     cursor: pointer;
     position: relative;
@@ -907,38 +858,14 @@ body::after {
     opacity: 1;
 }
 
-/* 添加点击效果 */
 #version-status-item:active {
     transform: translateY(0);
     background: rgba(158, 148, 216, 0.2);
 }
 
-/* 响应式设计（移动端规则已整合至 news-detail-mobile.css） */
-
-/* 系统深色主题自动应用 */
-@media (prefers-color-scheme: dark) {
-    :root:not(.dark-theme) {
-        --primary-color: #a78bfa;
-        --secondary-color: #f1f5f9;
-        --background-color: #0f172a;
-        --card-bg: #1e293b;
-        --text-color: #e2e8f0;
-        --nav-bg: rgba(15, 23, 42, 0.8);
-        --nav-bg-scroll: #1e293b;
-    }
-    
-    :root:not(.dark-theme) body {
-        background: var(--background-color) ;
-        color: var(--text-color) ;
-    }
-    
-/* 系统深色主题导航栏样式已移至 navigation.css */
-    
-/* Footer系统深色主题样式已移至 footer.css */
-    
     /* 新闻详情页深色主题 */
     :root:not(.dark-theme) .news-detail-section {
-        background: rgba(30, 41, 59, 0.85) ;
+        background: var(--card-bg) ;
         border: 1px solid rgba(71, 85, 105, 0.45) ;
     }
     
@@ -1035,7 +962,5 @@ body::after {
         background: none ;
         color: #79b8ff ;
     }
-    
-/* 系统深色主题导航链接样式已移至 navigation.css */
-}
+
 

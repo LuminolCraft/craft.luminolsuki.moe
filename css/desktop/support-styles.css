@@ -28,24 +28,6 @@
     transform: rotate(180deg);
 }
 
-/* 深色主题变量 */
-.dark-theme {
-    --primary-color: #a78bfa;
-    --secondary-color: #f1f5f9;
-    --background-color: #0f172a;
-    --card-bg: #1e293b;
-    --text-color: #e2e8f0;
-    --online-color: #10b981;
-    --nav-bg: rgba(15, 23, 42, 0.8);
-    --nav-bg-scroll: #1e293b;
-    --button-hover: #c4b5fd;
-}
-
-/* 导航栏样式已移至 navigation.css */
-
-/* Footer深色主题样式已移至 footer.css */
-
-
 * {
     margin: 0;
     padding: 0;
@@ -62,23 +44,6 @@ body {
 a {
     text-decoration: none;
   }
-
-
-/* 导航栏样式已移至 navigation.css */
-
-/* 导航栏样式已移至 navigation.css */
-/* 导航栏样式已移至 navigation.css */
-
-/* 导航栏样式已移至 navigation.css */
-
-
-
-
-/* 导航栏样式已移至 navigation.css */
-
-
-
-
 
 .container {
     max-width: 1200px;
@@ -202,11 +167,6 @@ header {
     margin-top: 0;
 }
 
-/* Footer链接样式已移至 footer.css */
-
-
-/* 已注释support.html>.back-to-top ---------------------------------------------------------------------*/
-/* 返回顶部圆形按钮样式 */
 .back-to-top {
     width: 50px;
     height: 50px;
@@ -242,7 +202,7 @@ header {
     transform: translateY(-4px);
     box-shadow: 0 8px 18px rgba(0,0,0,0.2);
 }
-/* 已注释support.html>.back-to-top ----------------------------------------------------------------------*/
+
 
 
 /* 返回主页圆形按钮样式 */
@@ -401,13 +361,12 @@ header {
 /* feet moved to /footer.css */
 
 
-@keyframes fadeIn {/* 页头文字、页头按钮动画 */
+@keyframes fadeIn {
     from { opacity: 0; transform: translateY(15px); }
     to { opacity: 1; transform: translateY(0); }
 }
 
 
-/* Footer链接样式已移至 footer.css */
 
 /* 网站状态信息样式 */
 .website-status-info {

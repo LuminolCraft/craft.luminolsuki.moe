@@ -16,7 +16,6 @@ a {
     text-decoration: none;
 }
 
-/* 导航栏主题切换按钮已移至 navigation.css */
 
 .theme-toggle-btn {
     background: rgba(255, 255, 255, 0.1);
@@ -46,17 +45,6 @@ a {
 .theme-toggle-btn:hover i {
     transform: rotate(180deg);
 }
-
-/* 导航栏样式已移至 navigation.css */
-
-/* 导航栏样式已移至 navigation.css */
-
-
-
-
-
-/* 导航栏样式已移至 navigation.css */
-
 
 /* banner */
 header {
@@ -797,12 +785,12 @@ header {
     background-repeat: no-repeat;
     z-index: -2;
     opacity: 0;
-    transition: opacity 1.5s ease-in-out; /* 延长过渡时间，让切换更柔和 */
-    filter: brightness(0.95) contrast(1.0); /* 接近原始亮度，减少过滤效果 */
+    transition: opacity 1.5s ease-in-out;
+    filter: brightness(0.95) contrast(1.0);
 }
 
 .header-background.fade-in {
-    opacity: 1.0; /* 完全不透明，显示原始图片 */
+    opacity: 1.0;
     filter: brightness(0.95) contrast(1.0);
 }
 
@@ -816,9 +804,9 @@ header {
     filter: brightness(0.95) contrast(1.0);
 }
 
-/* 添加更柔和的过渡效果 */
+
 .hero-section {
-    background-color: transparent; /* 透明背景，让图片显示 */
+    background-color: transparent;
 }
 
 .hero-overlay {
@@ -828,7 +816,7 @@ header {
     width: 100%;
     height: 100%;
     background: linear-gradient(to bottom, rgba(0,0,0,0.1), rgba(0,0,0,0.2));
-    z-index: -1; /* 在背景图片之上，内容之下 */
+    z-index: -1;
     pointer-events: none;
 }
 
@@ -840,7 +828,7 @@ header {
     grid-template-columns: 1fr 1fr;
     gap: 60px;
     align-items: center;
-    background: rgba(0, 0, 0, 0.3); /* 半透明黑色背景 */
+    background: rgba(0, 0, 0, 0.3);
     border-radius: 20px;
     backdrop-filter: blur(10px); /* 毛玻璃效果 */
     border: 1px solid rgba(255, 255, 255, 0.1);
@@ -952,19 +940,6 @@ header {
     background: var(--primary-gradient);
 }
 
-/* 深色主题服务器状态卡片适配 */
-.dark-theme .server-status-card {
-    background: rgba(30, 41, 59, 0.6);
-    border: 1px solid rgba(71, 85, 105, 0.3);
-}
-
-/* 系统深色主题服务器状态卡片适配 */
-@media (prefers-color-scheme: dark) {
-    :root:not(.dark-theme) .server-status-card {
-        background: rgba(30, 41, 59, 0.6) ;
-        border: 1px solid rgba(71, 85, 105, 0.3) ;
-    }
-}
 
 .status-indicator {
     display: flex;
@@ -995,21 +970,21 @@ header {
   
   /* 在线状态 - 绿色 */
   .status-dot.online {
-    background-color: #00BFA6; /* 或 var(--online-color) */
+    background-color: var(--online-color);
   }
   .status-dot.online::before {
     background-color: rgba(0, 191, 166, 0.3);
   }
   
-  /* 离线状态 - 红色 */
+
   .status-dot.offline {
-    background-color: #dc3545; /* Bootstrap 风格的红色，也可用 #ff4444 */
+    background-color: #dc3545;
   }
   .status-dot.offline::before {
     background-color: rgba(220, 53, 69, 0.3);
   }
   
-  /* 脉冲动画 */
+
   @keyframes pulse {
     0%, 100% {
       opacity: 1;
@@ -1062,7 +1037,7 @@ header {
     color: var(--online-color);
 }
 
-/* 移除所有过渡效果，让header和features-section直接连接 */
+
 
 .wave-divider {
     position: absolute;
@@ -1079,23 +1054,7 @@ header {
     display: block;
 }
 
-/* 深色主题过渡区域适配 */
-.dark-theme .transition-shape {
-    background: var(--background-color);
-}
 
-/* 系统深色主题过渡区域适配 */
-@media (prefers-color-scheme: dark) {
-    :root:not(.dark-theme) .transition-section {
-        background: transparent ;
-    }
-    
-    :root:not(.dark-theme) .transition-shape {
-        background: var(--background-color) ;
-    }
-}
-
-/* 新的柔和动画效果 */
 @keyframes gentleShift {
     0%, 100% { 
         opacity: 0.8;
@@ -1107,7 +1066,6 @@ header {
     }
 }
 
-/* 特色区域 - 强自发光分隔效果 */
 .features-section {
     padding: 100px 0;
     background: var(--background-color);
@@ -1183,13 +1141,11 @@ header {
     transform: translateY(50px);
 }
 
-/* 滚动动画 - 当元素进入视口时触发 */
 .feature-card.animate {
     opacity: 1;
     transform: translateY(0);
 }
 
-/* 为每个卡片设置不同的延迟时间 */
 .feature-card:nth-child(1).animate {
     transition-delay: 0.1s;
 }
@@ -1202,7 +1158,6 @@ header {
     transition-delay: 0.3s;
 }
 
-/* 服务器卡片滚动动画 */
 .server-card {
     opacity: 0;
     transform: translateY(30px);
@@ -1214,7 +1169,6 @@ header {
     transform: translateY(0);
 }
 
-/* 团队卡片滚动动画 */
 .contributor-card {
     opacity: 0;
     transform: translateY(30px);
@@ -1226,7 +1180,6 @@ header {
     transform: translateY(0);
 }
 
-/* 为团队卡片设置错开动画 */
 .contributor-card:nth-child(1).animate { transition-delay: 0.1s; }
 .contributor-card:nth-child(2).animate { transition-delay: 0.2s; }
 .contributor-card:nth-child(3).animate { transition-delay: 0.3s; }
@@ -1285,7 +1238,8 @@ header {
 /* 服务器类型区域 */
 .servers-section {
     padding: 100px 0;
-    background: var(--background-gradient);
+    /* background: var(--background-gradient); */
+    background: var(--background-color);
 }
 
 
@@ -1315,7 +1269,6 @@ header {
     transform: translateY(30px);
 }
 
-/* 服务器卡片动画状态 - 同时出现，无延迟 */
 .server-card.animate {
     opacity: 1;
     transform: translateY(0);
@@ -1336,28 +1289,9 @@ header {
     box-shadow: 0 25px 50px var(--shadow-hover);
 }
 
-/* 深色主题服务器卡片适配 */
-.dark-theme .server-card {
-    background: rgba(30, 41, 59, 0.8);
-    border: 1px solid rgba(71, 85, 105, 0.3);
-    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
-}
 
-.dark-theme .server-card:hover {
-    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4);
-}
-
-/* 系统深色主题服务器卡片适配 */
-@media (prefers-color-scheme: dark) {
-    :root:not(.dark-theme) .server-card {
-        background: rgba(30, 41, 59, 0.8) ;
-        border: 1px solid rgba(71, 85, 105, 0.3) ;
-        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3) ;
-    }
-    
-    :root:not(.dark-theme) .server-card:hover {
-        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4) ;
-    }
+.server-card{
+    background-color: var();
 }
 
 .server-type {
@@ -1480,7 +1414,6 @@ header {
     border-color: var(--primary-color);
 }
 
-/* Contributor 信息 */
 .contributor-info {
     flex: 1;
     min-width: 0;
@@ -1513,7 +1446,6 @@ header {
     line-height: 1.4;
 }
 
-/* Contributor GitHub 链接 */
 .contributor-github-link {
     display: inline-flex;
     align-items: center;
@@ -1706,7 +1638,6 @@ header {
     }
 }
 
-/* 移动端样式已移至 mobile.css */
 
 
 /* 服务器配置样式 */
@@ -1803,7 +1734,6 @@ header {
     line-height: 1.3;
 }
 
-/* 主页服务器状态指示器样式 */
 #server-status .status-indicator {
     display: inline-flex;
     align-items: center;
