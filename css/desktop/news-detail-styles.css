@@ -862,42 +862,29 @@ body::after {
     transform: translateY(0);
     background: rgba(158, 148, 216, 0.2);
 }
-
+.news-content p {
+    color: var(--text-color);
+  }
     /* 新闻详情页深色主题 */
     :root:not(.dark-theme) .news-detail-section {
         background: var(--card-bg) ;
         border: 1px solid rgba(71, 85, 105, 0.45) ;
     }
     
-    :root:not(.dark-theme) .news-content h1,
-    :root:not(.dark-theme) .news-content h2,
-    :root:not(.dark-theme) .news-content h3,
-    :root:not(.dark-theme) .news-content h4,
-    :root:not(.dark-theme) .news-content h5,
-    :root:not(.dark-theme) .news-content h6 {
-        color: #e2e8f0 ;
-    }
-    
-    :root:not(.dark-theme) .news-content p {
-        color: #cbd5e1 ;
-    }
-    
-    :root:not(.dark-theme) .news-content ul,
-    :root:not(.dark-theme) .news-content ol {
-        color: #cbd5e1 ;
-    }
     
     :root:not(.dark-theme) .news-content blockquote {
         background: rgba(71, 85, 105, 0.2) ;
         border-left: 4px solid #a78bfa ;
-        color: #cbd5e1 ;
+        color: var(--tag-text) ;
     }
     
     :root:not(.dark-theme) .news-content table {
         background: rgba(30, 41, 59, 0.5) ;
         border: 1px solid rgba(71, 85, 105, 0.3) ;
     }
-    
+    .news-content ul, .news-content ol {
+        color: var(--text-color);
+      }
     :root:not(.dark-theme) .news-content th,
     :root:not(.dark-theme) .news-content td {
         border: 1px solid rgba(71, 85, 105, 0.3) ;
@@ -908,10 +895,7 @@ body::after {
         background: rgba(71, 85, 105, 0.3) ;
     }
     
-    :root:not(.dark-theme) .news-content code {
-        background: rgba(71, 85, 105, 0.3) ;
-        color: #cbd5e1 ;
-    }
+    
     
     :root:not(.dark-theme) .news-content a {
         color: #a78bfa ;
@@ -930,8 +914,8 @@ body::after {
     }
     
     /* 图片画廊深色主题 */
-    :root:not(.dark-theme) .gallery-section {
-        background: rgba(30, 41, 59, 0.5) ;
+    .gallery-section {
+        background: var(--card-bg) ;
         border: 1px solid rgba(71, 85, 105, 0.3) ;
     }
     
