@@ -1,5 +1,4 @@
 exports.handler = async (event, context) => {
-    // 设置CORS头部
     const headers = {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Headers': 'Content-Type',
@@ -7,7 +6,6 @@ exports.handler = async (event, context) => {
         'Content-Type': 'application/json'
     };
 
-    // 处理预检请求
     if (event.httpMethod === 'OPTIONS') {
         return {
             statusCode: 200,
@@ -17,7 +15,6 @@ exports.handler = async (event, context) => {
     }
 
     try {
-        // Netlify自动提供的环境变量 - 尝试多个可能的变量名
         const commitHash = process.env.COMMIT_REF ||
                           process.env.GIT_COMMIT_REF ||
                           process.env.NETLIFY_VERSION ||
@@ -25,7 +22,6 @@ exports.handler = async (event, context) => {
         const branch = process.env.BRANCH || 'main';
         const deployTime = process.env.DEPLOY_TIME || new Date().toISOString();
         
-        // 获取提交哈希的前7位
         const shortHash = commitHash ? commitHash.substring(0, 7) : null;
 
         console.log('Netlify环境变量:', {
@@ -38,7 +34,6 @@ exports.handler = async (event, context) => {
             '所有环境变量': Object.keys(process.env).filter(key => key.includes('COMMIT') || key.includes('GIT') || key.includes('DEPLOY'))
         });
 
-        // 如果无法从环境变量获取，尝试从GitHub API获取
         if (!commitHash || commitHash === 'unknown') {
             try {
                 const githubResponse = await fetch('https://api.github.com/repos/LuminolCraft/craft.luminolsuki.moe/commits/main', {
@@ -97,4 +92,3 @@ exports.handler = async (event, context) => {
         };
     }
 };
-
