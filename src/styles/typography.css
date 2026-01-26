@@ -1,0 +1,623 @@
+/**
+ * 排版系统 - 统一管理网站排版样式
+ * 
+ * @author LuminolCraft Team
+ * @version 2.0.0
+ * @since 2025-12-27
+ */
+
+/* ===========================================
+   排版系统基础配置
+   =========================================== */
+
+/* 字体变量确保存在 - 如果 fonts.css 未加载时的备用定义 */
+:root {
+    /* 字体样式 - 如果 fonts.css 未导入时的备用定义 */
+    --font-primary: 'MiSans VF', 'MiSans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Consolas, 'Liberation Mono', Menlo, Monaco, 'Courier New', monospace;
+    
+    /* 字体大小 - 如果 fonts.css 未导入时的备用定义 */
+    --font-size-xs: 0.75rem;    /* 12px */
+    --font-size-sm: 0.875rem;   /* 14px */
+    --font-size-base: 1rem;    /* 16px */
+    --font-size-lg: 1.125rem;  /* 18px */
+    --font-size-xl: 1.25rem;   /* 20px */
+    --font-size-2xl: 1.5rem;    /* 24px */
+    --font-size-3xl: 1.875rem; /* 30px */
+    --font-size-4xl: 2.25rem;   /* 36px */
+    --font-size-5xl: 3rem;      /* 48px */
+    
+    /* 字体权重 - 如果 fonts.css 未导入时的备用定义 */
+    --font-weight-light: 300;
+    --font-weight-normal: 400;
+    --font-weight-medium: 500;
+    --font-weight-semibold: 600;
+    --font-weight-bold: 700;
+    --font-weight-extrabold: 800;
+    
+    /* 行高 - 如果 fonts.css 未导入时的备用定义 */
+    --line-height-tight: 1.25;
+    --line-height-snug: 1.375;
+    --line-height-normal: 1.5;
+    --line-height-relaxed: 1.625;
+    --line-height-loose: 2;
+    
+    /* 间距系统 */
+    --spacing-0: 0;
+    --spacing-1: 0.25rem;   /* 4px */
+    --spacing-2: 0.5rem;    /* 8px */
+    --spacing-3: 0.75rem;   /* 12px */
+    --spacing-4: 1rem;      /* 16px */
+    --spacing-5: 1.25rem;   /* 20px */
+    --spacing-6: 1.35rem;    /* 24px */
+    --spacing-8: 2rem;      /* 32px */
+    --spacing-10: 2.5rem;   /* 40px */
+    --spacing-12: 3rem;     /* 48px */
+    --spacing-16: 4rem;     /* 64px */
+    --spacing-20: 5rem;     /* 80px */
+    --spacing-24: 6rem;     /* 96px */
+    --spacing-32: 8rem;     /* 128px */
+    
+    /* 边框圆角 */
+    --radius-sm: 0.25rem;   /* 4px */
+    --radius-md: 0.5rem;    /* 8px */
+    --radius-lg: 0.75rem;   /* 12px */
+    --radius-xl: 1rem;      /* 16px */
+    --radius-2xl: 1.5rem;   /* 24px */
+    --radius-3xl: 2rem;     /* 32px */
+    --radius-full: 9999px;
+    
+    /* 过渡效果 */
+    --transition-fast: 0.15s ease;
+    --transition-normal: 0.3s ease;
+    --transition-slow: 0.5s ease;
+    
+    /* 阴影效果 */
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+    --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.1);
+    
+    /* 排版层级结构 */
+    --typography-scale: 1.25;
+    
+    /* 文本颜色 - 浅色主题默认值 */
+    --text-color: #1e293b;
+    --text-secondary: #64748b;
+    --text-tertiary: #94a3b8;
+    --link-color: #6366f1;
+    --link-hover-color: #4f46e5;
+    
+
+    
+    /* 标题样式 */
+    --heading-font-weight: var(--font-weight-bold);
+    --heading-line-height: var(--line-height-tight);
+    --heading-margin-bottom: var(--spacing-4);
+    
+    /* 正文样式 */
+    --body-font-weight: var(--font-weight-normal);
+    --body-line-height: var(--line-height-relaxed);
+    --body-margin-bottom: var(--spacing-4);
+    
+    /* 按钮样式 */
+    --button-font-weight: var(--font-weight-medium);
+    --button-line-height: var(--line-height-normal);
+    --button-padding: var(--spacing-3) var(--spacing-6);
+    --button-border-radius: var(--radius-lg);
+    
+    /* 链接样式 */
+    --link-color: var(--primary-color);
+    --link-hover-color: var(--button-hover);
+    --link-transition: color var(--transition-fast);
+    
+    /* 代码样式 */
+    --code-font-family: var(--font-mono);
+    --code-font-size: 0.9em;
+    --code-background-color: rgba(156, 163, 175, 0.1);
+    --code-padding: var(--spacing-1) var(--spacing-2);
+    --code-border-radius: var(--radius-sm);
+    
+    /* 列表样式 */
+    --list-margin-bottom: var(--spacing-4);
+    --list-padding-left: var(--spacing-6);
+    --list-item-margin-bottom: var(--spacing-2);
+    
+    /* 表格样式 */
+    --table-border-color: var(--border-color);
+    --table-row-hover-background-color: rgba(156, 163, 175, 0.05);
+    --table-cell-padding: var(--spacing-3) var(--spacing-4);
+    
+    /* 引用样式 */
+    --quote-border-color: var(--primary-color);
+    --quote-background-color: rgba(158, 148, 216, 0.05);
+    --quote-padding: var(--spacing-6);
+    --quote-margin: var(--spacing-6) 0;
+    --quote-font-style: italic;
+    
+    /* 分隔线样式 */
+    --divider-color: var(--border-color);
+    --divider-height: 1px;
+    --divider-margin: var(--spacing-8) 0;
+}
+
+/* ===========================================
+   排版层级结构
+   =========================================== */
+
+/* 标题样式 */
+h1, h2, h3, h4, h5, h6 {
+    font-weight: var(--heading-font-weight);
+    line-height: var(--heading-line-height);
+    margin-bottom: var(--heading-margin-bottom);
+    color: var(--text-color);
+}
+
+h1 {
+    font-size: var(--font-size-4xl);
+    letter-spacing: -0.025em;
+}
+
+h2 {
+    font-size: var(--font-size-3xl);
+    letter-spacing: -0.025em;
+}
+
+h3 {
+    font-size: var(--font-size-2xl);
+    letter-spacing: -0.025em;
+}
+
+h4 {
+    font-size: var(--font-size-xl);
+    letter-spacing: -0.025em;
+}
+
+h5 {
+    font-size: var(--font-size-lg);
+    letter-spacing: -0.025em;
+}
+
+h6 {
+    font-size: var(--font-size-base);
+    letter-spacing: -0.025em;
+}
+
+/* 正文样式 */
+p {
+    font-weight: var(--body-font-weight);
+    line-height: var(--body-line-height);
+    margin-bottom: var(--body-margin-bottom);
+    color: var(--text-color);
+}
+
+/* 列表样式 */
+ul, ol {
+    margin-bottom: var(--list-margin-bottom);
+    padding-left: var(--list-padding-left);
+}
+
+li {
+    margin-bottom: var(--list-item-margin-bottom);
+    color: var(--text-color);
+}
+
+ul li {
+    list-style-type: disc;
+}
+
+ol li {
+    list-style-type: decimal;
+}
+
+/* 链接样式 */
+a {
+    color: var(--link-color);
+    text-decoration: none;
+    transition: var(--link-transition);
+}
+
+a:hover {
+    color: var(--link-hover-color);
+    text-decoration: underline;
+}
+
+/* 代码样式 */
+code {
+    font-family: var(--font-primary);
+    font-size: var(--code-font-size);
+    background-color: var(--code-background-color);
+    padding: var(--code-padding);
+    border-radius: var(--code-border-radius);
+    color: var(--text-color);
+}
+
+pre {
+    font-family: var(--code-font-family);
+    background-color: var(--code-background-color);
+    padding: var(--spacing-4);
+    border-radius: var(--radius-lg);
+    overflow-x: auto;
+    margin-bottom: var(--body-margin-bottom);
+}
+
+pre code {
+    background-color: transparent;
+    padding: 0;
+    border-radius: 0;
+}
+
+/* 表格样式 */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: var(--body-margin-bottom);
+}
+
+th, td {
+    padding: var(--table-cell-padding);
+    border-bottom: 1px solid var(--table-border-color);
+    text-align: left;
+    color: var(--text-color);
+}
+
+th {
+    font-weight: var(--font-weight-semibold);
+    background-color: rgba(156, 163, 175, 0.05);
+}
+
+tr:hover {
+    background-color: var(--table-row-hover-background-color);
+}
+
+/* 引用样式 */
+blockquote {
+    border-left: 4px solid var(--quote-border-color);
+    background-color: var(--quote-background-color);
+    padding: 15px 20px;;
+    margin: var(--quote-margin);
+    font-style: var(--quote-font-style);
+    color: var(--text-secondary);
+}
+
+/* 分隔线样式 */
+hr {
+    border: none;
+    border-top: var(--divider-height) solid var(--divider-color);
+    margin: var(--divider-margin);
+}
+
+/* ===========================================
+   排版工具类
+   =========================================== */
+
+/* 文本对齐 */
+.text-left {
+    text-align: left;
+}
+
+.text-center {
+    text-align: center;
+}
+
+.text-right {
+    text-align: right;
+}
+
+.text-justify {
+    text-align: justify;
+}
+
+/* 文本转换 */
+.text-uppercase {
+    text-transform: uppercase;
+}
+
+.text-lowercase {
+    text-transform: lowercase;
+}
+
+.text-capitalize {
+    text-transform: capitalize;
+}
+
+/* 文本装饰 */
+.text-underline {
+    text-decoration: underline;
+}
+
+.text-no-underline {
+    text-decoration: none;
+}
+
+/* 字体样式 */
+.text-normal {
+    font-style: normal;
+}
+
+.text-italic {
+    font-style: italic;
+}
+
+/* 文本溢出 */
+.text-truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.text-break {
+    word-break: break-word;
+    overflow-wrap: break-word;
+}
+
+/* 文本权重 */
+.font-hairline {
+    font-weight: 100;
+}
+
+.font-thin {
+    font-weight: 200;
+}
+
+.font-light {
+    font-weight: 300;
+}
+
+.font-normal {
+    font-weight: 400;
+}
+
+.font-medium {
+    font-weight: 500;
+}
+
+.font-semibold {
+    font-weight: 600;
+}
+
+.font-bold {
+    font-weight: 700;
+}
+
+.font-extrabold {
+    font-weight: 800;
+}
+
+.font-black {
+    font-weight: 900;
+}
+
+/* 行高 */
+.leading-none {
+    line-height: 1;
+}
+
+.leading-tight {
+    line-height: 1.25;
+}
+
+.leading-snug {
+    line-height: 1.375;
+}
+
+.leading-normal {
+    line-height: 1.5;
+}
+
+.leading-relaxed {
+    line-height: 1.625;
+}
+
+.leading-loose {
+    line-height: 2;
+}
+
+/* 字母间距 */
+.tracking-tighter {
+    letter-spacing: -0.05em;
+}
+
+.tracking-tight {
+    letter-spacing: -0.025em;
+}
+
+.tracking-normal {
+    letter-spacing: 0;
+}
+
+.tracking-wide {
+    letter-spacing: 0.025em;
+}
+
+.tracking-wider {
+    letter-spacing: 0.05em;
+}
+
+.tracking-widest {
+    letter-spacing: 0.1em;
+}
+
+/* 字间距 */
+.space-y-0 > :not([hidden]) ~ :not([hidden]) {
+    --tw-space-y-reverse: 0;
+    margin-top: calc(0px * calc(1 - var(--tw-space-y-reverse)));
+    margin-bottom: calc(0px * var(--tw-space-y-reverse));
+}
+
+.space-y-1 > :not([hidden]) ~ :not([hidden]) {
+    --tw-space-y-reverse: 0;
+    margin-top: calc(0.25rem * calc(1 - var(--tw-space-y-reverse)));
+    margin-bottom: calc(0.25rem * var(--tw-space-y-reverse));
+}
+
+.space-y-2 > :not([hidden]) ~ :not([hidden]) {
+    --tw-space-y-reverse: 0;
+    margin-top: calc(0.5rem * calc(1 - var(--tw-space-y-reverse)));
+    margin-bottom: calc(0.5rem * var(--tw-space-y-reverse));
+}
+
+.space-y-3 > :not([hidden]) ~ :not([hidden]) {
+    --tw-space-y-reverse: 0;
+    margin-top: calc(0.75rem * calc(1 - var(--tw-space-y-reverse)));
+    margin-bottom: calc(0.75rem * var(--tw-space-y-reverse));
+}
+
+.space-y-4 > :not([hidden]) ~ :not([hidden]) {
+    --tw-space-y-reverse: 0;
+    margin-top: calc(1rem * calc(1 - var(--tw-space-y-reverse)));
+    margin-bottom: calc(1rem * var(--tw-space-y-reverse));
+}
+
+.space-y-5 > :not([hidden]) ~ :not([hidden]) {
+    --tw-space-y-reverse: 0;
+    margin-top: calc(1.25rem * calc(1 - var(--tw-space-y-reverse)));
+    margin-bottom: calc(1.25rem * var(--tw-space-y-reverse));
+}
+
+.space-y-6 > :not([hidden]) ~ :not([hidden]) {
+    --tw-space-y-reverse: 0;
+    margin-top: calc(1.5rem * calc(1 - var(--tw-space-y-reverse)));
+    margin-bottom: calc(1.5rem * var(--tw-space-y-reverse));
+}
+
+/* ===========================================
+   响应式排版
+   =========================================== */
+
+@media (max-width: 1024px) {
+    h1 {
+        font-size: var(--font-size-3xl);
+    }
+    
+    h2 {
+        font-size: var(--font-size-2xl);
+    }
+    
+    h3 {
+        font-size: var(--font-size-xl);
+    }
+    
+    h4 {
+        font-size: var(--font-size-lg);
+    }
+}
+
+@media (max-width: 768px) {
+    h1 {
+        font-size: var(--font-size-2xl);
+    }
+    
+    h2 {
+        font-size: var(--font-size-xl);
+    }
+    
+    h3 {
+        font-size: var(--font-size-lg);
+    }
+    
+    h4 {
+        font-size: var(--font-size-base);
+    }
+    
+    /* 优化移动端文本可读性 */
+    body {
+        font-size: var(--font-size-base);
+    }
+    
+    /* 优化移动端行高 */
+    p {
+        line-height: var(--line-height-relaxed);
+    }
+    
+    /* 优化移动端列表间距 */
+    ul, ol {
+        --list-padding-left: var(--spacing-4);
+    }
+}
+
+@media (max-width: 480px) {
+    h1 {
+        font-size: var(--font-size-xl);
+    }
+    
+    h2 {
+        font-size: var(--font-size-lg);
+    }
+    
+    h3 {
+        font-size: var(--font-size-base);
+    }
+    
+    /* 优化小屏设备文本可读性 */
+    body {
+        font-size: var(--font-size-sm);
+    }
+}
+
+/* ===========================================
+   无障碍支持
+   =========================================== */
+
+/* 焦点样式 */
+:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+}
+
+/* 减少动画偏好 */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+
+
+/* 高对比度模式支持 */
+@media (prefers-contrast: high) {
+    :root {
+        --text-color: #000000;
+        --text-secondary: #333333;
+        --table-border-color: #000000;
+        --divider-color: #000000;
+    }
+}
+
+/* 打印样式 */
+@media print {
+    * {
+        background: transparent !important;
+        color: black !important;
+        box-shadow: none !important;
+        text-shadow: none !important;
+    }
+    
+    a, a:visited {
+        text-decoration: underline;
+    }
+    
+    h1, h2, h3, h4, h5, h6 {
+        page-break-after: avoid;
+    }
+    
+    p, blockquote, ul, ol, dl, table {
+        page-break-inside: avoid;
+    }
+    
+    img {
+        max-width: 100% !important;
+        page-break-inside: avoid;
+    }
+    
+    pre, code {
+        border: 1px solid #999;
+        page-break-inside: avoid;
+    }
+}

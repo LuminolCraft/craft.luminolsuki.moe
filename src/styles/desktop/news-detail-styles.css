@@ -1,0 +1,718 @@
+
+
+
+
+
+
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: var(--font-primary);
+}
+
+body {
+    background: var(--background-color);
+    
+    line-height: 1.6;
+}
+
+a {
+    text-decoration: none;
+}
+
+
+/* 导航栏样式已移至 navigation.css 和 navigation-mobile.css */
+/* 桌面端导航布局已移至 navigation.css */
+
+/* 移动端汉堡菜单已移至 navigation-mobile.css */
+
+/* 移动端汉堡菜单修复已移至 navigation-mobile.css */
+
+
+
+
+/* 下拉菜单样式已移至 navigation.css */
+
+
+/* 导航栏相关样式已移至 navigation.css */
+
+.news-content a.external-link svg {
+    width: 18px;
+    height: 18px;
+    margin-left: 8px;
+    vertical-align: sub; /* 保持对齐 */
+}
+/* /* 动态酷炫背景：柔和渐变 + 光晕漂移 */
+body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background: var(--background-gradient);
+    background-size: 200% 200%;
+    animation: gradientShift 14s ease-in-out infinite alternate;
+}
+
+/* 漂移光晕层（不随滚动位移） */
+body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+        radial-gradient(600px 400px at 18% 22%, var(--shadow-color), transparent 60%),
+        radial-gradient(480px 320px at 78% 18%, var(--shadow-color), transparent 60%),
+        radial-gradient(520px 360px at 60% 82%, var(--shadow-color), transparent 65%);
+    filter: blur(0.2px);
+    animation: blobShift 18s ease-in-out infinite alternate;
+}
+
+@keyframes gradientShift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+@keyframes blobShift {
+    0% { background-position: 0% 0%, 100% 0%, 50% 100%; }
+    50% { background-position: 10% 5%, 90% 8%, 55% 90%; }
+    100% { background-position: 0% 0%, 100% 0%, 50% 100%; }
+}
+
+/* 兼容性：用户偏好减少动画时停用 */
+@media (prefers-reduced-motion: reduce) {
+    body::before, body::after {
+        animation: none;
+    }
+}
+
+
+/* 前景隔离 */
+.news-detail-section, .gallery-section, .lightbox {
+    position: relative;
+    z-index: 1;
+    background: var(--card-bg); /* 90% 不透明，背景可见 */
+}
+
+/* Markdown 标题样式 */
+.news-content h1, .news-detail-section h1 {
+    font-size: 2.2em;
+    color: var(--secondary-color);
+    margin: 1.5em 0 0.8em 0;
+    font-weight: 700;
+    line-height: 1.2;
+    border-bottom: 3px solid var(--bases-primary);
+    padding-bottom: 0.3em;
+}
+
+.news-content h2, .news-detail-section h2 {
+    font-size: 1.8em;
+    color: var(--secondary-color);
+    margin: 1.3em 0 0.6em 0;
+    font-weight: 600;
+    line-height: 1.3;
+    /* border-bottom: 3px solid var(--bases-primary); */
+}
+
+.news-content h3, .news-detail-section h3 {
+    font-size: 1.5em;
+    color: var(--secondary-color);
+    margin: 1.2em 0 0.5em 0;
+    font-weight: 600;
+    line-height: 1.4;
+}
+
+.news-content h4, .news-detail-section h4 {
+    font-size: 1.3em;
+    color: var(--secondary-color);
+    margin: 1em 0 0.4em 0;
+    font-weight: 600;
+}
+
+.news-content h5, .news-detail-section h5 {
+    font-size: 1.1em;
+    color: var(--secondary-color);
+    margin: 0.8em 0 0.3em 0;
+    font-weight: 600;
+}
+
+.news-content h6, .news-detail-section h6 {
+    font-size: 1em;
+    color: var(--secondary-color);
+    margin: 0.6em 0 0.2em 0;
+    font-weight: 600;
+}
+
+/* Markdown 列表样式 */
+.news-content ul, .news-content ol {
+    padding-left: 2em;
+    margin: 1em 0;
+    line-height: 1.8;
+}
+
+.news-content li {
+    margin-bottom: 0.5em;
+    font-size: 1.1em;
+}
+
+.news-content ul li {
+    list-style-type: disc;
+}
+
+.news-content ol li {
+    list-style-type: decimal;
+}
+
+.news-content ul ul, .news-content ol ol, .news-content ul ol, .news-content ol ul {
+    margin: 0.3em 0;
+    padding-left: 1.5em;
+}
+
+/* Markdown 强调样式 */
+.news-content strong, .news-detail-section strong {
+    color: var(--bases-primary);
+    font-weight: 700;
+}
+
+.news-content em, .news-detail-section em {
+    font-style: italic;
+    
+}
+
+/* Markdown 引用样式 */
+.news-content blockquote {
+    border-left: 4px solid var(--bases-primary);
+    background: var(--glass-bg);
+    padding: 15px 20px;
+    margin: 20px 0;
+    border-radius: 0 8px 8px 0;
+    font-style: italic;
+
+    position: relative;
+}
+
+.news-content blockquote::before {
+    content: '"';
+    font-size: 3em;
+    color: var(--bases-primary);
+    position: absolute;
+    top: -10px;
+    left: 10px;
+    opacity: 0.3;
+}
+
+.news-content blockquote p {
+    margin: 0;
+    font-size: 1.05em;
+    line-height: 1.6;
+}
+
+
+
+
+.loading-message {
+    font-family: var(--font-primary);
+    font-size: 1.1em;
+    text-align: center;
+    
+}
+
+
+
+.news-markdown strong,
+.news-content strong {
+    color: var(--bases-primary); /* #9e94d8 */
+    font-weight: bold; /* 保持粗体效果 */
+}
+
+
+
+/* 代码高亮 - 基础样式，具体高亮由 Prism.js 处理 */
+.news-content pre {
+    padding: 1.5em;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin: 1.5em 0;
+    border: none;
+    box-shadow: 0 4px 12px var(--shadow-color);
+}
+
+.news-content pre code {
+    background: none;
+    padding: 0;
+    border: none;
+    font-size: 1.1em; /* 增大字体大小 */
+    line-height: 1.7; /* 增加行高 */
+    font-family: MiSans, var(--font-primary);
+}
+
+/* Prism.js 代码块字体大小调整 */
+.news-content pre[class*="language-"] {
+    font-size: 1.1em ; /* 确保 Prism.js 代码块字体更大 */
+    line-height: 1.7 ;
+}
+
+.news-content pre[class*="language-"] code {
+    font-size: 1.1em ;
+    line-height: 1.7 ;
+}
+
+/* GitHub 风格代码高亮 */
+.news-content pre[class*="language-"] {
+    background: var(--card-bg) ;
+    border: none ;
+    border-radius: 6px ;
+    color: var(--text-color) ;
+    text-shadow: none ;
+}
+
+.news-content pre[class*="language-"] code {
+    color: var(--text-color) ;
+    text-shadow: none ;
+}
+
+
+
+/* GitHub 风格语法高亮 */
+.news-content .token.comment,
+.news-content .token.prolog,
+.news-content .token.doctype,
+.news-content .token.cdata {
+    color: var(--text-secondary) ;
+}
+
+
+
+/* 确保 token.tag 没有背景色 */
+.news-content .token.tag {
+    background: none ;
+    color: var(--info-color) ;
+}
+
+
+
+
+
+.news-content .token.operator,
+.news-content .token.entity,
+.news-content .token.url,
+.news-content .language-css .token.string,
+.news-content .style .token.string {
+    color: var(--error-color) ;
+}
+
+.news-content .token.atrule,
+.news-content .token.attr-value,
+.news-content .token.keyword {
+    color: var(--error-color) ;
+}
+
+.news-content .token.function,
+.news-content .token.class-name {
+    color: var(--bases-primary) ;
+}
+
+.news-content .token.regex,
+.news-content .token.important,
+.news-content .token.variable {
+    color: var(--accent-color) ;
+}
+
+.news-content code {
+    font-family: MiSans, var(--font-primary);
+}
+
+/* 内联代码样式 */
+.news-content p code,
+.news-content li code,
+.news-content td code,
+.news-content th code {
+    background: var(--glass-bg);
+    color: var(--bases-primary);
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 0.9em;
+    font-weight: 500;
+    border: 1px solid var(--glass-border);
+    font-family: MiSans, var(--font-primary);
+}
+
+/* 表格样式 */
+.news-content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.5em 0;
+    background: var(--card-bg);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px var(--shadow-color);
+}
+
+.news-content th,
+.news-content td {
+    padding: 12px 16px;
+    text-align: left;
+    border-bottom: 1px solid var(--glass-border);
+    font-size: 1em;
+}
+
+.news-content th {
+    background: var(--glass-bg);
+    font-weight: 600;
+    color: var(--secondary-color);
+}
+
+.news-content tr:hover {
+    background: var(--glass-bg);
+}
+
+/* 分割线样式 */
+.news-content hr {
+    border: none;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--bases-primary), transparent);
+    margin: 2em 0;
+}
+
+/* 链接样式 */
+.news-content a {
+    color: var(--bases-primary);
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.news-content a:hover {
+    color: var(--button-hover);
+    border-bottom-color: var(--button-hover);
+}
+
+/* 外链使用浏览器默认蓝色 */
+.news-content a.external-link {
+    color: var(--info-color);
+    position: relative;
+}
+
+.news-content a.external-link:hover {
+    color: var(--bases-primary);
+    border-bottom-color: var(--bases-primary);
+}
+
+
+
+
+
+/* 置顶图标样式 */
+.pinned-icon {
+    display: inline-block;
+    font-size: 1.2em;
+    color: var(--pinned-border);
+    margin-right: 5px;
+    vertical-align: middle;
+}
+
+/* 新闻详情样式 */
+.news-detail-section {
+    padding: 50px 60px;
+    background: var(--card-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    margin-top: 80px;
+    margin-bottom: 20px;
+    margin-left: auto;
+    margin-right: auto;
+    max-width: 1200px;
+    min-width: 800px;
+    box-shadow: 0 20px 40px var(--shadow-color);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+}
+
+.news-detail-section h2 {
+    font-family: var(--font-primary);
+    color: var(--secondary-color);
+    font-size: 32px;
+    margin-bottom: 20px;
+    line-height: 1.3;
+    font-weight: 600;
+}
+
+.news-detail-section .news-date {
+    font-family: var(--font-primary);
+    font-size: 0.9em;
+    
+    opacity: 0.8;
+    margin-bottom: 10px;
+    display: block;
+}
+
+.news-detail-section .news-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-bottom: 20px;
+    border-bottom: 3px solid var(--bases-primary);
+}
+
+.news-detail-section .tag {
+    background: var(--tag-bg);
+    color: var(--tag-text);
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.85em;
+}
+
+.news-detail-section .news-img {
+    width: 55%;
+    height: 55%;
+    background-size: cover;
+    background-position: center;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+/* 无图详情：移除图片占位，避免标签下方空白 */
+.no-image .news-img {
+    display: none;
+}
+
+.news-detail-section p {
+    font-family: var(--font-primary);
+    font-size: 1.15em;
+    
+    line-height: 1.9;
+    margin-bottom: 1.2em;
+    
+}
+
+/* Markdown 图片样式 */
+.news-content img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px var(--shadow-color);
+    transition: transform 0.3s ease;
+}
+
+.news-content img:hover {
+    transform: scale(1.02);
+}
+
+/* 段落中的图片居中 */
+.news-content p img {
+    max-width: 100%;
+    height: auto;
+}
+
+.back-to-news {
+    display: inline-block;
+    margin-top: 20px;
+    padding: 10px 20px;
+    background: var(--bases-primary);
+    color: var(--white);
+    border-radius: 5px;
+    font-family: var(--font-primary);
+    font-size: 1em;
+    text-decoration: none;
+    transition: background 0.3s, transform 0.3s;
+}
+
+.back-to-news:hover {
+    background: var(--bases-button-hover);
+    transform: translateY(-2px);
+}
+
+.news-detail-section .error-message {
+    font-family: var(--font-primary);
+    font-size: 1.1em;
+    text-align: center;
+    
+}
+
+/* 图片画廊样式 */
+.gallery-section {
+    padding: 20px;
+    max-width: 800px;
+    
+}
+
+.gallery-section h3 {
+    font-family: var(--font-primary);
+    color: var(--secondary-color);
+    font-size: 1.5em;
+    margin-bottom: 15px;
+}
+
+.gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 10px;
+}
+
+.gallery-item {
+    overflow: hidden;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.gallery-item img {
+    width: 100%;
+    height: 150px;
+    object-fit: cover;
+    transition: transform 0.3s;
+}
+
+.gallery-item img:hover {
+    transform: scale(1.05);
+}
+
+.gallery-section .empty-message {
+    font-family: var(--font-primary);
+    font-size: 1.1em;
+    text-align: center;
+    
+}
+
+/* 灯箱样式 */
+.lightbox {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--footer-background-color);
+    align-items: center;
+    justify-content: center;
+    z-index: 2000; /* 提高 z-index */
+}
+
+.lightbox-image {
+    max-width: 95%;
+    max-height: 90%;
+    object-fit: contain;
+    border-radius: 8px;
+}
+
+.lightbox-close,
+.lightbox-prev,
+.lightbox-next {
+    position: absolute;
+    color: var(--white);
+    font-size: 2em;
+    cursor: pointer;
+    user-select: none;
+}
+
+.lightbox-close {
+    top: 20px;
+    right: 20px;
+}
+
+.lightbox-prev {
+    left: 20px;
+}
+
+.lightbox-next {
+    right: 20px;
+}
+
+
+
+/* Footer样式已移至 footer.css */
+
+
+@keyframes fadeIn {/* 页头文字、页头按钮动画 */
+    from { opacity: 0; transform: translateY(15px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+
+/* Footer链接样式已移至 footer.css */
+
+/* 网站状态信息样式 */
+.website-status-info {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    margin: 25px 0 15px 0;
+    flex-wrap: wrap;
+    opacity: 0.8;
+    font-size: 0.9em;
+}
+
+.status-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-secondary);
+    transition: all 0.3s ease;
+    padding: 8px 12px;
+    border-radius: 6px;
+    background: var(--glass-bg);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--glass-border);
+}
+
+.status-item:hover {
+    color: var(--bases-primary);
+    background: var(--glass-bg);
+    transform: translateY(-2px);
+}
+
+.status-item i {
+    font-size: 14px;
+    color: var(--bases-primary);
+    opacity: 0.8;
+}
+
+.status-item span {
+    font-family: var(--font-primary);
+    font-weight: 500;
+}
+
+.status-item span span {
+    font-family: var(--font-mono);
+    font-weight: 600;
+    color: var(--white);
+    opacity: 0.9;
+}
+
+/* 可点击的版本状态项样式 */
+#version-status-item {
+    cursor: pointer;
+    position: relative;
+}
+
+#version-status-item:hover {
+    color: var(--bases-primary);
+    background: var(--glass-bg);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px var(--shadow-color);
+}
+
+#version-status-item:hover i {
+    color: var(--bases-primary);
+    opacity: 1;
+}
+
+#version-status-item:hover span span {
+    color: var(--bases-primary);
+    opacity: 1;
+}
+
+/* 添加点击效果 */
+#version-status-item:active {
+    transform: translateY(0);
+    background: var(--glass-bg);
+}
+
+/* 响应式设计（移动端规则已整合至 news-detail-mobile.css） */
+
+/* 响应式设计（移动端规则已整合至 news-detail-mobile.css） */
+

@@ -1,0 +1,192 @@
+
+.news-markdown h1 { font-size: 1.5em; color: var(--secondary-color); }
+.news-markdown ul { padding-left: 20px; }
+.news-markdown strong { color: var(--primary-color); }
+
+
+    @media (max-width: 846px) {
+
+    .news-detail-section {
+        padding: 25px 20px;
+        max-width: none;
+        min-width: unset;
+        margin: 60px auto 15px auto;
+        overflow-x: auto;
+    }
+
+    .news-detail-section h2 {
+        font-size: 26px;
+        line-height: 1.2;
+    }
+
+    /* 移动端标题样式调整 */
+    .news-content h1, .news-detail-section h1 {
+        font-size: 1.8em;
+        margin: 1.2em 0 0.6em 0;
+    }
+
+    .news-content h2, .news-detail-section h2 {
+        font-size: 1.6em;
+        margin: 1em 0 0.5em 0;
+    }
+
+    .news-content h3, .news-detail-section h3 {
+        font-size: 1.4em;
+        margin: 0.8em 0 0.4em 0;
+    }
+
+    .news-content h4, .news-detail-section h4 {
+        font-size: 1.2em;
+        margin: 0.6em 0 0.3em 0;
+    }
+
+    .news-detail-section .news-img {
+        height: 200px;
+        width: 100%;
+    }
+
+    /* 无图详情：移动端隐藏图片容器，避免空白 */
+    .no-image .news-img {
+        display: none;
+    }
+
+    .news-detail-section p {
+        font-size: 1.05em;
+        line-height: 1.8;
+        
+    }
+
+    /* 移动端内容容器样式 */
+    .news-content {
+        width: 100%;
+        white-space: normal;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+    }
+
+    /* 移动端列表样式 */
+    .news-content ul, .news-content ol {
+        /* padding-left: 1.5em; */
+        margin: 0.8em 0;
+    }
+
+    .news-content li {
+        margin-bottom: 0.4em;
+        font-size: 1.05em;
+    }
+
+    /* 移动端代码块样式 */
+    .news-content pre {
+        padding: 1em;
+        margin: 1em 0;
+        font-size: 1em; /* 增大移动端字体大小 */
+        overflow-x: auto;
+        line-height: 1.6;
+    }
+    
+    /* 移动端 Prism.js 代码块字体大小调整 */
+    .news-content pre[class*="language-"] {
+        font-size: 1em ;
+        line-height: 1.6 ;
+        background: #f6f8fa ;
+        border: 1px solid #e1e4e8 ;
+        border-radius: 6px ;
+        color: #24292e ;
+    }
+    
+    .news-content pre[class*="language-"] code {
+        font-size: 1em ;
+        line-height: 1.6 ;
+        color: #24292e ;
+    }
+    
+    /* 移动端代码块工具栏 */
+    .code-block-toolbar {
+        top: 8px ;
+        right: 8px ;
+        gap: 6px ;
+    }
+    
+    .code-block-btn {
+        padding: 3px 6px ;
+        font-size: 11px ;
+    }
+
+    .news-content p code,
+    .news-content li code {
+        padding: 2px 6px;
+        font-size: 0.85em;
+    }
+
+    /* 移动端表格样式 */
+    .news-content table {
+        font-size: 0.9em;
+        margin: 1em 0;
+    }
+
+    .news-content th,
+    .news-content td {
+        padding: 8px 12px;
+    }
+
+    /* 移动端 Markdown 图片样式 */
+    .news-content img {
+        max-width: 100% ;
+        height: auto ;
+        display: block;
+        margin: 1em auto;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    /* 移动端图片居中 */
+    .news-content p img {
+        max-width: 100% ;
+        height: auto ;
+        margin: 1em auto;
+        display: block;
+    }
+
+    .back-to-news {
+        padding: 8px 16px;
+        font-size: 0.9em;
+    }
+
+    .pinned-icon {
+        display: inline-block;
+        font-size: 1.2em;
+        color: var(--pinned-border);
+        margin-right: 5px;
+        vertical-align: middle;
+    }
+    .gallery-section {
+        padding: 15px;
+        max-width: 100%;
+    }
+    .gallery-section h3 {
+        font-size: 1.3em;
+    }
+    .gallery-grid {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+    .gallery-item img {
+        height: auto;
+        max-height: 200px;
+        width: 100%;
+        object-fit: cover;
+    }
+    .lightbox-image {
+        max-width: 95%;
+        max-height: 85%;
+        object-fit: contain;
+    }
+    .lightbox-close,
+    .lightbox-prev,
+    .lightbox-next {
+        font-size: 1.5em;
+    }
+    #three-canvas-container {
+        height: 100vh; /* 确保移动端适配 */
+    }
+}
