@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>主题切换测试</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f8fafc;
+            color: #1e293b;
+        }
+        
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid rgba(156, 163, 175, 0.2);
+            background-color: rgba(255, 255, 255, 0.8);
+        }
+        
+        .status {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+            font-weight: 500;
+            background-color: rgba(34, 197, 94, 0.1);
+            color: #166534;
+            border: 1px solid rgba(34, 197, 94, 0.2);
+        }
+        
+        .test-item {
+            margin: 15px 0;
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 4px solid #3b82f6;
+            background-color: rgba(59, 130, 246, 0.05);
+        }
+        
+        .code-block {
+            background-color: #f1f5f9;
+            color: #1e293b;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 14px;
+            overflow-x: auto;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🎨 主题切换功能测试</h1>
+        
+        <div class="status">
+            ✅ 深色/浅色模式切换功能已移除
+        </div>
+        
+        <div class="test-item">
+            <h3>测试项目 1: 统一主题</h3>
+            <p>页面现在只使用浅色主题，所有深色模式相关代码已清理。</p>
+        </div>
+        
+        <div class="test-item">
+            <h3>测试项目 2: 颜色变量</h3>
+            <p>所有颜色定义和使用均统一采用theme-colors.css中的变量。</p>
+        </div>
+        
+        <h3>清理内容:</h3>
+        <div class="code-block">
+// 已移除的内容:
+1. 所有包含"prefers-color-scheme: dark"的CSS媒体查询
+2. 所有.dark-theme类样式
+3. ThemeToggle组件及其相关引用
+4. app-config.ts中的主题相关配置
+5. 系统主题监听代码
+        </div>
+    </div>
+</body>
+</html>

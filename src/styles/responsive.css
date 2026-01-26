@@ -1,0 +1,769 @@
+/**
+ * 现代化响应式设计系统 - 统一管理网站响应式布局
+ * 
+ * @author LuminolCraft Team
+ * @version 3.0.0
+ * @since 2025-12-28
+ */
+
+/* ===========================================
+   响应式断点定义
+   =========================================== */
+
+:root {
+    /* 移动端断点 - 现代化设计 */
+    --breakpoint-xs: 0px;
+    --breakpoint-sm: 480px;
+    --breakpoint-md: 768px;
+    --breakpoint-lg: 1024px;
+    --breakpoint-xl: 1280px;
+    --breakpoint-2xl: 1536px;
+    
+    /* 容器最大宽度 */
+    --container-max-width: 1200px;
+    --container-padding: var(--spacing-4);
+    
+    /* 现代化间距系统 */
+    --spacing-xs: 0.25rem;   /* 4px */
+    --spacing-sm: 0.5rem;    /* 8px */
+    --spacing-md: 1rem;      /* 16px */
+    --spacing-lg: 1.5rem;    /* 24px */
+    --spacing-xl: 2rem;      /* 32px */
+    --spacing-2xl: 3rem;     /* 48px */
+    --spacing-3xl: 4rem;     /* 64px */
+    --spacing-4xl: 6rem;     /* 96px */
+    
+    /* 传统间距变量兼容 */
+    --spacing-1: var(--spacing-xs);
+    --spacing-2: var(--spacing-sm);
+    --spacing-3: var(--spacing-md);
+    --spacing-4: var(--spacing-lg);
+    --spacing-5: var(--spacing-xl);
+    --spacing-6: var(--spacing-2xl);
+    --spacing-8: var(--spacing-3xl);
+    --spacing-10: var(--spacing-4xl);
+    
+    /* 现代化字体大小系统 */
+    --font-size-xs: 0.75rem;    /* 12px */
+    --font-size-sm: 0.875rem;   /* 14px */
+    --font-size-base: 1rem;     /* 16px */
+    --font-size-lg: 1.125rem;   /* 18px */
+    --font-size-xl: 1.25rem;    /* 20px */
+    --font-size-2xl: 1.5rem;    /* 24px */
+    --font-size-3xl: 1.875rem;  /* 30px */
+    --font-size-4xl: 2.25rem;   /* 36px */
+    --font-size-5xl: 3rem;      /* 48px */
+    --font-size-6xl: 3.75rem;   /* 60px */
+    
+    /* 现代化行高系统 */
+    --line-height-none: 1;
+    --line-height-tight: 1.25;
+    --line-height-snug: 1.375;
+    --line-height-normal: 1.5;
+    --line-height-relaxed: 1.625;
+    --line-height-loose: 2;
+    
+    /* 现代化动画时长 */
+    --duration-fast: 150ms;
+    --duration-normal: 250ms;
+    --duration-slow: 350ms;
+    --duration-slower: 500ms;
+    
+    /* 现代化缓动函数 */
+    --ease-in: cubic-bezier(0.4, 0, 1, 1);
+    --ease-out: cubic-bezier(0, 0, 0.2, 1);
+    --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+    --ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    
+    /* 现代化阴影系统 */
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-base: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    --shadow-inner: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06);
+    
+
+}
+
+/* ===========================================
+   现代化响应式容器系统
+   =========================================== */
+
+/* 基础容器 */
+.container {
+    max-width: var(--container-max-width);
+    margin: 0 auto;
+    padding: 0 var(--container-padding);
+    transition: all var(--duration-normal) var(--ease-out);
+}
+
+/* 现代化容器变体 */
+.container-fluid {
+    width: 100%;
+    padding: 0 var(--spacing-4);
+}
+
+.container-narrow {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 0 var(--spacing-6);
+}
+
+.container-wide {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 var(--spacing-4);
+}
+
+/* 响应式容器调整 */
+@media (max-width: 768px) {
+    .container {
+        --container-padding: var(--spacing-3);
+    }
+    
+    .container-fluid {
+        padding: 0 var(--spacing-3);
+    }
+    
+    .container-narrow {
+        padding: 0 var(--spacing-4);
+    }
+    
+    .container-wide {
+        padding: 0 var(--spacing-2);
+    }
+}
+
+@media (max-width: 480px) {
+    .container {
+        --container-padding: var(--spacing-2);
+    }
+    
+    .container-fluid {
+        padding: 0 var(--spacing-2);
+    }
+    
+    .container-narrow {
+        padding: 0 var(--spacing-3);
+    }
+    
+    .container-wide {
+        padding: 0 var(--spacing-1);
+    }
+}
+
+/* ===========================================
+   现代化响应式网格系统
+   =========================================== */
+
+/* 基础网格容器 */
+.grid {
+    display: grid;
+    gap: var(--spacing-4);
+    transition: all var(--duration-normal) var(--ease-out);
+}
+
+/* 响应式列数系统 */
+.grid-cols-auto {
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+}
+
+.grid-cols-fit {
+    grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+}
+
+/* 固定列数 */
+.grid-cols-1 { grid-template-columns: repeat(1, 1fr); }
+.grid-cols-2 { grid-template-columns: repeat(2, 1fr); }
+.grid-cols-3 { grid-template-columns: repeat(3, 1fr); }
+.grid-cols-4 { grid-template-columns: repeat(4, 1fr); }
+.grid-cols-5 { grid-template-columns: repeat(5, 1fr); }
+.grid-cols-6 { grid-template-columns: repeat(6, 1fr); }
+
+/* 响应式列数 */
+@media (max-width: 1024px) {
+    .lg\:grid-cols-1 { grid-template-columns: repeat(1, 1fr); }
+    .lg\:grid-cols-2 { grid-template-columns: repeat(2, 1fr); }
+    .lg\:grid-cols-3 { grid-template-columns: repeat(3, 1fr); }
+    .lg\:grid-cols-4 { grid-template-columns: repeat(4, 1fr); }
+    .lg\:grid-cols-auto { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+}
+
+@media (max-width: 768px) {
+    .md\:grid-cols-1 { grid-template-columns: repeat(1, 1fr); }
+    .md\:grid-cols-2 { grid-template-columns: repeat(2, 1fr); }
+    .md\:grid-cols-3 { grid-template-columns: repeat(3, 1fr); }
+    .md\:grid-cols-auto { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+    
+    /* 默认移动端单列 */
+    .grid-cols-2,
+    .grid-cols-3,
+    .grid-cols-4,
+    .grid-cols-5,
+    .grid-cols-6 {
+        grid-template-columns: 1fr;
+    }
+    
+    .grid {
+        gap: var(--spacing-3);
+    }
+}
+
+@media (max-width: 480px) {
+    .sm\:grid-cols-1 { grid-template-columns: repeat(1, 1fr); }
+    .sm\:grid-cols-2 { grid-template-columns: repeat(2, 1fr); }
+    .sm\:grid-cols-auto { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+    
+    .grid {
+        gap: var(--spacing-2);
+    }
+}
+
+/* ===========================================
+   现代化动画效果系统
+   =========================================== */
+
+/* 基础动画类 */
+.animate-fade-in {
+    animation: fadeIn var(--duration-normal) var(--ease-out);
+    will-change: opacity;
+}
+
+.animate-slide-up {
+    animation: slideUp var(--duration-normal) var(--ease-out);
+    will-change: opacity, transform;
+}
+
+.animate-slide-down {
+    animation: slideDown var(--duration-normal) var(--ease-out);
+    will-change: opacity, transform;
+}
+
+.animate-scale-in {
+    animation: scaleIn var(--duration-fast) var(--ease-bounce);
+    will-change: opacity, transform;
+}
+
+.animate-rotate-in {
+    animation: rotateIn var(--duration-slow) var(--ease-out);
+    will-change: opacity, transform;
+}
+
+/* 延迟动画 */
+.animate-delay-1 { animation-delay: 0.1s; }
+.animate-delay-2 { animation-delay: 0.2s; }
+.animate-delay-3 { animation-delay: 0.3s; }
+.animate-delay-4 { animation-delay: 0.4s; }
+.animate-delay-5 { animation-delay: 0.5s; }
+
+/* 持续时间变体 */
+.animate-fast { animation-duration: var(--duration-fast); }
+.animate-normal { animation-duration: var(--duration-normal); }
+.animate-slow { animation-duration: var(--duration-slow); }
+.animate-slower { animation-duration: var(--duration-slower); }
+
+/* 动画定义 */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideUp {
+    from { 
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to { 
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideDown {
+    from { 
+        opacity: 0;
+        transform: translateY(-30px);
+    }
+    to { 
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes scaleIn {
+    from { 
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to { 
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes rotateIn {
+    from { 
+        opacity: 0;
+        transform: rotate(-10deg) scale(0.9);
+    }
+    to { 
+        opacity: 1;
+        transform: rotate(0deg) scale(1);
+    }
+}
+
+/* 悬停效果 */
+.hover-lift {
+    transition: all var(--duration-normal) var(--ease-out);
+    will-change: transform, box-shadow;
+}
+
+.hover-lift:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+}
+
+
+
+.hover-scale {
+    transition: all var(--duration-fast) var(--ease-out);
+    will-change: transform;
+}
+
+.hover-scale:hover {
+    transform: scale(1.05);
+}
+
+.hover-glow {
+    transition: all var(--duration-normal) var(--ease-out);
+    will-change: box-shadow;
+}
+
+.hover-glow:hover {
+    box-shadow: 0 0 20px rgba(139, 92, 246, 0.4);
+}
+
+
+
+/* ===========================================
+   现代化微交互系统
+   =========================================== */
+
+/* 按钮交互 */
+.btn {
+    position: relative;
+    overflow: hidden;
+    transition: all var(--duration-normal) var(--ease-out);
+    transform: translateZ(0);
+}
+
+.btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left var(--duration-slow) var(--ease-out);
+}
+
+.btn:hover::before {
+    left: 100%;
+}
+
+/* 加载状态 */
+.loading {
+    position: relative;
+    color: transparent;
+}
+
+.loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    margin: -10px 0 0 -10px;
+    border: 2px solid transparent;
+    border-top: 2px solid currentColor;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* 焦点状态 */
+.focus-ring:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.3);
+}
+
+
+
+/* 卡片交互 */
+.card {
+    transition: all var(--duration-normal) var(--ease-out);
+    transform: translateZ(0);
+}
+
+.card-interactive {
+    cursor: pointer;
+}
+
+.card-interactive:hover {
+    transform: translateY(-2px);
+}
+
+.card-interactive:active {
+    transform: translateY(0);
+}
+
+/* 文本选择样式 */
+::selection {
+    background-color: rgba(139, 92, 246, 0.3);
+    color: inherit;
+}
+
+::-moz-selection {
+    background-color: rgba(139, 92, 246, 0.3);
+    color: inherit;
+}
+
+/* ===========================================
+   响应式间距工具类
+   =========================================== */
+
+/* 响应式内边距 */
+@media (max-width: 768px) {
+    .sm\:p-0 {
+        padding: 0;
+    }
+    
+    .sm\:p-2 {
+        padding: var(--spacing-2);
+    }
+    
+    .sm\:p-3 {
+        padding: var(--spacing-3);
+    }
+    
+    .sm\:p-4 {
+        padding: var(--spacing-4);
+    }
+}
+
+/* 响应式外边距 */
+@media (max-width: 768px) {
+    .sm\:m-0 {
+        margin: 0;
+    }
+    
+    .sm\:m-2 {
+        margin: var(--spacing-2);
+    }
+    
+    .sm\:m-3 {
+        margin: var(--spacing-3);
+    }
+    
+    .sm\:m-4 {
+        margin: var(--spacing-4);
+    }
+}
+
+/* ===========================================
+   响应式显示控制
+   =========================================== */
+
+/* 隐藏/显示元素 */
+@media (max-width: 768px) {
+    .sm\:hidden {
+        display: none;
+    }
+    
+    .sm\:block {
+        display: block;
+    }
+    
+    .sm\:flex {
+        display: flex;
+    }
+    
+    .sm\:grid {
+        display: grid;
+    }
+}
+
+@media (max-width: 480px) {
+    .xs\:hidden {
+        display: none;
+    }
+    
+    .xs\:block {
+        display: block;
+    }
+    
+    .xs\:flex {
+        display: flex;
+    }
+    
+    .xs\:grid {
+        display: grid;
+    }
+}
+
+/* ===========================================
+   响应式排版
+   =========================================== */
+
+/* 优化移动端文本可读性 */
+@media (max-width: 768px) {
+    body {
+        font-size: var(--font-size-base);
+    }
+    
+    /* 优化移动端行高 */
+    p {
+        line-height: var(--line-height-relaxed);
+    }
+    
+    /* 优化移动端标题大小 */
+    h1 {
+        font-size: var(--font-size-3xl);
+    }
+    
+    h2 {
+        font-size: var(--font-size-2xl);
+    }
+    
+    h3 {
+        font-size: var(--font-size-xl);
+    }
+    
+    h4 {
+        font-size: var(--font-size-lg);
+    }
+    
+    /* 优化移动端列表间距 */
+    ul, ol {
+        --list-padding-left: var(--spacing-4);
+    }
+}
+
+@media (max-width: 480px) {
+    body {
+        font-size: var(--font-size-sm);
+    }
+    
+    h1 {
+        font-size: var(--font-size-2xl);
+    }
+    
+    h2 {
+        font-size: var(--font-size-xl);
+    }
+    
+    h3 {
+        font-size: var(--font-size-lg);
+    }
+    
+    h4 {
+        font-size: var(--font-size-base);
+    }
+}
+
+/* ===========================================
+   响应式触摸优化
+   =========================================== */
+
+/* 优化触摸目标大小 */
+@media (max-width: 768px) {
+    button,
+    a,
+    .btn,
+    .nav-link,
+    .menu-item {
+        min-width: 44px;
+        min-height: 44px;
+        padding: var(--spacing-2) var(--spacing-4);
+    }
+    
+    /* 优化表单元素触摸目标 */
+    input,
+    select,
+    textarea {
+        min-height: 44px;
+        padding: var(--spacing-2) var(--spacing-3);
+    }
+}
+
+/* ===========================================
+   响应式图片和媒体
+   =========================================== */
+
+/* 响应式图片 */
+img {
+    max-width: 100%;
+    height: auto;
+}
+
+/* 优化移动端媒体显示 */
+@media (max-width: 768px) {
+    .responsive-img {
+        object-fit: cover;
+        width: 100%;
+    }
+    
+    /* 优化视频显示 */
+    video {
+        max-width: 100%;
+        height: auto;
+    }
+    
+    /* 优化iframe显示 */
+    iframe {
+        max-width: 100%;
+        height: auto;
+    }
+}
+
+/* ===========================================
+   响应式布局组件
+   =========================================== */
+
+/* 响应式卡片 */
+@media (max-width: 768px) {
+    .card {
+        padding: var(--spacing-4);
+    }
+    
+    .card-title {
+        font-size: var(--font-size-xl);
+    }
+    
+    .card-content {
+        font-size: var(--font-size-base);
+    }
+}
+
+/* 响应式导航 */
+@media (max-width: 768px) {
+    .nav {
+        padding: var(--spacing-3) var(--spacing-4);
+    }
+    
+    .nav-menu {
+        flex-direction: column;
+        gap: var(--spacing-2);
+    }
+}
+
+/* 响应式页脚 */
+@media (max-width: 768px) {
+    .footer {
+        padding: var(--spacing-6) var(--spacing-4);
+    }
+    
+    .footer-content {
+        grid-template-columns: repeat(1, 1fr);
+        gap: var(--spacing-4);
+    }
+}
+
+/* ===========================================
+   移动端性能优化
+   =========================================== */
+
+/* 优化移动端动画性能 */
+@media (max-width: 768px) {
+    .animate {
+        animation-duration: 0.3s;
+    }
+    
+    /* 减少移动端动画效果 */
+    .mobile-no-animate {
+        animation: none;
+        transition: none;
+    }
+}
+
+/* 优化移动端滚动性能 */
+@media (max-width: 768px) {
+    * {
+        -webkit-overflow-scrolling: touch;
+        scroll-behavior: smooth;
+    }
+    
+    /* 避免移动端页面抖动 */
+    html {
+        overflow-x: hidden;
+    }
+    
+    body {
+        overflow-x: hidden;
+        position: relative;
+    }
+}
+
+/* ===========================================
+   响应式工具类
+   =========================================== */
+
+/* 文本对齐 */
+@media (max-width: 768px) {
+    .sm\:text-left {
+        text-align: left;
+    }
+    
+    .sm\:text-center {
+        text-align: center;
+    }
+    
+    .sm\:text-right {
+        text-align: right;
+    }
+}
+
+/* 弹性布局 */
+@media (max-width: 768px) {
+    .sm\:flex {
+        display: flex;
+    }
+    
+    .sm\:flex-col {
+        flex-direction: column;
+    }
+    
+    .sm\:items-center {
+        align-items: center;
+    }
+    
+    .sm\:justify-center {
+        justify-content: center;
+    }
+    
+    .sm\:justify-between {
+        justify-content: space-between;
+    }
+}
+
+/* 间距调整 */
+@media (max-width: 768px) {
+    .sm\:gap-2 {
+        gap: var(--spacing-2);
+    }
+    
+    .sm\:gap-3 {
+        gap: var(--spacing-3);
+    }
+    
+    .sm\:gap-4 {
+        gap: var(--spacing-4);
+    }
+}

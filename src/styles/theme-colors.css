@@ -1,0 +1,123 @@
+:root{
+    /* 从 base.css 导入的基础颜色变量 */
+    --vt2-c-white: #ffffff;
+    --vt-c-white-soft: #f8f8f8;
+    --vt-c-white-mute: #f2f2f2;
+    
+    --vt-c-black: #181818;
+    --vt-c-black-soft: #222222;
+    --vt-c-black-mute: #282828;
+    
+    --vt-c-indigo: #2c3e50;
+    
+    --vt-c-divider-light-1: rgba(60, 60, 60, 0.29);
+    --vt-c-divider-light-2: rgba(60, 60, 60, 0.12);
+    
+    --vt-c-text-light-1: var(--vt-c-indigo);
+    --vt-c-text-light-2: rgba(60, 60, 60, 0.66);
+    
+    --vt-footer-background-color: #000000;
+    --vt-c-Footer-text-color: #888888;
+    
+    --vt-c-color-navbar-bg: rgba(255, 255, 255, 0.95);
+    
+    /* 使用 base.css 的基础颜色变量 */
+    --bases-bg: #f2eefc;
+    --bases-primary: #a78bfa;
+    --bases-primary-gradient: linear-gradient(135deg, #9e94d8 0%, #b6ade6 100%);
+    --bases-background-color: var(--vt-c-white);
+    --bases-background-gradient: linear-gradient(135deg, var(--vt-c-white) 0%, var(--vt-c-white-soft) 50%, var(--vt-c-white-mute) 100%);
+    --bases-secondary-color: var(--vt-c-text-light-1);
+    --bases-section-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+    --basses-footer-gradinet: linear-gradient(135deg, #0a0f1c 0%, #1a1f2e 100%);
+    --bases-card-bg: rgba(255, 255, 255, 0.8);
+    --bases-card-bg-hover: rgba(255, 255, 255, 0.9);
+    --bases-text-color: var(--vt-c-text-light-1);
+    --bases-text-secondary: var(--vt-c-text-light-2);
+    --bases-online-dot: #00BFA6;
+    --bases-nav-bg: rgba(0, 0, 0, 0.7);
+    --bases-nav-bg-scroll: #2f2f2f;
+    /* --bases-side-nav-bg */
+    --bases-button-hover: #c4b5fd;
+    --bases-accent-color: #f59e0b;
+    --bases-glass-bg: rgba(255, 255, 255, 0.6);
+    --bases-glass-border: rgba(158, 148, 216, 0.3);
+    --bases-shadow-color: rgba(109, 91, 154, 0.2);
+    --bases-shadow-hover: rgba(109, 91, 154, 0.3);
+    --bases-footer-background-color: var(--vt-footer-background-color);
+    --bases-white: #ffffff;
+    --bases-black: #000000;
+    --bases-success-color: #00BFA6;
+    --bases-error-color: #dc3545;
+    --bases-warning-color: #ffc107;
+    --bases-info-color: #3b82f6;
+
+    /* --dark */
+    --bases-dark-bg:#17171a;
+    --bases-dark-text-color:#f2eefc;
+    --bases-dark-card-bg:#545455;
+}
+
+
+
+
+:root{
+    --background-color: var(--bases-bg);
+    --primary-color: var(--bases-primary);
+    --primary-gradient: var(--bases-primary-gradient);
+    --secondary-color: var(--bases-secondary-color);
+    --background-gradient: var(--bases-background-gradient);
+    --card-bg: var(--bases-card-bg);
+    --card-bg-hover: var(--bases-card-bg-hover);
+    --text-color: var(--bases-text-color);
+    --text-secondary: var(--bases-text-secondary);
+    --online-color: var(--bases-online-dot);
+    --nav-bg: var(--bases-nav-bg);
+    --nav-bg-scroll: var(--bases-nav-bg-scroll);
+    --button-hover: var(--bases-button-hover);
+    --accent-color: var(--bases-accent-color);
+    --glass-bg: var(--bases-glass-bg);
+    --glass-border: var(--bases-glass-border);
+    --shadow-color: var(--bases-shadow-color);
+    --shadow-hover: var(--bases-shadow-hover);
+    --footer-background-color: var(--bases-footer-background-color);
+    --footer-gradient: var(--basses-footer-gradinet);
+    --color-footer-text: var(--vt-c-Footer-text-color);
+    --white: var(--bases-white);
+    --black: var(--bases-black);
+    --success-color: var(--bases-success-color);
+    --error-color: var(--bases-error-color);
+    --warning-color: var(--bases-warning-color);
+    --info-color: var(--bases-info-color);
+}
+
+@media (prefers-color-scheme: dark) {
+    :root{
+        --background-color: var(--bases-dark-bg);
+        --primary-color: var(--bases-dark-primary);
+        --primary-gradient: var(--bases-dark-primary-gradient);
+        --secondary-color: var(--bases-dark-secondary-color);
+        --background-gradient: var(--bases-dark-background-gradient);
+        --card-bg: var(--bases-dark-card-bg);
+        --card-bg-hover: var(--bases-dark-card-bg-hover);
+        --text-color: var(--bases-dark-text-color);
+        --text-secondary: var(--bases-dark-text-secondary);
+        --online-color: var(--bases-dark-online-dot);
+        --nav-bg: var(--bases-dark-nav-bg);
+        --nav-bg-scroll: var(--bases-dark-nav-bg-scroll);
+        --button-hover: var(--bases-dark-button-hover);
+        --accent-color: var(--bases-dark-accent-color);
+        --glass-bg: var(--bases-dark-glass-bg);
+        --glass-border: var(--bases-dark-glass-border);
+        --shadow-color: var(--bases-dark-shadow-color);
+        --shadow-hover: var(--bases-dark-shadow-hover);
+        --footer-background-color: var(--bases-dark-footer-background-color);
+        --footer-gradient: var(--basses-dark-footer-gradinet);
+        --white: var(--bases-dark-white);
+        --black: var(--bases-dark-black);
+        --success-color: var(--bases-dark-success-color);
+        --error-color: var(--bases-dark-error-color);
+        --warning-color: var(--bases-dark-warning-color);
+        --info-color: var(--bases-dark-info-color);
+    }
+}
