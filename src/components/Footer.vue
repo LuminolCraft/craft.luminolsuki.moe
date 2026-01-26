@@ -56,7 +56,7 @@ const goToVersionCommit = () => {
         return
     }
     
-    const githubRepoUrl = 'https://github.com/LuminolCraft/luminolcraft-vue-main'
+    const githubRepoUrl = 'https://github.com/LuminolCraft/craft.luminolsuki.moe'
     let githubUrl
     
     if (websiteVersion.value === 'dev') {
@@ -134,7 +134,7 @@ onMounted(() => {
         </div>
     </div>
         <div class="copyright-info">
-            <p>{{ t('footer.copyright', { year: 2025-2026 }) }}</p>
+            <p>{{ t('footer.copyright', { year: '2025-2026' }) }}</p>
             <p>{{ t('footer.disclaimer') }}</p>
             <p>{{ t('footer.font') }}<a href="https://hyperos.mi.com/font/" target="_blank" rel="noopener noreferrer">MiSans
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1.5" class="h-4 w-4 ml-1 align-sub" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"></path></svg>
