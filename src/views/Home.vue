@@ -167,7 +167,7 @@
                             </div>
                             <div class="contributor-info">
                                 <div class="contributor-name">NaT_Jerry</div>
-                                <div class="contributor-role">{{ t('home.team.roles.admin') }}</div>
+                                <div class="contributor-role">{{ t('home.team.roles.survivalAdmin') }}</div>
                                 <div class="contributor-links-wrapper">
                                     <a href="https://github.com/NatJerry" target="_blank" rel="noopener noreferrer" class="contributor-github-link">
                                     <svg class="github-icon" viewBox="0 0 24 24" fill="currentColor">
@@ -224,6 +224,17 @@
                         </div>
                     </article>
                     
+                    <article class="contributor-card">
+                        <div class="contributor-layout">
+                            <div class="contributor-avatar-container">
+                                <img src="https://q1.qlogo.cn/g?b=qq&nk=3900217885&s=0" alt="IngilYing" class="contributor-avatar" loading="lazy">
+                            </div>
+                            <div class="contributor-info">
+                                <div class="contributor-name">婧婧</div>
+                                <div class="contributor-role">{{ t('home.team.roles.admin') }}</div>
+                            </div>
+                        </div>
+                    </article>
                     
                     <article class="contributor-card">
                         <div class="contributor-layout">

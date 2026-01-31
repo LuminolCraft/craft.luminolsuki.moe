@@ -97,15 +97,17 @@
             >
               {{ t('news.list.pagination.prev') }}
             </button>
-            <button
-              v-for="page in pageCount"
-              :key="page"
-              class="pagination-btn"
-              :class="{ active: currentPage === page - 1 }"
-              @click="goToPage(page - 1)"
-            >
-              {{ page }}
-            </button>
+            <template v-for="(item, index) in displayedPages" :key="index">
+              <button
+                v-if="typeof item === 'number'"
+                class="pagination-btn"
+                :class="{ active: currentPage === item - 1 }"
+                @click="goToPage(item - 1)"
+              >
+                {{ item }}
+              </button>
+              <span v-else class="pagination-ellipsis">{{ item }}</span>
+            </template>
             <button
               class="pagination-btn"
               :disabled="currentPage === pageCount - 1"
@@ -129,6 +131,7 @@
     import { useI18n } from 'vue-i18n';
     import { marked } from 'marked'; // 假设已安装 marked 或通过 CDN 加载
     import debounce from 'lodash/debounce'; // 假设使用 lodash 的 debounce
+    import { appConfig } from '../config/app-config';
     
     // 类型定义
     interface NewsItem {
@@ -153,7 +156,7 @@
     // NewsManager 类转换为 TypeScript
     class NewsManager {
       currentPage = 0;
-      itemsPerPage = window.innerWidth <= 768 ? 3 : 6;
+      itemsPerPage = window.innerWidth <= 768 ? appConfig.newsPagination.mobileItemsPerPage : appConfig.newsPagination.desktopItemsPerPage;
       filteredNews: NewsItem[] | null = null;
       allNewsWithContent: NewsItem[] = [];
       NEWS_STORAGE_KEY = 'session_news_data';
@@ -450,7 +453,7 @@
               !href.includes(this.SITE_DOMAIN) &&
               !href.startsWith('#');
             const svgIcon = isExternal
-              ? '<svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1.5" class="h-4 w-4 ml-1 align-sub" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"></path></svg>'
+              ? '<svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1.5" style="width: 18px; height: 18px; margin-left: 8px; vertical-align: sub;" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"></path></svg>'
               : '';
             return `<a href="${escapeHtml(href)}" class="${
               isExternal ? 'external-link' : ''
@@ -491,7 +494,8 @@
         }
         this.debugLog('marked 库加载成功，版本:', (marked as any).version || '未知');
         const renderer = new (marked.Renderer as any)();
-        renderer.link = (href: string, title: string, text: string) => {
+        renderer.link = ({ href, title, tokens }: any) => {
+          const text = this.parseTokens(tokens);
           const isValidHref = typeof href === 'string' && href.trim() !== '';
           const isExternal =
             isValidHref &&
@@ -499,22 +503,39 @@
             !href.includes(this.SITE_DOMAIN) &&
             !href.startsWith('#');
           const svgIcon = isExternal
-            ? `<svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1.5" class="h-4 w-4 ml-1 align-sub" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"></path></svg>`
+            ? `<svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1.5" style="width: 18px; height: 18px; margin-left: 8px; vertical-align: sub;" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"></path></svg>`
             : '';
           if (!isValidHref) return text;
-          return `<a href="${href}" ${title ? `title="${title}"` : ''} class="${
+          const titleAttr = title && title !== 'undefined' ? `title="${title}"` : '';
+          return `<a href="${href}" ${titleAttr} class="${
             isExternal ? 'external-link' : ''
           }">${text}${svgIcon}</a>`;
         };
         marked.setOptions({ renderer });
         return true;
       }
+
+      parseTokens(tokens: any[]): string {
+        if (!tokens || !Array.isArray(tokens)) return '';
+        return tokens.map((token: any) => {
+          if (token.type === 'text' || token.type === 'codespan') {
+            return token.text || '';
+          } else if (token.type === 'strong' || token.type === 'em') {
+            return this.parseTokens(token.tokens);
+          } else if (token.type === 'link') {
+            return this.parseTokens(token.tokens);
+          } else if (token.type === 'image') {
+            return token.text || '';
+          }
+          return '';
+        }).join('');
+      }
     
       initEventListeners() {
         window.addEventListener(
           'resize',
           debounce(() => {
-            this.itemsPerPage = window.innerWidth <= 768 ? 3 : 6;
+            this.itemsPerPage = window.innerWidth <= 768 ? appConfig.newsPagination.mobileItemsPerPage : appConfig.newsPagination.desktopItemsPerPage;
           }, 200)
         );
       }
@@ -751,6 +772,48 @@
           refreshTrigger.value;
           return newsManager.getPageCount();
         });
+
+        const displayedPages = computed(() => {
+          refreshTrigger.value;
+          const total = pageCount.value;
+          const current = currentPage.value + 1;
+          const maxPages = appConfig.newsPagination.maxDisplayedPages;
+          const pages: (number | string)[] = [];
+
+          if (total <= maxPages) {
+           for (let i = 1; i <= total; i++) {
+              pages.push(i);
+            }
+            return pages;
+          }
+
+          pages.push(1);
+
+          const half = Math.floor(maxPages / 2);
+          if (current <= half + 1) {
+            for (let i = 2; i <= Math.min(maxPages - 1, total); i++) {
+              pages.push(i);
+            }
+            if (total > maxPages - 1) {
+              pages.push('...');
+              pages.push(total);
+            }
+          } else if (current >= total - half) {
+            pages.push('...');
+            for (let i = Math.max(total - maxPages + 2, 2); i <= total; i++) {
+              pages.push(i);
+            }
+          } else {
+            pages.push('...');
+            for (let i = current - 1; i <= current + 1; i++) {
+              pages.push(i);
+            }
+            pages.push('...');
+            pages.push(total);
+          }
+
+          return pages;
+        });
     
         const cacheStatusText = computed(() => {
           refreshTrigger.value;
@@ -855,6 +918,7 @@
           uniqueTags,
           paginatedNews,
           pageCount,
+          displayedPages,
           cacheStatusText,
           loadError,
           filterNews,

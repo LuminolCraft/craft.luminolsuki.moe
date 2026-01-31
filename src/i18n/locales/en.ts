@@ -1,4 +1,8 @@
 export default {
+  "404":{
+    "description": "Oops! The page you're looking for doesn't exist.",
+    "backhome": "Go back to home"
+  },
   "common": {
     "home": "Home",
     "rules": "Server Rules",
@@ -277,7 +281,7 @@ export default {
         "owner": "Physical Server Owner & Luminol Server Developer",
         "admin": "Administrator",
         "community": "Community Management",
-        "developer": "Website Development Lead",
+        "developer": "Website Development",
         "survivalAdmin": "Survival Server Administrator",
         "creativeAdmin": "Creative Server Administrator"
       }

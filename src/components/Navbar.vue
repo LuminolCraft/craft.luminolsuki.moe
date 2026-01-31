@@ -1,5 +1,5 @@
 <template>
-    <nav>
+    <nav :class="{ 'navbar-fixed': appConfig.navbarFixed }">
       <input type="checkbox" id="burger" class="burger-input" ref="burgerInput">
       <label class="burger" for="burger">
         <span></span>
@@ -20,6 +20,7 @@
         <router-link to="/Support">{{ t('common.support') }}</router-link>
         <router-link to="/News">{{ t('common.news') }}</router-link>
         <router-link to="/Monitoring">{{ t('common.monitoring') }}</router-link>
+        <LanguageSwitcher v-if="appConfig.showLanguageToggle" />
       </div>
   
       <div class="side-nav-overlay"></div>
@@ -56,7 +57,9 @@
           <router-link to="/Support">{{ t('common.support') }}</router-link>
           <router-link to="/News">{{ t('common.news') }}</router-link>
           <router-link to="/Monitoring">{{ t('common.monitoring') }}</router-link>
+          <LanguageSwitcher v-if="appConfig.showLanguageToggle" />
         </div>
+        
       </div>
     </nav>
   </template>
@@ -66,23 +69,35 @@
   </style>
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, watch } from 'vue'
+import { useRouter } from 'vue-router'
+import LanguageSwitcher from './LanguageSwitcher.vue'
+import { appConfig } from '../config/app-config'
 
 const { t } = useI18n()
+const router = useRouter()
 
 // 获取burger复选框元素
 const burgerInput = ref<HTMLInputElement | null>(null)
+
+// 关闭侧边栏的函数
+const closeSidebar = () => {
+  if (burgerInput.value) {
+    burgerInput.value.checked = false
+  }
+}
 
 // 点击外部区域关闭侧边栏的处理函数
 const handleClickOutside = (event: MouseEvent) => {
   // 确保burgerInput已获取
   if (!burgerInput.value) return
   
-  // 获取侧边栏和汉堡菜单元素
+  // 获取侧边栏、汉堡菜单和遮罩层元素
   const sideNav = document.querySelector('.side-nav')
   const burger = document.querySelector('.burger')
+  const overlay = document.querySelector('.side-nav-overlay')
   
-  // 检查点击目标是否在侧边栏或汉堡菜单外部
+  // 检查点击目标是否在侧边栏、汉堡菜单或遮罩层外部
   if (
     sideNav && 
     burger && 
@@ -91,17 +106,54 @@ const handleClickOutside = (event: MouseEvent) => {
     event.target !== burgerInput.value
   ) {
     // 关闭侧边栏
-    burgerInput.value.checked = false
+    closeSidebar()
+  }
+  
+  // 点击遮罩层时也关闭侧边栏
+  if (overlay && overlay.contains(event.target as Node)) {
+    closeSidebar()
   }
 }
+
+// 处理侧边栏链接点击事件
+const handleSideNavClick = (event: Event) => {
+  const target = event.target as HTMLElement
+  
+  // 检查点击的是否是链接元素
+  const link = target.closest('a, .router-link-active')
+  
+  if (link) {
+    // 延迟关闭侧边栏，确保路由跳转完成
+    setTimeout(() => {
+      closeSidebar()
+    }, 100)
+  }
+}
+
+// 监听路由变化，路由改变时自动关闭侧边栏
+watch(() => router.currentRoute.value, () => {
+  closeSidebar()
+})
 
 // 组件挂载时添加事件监听
 onMounted(() => {
   document.addEventListener('click', handleClickOutside)
+  
+  // 添加侧边栏点击事件监听
+  const sideNav = document.querySelector('.side-nav')
+  if (sideNav) {
+    sideNav.addEventListener('click', handleSideNavClick)
+  }
 })
 
 // 组件卸载时移除事件监听，避免内存泄漏
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
+  
+  // 移除侧边栏点击事件监听
+  const sideNav = document.querySelector('.side-nav')
+  if (sideNav) {
+    sideNav.removeEventListener('click', handleSideNavClick)
+  }
 })
 </script>

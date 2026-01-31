@@ -1,4 +1,8 @@
 export default {
+  "404":{
+    "description": "恭喜！您找到了隐藏页面，凭此页面截图可以找管理员兑换神秘奖励。",
+    "backhome": "返回主页"
+  },
   "common": {
     "home": "首页",
     "rules": "服务器规则",
@@ -278,7 +282,7 @@ export default {
         "owner": "物理服主 & Luminol 服务端开发人员",
         "admin": "管理员",
         "community": "社区管理",
-        "developer": "网站开发主理人",
+        "developer": "网站开发",
         "survivalAdmin": "纯净生存服务器管理员",
         "creativeAdmin": "综合生存服务器管理员"
       }

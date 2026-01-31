@@ -1,10 +1,4 @@
 
-
-
-
-
-
-
 * {
     margin: 0;
     padding: 0;
@@ -22,29 +16,14 @@ a {
     text-decoration: none;
 }
 
-
-/* 导航栏样式已移至 navigation.css 和 navigation-mobile.css */
-/* 桌面端导航布局已移至 navigation.css */
-
-/* 移动端汉堡菜单已移至 navigation-mobile.css */
-
-/* 移动端汉堡菜单修复已移至 navigation-mobile.css */
-
-
-
-
-/* 下拉菜单样式已移至 navigation.css */
-
-
-/* 导航栏相关样式已移至 navigation.css */
-
 .news-content a.external-link svg {
     width: 18px;
     height: 18px;
     margin-left: 8px;
-    vertical-align: sub; /* 保持对齐 */
+    vertical-align: sub;
 }
-/* /* 动态酷炫背景：柔和渐变 + 光晕漂移 */
+
+/* 动态酷炫背景：柔和渐变 + 光晕漂移 */
 body::before {
     content: '';
     position: fixed;
@@ -426,7 +405,7 @@ body::after {
     margin-left: auto;
     margin-right: auto;
     max-width: 1200px;
-    min-width: 800px;
+    min-width: 900px;
     box-shadow: 0 20px 40px var(--shadow-color);
     backdrop-filter: blur(15px);
     -webkit-backdrop-filter: blur(15px);

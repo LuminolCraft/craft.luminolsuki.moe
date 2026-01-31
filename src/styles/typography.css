@@ -249,7 +249,7 @@ pre code {
 
 /* 表格样式 */
 table {
-    width: 100%;
+    width: 300%;
     border-collapse: collapse;
     margin-bottom: var(--body-margin-bottom);
 }

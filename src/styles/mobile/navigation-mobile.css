@@ -163,5 +163,41 @@
         margin-right: 10px;
       }
       
+      /* 语言切换器移动端样式 - 在侧边栏内 */
+      .side-nav .language-switcher {
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        width: 100%;
+        justify-content: center;
+      }
+
+      .side-nav .language-container {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: none;
+      }
+
+      .side-nav .language-container:hover {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: rgba(255, 255, 255, 0.2);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+      }
+
+      .side-nav .language-btn {
+        padding: 6px 14px;
+        font-size: 0.85rem;
+        border-radius: 14px;
+      }
+
+      .side-nav .language-btn.active {
+        background: linear-gradient(135deg, rgba(158, 148, 216, 0.3), rgba(158, 148, 216, 0.15));
+        box-shadow: 0 2px 8px rgba(158, 148, 216, 0.2);
+      }
+
+      .side-nav .language-btn.active::after {
+        width: 18px;
+        background: linear-gradient(90deg, transparent, rgba(158, 148, 216, 0.6), transparent);
+      }
 }
 

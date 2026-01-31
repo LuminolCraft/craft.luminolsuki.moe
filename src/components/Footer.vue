@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { appConfig } from '../config/app-config'
 
 const { t } = useI18n()
 
@@ -133,7 +134,7 @@ onMounted(() => {
             <span>{{ t('footer.uptime') }} <span>{{ websiteUptime }}</span></span>
         </div>
     </div>
-        <div class="copyright-info">
+        <div class="copyright-info" v-if="appConfig.showFooterCopyright">
             <p>{{ t('footer.copyright', { year: '2025-2026' }) }}</p>
             <p>{{ t('footer.disclaimer') }}</p>
             <p>{{ t('footer.font') }}<a href="https://hyperos.mi.com/font/" target="_blank" rel="noopener noreferrer">MiSans

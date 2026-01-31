@@ -501,6 +501,16 @@ a {
     transform: none;
 }
 
+.pagination-ellipsis {
+    display: inline-block;
+    padding: 8px 12px;
+    margin: 0 5px;
+    color: var(--text-color);
+    font-family: var(--font-primary);
+    font-size: 0.95em;
+    user-select: none;
+}
+
 .empty-message,
 .error-message {
     font-family: var(--font-primary);
