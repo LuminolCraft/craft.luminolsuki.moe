@@ -130,9 +130,10 @@ const handleSideNavClick = (event: Event) => {
   }
 }
 
-// 监听路由变化，路由改变时自动关闭侧边栏
+// 监听路由变化，路由改变时自动关闭侧边栏并滚动到顶部
 watch(() => router.currentRoute.value, () => {
   closeSidebar()
+  window.scrollTo({ top: 0, behavior: 'smooth' })
 })
 
 // 组件挂载时添加事件监听
