@@ -1,7 +1,6 @@
 // src/router/index.ts
 import { createRouter, createWebHistory } from 'vue-router'
 import type { RouteLocationNormalizedLoaded } from 'vue-router'
-
 const routes = [
   {
     path: '/',
@@ -55,7 +54,7 @@ const routes = [
     name: 'monitoring',
     component: () => import('../views/Monitoring.vue'),
     meta: {
-      title: 'LuminolCraft 新闻详情',
+      title: 'LuminolCraft 服务器监控',
       description: 'LuminolCraft 是 LuminolMC 附属的 Minecraft 服务器，拥有综合生存与纯净生存两个子服，管理活跃，欢迎加入我们！'
     }
   },
@@ -69,6 +68,8 @@ const routes = [
     }
   }
 ]
+
+
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
