@@ -131,7 +131,7 @@ onMounted(() => {
         </div>
         <div class="status-item">
             <i class="fas fa-clock"></i>
-            <span>{{ t('footer.uptime') }} <span>{{ websiteUptime }}</span></span>
+            <span>{{ t('footer.uptime') }} <span>{{ websiteUptime }}{{ t('footer.upday') }}</span></span>
         </div>
     </div>
         <div class="copyright-info" v-if="appConfig.showFooterCopyright">
