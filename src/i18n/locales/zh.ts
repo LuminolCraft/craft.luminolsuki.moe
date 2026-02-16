@@ -73,6 +73,7 @@ export default {
     "github": "GitHub",
     "version": "版本",
     "uptime": "运行",
+    "upday":"天",
     "Number": "加载中...",
     "copyright": "© {year} LuminolCraft- 保留所有权利",
     "disclaimer": "\"Minecraft\" 以及\"我的世界\"为 Mojang Studios 的商标，LuminolCraft 与 Mojang 以及 Microsoft 没有任何从属关系。LuminolCraft 不是 Minecraft 官方的服务器。",

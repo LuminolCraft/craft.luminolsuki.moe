@@ -72,6 +72,7 @@ export default {
     "afdian": "Afdian",
     "github": "GitHub",
     "version": "Version",
+    "upday": "Day",
     "runningTime": "Running",
     "copyright": "© {year} LuminolCraft",
     "disclaimer": "\"Minecraft\" and \"我的世界\" are trademarks of Mojang Studios. LuminolCraft is not affiliated with Mojang or Microsoft. LuminolCraft is not an official Minecraft server.",
