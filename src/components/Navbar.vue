@@ -1,14 +1,14 @@
 <template>
     <nav :class="{ 'navbar-fixed': appConfig.navbarFixed }">
       <input type="checkbox" id="burger" class="burger-input" ref="burgerInput">
-      <label class="burger" for="burger">
+      <label class="burger" for="burger" ref="burger">
         <span></span>
         <span></span>
         <span></span>
       </label>
-  
+
       <!-- 侧边导航栏 -->
-      <div class="side-nav">
+      <div class="side-nav" ref="sideNav">
         <router-link to="/">{{ t('common.home') }}</router-link>
         <router-link to="/SimpleRules">{{ t('common.rules') }} ({{ t('common.simpleRules') }})</router-link>
         <a class="dropdown-ico" href="https://docs.qq.com/pdf/DQUZYS0FKenFmYWZx" target="_blank" rel="noopener noreferrer">
@@ -22,8 +22,8 @@
         <router-link to="/Monitoring">{{ t('common.monitoring') }}</router-link>
         <LanguageSwitcher v-if="appConfig.showLanguageToggle" />
       </div>
-  
-      <div class="side-nav-overlay"></div>
+
+      <div class="side-nav-overlay" ref="overlay"></div>
   
       <div class="logo-and-title">
             <div class="logo-container">
@@ -77,8 +77,11 @@ import { appConfig } from '../config/app-config'
 const { t } = useI18n()
 const router = useRouter()
 
-// 获取burger复选框元素
+// 获取元素
 const burgerInput = ref<HTMLInputElement | null>(null)
+const sideNav = ref<HTMLElement | null>(null)
+const burger = ref<HTMLElement | null>(null)
+const overlay = ref<HTMLElement | null>(null)
 
 // 关闭侧边栏的函数
 const closeSidebar = () => {
@@ -89,20 +92,13 @@ const closeSidebar = () => {
 
 // 点击外部区域关闭侧边栏的处理函数
 const handleClickOutside = (event: MouseEvent) => {
-  // 确保burgerInput已获取
-  if (!burgerInput.value) return
-  
-  // 获取侧边栏、汉堡菜单和遮罩层元素
-  const sideNav = document.querySelector('.side-nav')
-  const burger = document.querySelector('.burger')
-  const overlay = document.querySelector('.side-nav-overlay')
+  // 确保所有元素已获取
+  if (!burgerInput.value || !sideNav.value || !burger.value) return
   
   // 检查点击目标是否在侧边栏、汉堡菜单或遮罩层外部
   if (
-    sideNav && 
-    burger && 
-    !sideNav.contains(event.target as Node) && 
-    !burger.contains(event.target as Node) &&
+    !sideNav.value.contains(event.target as Node) && 
+    !burger.value.contains(event.target as Node) &&
     event.target !== burgerInput.value
   ) {
     // 关闭侧边栏
@@ -110,7 +106,7 @@ const handleClickOutside = (event: MouseEvent) => {
   }
   
   // 点击遮罩层时也关闭侧边栏
-  if (overlay && overlay.contains(event.target as Node)) {
+  if (overlay.value && overlay.value.contains(event.target as Node)) {
     closeSidebar()
   }
 }
@@ -141,9 +137,8 @@ onMounted(() => {
   document.addEventListener('click', handleClickOutside)
   
   // 添加侧边栏点击事件监听
-  const sideNav = document.querySelector('.side-nav')
-  if (sideNav) {
-    sideNav.addEventListener('click', handleSideNavClick)
+  if (sideNav.value) {
+    sideNav.value.addEventListener('click', handleSideNavClick)
   }
 })
 
@@ -152,9 +147,8 @@ onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
   
   // 移除侧边栏点击事件监听
-  const sideNav = document.querySelector('.side-nav')
-  if (sideNav) {
-    sideNav.removeEventListener('click', handleSideNavClick)
+  if (sideNav.value) {
+    sideNav.value.removeEventListener('click', handleSideNavClick)
   }
 })
 </script>
