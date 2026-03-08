@@ -44,7 +44,7 @@
                         </div> -->
                         <div class="info-item">
                             <div class="info-label">{{ t('home.serverStatus.versionLabel') }}</div>
-                            <div class="info-value" id="info-version">1.21.7/8</div>
+                            <div class="info-value" id="info-version">1.21.11</div>
                         </div>
                         <div id="info-server-type" class="info-item">
                             <div class="info-label">{{ t('home.serverStatus.typeLabel') }}</div>
