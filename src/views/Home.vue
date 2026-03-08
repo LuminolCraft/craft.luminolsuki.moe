@@ -399,7 +399,7 @@ let intervalId: ReturnType<typeof setInterval> | null = null;
 
 const serverOnline = ref(false);
 const onlinePlayers = ref('加载中...');
-const serverVersion = ref('1.21.7/8');
+const serverVersion = ref('1.21.11');
 const serverStatus = ref(t('home.serverStatus.statusChecking'));
 
 const fetchServerStatus = async () => {
