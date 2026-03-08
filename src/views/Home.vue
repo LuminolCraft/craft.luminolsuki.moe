@@ -2,8 +2,8 @@
     <!-- 顶部区域 -->
     <header id="header" class="hero-section">
         <!-- 背景轮播图容器 - 双层实现平滑过渡 -->
-        <div class="header-background fade-in" id="bg-slider-1" :style="{ backgroundImage: `url(${currentImage1})` }"></div>
-        <div class="header-background" id="bg-slider-2" :style="{ backgroundImage: `url(${currentImage2})` }"></div>
+        <div class="header-background" :class="{ 'fade-in': activeLayer === 1 }" :style="{ backgroundImage: `url(${currentImage1})`, opacity: activeLayer === 1 ? '1' : '0' }"></div>
+        <div class="header-background" :style="{ backgroundImage: `url(${currentImage2})`, opacity: activeLayer === 2 ? '1' : '0' }"></div>
         
         <div class="hero-overlay"></div>
         
@@ -28,14 +28,14 @@
             <div class="hero-visual">
                 <div class="server-status-card">
                     <div class="status-indicator">
-                        <div class="status-dot" id="server-status-dot"></div>
-                        <div class="status-text" id="server-status-text">{{ t('home.serverStatus.loading') }}</div>
+                        <div class="status-dot" :class="{ online: serverOnline, offline: !serverOnline }"></div>
+                        <div class="status-text">{{ serverOnline ? '在线' : '离线' }}</div>
                     </div>
                     
                     <div class="server-info-grid">
                         <div class="info-item">
                             <div class="info-label">{{ t('home.serverStatus.playersLabel') }}</div>
-                            <span class="info-value" id="online-players">{{ t('home.serverStatus.playersLoading') }}</span>
+                            <span class="info-value">{{ onlinePlayers }}</span>
                         </div>
                         
                         <!-- <div class="info-item">
@@ -44,15 +44,15 @@
                         </div> -->
                         <div class="info-item">
                             <div class="info-label">{{ t('home.serverStatus.versionLabel') }}</div>
-                            <div class="info-value" id="info-version">1.21.11</div>
+                            <div class="info-value">1.21.11</div>
                         </div>
-                        <div id="info-server-type" class="info-item">
+                        <div class="info-item">
                             <div class="info-label">{{ t('home.serverStatus.typeLabel') }}</div>
                             <div class="info-value">{{ t('home.serverStatus.typeValue') }}</div>
                         </div>
                         <div class="info-item">
                             <div class="info-label">{{ t('home.serverStatus.statusLabel') }}</div>
-                            <div class="info-value" id="server-status">{{ t('home.serverStatus.statusChecking') }}</div>
+                            <div class="info-value">{{ serverStatus }}</div>
                         </div>
                     </div>
                 </div>
@@ -371,36 +371,20 @@ const nextRandomImage = () => {
     
     currentIndex.value = newIndex;
     
-    const bg1 = document.getElementById('bg-slider-1');
-    const bg2 = document.getElementById('bg-slider-2');
-    
     if (activeLayer.value === 1) {
-        if (bg2) {
-            bg2.style.backgroundImage = `url(${backgroundImages[newIndex]})`;
-            bg2.style.opacity = '1';
-        }
-        if (bg1) {
-            bg1.style.opacity = '0';
-        }
+        currentImage2.value = backgroundImages[newIndex];
         activeLayer.value = 2;
     } else {
-        if (bg1) {
-            bg1.style.backgroundImage = `url(${backgroundImages[newIndex]})`;
-            bg1.style.opacity = '1';
-        }
-        if (bg2) {
-            bg2.style.opacity = '0';
-        }
+        currentImage1.value = backgroundImages[newIndex];
         activeLayer.value = 1;
     }
 };
 
 let intervalId: ReturnType<typeof setInterval> | null = null;
 
-const serverOnline = ref(false);
+const serverOnline = ref(true);
 const onlinePlayers = ref('加载中...');
-const serverVersion = ref('1.21.11');
-const serverStatus = ref(t('home.serverStatus.statusChecking'));
+const serverStatus = ref('服务器在线');
 
 const fetchServerStatus = async () => {
     try {
@@ -409,7 +393,6 @@ const fetchServerStatus = async () => {
             const data = await response.json();
             serverOnline.value = data.online || false;
             onlinePlayers.value = data.online ? `${data.players?.online || 0}/${data.players?.max || 0}` : '0/0';
-            serverVersion.value = data.version || '1.21.7/8';
             serverStatus.value = data.online ? '服务器在线' : '服务器离线';
         } else {
             throw new Error('API 请求失败');
@@ -422,38 +405,14 @@ const fetchServerStatus = async () => {
     }
 };
 
-const updateStatusDisplay = () => {
-    const statusDot = document.getElementById('server-status-dot');
-    const statusText = document.getElementById('server-status-text');
-    const playersElement = document.getElementById('online-players');
-    const statusElement = document.getElementById('server-status');
-    
-    if (statusDot) {
-        statusDot.className = `status-dot ${serverOnline.value ? 'online' : 'offline'}`;
-    }
-    
-    if (statusText) {
-        statusText.textContent = serverOnline.value ? '在线' : '离线';
-    }
-    
-    if (playersElement) {
-        playersElement.textContent = onlinePlayers.value;
-    }
-    
-    if (statusElement) {
-        statusElement.textContent = serverStatus.value;
-    }
-};
+
 
 onMounted(async () => {
     intervalId = setInterval(nextRandomImage, 3600);
     
     await fetchServerStatus();
-    await nextTick();
-    updateStatusDisplay();
     
     setInterval(fetchServerStatus, 30000);
-    setInterval(updateStatusDisplay, 30000);
 });
 
 onUnmounted(() => {
