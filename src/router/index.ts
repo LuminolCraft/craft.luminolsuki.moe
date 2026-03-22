@@ -91,9 +91,9 @@ const routes = [
     alias: ['/news-detail', '/news-detail.html', '/NewsDetail.html']
   },
   {
-    path: '/Monitoring',
-    name: 'monitoring',
-    component: () => import('../views/Monitoring.vue'),
+    path: '/Archive',
+    name: 'Archive',
+    component: () => import('../views/Archive.vue'),
     meta: {
       og: {
         title: 'LuminolCraft 服务器监控',

@@ -63,6 +63,7 @@
 
 :root{
     --background-color: var(--bases-bg);
+    --text-primary: #f1f5f9;
     --primary-color: var(--bases-primary);
     --primary-gradient: var(--bases-primary-gradient);
     --secondary-color: var(--bases-secondary-color);
