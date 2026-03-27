@@ -814,13 +814,13 @@ header {
     border: none;
 }
 
-.btn-primary-hero {
+.btn-primary {
     background: linear-gradient(135deg, #6366f1 0%, #818cf8 100%);
     color: white;
     box-shadow: 0 4px 20px rgba(99, 102, 241, 0.3);
 }
 
-.btn-primary-hero:hover {
+.btn-primary:hover {
     transform: translateY(-3px);
     box-shadow: 0 12px 35px rgba(158, 148, 216, 0.4);
 }
