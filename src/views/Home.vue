@@ -408,6 +408,25 @@
     color: var(--accent-cyan);
     font-weight: 500;
     margin-bottom: 20px;
+    height: 1.6em;
+    position: relative;
+    display: inline-block;
+}
+
+.hero-subtitle .typed-text {
+    border-right: 2px solid var(--accent-cyan);
+    white-space: nowrap;
+    overflow: hidden;
+    display: inline-block;
+}
+
+.hero-subtitle .typed-text.done {
+    animation: cursorBlink 0.8s step-end infinite;
+}
+
+@keyframes cursorBlink {
+    0%, 100% { border-right-color: var(--accent-cyan); }
+    50% { border-right-color: transparent; }
 }
 
 .hero-description {

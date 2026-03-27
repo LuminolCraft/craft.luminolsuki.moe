@@ -1,5 +1,6 @@
 :root{
     /* 从 base.css 导入的基础颜色变量 */
+    --accent-cyan: #ffffff;
     --vt2-c-white: #ffffff;
     --vt-c-white-soft: #f8f8f8;
     --vt-c-white-mute: #f2f2f2;
