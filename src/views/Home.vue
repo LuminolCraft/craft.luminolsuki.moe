@@ -2514,11 +2514,11 @@ onMounted(async () => {
             const speed = 80;
 
             function typeChar() {
-                if (i < text.length) {
+                if (el && i < text.length) {
                     el.textContent += text.charAt(i);
                     i++;
                     setTimeout(typeChar, speed);
-                } else {
+                } else if (el) {
                     el.classList.add('done');
                 }
             }
@@ -2534,7 +2534,7 @@ onMounted(async () => {
         const headers = document.querySelectorAll('.header-background');
         headers.forEach(header => {
             if (y < window.innerHeight) {
-                header.style.transform = `scale(${1.05 + y * 0.0001}) translateY(${y * 0.15}px)`;
+                (header as HTMLElement).style.transform = `scale(${1.05 + y * 0.0001}) translateY(${y * 0.15}px)`;
             }
         });
     }, { passive: true });
