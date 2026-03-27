@@ -33,7 +33,7 @@ useHead({
   @import './styles/fonts.css';
   @import './styles/theme-colors.css';
   @import './styles/typography.css';
-  @import './styles/responsive.css'; 
+  /* @import './styles/responsive.css';  */
     * {
         margin: 0;
         padding: 0;
