@@ -405,7 +405,7 @@
 
 .hero-subtitle {
     font-size: 1.15rem;
-    color: var(--accent-cyan);
+    color: #aac2da;
     font-weight: 500;
     margin-bottom: 20px;
     height: 1.6em;
@@ -414,7 +414,7 @@
 }
 
 .hero-subtitle .typed-text {
-    border-right: 2px solid var(--accent-cyan);
+    border-right: 2px solid var(--text-primary);
     white-space: nowrap;
     overflow: hidden;
     display: inline-block;
@@ -425,13 +425,13 @@
 }
 
 @keyframes cursorBlink {
-    0%, 100% { border-right-color: var(--accent-cyan); }
+    0%, 100% { border-right-color: var(--text-primary); }
     50% { border-right-color: transparent; }
 }
 
 .hero-description {
     font-size: 0.95rem;
-    color: var(--text-secondary);
+    color: var(--text-primary);
     line-height: 1.8;
     max-width: 560px;
     margin-bottom: 32px;
