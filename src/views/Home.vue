@@ -431,7 +431,7 @@
 
 .hero-description {
     font-size: 0.95rem;
-    color: var(--text-secondary);
+    color: var(--bases-white);
     line-height: 1.8;
     max-width: 560px;
     margin-bottom: 32px;
