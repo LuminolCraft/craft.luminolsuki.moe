@@ -14,8 +14,16 @@ app.use(createPinia())
 app.use(i18n)
 app.use(router)
 
-
-
+head.push({
+    script: [
+        {
+            src:'https://cloud.umami.is/script.js',
+            'data-website-id':'99722dca-d63f-4f8a-91f0-429d18477455',
+            defer: true,
+        },
+    ],
+})
+//<script defer src="https://cloud.umami.is/script.js" data-website-id="99722dca-d63f-4f8a-91f0-429d18477455"></script>
 router.beforeEach((to) => {
     const og = to.meta.og as any
     if (!og) return
