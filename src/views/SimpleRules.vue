@@ -21,6 +21,7 @@
 
 
 <style scoped>
+
 .rules-section {
     padding: var(--space-20) 0;
 }
@@ -33,6 +34,7 @@
 
 .rules-content {
     text-align: left;
+    margin-top: var(--space-12);    
 }
 
 .rules-content h1 {
@@ -58,7 +60,7 @@
 
 .rules-quote {
     box-shadow: var(--shadow-border);
-    background-color: hsla(0, 0%, 98%, 1);
+    background-color: var(--card-bg);
     padding: var(--space-6);
     margin: var(--space-8) 0;
     border-radius: var(--radius-comfortable);
@@ -74,10 +76,37 @@
 
 .back-to-home {
     display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    margin-top: var(--space-6);
+	align-items: center;
+	gap: 10px;
+	padding: 12px 28px;
+	border-radius: var(--radius-comfortable);
+	font-size: 0.9rem;
+	font-weight: 600;
+	text-decoration: none;
+	transition: transform 0.25s,box-shadow 0.25s,background 0.25s;
+	cursor: pointer;
+	border: none;
+	font-family: var(--font-main);
 }
+
+.back-to-home:hover {
+	text-decoration: none;
+}
+.back-to-home:hover::before {
+  left: 100%;
+}
+.back-to-home::before{
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left var(--duration-slow) var(--ease-out);
+}
+
+
 
 @media (max-width: 768px) {
     .rules-section {

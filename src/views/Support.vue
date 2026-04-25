@@ -14,7 +14,7 @@
                             <h3 class="method-title vercel-card-title">{{ t('support.methods.minebbs.title') }}</h3>
                         </div>
                         <p class="method-desc vercel-body-small">{{ t('support.methods.minebbs.desc') }}</p>
-                        <a href="https://www.minebbs.com/threads/luminolcraft.35730/" target="_blank" rel="noopener noreferrer" class="btn vercel-btn vercel-btn-secondary">
+                        <a href="https://www.minebbs.com/threads/luminolcraft.35730/" target="_blank" rel="noopener noreferrer" class="btn vercel-btn vercel-btn-primary">
                             {{ t('support.actions.goTo') }}
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1.5" class="link-icon" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"></path></svg>
                         </a>
@@ -26,7 +26,7 @@
                             <h3 class="method-title vercel-card-title">{{ t('support.methods.klpbbs.title') }}</h3>
                         </div>
                         <p class="method-desc vercel-body-small">{{ t('support.methods.klpbbs.desc') }}</p>
-                        <a href="https://klpbbs.com/thread-162318-1-1.html" target="_blank" rel="noopener noreferrer" class="btn vercel-btn vercel-btn-secondary">
+                        <a href="https://klpbbs.com/thread-162318-1-1.html" target="_blank" rel="noopener noreferrer" class="btn vercel-btn vercel-btn-primary">
                             {{ t('support.actions.goTo') }}
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1.5" class="link-icon" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"></path></svg>
                         </a>
@@ -38,7 +38,7 @@
                             <h3 class="method-title vercel-card-title">{{ t('support.methods.mcmod.title') }}</h3>
                         </div>
                         <p class="method-desc vercel-body-small">{{ t('support.methods.mcmod.desc') }}</p>
-                        <a href="https://play.mcmod.cn/sv20188263.html" target="_blank" rel="noopener noreferrer" class="btn vercel-btn vercel-btn-secondary">
+                        <a href="https://play.mcmod.cn/sv20188263.html" target="_blank" rel="noopener noreferrer" class="btn vercel-btn vercel-btn-primary">
                             {{ t('support.actions.goTo') }}
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1.5" class="link-icon" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"></path></svg>
                         </a>
@@ -62,7 +62,7 @@
                             <h3 class="method-title vercel-card-title">{{ t('support.methods.luminolcraft.title') }}</h3>
                         </div>
                         <p class="method-desc vercel-body-small">{{ t('support.methods.luminolcraft.desc') }}</p>
-                        <a href="https://github.com/LuminolCraft/" target="_blank" rel="noopener noreferrer" class="btn vercel-btn vercel-btn-secondary">
+                        <a href="https://github.com/LuminolCraft/" target="_blank" rel="noopener noreferrer" class="btn vercel-btn vercel-btn-primary">
                             {{ t('support.actions.viewProject') }}
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1.5" class="link-icon" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"></path></svg>
                         </a>
@@ -74,7 +74,7 @@
                             <h3 class="method-title vercel-card-title">{{ t('support.methods.webSource.title') }}</h3>
                         </div>
                         <p class="method-desc vercel-body-small">{{ t('support.methods.webSource.desc') }}</p>
-                        <a href="https://github.com/LuminolCraft/craft.luminolsuki.moe" target="_blank" rel="noopener noreferrer" class="btn vercel-btn vercel-btn-secondary">
+                        <a href="https://github.com/LuminolCraft/craft.luminolsuki.moe" target="_blank" rel="noopener noreferrer" class="btn vercel-btn vercel-btn-primary">
                             {{ t('support.actions.viewProject') }}
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1.5" class="link-icon" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"></path></svg>
                         </a>
