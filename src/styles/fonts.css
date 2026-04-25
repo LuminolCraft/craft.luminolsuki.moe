@@ -1,240 +1,401 @@
 /**
- * 通用字体资源文件
- * 统一管理网站字体配置
+ * Vercel Design System - 字体系统 (Geist-Inspired)
+ * 基于 Vercel 的 Geist 字体规范
  * 
- * @author LuminolCraft Team
- * @version 1.0.0
- * @since 2025-10-26
+ * 核心原则：
+ * - 极端负字间距 (-2.4px to -2.88px at display sizes)
+ * - 三层权重系统 (400/500/600)
+ * - OpenType "liga" 全局启用
+ * - MiSans 作为 Geist 替代字体
  */
 
 /* ===========================================
-   MiSans 字体导入
+   MiSans 字体导入 (Geist Alternative)
+   单一 Variable Font 加载策略 - 最小化请求数
    =========================================== */
 
-/* MiSans 拉丁文字体 (Variable Font) */
-@import url("https://cdn-font.hyperos.mi.com/font/css?family=MiSans_Latin_VF:VF:Latin&display=swap");
-
-/* MiSans 中文字体 (Variable Font) */
+/* MiSans Variable Font: 中文简体 + Latin，覆盖所有权重(100-900) */
 @import url("https://cdn-font.hyperos.mi.com/font/css?family=MiSans_VF:VF:Chinese_Simplify,Latin&display=swap");
 
-/* MiSans 完整字体包 (多字重) */
-@import url("https://cdn-font.hyperos.mi.com/font/css?family=MiSans:100,200,300,400,450,500,600,650,700,900:Chinese_Simplify,Latin&display=swap");
-
 /* ===========================================
-   字体变量定义
+   Vercel 字体变量定义 (Design Tokens)
    =========================================== */
 
 :root {
-    /* 主要字体栈 */
+    /* ---- 主字体栈 (Primary Font Family) ---- */
+    /* 基于 Vercel Geist Sans，使用 MiSans 作为替代 */
     --font-primary: 'MiSans VF', 'MiSans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial, sans-serif;
     
-    /* 等宽字体栈 */
+    /* ---- 等宽字体栈 (Monospace) ---- */
+    /* 基于 Vercel Geist Mono，使用系统等宽字体作为替代 */
     --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Consolas, 'Liberation Mono', Menlo, Monaco, 'Courier New', monospace;
     
-    /* 备用字体栈 */
+    /* ---- 备用字体栈 ---- */
     --font-fallback: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial, sans-serif;
     
-    /* 字体大小变量 */
-    --font-size-xs: 0.75rem;    /* 12px */
-    --font-size-sm: 0.875rem;   /* 14px */
-    --font-size-base: 1rem;    /* 16px */
-    --font-size-lg: 1.125rem;  /* 18px */
-    --font-size-xl: 1.25rem;   /* 20px */
-    --font-size-2xl: 1.5rem;    /* 24px */
-    --font-size-3xl: 1.875rem; /* 30px */
-    --font-size-4xl: 2.25rem;   /* 36px */
-    --font-size-5xl: 3rem;      /* 48px */
+    /* ===========================================
+       Vercel 排版层级系统 (Typography Scale)
+       基于 DESIGN.md 第3节 Typography Rules
+       =========================================== */
     
-    /* 字体权重变量 */
-    --font-weight-light: 300;
-    --font-weight-normal: 400;
-    --font-weight-medium: 500;
-    --font-weight-semibold: 600;
-    --font-weight-bold: 700;
-    --font-weight-extrabold: 800;
+    /* ---- 字体大小 (Font Sizes) ---- */
+    /* Vercel 标准：从 7px (Micro Badge) 到 48px (Display Hero) */
+    --font-size-micro: 0.4375rem;   /* 7px  - Micro Badge */
+    --font-size-caption: 0.75rem;   /* 12px - Caption, Metadata */
+    --font-size-small: 0.875rem;     /* 14px - Button/Link, Body Small */
+    --font-size-body: 1rem;          /* 16px - Body Standard */
+    --font-size-body-large: 1.125rem;/* 18px - Body Large */
+    --font-size-card-title: 1.5rem;  /* 24px - Card Title */
+    --font-size-subheading: 2rem;    /* 32px - Sub-heading */
+    --font-size-section: 2.5rem;     /* 40px - Section Heading */
+    --font-size-display: 3rem;        /* 48px - Display Hero */
     
-    /* 行高变量 */
-    --line-height-tight: 1.25;
-    --line-height-snug: 1.375;
-    --line-height-normal: 1.5;
-    --line-height-relaxed: 1.625;
-    --line-height-loose: 2;
+    /* ---- Vercel 三层权重系统 (Three-Weight System) ---- */
+    /* 严格遵循：400(正文/阅读), 500(UI/交互), 600(标题/强调) */
+    /* 禁止使用 700(bold)，除非 Micro Badge */
+    --font-weight-normal: 400;      /* 正文/阅读 - Body text */
+    --font-weight-medium: 500;      /* UI/交互 - Buttons, Links, Navigation */
+    --font-weight-semibold: 600;    /* 标题/强调 - Headings, Active states */
+    --font-weight-bold: 700;        /* 仅用于 Micro Badge */
+    
+    /* ===========================================
+       Vercel 负字间距系统 (Negative Letter-Spacing)
+       基于 DESIGN.md 第3节 Compression as identity
+       =========================================== */
+    
+    /* Display 尺寸 (48px): 最大压缩 -2.4px to -2.88px */
+    --letter-spacing-tightest: -2.4px;   /* 48px+ 显示标题 */
+    
+    /* Section 尺寸 (40px): 强压缩 -2.4px */
+    --letter-spacing-tighter: -2.0px;    /* 40px 区块标题 */
+    
+    /* Subheading 尺寸 (32px): 中等压缩 -1.28px */
+    --letter-spacing-tight: -1.28px;     /* 32px 子标题 */
+    
+    /* Card Title 尺寸 (24px): 轻微压缩 -0.96px */
+    --letter-spacing-normal: -0.96px;    /* 24px 卡片标题 */
+    
+    /* Body Medium 尺寸 (16px): 微弱压缩 -0.32px */
+    --letter-spacing-relaxed: -0.32px;   /* 16px 强调文本 */
+    
+    /* 标准尺寸 (14px及以下): 零或正常 */
+    --letter-spacing-none: 0;           /* 14px 及以下 */
+    
+    /* ===========================================
+       Vercel 行高系统 (Line Height)
+       基于 DESIGN.md 第3节 Hierarchy 表格
+       =========================================== */
+    
+    /* Tight: 用于显示标题 - 1.00~1.17 */
+    --line-height-tightest: 1.00;      /* Display Hero */
+    --line-height-tight: 1.20;         /* Section Heading */
+    --line-height-snug: 1.25;          /* Sub-heading Large */
+    --line-height-normal: 1.33;        /* Card Title */
+    
+    /* Relaxed: 用于正文 - 1.50~1.80 */
+    --line-height-relaxed: 1.56;       /* Body Standard */
+    --line-height-loose: 1.80;         /* Body Large */
+    --line-height-button: 1.43;        /* Button/Link */
 }
 
 /* ===========================================
-   基础字体样式
+   Vercel 全局字体设置
    =========================================== */
 
-/* 全局字体设置 */
 * {
     font-family: var(--font-primary);
+    
+    /* Vercel 关键特性：全局启用 OpenType ligatures */
+    font-feature-settings: "liga" 1, "kern" 1;
+    -webkit-font-feature-settings: "liga" 1, "kern" 1;
+    -moz-font-feature-settings: "liga" 1, "kern" 1;
 }
 
-/* 等宽字体类 */
+html {
+    font-size: 16px;
+    
+    /* Vercel 字体渲染优化 */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+}
+
+body {
+    font-family: var(--font-primary);
+    font-weight: var(--font-weight-normal); /* 默认 400 权重 */
+    line-height: var(--line-height-relaxed); /* 1.56 行高 */
+}
+
+/* ===========================================
+   Vercel 等宽字体类 (Monospace Classes)
+   =========================================== */
+
 .font-mono {
     font-family: var(--font-mono);
+    
+    /* Vercel Mono 特性：大写 + 连字 */
+    text-transform: uppercase;
+    font-feature-settings: "liga" 1, "tnum" 1;
+    -webkit-font-feature-settings: "liga" 1, "tnum" 1;
 }
 
-/* 备用字体类 */
 .font-fallback {
     font-family: var(--font-fallback);
 }
 
 /* ===========================================
-   字体大小工具类
+   Vercel 字体大小工具类 (Font Size Utilities)
+   基于 DESIGN.md 第3节完整层级
    =========================================== */
 
-.text-xs { font-size: var(--font-size-xs); }
-.text-sm { font-size: var(--font-size-sm); }
-.text-base { font-size: var(--font-size-base); }
-.text-lg { font-size: var(--font-size-lg); }
-.text-xl { font-size: var(--font-size-xl); }
-.text-2xl { font-size: var(--font-size-2xl); }
-.text-3xl { font-size: var(--font-size-3xl); }
-.text-4xl { font-size: var(--font-size-4xl); }
-.text-5xl { font-size: var(--font-size-5xl); }
+.text-micro { 
+    font-size: var(--font-size-micro);      /* 7px */
+    font-weight: var(--font-weight-bold);      /* 700 仅用于 micro badge */
+    letter-spacing: var(--letter-spacing-none);
+    line-height: var(--line-height-tightest);
+    text-transform: uppercase;
+}
+
+.text-caption { 
+    font-size: var(--font-size-caption);     /* 12px */
+    font-weight: var(--font-weight-medium);    /* 500 */
+    letter-spacing: var(--letter-spacing-none);
+    line-height: 1.33;                          /* 1.33 Caption 行高 */
+}
+
+.text-small { 
+    font-size: var(--font-size-small);       /* 14px */
+    font-weight: var(--font-weight-medium);    /* 500 Button/Link */
+    letter-spacing: var(--letter-spacing-none);
+    line-height: var(--line-height-button);    /* 1.43 */
+}
+
+.text-base { 
+    font-size: var(--font-size-body);        /* 16px */
+    font-weight: var(--font-weight-normal);    /* 400 Body */
+    letter-spacing: var(--letter-spacing-none);
+    line-height: var(--line-height-relaxed);   /* 1.56 */
+}
+
+.text-lg { 
+    font-size: var(--font-size-body-large);  /* 18px */
+    font-weight: var(--font-weight-normal);    /* 400 */
+    letter-spacing: var(--letter-spacing-none);
+    line-height: var(--line-height-loose);     /* 1.80 */
+}
+
+.text-xl { 
+    font-size: var(--font-size-card-title);  /* 24px Card Title */
+    font-weight: var(--font-weight-semibold);   /* 600 */
+    letter-spacing: var(--letter-spacing-normal); /* -0.96px */
+    line-height: var(--line-height-normal);    /* 1.33 */
+}
+
+.text-2xl { 
+    font-size: var(--font-size-subheading);  /* 32px Subheading */
+    font-weight: var(--font-weight-semibold);   /* 600 */
+    letter-spacing: var(--letter-spacing-tight);   /* -1.28px */
+    line-height: var(--line-height-snug);      /* 1.25 */
+}
+
+.text-3xl { 
+    font-size: var(--font-size-section);     /* 40px Section */
+    font-weight: var(--font-weight-semibold);   /* 600 */
+    letter-spacing: var(--letter-spacing-tighter); /* -2.0px */
+    line-height: var(--line-height-tight);     /* 1.20 */
+}
+
+.text-4xl { 
+    font-size: var(--font-size-display);     /* 48px Display Hero */
+    font-weight: var(--font-weight-semibold);   /* 600 */
+    letter-spacing: var(--letter-spacing-tightest); /* -2.4px */
+    line-height: var(--line-height-tightest);  /* 1.00 */
+}
 
 /* ===========================================
-   字体权重工具类
+   Vercel 字体权重工具类 (Font Weight Utilities)
+   严格三层权重系统
    =========================================== */
 
-.font-light { font-weight: var(--font-weight-light); }
-.font-normal { font-weight: var(--font-weight-normal); }
-.font-medium { font-weight: var(--font-weight-medium); }
-.font-semibold { font-weight: var(--font-weight-semibold); }
-.font-bold { font-weight: var(--font-weight-bold); }
-.font-extrabold { font-weight: var(--font-weight-extrabold); }
+.font-normal { font-weight: var(--font-weight-normal); }      /* 400 - 正文/阅读 */
+.font-medium { font-weight: var(--font-weight-medium); }      /* 500 - UI/交互 */
+.font-semibold { font-weight: var(--font-weight-semibold); }  /* 600 - 标题/强调 */
+.font-bold { font-weight: var(--font-weight-bold); }          /* 700 - 仅 Micro Badge */
 
 /* ===========================================
-   行高工具类
+   Vercel 行高工具类 (Line Height Utilities)
    =========================================== */
 
-.leading-tight { line-height: var(--line-height-tight); }
-.leading-snug { line-height: var(--line-height-snug); }
-.leading-normal { line-height: var(--line-height-normal); }
-.leading-relaxed { line-height: var(--line-height-relaxed); }
-.leading-loose { line-height: var(--line-height-loose); }
+.leading-tightest { line-height: var(--line-height-tightest); } /* 1.00 */
+.leading-tight { line-height: var(--line-height-tight); }         /* 1.20 */
+.leading-snug { line-height: var(--line-height-snug); }           /* 1.25 */
+.leading-normal { line-height: var(--line-height-normal); }     /* 1.33 */
+.leading-relaxed { line-height: var(--line-height-relaxed); }   /* 1.56 */
+.leading-loose { line-height: var(--line-height-loose); }         /* 1.80 */
 
 /* ===========================================
-   常用文本样式组合
+   Vercel 字母间距工具类 (Letter Spacing Utilities)
+   负字间距系统 - 从最紧到正常
    =========================================== */
 
-/* 标题样式 */
-.heading-1 {
-    font-size: var(--font-size-4xl);
-    font-weight: var(--font-weight-bold);
-    line-height: var(--line-height-tight);
+.tracking-tightest { letter-spacing: var(--letter-spacing-tightest); } /* -2.4px */
+.tracking-tighter { letter-spacing: var(--letter-spacing-tighter); }   /* -2.0px */
+.tracking-tight { letter-spacing: var(--letter-spacing-tight); }       /* -1.28px */
+.tracking-normal { letter-spacing: var(--letter-spacing-normal); }    /* -0.96px */
+.tracking-relaxed { letter-spacing: var(--letter-spacing-relaxed); }   /* -0.32px */
+.tracking-none { letter-spacing: var(--letter-spacing-none); }        /* 0 */
+
+/* ===========================================
+   Vercel 组合样式类 (Composite Classes)
+   基于 DESIGN.md 第3节 Hierarchy 完整定义
+   =========================================== */
+
+/* ---- Display Hero (48px) - 最大冲击力 ---- */
+.display-hero {
+    font-size: var(--font-size-display);            /* 48px */
+    font-weight: var(--font-weight-semibold);         /* 600 */
+    line-height: var(--line-height-tightest);        /* 1.00 */
+    letter-spacing: var(--letter-spacing-tightest);  /* -2.4px ~ -2.88px */
 }
 
-.heading-2 {
-    font-size: var(--font-size-3xl);
-    font-weight: var(--font-weight-semibold);
-    line-height: var(--line-height-snug);
+/* ---- Section Heading (40px) - 功能区标题 ---- */
+.section-heading {
+    font-size: var(--font-size-section);             /* 40px */
+    font-weight: var(--font-weight-semibold);         /* 600 */
+    line-height: var(--line-height-tight);          /* 1.20 */
+    letter-spacing: var(--letter-spacing-tighter);   /* -2.4px */
 }
 
-.heading-3 {
-    font-size: var(--font-size-2xl);
-    font-weight: var(--font-weight-semibold);
-    line-height: var(--line-height-snug);
+/* ---- Subheading Large (32px) - 卡片子标题 ---- */
+.subheading-large {
+    font-size: var(--font-size-subheading);         /* 32px */
+    font-weight: var(--font-weight-semibold);         /* 600 */
+    line-height: var(--line-height-snug);           /* 1.25 */
+    letter-spacing: var(--letter-spacing-tight);     /* -1.28px */
 }
 
-.heading-4 {
-    font-size: var(--font-size-xl);
-    font-weight: var(--font-weight-medium);
-    line-height: var(--line-height-normal);
+/* ---- Subheading (32px) - 轻量子标题 ---- */
+.subheading {
+    font-size: var(--font-size-subheading);         /* 32px */
+    font-weight: var(--font-weight-normal);          /* 400 */
+    line-height: 1.50;                               /* 1.50 */
+    letter-spacing: var(--letter-spacing-tight);     /* -1.28px */
 }
 
-.heading-5 {
-    font-size: var(--font-size-lg);
-    font-weight: var(--font-weight-medium);
-    line-height: var(--line-height-normal);
+/* ---- Card Title (24px) - 卡片标题 ---- */
+.card-title {
+    font-size: var(--font-size-card-title);         /* 24px */
+    font-weight: var(--font-weight-semibold);         /* 600 */
+    line-height: var(--line-height-normal);         /* 1.33 */
+    letter-spacing: var(--letter-spacing-normal);    /* -0.96px */
 }
 
-.heading-6 {
-    font-size: var(--font-size-base);
-    font-weight: var(--font-weight-medium);
-    line-height: var(--line-height-normal);
+/* ---- Card Title Light (24px) - 次要卡片标题 ---- */
+.card-title-light {
+    font-size: var(--font-size-card-title);         /* 24px */
+    font-weight: var(--font-weight-medium);          /* 500 */
+    line-height: var(--line-height-normal);         /* 1.33 */
+    letter-spacing: var(--letter-spacing-normal);    /* -0.96px */
 }
 
-/* 正文样式 */
+/* ---- Body Large (20px) - 引言、功能描述 ---- */
+.body-large {
+    font-size: var(--font-size-body-large);        /* 20px */
+    font-weight: var(--font-weight-normal);          /* 400 */
+    line-height: var(--line-height-loose);          /* 1.80 */
+    letter-spacing: var(--letter-spacing-none);     /* normal */
+}
+
+/* ---- Body (18px) - 标准阅读文本 ---- */
 .body-text {
-    font-size: var(--font-size-base);
-    font-weight: var(--font-weight-normal);
-    line-height: var(--line-height-normal);
+    font-size: 1.125rem;                             /* 18px */
+    font-weight: var(--font-weight-normal);          /* 400 */
+    line-height: var(--line-height-relaxed);        /* 1.56 */
 }
 
+/* ---- Body Small (16px) - 标准UI文本 ---- */
 .body-text-sm {
-    font-size: var(--font-size-sm);
-    font-weight: var(--font-weight-normal);
-    line-height: var(--line-height-normal);
+    font-size: var(--font-size-body);              /* 16px */
+    font-weight: var(--font-weight-normal);          /* 400 */
+    line-height: 1.50;                               /* 1.50 */
 }
 
-/* 代码样式 */
+/* ---- Body Medium (16px) - 导航、强调文本 ---- */
+.body-medium {
+    font-size: var(--font-size-body);              /* 16px */
+    font-weight: var(--font-weight-medium);          /* 500 */
+    line-height: 1.50;                               /* 1.50 */
+}
+
+/* ---- Body Semibold (16px) - 强标签、活跃状态 ---- */
+.body-semibold {
+    font-size: var(--font-size-body);              /* 16px */
+    font-weight: var(--font-weight-semibold);        /* 600 */
+    line-height: 1.50;                               /* 1.50 */
+    letter-spacing: var(--letter-spacing-relaxed);  /* -0.32px */
+}
+
+/* ---- Button / Link (14px) - 按钮、链接 ---- */
+.button-text {
+    font-size: var(--font-size-small);             /* 14px */
+    font-weight: var(--font-weight-medium);          /* 500 */
+    line-height: var(--line-height-button);         /* 1.43 */
+}
+
+/* ---- Button Small (14px) - 紧凑按钮 ---- */
+.button-small {
+    font-size: var(--font-size-small);             /* 14px */
+    font-weight: var(--font-weight-normal);          /* 400 */
+    line-height: 1.00;                               /* 1.00 tight */
+}
+
+/* ---- Caption (12px) - 元数据、标签 ---- */
+.caption {
+    font-size: var(--font-size-caption);            /* 12px */
+    font-weight: var(--font-weight-medium);          /* 400-500 */
+    line-height: 1.33;                               /* 1.33 */
+}
+
+/* ---- Mono Body (16px) - 代码块 ---- */
 .code-text {
     font-family: var(--font-mono);
-    font-size: var(--font-size-sm);
-    font-weight: var(--font-weight-normal);
-    line-height: var(--line-height-normal);
+    font-size: var(--font-size-body);              /* 16px */
+    font-weight: var(--font-weight-normal);          /* 400 */
+    line-height: 1.50;                               /* 1.50 */
 }
 
-/* 小字样式 */
-.small-text {
-    font-size: var(--font-size-xs);
-    font-weight: var(--font-weight-normal);
-    line-height: var(--line-height-normal);
+/* ---- Mono Caption (13px) - 代码标签 ---- */
+.code-caption {
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;                            /* 13px */
+    font-weight: var(--font-weight-medium);          /* 500 */
+    line-height: 1.54;                               /* 1.54 */
+    text-transform: uppercase;
 }
 
-/* ===========================================
-   响应式字体大小
-   =========================================== */
-
-@media (max-width: 768px) {
-    :root {
-        --font-size-xs: 0.7rem;    /* 11.2px */
-        --font-size-sm: 0.8rem;    /* 12.8px */
-        --font-size-base: 0.9rem;  /* 14.4px */
-        --font-size-lg: 1rem;      /* 16px */
-        --font-size-xl: 1.1rem;    /* 17.6px */
-        --font-size-2xl: 1.3rem;   /* 20.8px */
-        --font-size-3xl: 1.6rem;   /* 25.6px */
-        --font-size-4xl: 2rem;     /* 32px */
-        --font-size-5xl: 2.5rem;   /* 40px */
-    }
+/* ---- Mono Small (12px) - 技术标签 ---- */
+.code-small {
+    font-family: var(--font-mono);
+    font-size: var(--font-size-caption);           /* 12px */
+    font-weight: var(--font-weight-medium);          /* 500 */
+    line-height: 1.00;                               /* 1.00 tight */
+    text-transform: uppercase;
 }
 
-@media (max-width: 480px) {
-    :root {
-        --font-size-xs: 0.65rem;   /* 10.4px */
-        --font-size-sm: 0.75rem;   /* 12px */
-        --font-size-base: 0.85rem; /* 13.6px */
-        --font-size-lg: 0.95rem;   /* 15.2px */
-        --font-size-xl: 1.05rem;   /* 16.8px */
-        --font-size-2xl: 1.2rem;   /* 19.2px */
-        --font-size-3xl: 1.4rem;   /* 22.4px */
-        --font-size-4xl: 1.8rem;   /* 28.8px */
-        --font-size-5xl: 2.2rem;   /* 35.2px */
-    }
+/* ---- Micro Badge (7px) - 微型徽章 ---- */
+.micro-badge {
+    font-size: var(--font-size-micro);             /* 7px */
+    font-weight: var(--font-weight-bold);           /* 700 仅允许 bold */
+    line-height: 1.00;                               /* 1.00 tight */
+    text-transform: uppercase;
+    letter-spacing: var(--letter-spacing-none);
 }
 
 /* ===========================================
-   字体加载优化
+   特殊用途字体样式 (Specialty Styles)
    =========================================== */
 
-/* 字体加载时的备用样式 */
-.font-loading {
-    font-family: var(--font-fallback);
-}
-
-/* 字体加载完成后的样式 */
-.font-loaded {
-    font-family: var(--font-primary);
-}
-
-/* ===========================================
-   特殊用途字体样式
-   =========================================== */
-
-/* 数字显示 */
+/* 数字显示 - Tabular Numbers */
 .number-display {
     font-family: var(--font-mono);
     font-weight: var(--font-weight-medium);
@@ -251,42 +412,34 @@
 /* 版本号显示 */
 .version-display {
     font-family: var(--font-mono);
-    font-size: var(--font-size-sm);
+    font-size: var(--font-size-small);
     font-weight: var(--font-weight-normal);
     color: #6b7280;
 }
 
 /* ===========================================
-   字体性能优化
+   Vercel 字体渲染优化
    =========================================== */
 
-/* 预加载关键字体 */
-@font-face {
-    font-family: 'MiSans VF';
-    font-display: swap;
-    src: url('https://cdn-font.hyperos.mi.com/font/woff2/MiSans_VF.woff2') format('woff2-variations');
-    font-weight: 100 900;
-    font-style: normal;
-}
-
-/* 预加载等宽字体 */
-@font-face {
-    font-family: 'MiSans Mono';
-    font-display: swap;
-    src: url('https://cdn-font.hyperos.mi.com/font/woff2/MiSans_Mono.woff2') format('woff2');
-    font-weight: 400;
-    font-style: normal;
-}
-
-/* 字体渲染优化 */
 * {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
 }
 
+/* 文本选择样式 - Vercel Selection Color */
+::selection {
+    background-color: hsla(0, 0%, 95%, 1);  /* --geist-selection-text-color */
+    color: inherit;
+}
+
+::-moz-selection {
+    background-color: hsla(0, 0%, 95%, 1);
+    color: inherit;
+}
+
 /* ===========================================
-   兼容性处理
+   兼容性处理 (Compatibility Fallbacks)
    =========================================== */
 
 /* 不支持CSS变量的浏览器 */
@@ -301,7 +454,7 @@
 }
 
 /* ===========================================
-   调试工具
+   调试工具 (Debugging Tools)
    =========================================== */
 
 /* 字体调试模式 */

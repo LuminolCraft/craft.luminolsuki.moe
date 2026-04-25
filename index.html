@@ -5,10 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="referrer" content="no-referrer" />
     <title>LuminolCraft 服务器 - 加入我们的冒险</title>
+    
+    <!-- 关键字体预加载 - 提升首屏渲染速度 -->
+    <link rel="preload" href="https://cdn-font.hyperos.mi.com/font/woff2/MiSans_VF.woff2" as="font" type="font/woff2-variations" crossorigin>
+    <link rel="preconnect" href="https://cdn-font.hyperos.mi.com" crossorigin>
+    
+    <!-- Favicon 预加载 -->
     <link rel="icon" href="https://imagehosting-ez2.pages.dev/images/favicon.ico">
     <link rel="icon" href="https://imagehosting-ez2.pages.dev/images/favicon.png" type="image/png">
-    <!-- Font Awesome CDN -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css">
+    
+    <!-- Font Awesome CDN (延迟加载，不阻塞首屏) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" media="print" onload="this.media='all'">
+    <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css"></noscript>
+    
     <script defer src="https://cloud.umami.is/script.js" data-website-id="99722dca-d63f-4f8a-91f0-429d18477455"></script>
   </head>
   <body>

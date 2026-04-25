@@ -72,30 +72,511 @@
 @import '../styles/desktop/news-detail-styles.css';
 @import '../styles/mobile/news-detail-mobile.css';
 
-.loading-message,
-.error-message {
-  text-align: center;
-  padding: 40px 20px;
+/* Vercel Design System - News Detail Page (保留原有背景色) */
+
+.news-detail-section {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: var(--vercel-space-12, 48px) var(--spacing-4);
 }
 
-.error-message h3 {
-  color: #ff6b6b;
-  margin-bottom: 10px;
+/* 新闻详情标题 - Vercel Typography */
+#news-detail h2 {
+    font-size: clamp(2rem, 5vw, 3rem);
+    font-weight: var(--vercel-weight-semibold);
+    line-height: var(--vercel-leading-snug);
+    letter-spacing: var(--vercel-tracking-tighter);
+    color: var(--text-color);
+    margin-bottom: var(--vercel-space-4, 16px);
 }
 
+/* 新闻日期 - Vercel Caption Style */
+.news-date {
+    font-size: 14px;
+    font-weight: var(--vercel-weight-medium);
+    color: var(--text-secondary);
+    margin-bottom: var(--vercel-space-3, 12px);
+    letter-spacing: var(--vercel-tracking-none);
+}
+
+/* 新闻标签 - Vercel Badge Style */
+.news-tags {
+    display: flex;
+    gap: var(--vercel-space-2, 8px);
+    flex-wrap: wrap;
+    margin-bottom: var(--vercel-space-6, 24px);
+}
+
+.tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: var(--vercel-radius-pill, 9999px);
+    background: var(--glass-bg, rgba(158, 148, 216, 0.12));
+    color: var(--primary-color, #a78bfa);
+    font-size: 13px;
+    font-weight: var(--vercel-weight-medium, 500);
+    letter-spacing: 0.02em;
+    transition: all var(--vercel-duration-fast, 150ms) var(--vercel-ease-out, ease-out);
+}
+
+.tag:hover {
+    background: var(--primary-color, #a78bfa);
+    color: var(--white, #ffffff);
+}
+
+/* 新闻图片 */
+.news-img {
+    width: 100%;
+    height: 400px;
+    border-radius: var(--vercel-radius-image);
+    background-size: cover;
+    background-position: center;
+    margin-bottom: var(--vercel-space-8, 32px);
+    box-shadow: var(--vercel-shadow-card);
+}
+
+/* 新闻内容 - Vercel Typography（普通容器，不做滚动） */
+.news-content {
+    font-size: 1.125rem;
+    font-weight: var(--vercel-weight-normal);
+    line-height: var(--vercel-leading-relaxed);
+    color: var(--text-color);
+    margin-bottom: var(--vercel-space-10, 40px);
+}
+
+.news-content :is(h1, h2, h3, h4, h5, h6) {
+    font-weight: var(--vercel-weight-semibold);
+    line-height: var(--vercel-leading-snug);
+    letter-spacing: var(--vercel-tracking-tight);
+    color: var(--text-color);
+    margin-top: var(--vercel-space-8, 32px);
+    margin-bottom: var(--vercel-space-4, 16px);
+}
+
+.news-content p {
+    margin-bottom: var(--vercel-space-4, 16px);
+}
+
+.news-content a {
+    color: var(--link-color);
+    text-decoration: none;
+    transition: all var(--vercel-duration-fast) var(--vercel-ease-out);
+}
+
+.news-content a:hover {
+    color: var(--link-hover-color);
+    text-decoration: underline;
+}
+
+.news-content code {
+    font-family: var(--vercel-mono-family, var(--font-mono));
+    font-size: 0.9em;
+    background: rgba(158, 148, 216, 0.1);
+    padding: 2px 6px;
+    border-radius: var(--vercel-radius-micro);
+    color: var(--text-color);
+}
+
+.news-content pre {
+    background: var(--card-bg);
+    border-radius: var(--vercel-radius-comfortable);
+    padding: var(--vercel-space-5, 20px);
+    overflow-x: auto;
+    margin: var(--vercel-space-6, 24px) 0;
+    box-shadow: var(--vercel-shadow-border);
+}
+
+.news-content pre code {
+    background: transparent;
+    padding: 0;
+    border-radius: 0;
+}
+
+/* =============================================
+   Table 样式 - table 自身作为独立滚动容器
+   超出部分隐藏 + 水平/垂直滚动条
+   ============================================= */
+
+.news-content > table,
+.news-content table {
+    /* 核心：table 作为滚动容器 */
+    display: block;
+
+    /* 尺寸约束 - 关键！确保不溢出父容器 */
+    width: auto;
+    max-width: 100% !important;  /* 强制：不超过 .news-content 宽度 */
+    max-height: 60vh !important;   /* 最大高度，超出显示垂直滚动条 */
+
+    /* 滚动行为 - 超出内容隐藏，显示滚动条 */
+    overflow-x: auto !important;     /* 水平滚动 */
+    overflow-y: auto !important;     /* 垂直滚动 */
+    -webkit-overflow-scrolling: touch;
+
+    /* Firefox 滚动条样式 */
+    scrollbar-width: thin;
+    scrollbar-color: var(--primary-color) transparent;
+    scrollbar-gutter: stable;
+
+    /* 表格基础样式 */
+    border-collapse: collapse;
+    margin: var(--vercel-space-6, 24px) 0;
+    font-size: 14px;
+    box-shadow: var(--vercel-shadow-border);
+    border-radius: var(--vercel-radius-comfortable);
+}
+
+/* thead 样式 */
+.news-content thead {
+    background: var(--card-bg);
+    display: table-header-group; /* 保持正常表格头组布局 */
+}
+
+.news-content thead tr {
+    display: table-row;
+}
+
+/* tbody 样式 */
+.news-content tbody {
+    display: table-row-group; /* 保持正常表格体组布局 */
+}
+
+.news-content tbody tr {
+    display: table-row;
+}
+
+/* th/td 单元格样式 */
+.news-content th,
+.news-content td {
+    display: table-cell; /* 保持单元格布局 */
+    padding: var(--vercel-space-3, 12px) var(--vercel-space-4, 16px);
+    text-align: left;
+    border-bottom: 1px solid var(--glass-border);
+    color: var(--text-color);
+
+    /* 防止单元格无限撑开表格 */
+    max-width: 180px;        /* 限制单列最大宽度 */
+    min-width: 70px;         /* 最小宽度 */
+    word-wrap: break-word;      /* 长单词换行 */
+    overflow-wrap: break-word;  /* 同上 */
+    white-space: normal;         /* 允许换行 */
+    vertical-align: top;
+}
+
+.news-content th {
+    font-weight: var(--vercel-weight-semibold);
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-secondary);
+    background: rgba(158, 148, 216, 0.05);
+}
+
+.news-content tbody tr:hover {
+    background: rgba(158, 148, 216, 0.08);
+}
+
+.news-content tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* Webkit 浏览器自定义滚动条样式 - 应用到 table 元素 */
+.news-content > table::-webkit-scrollbar,
+.news-content table::-webkit-scrollbar {
+    width: 8px;   /* 垂直滚动条宽度 */
+    height: 8px;  /* 水平滚动条高度 */
+}
+
+.news-content > table::-webkit-scrollbar-track,
+.news-content table::-webkit-scrollbar-track {
+    background: transparent;
+    border-radius: var(--vercel-radius-pill);
+}
+
+.news-content > table::-webkit-scrollbar-thumb,
+.news-content table::-webkit-scrollbar-thumb {
+    background: var(--primary-color);
+    border-radius: var(--vercel-radius-pill);
+    opacity: 0.6;
+}
+
+.news-content > table::-webkit-scrollbar-thumb:hover,
+.news-content table::-webkit-scrollbar-thumb:hover {
+    background: var(--button-hover);
+    opacity: 1;
+}
+
+.news-content > table::-webkit-scrollbar-corner,
+.news-content table::-webkit-scrollbar-corner {
+    background: transparent;
+}
+
+/* Firefox 滚动条样式已在上面通过 scrollbar-width 和 scrollbar-color 设置 */
+
+.news-content blockquote {
+    border-left: 3px solid var(--primary-color);
+    padding-left: var(--vercel-space-5, 20px);
+    margin: var(--vercel-space-6, 24px) 0;
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+.news-content ul,
+.news-content ol {
+    padding-left: var(--vercel-space-6, 24px);
+    margin-bottom: var(--vercel-space-4, 16px);
+}
+
+.news-content li {
+    margin-bottom: var(--vercel-space-2, 8px);
+    line-height: var(--vercel-leading-relaxed);
+}
+
+/* 图片画廊 - Vercel Grid Style */
+.gallery-section {
+    margin-top: var(--vercel-space-10, 40px);
+    padding-top: var(--vercel-space-8, 32px);
+    border-top: 1px solid var(--glass-border);
+}
+
+.gallery-section h3 {
+    font-size: 1.5rem;
+    font-weight: var(--vercel-weight-semibold);
+    line-height: var(--vercel-leading-normal);
+    letter-spacing: var(--vercel-tracking-normal);
+    color: var(--text-color);
+    margin-bottom: var(--vercel-space-6, 24px);
+}
+
+.gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: var(--vercel-space-4, 16px);
+}
+
+.gallery-item {
+    aspect-ratio: 16 / 9;
+    border-radius: var(--vercel-radius-comfortable);
+    overflow: hidden;
+    cursor: pointer;
+    box-shadow: var(--vercel-shadow-border);
+    transition: all var(--vercel-duration-fast) var(--vercel-ease-out);
+}
+
+.gallery-item:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--vercel-shadow-hover);
+}
+
+.gallery-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform var(--vercel-duration-slow) var(--vercel-ease-out);
+}
+
+.gallery-item:hover img {
+    transform: scale(1.05);
+}
+
+.empty-message {
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 14px;
+    font-weight: var(--vercel-weight-normal);
+    padding: var(--vercel-space-6, 24px);
+}
+
+/* 返回按钮 - Vercel Button Style */
 .back-to-news {
-  display: inline-block;
-  margin-top: 20px;
-  padding: 10px 20px;
-  background-color: var(--primary-color, #6366f1);
-  color: white;
-  text-decoration: none;
-  border-radius: 4px;
-  transition: background-color 0.3s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 18px;
+    border-radius: var(--vercel-radius-standard);
+    background: var(--primary-color);
+    color: var(--text-primary);
+    font-family: var(--vercel-font-family, var(--font-primary));
+    font-size: 14px;
+    font-weight: var(--vercel-weight-medium);
+    text-decoration: none;
+    margin-top: var(--vercel-space-8, 32px);
+    transition: all var(--vercel-duration-fast) var(--vercel-ease-out);
+    box-shadow: var(--vercel-shadow-border);
 }
 
 .back-to-news:hover {
-  background-color: var(--primary-hover-color, #4f46e5);
+    transform: translateY(-1px);
+    box-shadow: var(--vercel-shadow-hover);
+    background: var(--button-hover);
+}
+
+/* 加载和错误状态 - Vercel Card Style */
+.loading-message,
+.error-message {
+    text-align: center;
+    padding: var(--vercel-space-10, 40px) var(--vercel-space-5, 20px);
+    background: var(--card-bg);
+    border-radius: var(--vercel-radius-comfortable);
+    box-shadow: var(--vercel-shadow-card);
+    max-width: 600px;
+    margin: var(--vercel-space-8, 32px) auto;
+}
+
+.error-message h3 {
+    font-size: 1.25rem;
+    font-weight: var(--vercel-weight-semibold);
+    color: var(--error-color);
+    margin-bottom: var(--vercel-space-3, 12px);
+    letter-spacing: var(--vercel-tracking-normal);
+}
+
+.error-message p {
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: var(--vercel-leading-relaxed);
+    margin-bottom: var(--vercel-space-4, 16px);
+}
+
+.error-message button,
+.error-message .back-to-news {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 18px;
+    border-radius: var(--vercel-radius-standard);
+    background: var(--primary-color);
+    color: var(--text-primary);
+    font-family: var(--vercel-font-family, var(--font-primary));
+    font-size: 14px;
+    font-weight: var(--vercel-weight-medium);
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all var(--vercel-duration-fast) var(--vercel-ease-out);
+    box-shadow: var(--vercel-shadow-border);
+}
+
+.error-message button:hover,
+.error-message .back-to-news:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--vercel-shadow-hover);
+}
+
+/* Lightbox - Vercel Overlay Style */
+.lightbox {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(23, 23, 23, 0.95);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: vercel-fadeIn var(--vercel-duration-fast) var(--vercel-ease-out);
+}
+
+.lightbox-image {
+    max-width: 90%;
+    max-height: 90vh;
+    object-fit: contain;
+    border-radius: var(--vercel-radius-image);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+}
+
+.lightbox-close,
+.lightbox-prev,
+.lightbox-next {
+    position: absolute;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--card-bg);
+    border-radius: var(--vercel-radius-circle);
+    color: var(--text-color);
+    font-size: 28px;
+    cursor: pointer;
+    transition: all var(--vercel-duration-fast) var(--vercel-ease-out);
+    box-shadow: var(--vercel-shadow-border);
+}
+
+.lightbox-close:hover,
+.lightbox-prev:hover,
+.lightbox-next:hover {
+    background: var(--primary-color);
+    color: var(--text-primary);
+    transform: scale(1.1);
+}
+
+.lightbox-close {
+    top: 20px;
+    right: 20px;
+}
+
+.lightbox-prev {
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.lightbox-next {
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.lightbox-prev:hover,
+.lightbox-next:hover {
+    transform: translateY(-50%) scale(1.1);
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .news-detail-section {
+        padding: var(--vercel-space-8, 32px) var(--spacing-3);
+    }
+
+    #news-detail h2 {
+        font-size: 2rem;
+        letter-spacing: var(--vercel-tracking-tight);
+    }
+
+    .news-img {
+        height: 250px;
+    }
+
+    .gallery-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .lightbox-close,
+    .lightbox-prev,
+    .lightbox-next {
+        width: 36px;
+        height: 36px;
+        font-size: 24px;
+    }
+}
+
+@media (max-width: 480px) {
+    .news-detail-section {
+        padding: var(--vercel-space-6, 24px) var(--spacing-2);
+    }
+
+    #news-detail h2 {
+        font-size: 1.75rem;
+    }
+
+    .news-content {
+        font-size: 1rem;
+    }
 }
 </style>
 

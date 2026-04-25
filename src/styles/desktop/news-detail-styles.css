@@ -438,11 +438,15 @@ body::after {
 }
 
 .news-detail-section .tag {
-    background: var(--tag-bg);
-    color: var(--tag-text);
-    padding: 4px 8px;
-    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 9999px;
+    background: var(--glass-bg, rgba(158, 148, 216, 0.12));
+    color: var(--primary-color, #a78bfa);
     font-size: 0.85em;
+    font-weight: 500;
+    letter-spacing: 0.02em;
 }
 
 .news-detail-section .news-img {

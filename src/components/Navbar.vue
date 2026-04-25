@@ -9,17 +9,27 @@
 
       <!-- 侧边导航栏 -->
       <div class="side-nav" ref="sideNav">
-        <router-link to="/">{{ t('common.home') }}</router-link>
-        <router-link to="/SimpleRules">{{ t('common.rules') }} ({{ t('common.simpleRules') }})</router-link>
+        <router-link to="/">
+          {{ t('common.home') }}
+        </router-link>
+        <router-link to="/SimpleRules" class="nav-link">
+          {{ t('common.rules') }} ({{ t('common.simpleRules') }})
+        </router-link>
         <a class="dropdown-ico" href="https://docs.qq.com/pdf/DQUZYS0FKenFmYWZx" target="_blank" rel="noopener noreferrer">
           {{ t('common.rules') }} ({{ t('common.detailedRules') }})
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1.5" class="h-4 w-4 ml-1 align-sub" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"></path>
             </svg>
         </a>
-        <router-link to="/Support">{{ t('common.support') }}</router-link>
-        <router-link to="/News">{{ t('common.news') }}</router-link>
-        <router-link to="/Monitoring">{{ t('common.monitoring') }}</router-link>
+        <router-link to="/Support">
+          {{ t('common.support') }}
+        </router-link>
+        <router-link to="/News">
+          {{ t('common.news') }}
+        </router-link>
+        <router-link to="/Monitoring">
+          {{ t('common.monitoring') }}
+        </router-link>
         <LanguageSwitcher v-if="appConfig.showLanguageToggle" />
       </div>
 
@@ -38,8 +48,9 @@
   
       <div class="AAA">
         <div class="nav-links">
-          <!-- <router-link to="/">主页</router-link> -->
-          <a href="/">{{ t('common.home') }}</a>
+          <router-link to="/" class="nav-link">
+          {{ t('common.home') }}
+        </router-link>
           <div class="dropdown">
             <a href="#" class="dropdown-toggle">{{ t('common.rules') }}
                 <svg class="menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -47,16 +58,24 @@
                 </svg>
             </a>
             <div class="dropdown-menu">
-                <router-link class="dropdown-item" to="/SimpleRules">{{ t('common.simpleRules') }}</router-link>
+                <router-link to="/SimpleRules" class="dropdown-item nav-link">
+                  {{ t('common.simpleRules') }}
+                </router-link>
                     <!-- <svg  xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1.5" class="h-4 w-4 ml-1 align-sub" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"></path></svg> -->
                 <a href="https://docs.qq.com/pdf/DQUZYS0FKenFmYWZx" target="_blank" rel="noopener noreferrer"  class="dropdown-item">{{ t('common.detailedRules') }}
                     <svg  xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1.5" class="h-4 w-4 ml-1 align-sub" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"></path></svg>
                 </a>
             </div>
         </div>
-          <router-link to="/Support">{{ t('common.support') }}</router-link>
-          <router-link to="/News">{{ t('common.news') }}</router-link>
-          <router-link to="/Monitoring">{{ t('common.monitoring') }}</router-link>
+          <router-link to="/Support" class="nav-link">
+            {{ t('common.support') }}
+          </router-link>
+          <router-link to="/News" class="nav-link">
+            {{ t('common.news') }}
+          </router-link>
+          <router-link to="/Monitoring" class="nav-link">
+            {{ t('common.monitoring') }}
+          </router-link>
           <LanguageSwitcher v-if="appConfig.showLanguageToggle" />
         </div>
         

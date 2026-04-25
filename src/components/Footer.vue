@@ -83,9 +83,9 @@ onMounted(() => {
     <div class="footer-transition-section">
         <div class="footer-wave-divider">
             <svg viewBox="0 0 1200 120" preserveAspectRatio="none">
-                <path class="footer-wave-path" opacity=".3" fill="var(--footer-background-color)"></path>
-                <path class="footer-wave-path" opacity=".6" fill="var(--footer-background-color)"></path>
-                <path class="footer-wave-path" fill="var(--footer-background-color)"></path>
+                <path class="footer-wave-path" opacity=".3" fill="var(--bases-footer-background-color)"></path>
+                <path class="footer-wave-path" opacity=".6" fill="var(--bases-footer-background-color)"></path>
+                <path class="footer-wave-path" fill="var(--bases-footer-background-color)"></path>
             </svg>
         </div>
     </div>
@@ -216,7 +216,7 @@ p{
 }
 
 .footer-wave-path {
-    fill: var(--footer-background-color);
+    fill: var(--bases-footer-background-color);
 }
 
 /* Footer base */

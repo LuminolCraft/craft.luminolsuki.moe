@@ -1,189 +1,259 @@
 /**
- * 排版系统 - 统一管理网站排版样式
+ * 排版系统 - 基于 Vercel Geist Design System
+ * 
+ * 核心原则：
+ * - 三层权重系统: 400(正文/阅读) / 500(UI/交互) / 600(标题/强调)
+ * - 负字间距系统: -2.4px(48px) → -0.32px(16px) → 0(14px)
+ * - Shadow-as-Border 技术替代传统边框
+ * - OpenType ligatures 全局启用
  * 
  * @author LuminolCraft Team
- * @version 2.0.0
+ * @version 3.0.0
  * @since 2025-12-27
  */
 
 /* ===========================================
-   排版系统基础配置
+   排版系统基础配置 (Vercel Design Tokens)
    =========================================== */
 
-/* 字体变量确保存在 - 如果 fonts.css 未加载时的备用定义 */
 :root {
-    /* 字体样式 - 如果 fonts.css 未导入时的备用定义 */
+    /* ---- 字体族 ---- */
     --font-primary: 'MiSans VF', 'MiSans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial, sans-serif;
     --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Consolas, 'Liberation Mono', Menlo, Monaco, 'Courier New', monospace;
-    
-    /* 字体大小 - 如果 fonts.css 未导入时的备用定义 */
-    --font-size-xs: 0.75rem;    /* 12px */
-    --font-size-sm: 0.875rem;   /* 14px */
-    --font-size-base: 1rem;    /* 16px */
-    --font-size-lg: 1.125rem;  /* 18px */
-    --font-size-xl: 1.25rem;   /* 20px */
-    --font-size-2xl: 1.5rem;    /* 24px */
-    --font-size-3xl: 1.875rem; /* 30px */
-    --font-size-4xl: 2.25rem;   /* 36px */
-    --font-size-5xl: 3rem;      /* 48px */
-    
-    /* 字体权重 - 如果 fonts.css 未导入时的备用定义 */
-    --font-weight-light: 300;
+
+    /* ---- 三层权重系统 ---- */
     --font-weight-normal: 400;
     --font-weight-medium: 500;
     --font-weight-semibold: 600;
     --font-weight-bold: 700;
-    --font-weight-extrabold: 800;
-    
-    /* 行高 - 如果 fonts.css 未导入时的备用定义 */
-    --line-height-tight: 1.25;
-    --line-height-snug: 1.375;
-    --line-height-normal: 1.5;
-    --line-height-relaxed: 1.625;
-    --line-height-loose: 2;
-    
-    /* 间距系统 */
-    --spacing-0: 0;
-    --spacing-1: 0.25rem;   /* 4px */
-    --spacing-2: 0.5rem;    /* 8px */
-    --spacing-3: 0.75rem;   /* 12px */
-    --spacing-4: 1rem;      /* 16px */
-    --spacing-5: 1.25rem;   /* 20px */
-    --spacing-6: 1.35rem;    /* 24px */
-    --spacing-8: 2rem;      /* 32px */
-    --spacing-10: 2.5rem;   /* 40px */
-    --spacing-12: 3rem;     /* 48px */
-    --spacing-16: 4rem;     /* 64px */
-    --spacing-20: 5rem;     /* 80px */
-    --spacing-24: 6rem;     /* 96px */
-    --spacing-32: 8rem;     /* 128px */
-    
-    /* 边框圆角 */
-    --radius-sm: 0.25rem;   /* 4px */
-    --radius-md: 0.5rem;    /* 8px */
-    --radius-lg: 0.75rem;   /* 12px */
-    --radius-xl: 1rem;      /* 16px */
-    --radius-2xl: 1.5rem;   /* 24px */
-    --radius-3xl: 2rem;     /* 32px */
-    --radius-full: 9999px;
-    
-    /* 过渡效果 */
-    --transition-fast: 0.15s ease;
-    --transition-normal: 0.3s ease;
-    --transition-slow: 0.5s ease;
-    
-    /* 阴影效果 */
-    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
-    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
-    --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
-    --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.1);
-    
-    /* 排版层级结构 */
-    --typography-scale: 1.25;
-    
-    /* 文本颜色 - 浅色主题默认值 */
-    --text-color: #1e293b;
-    --text-secondary: #64748b;
-    --text-tertiary: #94a3b8;
-    --link-color: #6366f1;
-    --link-hover-color: #4f46e5;
-    
 
-    
-    /* 标题样式 */
-    --heading-font-weight: var(--font-weight-bold);
+    /* ---- 字体大小 (Vercel Scale) ---- */
+    --font-size-display: 3rem;       /* 48px Display Hero */
+    --font-size-section: 2.5rem;     /* 40px Section Heading */
+    --font-size-subheading: 2rem;    /* 32px Sub-heading Large */
+    --font-size-card-title: 1.5rem;  /* 24px Card Title */
+    --font-size-body-large: 1.25rem; /* 20px Body Large */
+    --font-size-body: 1.125rem;      /* 18px Body */
+    --font-size-body-small: 1rem;    /* 16px Body Small */
+    --font-size-button: 0.875rem;    /* 14px Button/Link */
+    --font-size-caption: 0.75rem;    /* 12px Caption */
+    --font-size-mono-caption: 0.81rem; /* 13px Mono Caption */
+    --font-size-mono-small: 0.75rem; /* 12px Mono Small */
+    --font-size-micro: 0.44rem;      /* 7px Micro Badge */
+
+    /* ---- 负字间距系统 ---- */
+    --letter-spacing-tightest: -2.4px;   /* 48px Display Hero */
+    --letter-spacing-tighter: -2.0px;    /* 40px Section Heading */
+    --letter-spacing-tight: -1.28px;     /* 32px Sub-heading */
+    --letter-spacing-normal: -0.96px;    /* 24px Card Title */
+    --letter-spacing-relaxed: -0.32px;   /* 16px Body Semibold */
+    --letter-spacing-none: 0;            /* 14px 及以下 */
+
+    /* ---- 行高系统 (Vercel Scale) ---- */
+    --line-height-tightest: 1.00;      /* Display Hero */
+    --line-height-tight: 1.20;         /* Section Heading */
+    --line-height-snug: 1.25;          /* Sub-heading Large */
+    --line-height-normal: 1.33;        /* Card Title */
+    --line-height-base: 1.50;          /* Body Small/Medium */
+    --line-height-relaxed: 1.56;       /* Body */
+    --line-height-loose: 1.80;         /* Body Large */
+    --line-height-button: 1.43;        /* Button/Link */
+    --line-height-caption: 1.33;       /* Caption */
+    --line-height-mono: 1.50;          /* Mono Body */
+    --line-height-mono-caption: 1.54;  /* Mono Caption */
+    --line-height-mono-tight: 1.00;    /* Mono Small/Micro */
+
+    /* ---- 间距系统 (8px Base Unit) ---- */
+    --spacing-0: 0;
+    --spacing-1: 4px;
+    --spacing-2: 8px;
+    --spacing-3: 12px;
+    --spacing-4: 16px;
+    --spacing-5: 20px;
+    --spacing-6: 24px;
+    --spacing-8: 32px;
+    --spacing-10: 40px;
+    --spacing-12: 48px;
+    --spacing-14: 56px;
+    --spacing-16: 64px;
+    --spacing-32: 128px;
+    --spacing-36: 144px;
+    --spacing-40: 160px;
+
+    /* ---- 圆角系统 ---- */
+    --radius-micro: 2px;
+    --radius-subtle: 4px;
+    --radius-standard: 6px;
+    --radius-comfortable: 8px;
+    --radius-image: 12px;
+    --radius-large: 64px;
+    --radius-xl: 100px;
+    --radius-pill: 9999px;
+    --radius-circle: 50%;
+
+    /* ---- 过渡效果 ---- */
+    --transition-fast: 150ms ease-out;
+    --transition-normal: 250ms ease-out;
+    --transition-slow: 350ms ease-out;
+
+    /* ---- 阴影系统 (Shadow-as-Border) ---- */
+    --shadow-border: rgba(0, 0, 0, 0.08) 0px 0px 0px 1px;
+    --shadow-light-border: rgb(235, 235, 235) 0px 0px 0px 1px;
+    --shadow-subtle: rgba(0, 0, 0, 0.04) 0px 2px 2px;
+    --shadow-card:
+        rgba(0, 0, 0, 0.08) 0px 0px 0px 1px,
+        rgba(0, 0, 0, 0.04) 0px 2px 2px,
+        rgba(0, 0, 0, 0.04) 0px 8px 8px -8px,
+        #fafafa 0px 0px 0px 1px;
+    --shadow-hover:
+        rgba(0, 0, 0, 0.08) 0px 0px 0px 1px,
+        rgba(0, 0, 0, 0.06) 0px 4px 8px,
+        rgba(0, 0, 0, 0.02) 0px 12px 16px -4px;
+
+    /* ---- 文本颜色 (兼容现有主题) ---- */
+    --text-color: var(--bases-text-color, #171717);
+    --text-secondary: var(--bases-text-secondary, #666666);
+    --text-tertiary: var(--bases-text-light-2, #808080);
+
+    /* ---- 链接颜色 (项目紫色主题) ---- */
+    --link-color: var(--bases-primary);
+    --link-hover-color: var(--button-hover);
+    --focus-ring-color: var(--bases-primary);
+
+    /* ---- 标题样式 ---- */
+    --heading-font-weight: var(--font-weight-semibold);
     --heading-line-height: var(--line-height-tight);
     --heading-margin-bottom: var(--spacing-4);
-    
-    /* 正文样式 */
+
+    /* ---- 正文样式 ---- */
     --body-font-weight: var(--font-weight-normal);
-    --body-line-height: var(--line-height-relaxed);
+    --body-line-height: var(--line-height-loose);
     --body-margin-bottom: var(--spacing-4);
-    
-    /* 按钮样式 */
+
+    /* ---- 按钮样式 ---- */
     --button-font-weight: var(--font-weight-medium);
-    --button-line-height: var(--line-height-normal);
-    --button-padding: var(--spacing-3) var(--spacing-6);
-    --button-border-radius: var(--radius-lg);
-    
-    /* 链接样式 */
-    --link-color: var(--primary-color);
-    --link-hover-color: var(--button-hover);
-    --link-transition: color var(--transition-fast);
-    
-    /* 代码样式 */
+    --button-line-height: var(--line-height-button);
+    --button-padding: var(--spacing-2) var(--spacing-4);
+    --button-border-radius: var(--radius-standard);
+
+    /* ---- 代码样式 (项目紫色主题) ---- */
     --code-font-family: var(--font-mono);
-    --code-font-size: 0.9em;
-    --code-background-color: rgba(156, 163, 175, 0.1);
+    --code-font-size: 1rem;
+    --code-background-color: var(--glass-bg, hsla(0, 0%, 98%, 1));
     --code-padding: var(--spacing-1) var(--spacing-2);
-    --code-border-radius: var(--radius-sm);
-    
-    /* 列表样式 */
+    --code-border-radius: var(--radius-micro);
+
+    /* ---- 列表样式 ---- */
     --list-margin-bottom: var(--spacing-4);
     --list-padding-left: var(--spacing-6);
     --list-item-margin-bottom: var(--spacing-2);
-    
-    /* 表格样式 */
-    --table-border-color: var(--border-color);
-    --table-row-hover-background-color: rgba(156, 163, 175, 0.05);
+
+    /* ---- 表格样式 ---- */
+    --table-shadow: var(--shadow-border);
     --table-cell-padding: var(--spacing-3) var(--spacing-4);
-    
-    /* 引用样式 */
-    --quote-border-color: var(--primary-color);
-    --quote-background-color: rgba(158, 148, 216, 0.05);
+
+    /* ---- 引用样式 (项目紫色主题) ---- */
+    --quote-shadow: var(--shadow-border);
+    --quote-background-color: var(--glass-bg, hsla(0, 0%, 98%, 1));
     --quote-padding: var(--spacing-6);
     --quote-margin: var(--spacing-6) 0;
-    --quote-font-style: italic;
-    
-    /* 分隔线样式 */
-    --divider-color: var(--border-color);
+    --quote-border-radius: 0 var(--radius-comfortable) var(--radius-comfortable) 0;
+
+    /* ---- 分隔线样式 ---- */
+    --divider-color: #ebebeb;
     --divider-height: 1px;
     --divider-margin: var(--spacing-8) 0;
+
+    /* ---- 选择文本颜色 ---- */
+    --selection-bg: hsla(0, 0%, 95%, 1);
 }
 
 /* ===========================================
-   排版层级结构
+   全局排版基础
    =========================================== */
 
-/* 标题样式 */
-h1, h2, h3, h4, h5, h6 {
-    font-weight: var(--heading-font-weight);
-    line-height: var(--heading-line-height);
+*,
+*::before,
+*::after {
+    font-feature-settings: "liga" 1, "kern" 1;
+}
+
+::selection {
+    background-color: var(--selection-bg);
+}
+
+::-moz-selection {
+    background-color: var(--selection-bg);
+}
+
+/* ===========================================
+   标题层级 (Vercel Hierarchy)
+   =========================================== */
+
+h1,
+.h1 {
+    font-size: var(--font-size-display);
+    font-weight: var(--font-weight-semibold);
+    line-height: var(--line-height-tightest);
+    letter-spacing: var(--letter-spacing-tightest);
     margin-bottom: var(--heading-margin-bottom);
     color: var(--text-color);
 }
 
-h1 {
-    font-size: var(--font-size-4xl);
-    letter-spacing: -0.025em;
+h2,
+.h2 {
+    font-size: var(--font-size-section);
+    font-weight: var(--font-weight-semibold);
+    line-height: var(--line-height-tight);
+    letter-spacing: var(--letter-spacing-tighter);
+    margin-bottom: var(--heading-margin-bottom);
+    color: var(--text-color);
 }
 
-h2 {
-    font-size: var(--font-size-3xl);
-    letter-spacing: -0.025em;
+h3,
+.h3 {
+    font-size: var(--font-size-subheading);
+    font-weight: var(--font-weight-semibold);
+    line-height: var(--line-height-snug);
+    letter-spacing: var(--letter-spacing-tight);
+    margin-bottom: var(--heading-margin-bottom);
+    color: var(--text-color);
 }
 
-h3 {
-    font-size: var(--font-size-2xl);
-    letter-spacing: -0.025em;
+h4,
+.h4 {
+    font-size: var(--font-size-card-title);
+    font-weight: var(--font-weight-semibold);
+    line-height: var(--line-height-normal);
+    letter-spacing: var(--letter-spacing-normal);
+    margin-bottom: var(--heading-margin-bottom);
+    color: var(--text-color);
 }
 
-h4 {
-    font-size: var(--font-size-xl);
-    letter-spacing: -0.025em;
+h5,
+.h5 {
+    font-size: var(--font-size-body-large);
+    font-weight: var(--font-weight-medium);
+    line-height: var(--line-height-loose);
+    letter-spacing: var(--letter-spacing-none);
+    margin-bottom: var(--spacing-3);
+    color: var(--text-color);
 }
 
-h5 {
-    font-size: var(--font-size-lg);
-    letter-spacing: -0.025em;
+h6,
+.h6 {
+    font-size: var(--font-size-button);
+    font-weight: var(--font-weight-medium);
+    line-height: 1.75;
+    letter-spacing: 0.05em;
+    margin-bottom: var(--spacing-2);
+    color: var(--text-secondary);
 }
 
-h6 {
-    font-size: var(--font-size-base);
-    letter-spacing: -0.025em;
-}
+/* ===========================================
+   正文样式 (Vercel Body System)
+   =========================================== */
 
-/* 正文样式 */
 p {
     font-weight: var(--body-font-weight);
     line-height: var(--body-line-height);
@@ -191,8 +261,48 @@ p {
     color: var(--text-color);
 }
 
-/* 列表样式 */
-ul, ol {
+.body-large {
+    font-size: var(--font-size-body-large);
+    font-weight: var(--font-weight-normal);
+    line-height: var(--line-height-loose);
+    color: var(--text-secondary);
+}
+
+.body-text {
+    font-size: var(--font-size-body);
+    font-weight: var(--font-weight-normal);
+    line-height: var(--line-height-relaxed);
+    color: var(--text-secondary);
+}
+
+.body-small {
+    font-size: var(--font-size-body-small);
+    font-weight: var(--font-weight-normal);
+    line-height: var(--line-height-base);
+    color: var(--text-color);
+}
+
+.body-medium {
+    font-size: var(--font-size-body-small);
+    font-weight: var(--font-weight-medium);
+    line-height: var(--line-height-base);
+    color: var(--text-color);
+}
+
+.body-semibold {
+    font-size: var(--font-size-body-small);
+    font-weight: var(--font-weight-semibold);
+    line-height: var(--line-height-base);
+    letter-spacing: var(--letter-spacing-relaxed);
+    color: var(--text-color);
+}
+
+/* ===========================================
+   列表样式
+   =========================================== */
+
+ul,
+ol {
     margin-bottom: var(--list-margin-bottom);
     padding-left: var(--list-padding-left);
 }
@@ -200,6 +310,7 @@ ul, ol {
 li {
     margin-bottom: var(--list-item-margin-bottom);
     color: var(--text-color);
+    line-height: var(--line-height-relaxed);
 }
 
 ul li {
@@ -210,11 +321,15 @@ ol li {
     list-style-type: decimal;
 }
 
-/* 链接样式 */
+/* ===========================================
+   链接样式 (Vercel Link System)
+   =========================================== */
+
 a {
     color: var(--link-color);
     text-decoration: none;
-    transition: var(--link-transition);
+    font-weight: var(--font-weight-medium);
+    transition: color var(--transition-fast);
 }
 
 a:hover {
@@ -222,124 +337,205 @@ a:hover {
     text-decoration: underline;
 }
 
-/* 代码样式 */
+a:focus-visible {
+    outline: 2px solid var(--focus-ring-color);
+    outline-offset: 2px;
+    border-radius: var(--radius-subtle);
+}
+
+/* ===========================================
+   代码样式 (Shadow-as-Border)
+   =========================================== */
+
 code {
-    font-family: var(--font-primary);
-    font-size: var(--code-font-size);
-    background-color: var(--code-background-color);
+    font-family: var(--code-font-family);
+    font-size: 0.9em;
+    background-color: var(--glass-bg, hsla(0, 0%, 98%, 1));
     padding: var(--code-padding);
     border-radius: var(--code-border-radius);
-    color: var(--text-color);
+    color: var(--bases-primary);
+    border: 1px solid var(--glass-border, rgba(158, 148, 216, 0.3));
 }
 
 pre {
     font-family: var(--code-font-family);
-    background-color: var(--code-background-color);
+    font-size: var(--code-font-size);
+    font-weight: var(--font-weight-normal);
+    line-height: var(--line-height-mono);
+    background-color: var(--card-bg, hsla(0, 0%, 98%, 1));
     padding: var(--spacing-4);
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-comfortable);
     overflow-x: auto;
     margin-bottom: var(--body-margin-bottom);
+    box-shadow: 0 4px 12px var(--shadow-color, rgba(109, 91, 154, 0.2));
 }
 
 pre code {
     background-color: transparent;
     padding: 0;
     border-radius: 0;
+    box-shadow: none;
 }
 
-/* 表格样式 */
+.mono-body {
+    font-family: var(--font-mono);
+    font-size: var(--font-size-body-small);
+    font-weight: var(--font-weight-normal);
+    line-height: var(--line-height-mono);
+}
+
+.mono-caption {
+    font-family: var(--font-mono);
+    font-size: var(--font-size-mono-caption);
+    font-weight: var(--font-weight-medium);
+    line-height: var(--line-height-mono-caption);
+}
+
+.mono-small {
+    font-family: var(--font-mono);
+    font-size: var(--font-size-mono-small);
+    font-weight: var(--font-weight-medium);
+    line-height: var(--line-height-mono-tight);
+    text-transform: uppercase;
+}
+
+/* ===========================================
+   表格样式 (Shadow-as-Border)
+   =========================================== */
+
 table {
-    width: 300%;
+    width: 100%;
     border-collapse: collapse;
     margin-bottom: var(--body-margin-bottom);
+    background: var(--card-bg, rgba(255, 255, 255, 0.8));
+    border-radius: var(--radius-comfortable);
+    overflow: hidden;
+    box-shadow: 0 2px 8px var(--shadow-color, rgba(109, 91, 154, 0.2));
 }
 
-th, td {
+th,
+td {
     padding: var(--table-cell-padding);
-    border-bottom: 1px solid var(--table-border-color);
     text-align: left;
     color: var(--text-color);
+    border-bottom: 1px solid var(--glass-border, #ebebeb);
 }
 
 th {
     font-weight: var(--font-weight-semibold);
-    background-color: rgba(156, 163, 175, 0.05);
+    background-color: var(--glass-bg, hsla(0, 0%, 98%, 1));
 }
 
-tr:hover {
-    background-color: var(--table-row-hover-background-color);
+tr:last-child td {
+    border-bottom: none;
 }
 
-/* 引用样式 */
+tr:hover td {
+    background-color: var(--glass-bg, hsla(0, 0%, 98%, 0.5));
+}
+
+/* ===========================================
+   引用样式 (Shadow-as-Border)
+   =========================================== */
+
 blockquote {
-    border-left: 4px solid var(--quote-border-color);
+    border-left: 4px solid var(--bases-primary);
     background-color: var(--quote-background-color);
-    padding: 15px 20px;;
+    padding: var(--quote-padding);
     margin: var(--quote-margin);
-    font-style: var(--quote-font-style);
+    border-radius: var(--quote-border-radius);
     color: var(--text-secondary);
+    font-style: italic;
+    line-height: var(--line-height-relaxed);
 }
 
-/* 分隔线样式 */
+blockquote p {
+    margin-bottom: 0;
+    color: inherit;
+}
+
+/* ===========================================
+   分隔线样式
+   =========================================== */
+
 hr {
     border: none;
-    border-top: var(--divider-height) solid var(--divider-color);
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--bases-primary), transparent);
     margin: var(--divider-margin);
 }
 
 /* ===========================================
-   排版工具类
+   按钮文字样式
    =========================================== */
 
-/* 文本对齐 */
-.text-left {
-    text-align: left;
+.button-text {
+    font-size: var(--font-size-button);
+    font-weight: var(--font-weight-medium);
+    line-height: var(--line-height-button);
+    color: var(--bases-primary);
 }
 
-.text-center {
-    text-align: center;
+.button-small {
+    font-size: var(--font-size-button);
+    font-weight: var(--font-weight-normal);
+    line-height: var(--line-height-tightest);
 }
 
-.text-right {
-    text-align: right;
+/* ===========================================
+   Caption & Micro Badge
+   =========================================== */
+
+.caption {
+    font-size: var(--font-size-caption);
+    font-weight: var(--font-weight-medium);
+    line-height: var(--line-height-caption);
+    color: var(--text-tertiary);
 }
 
-.text-justify {
-    text-align: justify;
-}
-
-/* 文本转换 */
-.text-uppercase {
+.micro-badge {
+    font-size: var(--font-size-micro);
+    font-weight: var(--font-weight-bold);
+    line-height: var(--line-height-mono-tight);
     text-transform: uppercase;
+    letter-spacing: 0.05em;
 }
 
-.text-lowercase {
-    text-transform: lowercase;
-}
+/* ===========================================
+   排版工具类 - 文本对齐
+   =========================================== */
 
-.text-capitalize {
-    text-transform: capitalize;
-}
+.text-left { text-align: left; }
+.text-center { text-align: center; }
+.text-right { text-align: right; }
+.text-justify { text-align: justify; }
 
-/* 文本装饰 */
-.text-underline {
-    text-decoration: underline;
-}
+/* ===========================================
+   排版工具类 - 文本转换
+   =========================================== */
 
-.text-no-underline {
-    text-decoration: none;
-}
+.text-uppercase { text-transform: uppercase; }
+.text-lowercase { text-transform: lowercase; }
+.text-capitalize { text-transform: capitalize; }
 
-/* 字体样式 */
-.text-normal {
-    font-style: normal;
-}
+/* ===========================================
+   排版工具类 - 文本装饰
+   =========================================== */
 
-.text-italic {
-    font-style: italic;
-}
+.text-underline { text-decoration: underline; }
+.text-no-underline { text-decoration: none; }
 
-/* 文本溢出 */
+/* ===========================================
+   排版工具类 - 字体样式
+   =========================================== */
+
+.text-normal { font-style: normal; }
+.text-italic { font-style: italic; }
+
+/* ===========================================
+   排版工具类 - 文本溢出
+   =========================================== */
+
 .text-truncate {
     overflow: hidden;
     text-overflow: ellipsis;
@@ -351,207 +547,155 @@ hr {
     overflow-wrap: break-word;
 }
 
-/* 文本权重 */
-.font-hairline {
-    font-weight: 100;
-}
+/* ===========================================
+   排版工具类 - 字体权重 (三层权重系统)
+   =========================================== */
 
-.font-thin {
-    font-weight: 200;
-}
+.font-normal { font-weight: 400; }
+.font-medium { font-weight: 500; }
+.font-semibold { font-weight: 600; }
 
-.font-light {
-    font-weight: 300;
-}
+/* ===========================================
+   排版工具类 - 行高 (Vercel Scale)
+   =========================================== */
 
-.font-normal {
-    font-weight: 400;
-}
+.leading-tightest { line-height: 1.00; }
+.leading-tight { line-height: 1.20; }
+.leading-snug { line-height: 1.25; }
+.leading-normal { line-height: 1.33; }
+.leading-base { line-height: 1.50; }
+.leading-relaxed { line-height: 1.56; }
+.leading-loose { line-height: 1.80; }
 
-.font-medium {
-    font-weight: 500;
-}
+/* ===========================================
+   排版工具类 - 字母间距 (Vercel Negative Tracking)
+   =========================================== */
 
-.font-semibold {
-    font-weight: 600;
-}
+.tracking-tightest { letter-spacing: -2.4px; }
+.tracking-tighter { letter-spacing: -2.0px; }
+.tracking-tight { letter-spacing: -1.28px; }
+.tracking-normal { letter-spacing: -0.96px; }
+.tracking-relaxed { letter-spacing: -0.32px; }
+.tracking-none { letter-spacing: 0; }
 
-.font-bold {
-    font-weight: 700;
-}
+/* ===========================================
+   排版工具类 - 间距 (8px Base Unit)
+   =========================================== */
 
-.font-extrabold {
-    font-weight: 800;
-}
-
-.font-black {
-    font-weight: 900;
-}
-
-/* 行高 */
-.leading-none {
-    line-height: 1;
-}
-
-.leading-tight {
-    line-height: 1.25;
-}
-
-.leading-snug {
-    line-height: 1.375;
-}
-
-.leading-normal {
-    line-height: 1.5;
-}
-
-.leading-relaxed {
-    line-height: 1.625;
-}
-
-.leading-loose {
-    line-height: 2;
-}
-
-/* 字母间距 */
-.tracking-tighter {
-    letter-spacing: -0.05em;
-}
-
-.tracking-tight {
-    letter-spacing: -0.025em;
-}
-
-.tracking-normal {
-    letter-spacing: 0;
-}
-
-.tracking-wide {
-    letter-spacing: 0.025em;
-}
-
-.tracking-wider {
-    letter-spacing: 0.05em;
-}
-
-.tracking-widest {
-    letter-spacing: 0.1em;
-}
-
-/* 字间距 */
 .space-y-0 > :not([hidden]) ~ :not([hidden]) {
-    --tw-space-y-reverse: 0;
-    margin-top: calc(0px * calc(1 - var(--tw-space-y-reverse)));
-    margin-bottom: calc(0px * var(--tw-space-y-reverse));
+    margin-top: 0;
 }
-
 .space-y-1 > :not([hidden]) ~ :not([hidden]) {
-    --tw-space-y-reverse: 0;
-    margin-top: calc(0.25rem * calc(1 - var(--tw-space-y-reverse)));
-    margin-bottom: calc(0.25rem * var(--tw-space-y-reverse));
+    margin-top: 4px;
 }
-
 .space-y-2 > :not([hidden]) ~ :not([hidden]) {
-    --tw-space-y-reverse: 0;
-    margin-top: calc(0.5rem * calc(1 - var(--tw-space-y-reverse)));
-    margin-bottom: calc(0.5rem * var(--tw-space-y-reverse));
+    margin-top: 8px;
 }
-
 .space-y-3 > :not([hidden]) ~ :not([hidden]) {
-    --tw-space-y-reverse: 0;
-    margin-top: calc(0.75rem * calc(1 - var(--tw-space-y-reverse)));
-    margin-bottom: calc(0.75rem * var(--tw-space-y-reverse));
+    margin-top: 12px;
 }
-
 .space-y-4 > :not([hidden]) ~ :not([hidden]) {
-    --tw-space-y-reverse: 0;
-    margin-top: calc(1rem * calc(1 - var(--tw-space-y-reverse)));
-    margin-bottom: calc(1rem * var(--tw-space-y-reverse));
+    margin-top: 16px;
 }
-
 .space-y-5 > :not([hidden]) ~ :not([hidden]) {
-    --tw-space-y-reverse: 0;
-    margin-top: calc(1.25rem * calc(1 - var(--tw-space-y-reverse)));
-    margin-bottom: calc(1.25rem * var(--tw-space-y-reverse));
+    margin-top: 20px;
 }
-
 .space-y-6 > :not([hidden]) ~ :not([hidden]) {
-    --tw-space-y-reverse: 0;
-    margin-top: calc(1.5rem * calc(1 - var(--tw-space-y-reverse)));
-    margin-bottom: calc(1.5rem * var(--tw-space-y-reverse));
+    margin-top: 24px;
+}
+.space-y-8 > :not([hidden]) ~ :not([hidden]) {
+    margin-top: 32px;
+}
+.space-y-10 > :not([hidden]) ~ :not([hidden]) {
+    margin-top: 40px;
+}
+.space-y-12 > :not([hidden]) ~ :not([hidden]) {
+    margin-top: 48px;
 }
 
 /* ===========================================
-   响应式排版
+   响应式排版 (Vercel Breakpoints)
    =========================================== */
 
 @media (max-width: 1024px) {
-    h1 {
-        font-size: var(--font-size-3xl);
+    h1, .h1 {
+        font-size: var(--font-size-section);
+        letter-spacing: var(--letter-spacing-tighter);
     }
-    
-    h2 {
-        font-size: var(--font-size-2xl);
+
+    h2, .h2 {
+        font-size: var(--font-size-subheading);
+        letter-spacing: var(--letter-spacing-tight);
     }
-    
-    h3 {
-        font-size: var(--font-size-xl);
+
+    h3, .h3 {
+        font-size: var(--font-size-card-title);
+        letter-spacing: var(--letter-spacing-normal);
     }
-    
-    h4 {
-        font-size: var(--font-size-lg);
+
+    h4, .h4 {
+        font-size: var(--font-size-body-large);
+        letter-spacing: var(--letter-spacing-none);
     }
 }
 
 @media (max-width: 768px) {
-    h1 {
-        font-size: var(--font-size-2xl);
+    h1, .h1 {
+        font-size: 2.5rem;
+        letter-spacing: var(--letter-spacing-tighter);
     }
-    
-    h2 {
-        font-size: var(--font-size-xl);
+
+    h2, .h2 {
+        font-size: var(--font-size-subheading);
+        letter-spacing: var(--letter-spacing-tight);
     }
-    
-    h3 {
-        font-size: var(--font-size-lg);
+
+    h3, .h3 {
+        font-size: var(--font-size-body-large);
+        letter-spacing: var(--letter-spacing-none);
     }
-    
-    h4 {
-        font-size: var(--font-size-base);
+
+    h4, .h4 {
+        font-size: var(--font-size-body);
+        letter-spacing: var(--letter-spacing-none);
     }
-    
-    /* 优化移动端文本可读性 */
+
     body {
-        font-size: var(--font-size-base);
+        font-size: var(--font-size-body-small);
     }
-    
-    /* 优化移动端行高 */
+
     p {
         line-height: var(--line-height-relaxed);
     }
-    
-    /* 优化移动端列表间距 */
+
     ul, ol {
         --list-padding-left: var(--spacing-4);
     }
 }
 
 @media (max-width: 480px) {
-    h1 {
-        font-size: var(--font-size-xl);
+    h1, .h1 {
+        font-size: var(--font-size-subheading);
+        letter-spacing: var(--letter-spacing-tight);
     }
-    
-    h2 {
-        font-size: var(--font-size-lg);
+
+    h2, .h2 {
+        font-size: var(--font-size-card-title);
+        letter-spacing: var(--letter-spacing-normal);
     }
-    
-    h3 {
-        font-size: var(--font-size-base);
+
+    h3, .h3 {
+        font-size: var(--font-size-body-large);
+        letter-spacing: var(--letter-spacing-none);
     }
-    
-    /* 优化小屏设备文本可读性 */
+
+    h4, .h4 {
+        font-size: var(--font-size-body-small);
+        letter-spacing: var(--letter-spacing-none);
+    }
+
     body {
-        font-size: var(--font-size-sm);
+        font-size: var(--font-size-button);
     }
 }
 
@@ -559,14 +703,12 @@ hr {
    无障碍支持
    =========================================== */
 
-/* 焦点样式 */
 :focus-visible {
-    outline: 2px solid var(--primary-color);
+    outline: 2px solid var(--focus-ring-color);
     outline-offset: 2px;
-    border-radius: var(--radius-sm);
+    border-radius: var(--radius-subtle);
 }
 
-/* 减少动画偏好 */
 @media (prefers-reduced-motion: reduce) {
     *,
     *::before,
@@ -578,14 +720,11 @@ hr {
     }
 }
 
-
-
 /* 高对比度模式支持 */
 @media (prefers-contrast: high) {
     :root {
         --text-color: #000000;
         --text-secondary: #333333;
-        --table-border-color: #000000;
         --divider-color: #000000;
     }
 }
@@ -598,24 +737,24 @@ hr {
         box-shadow: none !important;
         text-shadow: none !important;
     }
-    
+
     a, a:visited {
         text-decoration: underline;
     }
-    
+
     h1, h2, h3, h4, h5, h6 {
         page-break-after: avoid;
     }
-    
+
     p, blockquote, ul, ol, dl, table {
         page-break-inside: avoid;
     }
-    
+
     img {
         max-width: 100% !important;
         page-break-inside: avoid;
     }
-    
+
     pre, code {
         border: 1px solid #999;
         page-break-inside: avoid;

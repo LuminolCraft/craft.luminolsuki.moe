@@ -18,9 +18,11 @@
     "generate-sitemap": "tsx src/utils/generate-sitemap.ts"
   },
   "dependencies": {
+    "@gsap/react": "^2.1.2",
     "@unhead/ssr": "^2.0.19",
     "@unhead/vue": "^1.9.5",
     "chart.js": "^4.5.1",
+    "gsap": "^3.15.0",
     "highlight.js": "^11.11.1",
     "katex": "^0.16.27",
     "lodash": "^4.17.21",

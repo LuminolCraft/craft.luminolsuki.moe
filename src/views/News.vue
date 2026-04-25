@@ -123,6 +123,350 @@
     <style scoped>
     @import '../styles/desktop/news-styles.css';
     @import '../styles/mobile/news-mobile.css';
+
+    /* Vercel Design System - News Page (保留原有背景色) */
+
+    .news-section {
+        max-width: var(--vercel-container-max-width);
+        margin: 0 auto;
+        padding: 0 var(--spacing-4);
+    }
+
+    /* 页面标题区域 - Vercel Typography */
+    .intro {
+        text-align: center;
+        margin-bottom: var(--vercel-space-10, 40px);
+        padding: var(--vercel-space-12, 48px) 0;
+    }
+
+    .intro h2 {
+        font-size: clamp(2rem, 4vw, 2.5rem);
+        font-weight: var(--vercel-weight-semibold);
+        line-height: var(--vercel-leading-snug);
+        letter-spacing: var(--vercel-tracking-tighter);
+        color: var(--text-color);
+        margin-bottom: var(--vercel-space-4, 16px);
+    }
+
+    .intro p {
+        font-size: var(--vercel-body-large);
+        font-weight: var(--vercel-weight-normal);
+        line-height: var(--vercel-leading-loose);
+        color: var(--text-secondary);
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    /* 搜索区域 - Vercel Input Style */
+    .news-search {
+        display: flex;
+        gap: var(--vercel-space-3, 12px);
+        margin-bottom: var(--vercel-space-6, 24px);
+        max-width: 600px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .news-search input[type="search"] {
+        flex: 1;
+        padding: 10px 14px;
+        border-radius: var(--vercel-radius-standard);
+        font-family: var(--vercel-font-family, var(--font-primary));
+        font-size: 14px;
+        font-weight: var(--vercel-weight-normal);
+        color: var(--text-color);
+        background: var(--card-bg);
+        box-shadow: var(--vercel-shadow-border);
+        transition: all var(--vercel-duration-fast) var(--vercel-ease-out);
+        outline: none;
+        border: none;
+    }
+
+    .news-search input[type="search"]:focus {
+        box-shadow: var(--vercel-shadow-border), 0 0 0 3px rgba(147, 197, 253, 0.15);
+    }
+
+    .news-search input[type="search"]::placeholder {
+        color: var(--text-secondary);
+    }
+
+    .news-search button {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 18px;
+        border-radius: var(--vercel-radius-standard);
+        background: var(--primary-color);
+        color: var(--text-primary);
+        font-family: var(--vercel-font-family, var(--font-primary));
+        font-size: 14px;
+        font-weight: var(--vercel-weight-medium);
+        line-height: 1.43;
+        border: none;
+        cursor: pointer;
+        transition: all var(--vercel-duration-fast) var(--vercel-ease-out);
+        box-shadow: var(--vercel-shadow-border);
+    }
+
+    .news-search button:hover {
+        transform: translateY(-1px);
+        box-shadow: var(--vercel-shadow-hover);
+    }
+
+    /* 标签筛选器 */
+    .tag-filter {
+        text-align: center;
+        margin-bottom: var(--vercel-space-8, 32px);
+    }
+
+    .tag-filter label {
+        display: block;
+        font-size: 13px;
+        font-weight: var(--vercel-weight-medium);
+        color: var(--text-secondary);
+        margin-bottom: var(--vercel-space-2, 8px);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .tag-filter select {
+        padding: 10px 14px;
+        border-radius: var(--vercel-radius-standard);
+        font-family: var(--vercel-font-family, var(--font-primary));
+        font-size: 14px;
+        font-weight: var(--vercel-weight-normal);
+        color: var(--text-color);
+        background: var(--card-bg);
+        box-shadow: var(--vercel-shadow-border);
+        border: none;
+        cursor: pointer;
+        outline: none;
+        min-width: 200px;
+        transition: all var(--vercel-duration-fast) var(--vercel-ease-out);
+    }
+
+    .tag-filter select:focus {
+        box-shadow: var(--vercel-shadow-border), 0 0 0 3px rgba(147, 197, 253, 0.15);
+    }
+
+    /* 新闻网格 - Vercel Card Grid */
+    .news-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: var(--vercel-space-6, 24px);
+        margin-top: var(--vercel-space-8, 32px);
+    }
+
+    /* 新闻卡片 - Vercel Style */
+    .news-item {
+        background: var(--card-bg);
+        border-radius: var(--vercel-radius-comfortable);
+        overflow: hidden;
+        box-shadow: var(--vercel-shadow-card);
+        transition: all var(--vercel-duration-fast) var(--vercel-ease-out);
+        cursor: pointer;
+        position: relative;
+        border: none;
+    }
+
+    .news-item:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--vercel-shadow-hover);
+    }
+
+    .news-item.pinned {
+        border-left: 3px solid var(--primary-color);
+    }
+
+    .news-item h3 {
+        font-size: 1.25rem;
+        font-weight: var(--vercel-weight-semibold);
+        line-height: var(--vercel-leading-normal);
+        letter-spacing: var(--vercel-tracking-normal);
+        color: var(--text-color);
+        padding: var(--vercel-space-5, 20px) var(--vercel-space-5, 20px) var(--vercel-space-3, 12px);
+        margin: 0;
+    }
+
+    /* 新闻元数据 - Vercel Caption Style */
+    .news-meta {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 var(--vercel-space-5, 20px) var(--vercel-space-4, 16px);
+        gap: var(--vercel-space-3, 12px);
+    }
+
+    .news-date {
+        font-size: 13px;
+        font-weight: var(--vercel-weight-medium);
+        color: var(--text-secondary);
+        letter-spacing: var(--vercel-tracking-none);
+    }
+
+    /* 新闻标签 - Vercel Badge Style */
+    .news-tags {
+        display: flex;
+        gap: var(--vercel-space-2, 8px);
+        flex-wrap: wrap;
+    }
+
+    .tag {
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 10px;
+        border-radius: var(--vercel-radius-pill, 9999px);
+        background: var(--glass-bg, rgba(158, 148, 216, 0.12));
+        color: var(--primary-color, #a78bfa);
+        font-size: 11px;
+        font-weight: var(--vercel-weight-medium, 500);
+        letter-spacing: 0.02em;
+        transition: all var(--vercel-duration-fast, 150ms) var(--vercel-ease-out, ease-out);
+    }
+
+    .news-item:hover .tag {
+        background: var(--primary-color, #a78bfa);
+        color: var(--white, #ffffff);
+    }
+
+    /* 新闻图片 */
+    .news-img {
+        width: 100%;
+        height: 180px;
+        background-size: cover;
+        background-position: center;
+        margin-top: var(--vercel-space-3, 12px);
+    }
+
+    /* 新闻内容预览 */
+    .news-content {
+        padding: var(--vercel-space-4, 16px) var(--vercel-space-5, 20px) var(--vercel-space-5, 20px);
+        font-size: 14px;
+        font-weight: var(--vercel-weight-normal);
+        line-height: var(--vercel-leading-relaxed);
+        color: var(--text-secondary);
+        overflow: hidden;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+    }
+
+    /* 分页组件 - Vercel Style */
+    .news-pagination {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: var(--vercel-space-2, 8px);
+        margin-top: var(--vercel-space-12, 48px);
+        padding: var(--vercel-space-6, 24px) 0;
+    }
+
+    .pagination-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 36px;
+        height: 36px;
+        padding: 0 12px;
+        border-radius: var(--vercel-radius-subtle);
+        font-family: var(--vercel-font-family, var(--font-primary));
+        font-size: 14px;
+        font-weight: var(--vercel-weight-medium);
+        color: var(--text-color);
+        background: transparent;
+        border: 1px solid var(--glass-border);
+        cursor: pointer;
+        transition: all var(--vercel-duration-fast) var(--vercel-ease-out);
+    }
+
+    .pagination-btn:hover:not(:disabled) {
+        background: var(--card-bg);
+        transform: translateY(-1px);
+        box-shadow: var(--vercel-shadow-subtle);
+    }
+
+    .pagination-btn.active {
+        background: var(--primary-color);
+        color: var(--text-primary);
+        border-color: var(--primary-color);
+    }
+
+    .pagination-btn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+    }
+
+    .pagination-ellipsis {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        color: var(--text-secondary);
+        font-size: 14px;
+    }
+
+    /* 错误消息 - Vercel Card Style */
+    .error-message {
+        grid-column: 1 / -1;
+        text-align: center;
+        padding: var(--vercel-space-10, 40px);
+        background: var(--card-bg);
+        border-radius: var(--vercel-radius-comfortable);
+        box-shadow: var(--vercel-shadow-card);
+    }
+
+    .error-message h3 {
+        font-size: 1.25rem;
+        font-weight: var(--vercel-weight-semibold);
+        color: var(--text-color);
+        margin-bottom: var(--vercel-space-3, 12px);
+        letter-spacing: var(--vercel-tracking-normal);
+    }
+
+    .error-message p {
+        font-size: 14px;
+        color: var(--text-secondary);
+        line-height: var(--vercel-leading-relaxed);
+    }
+
+    /* 响应式设计 */
+    @media (max-width: 768px) {
+        .news-section {
+            padding: 0 var(--spacing-3);
+        }
+
+        .intro {
+            padding: var(--vercel-space-8, 32px) 0;
+            margin-bottom: var(--vercel-space-8, 32px);
+        }
+
+        .news-search {
+            flex-direction: column;
+        }
+
+        .news-grid {
+            grid-template-columns: 1fr;
+            gap: var(--vercel-space-4, 16px);
+        }
+
+        .news-pagination {
+            flex-wrap: wrap;
+            gap: var(--vercel-space-2, 6px);
+        }
+    }
+
+    @media (max-width: 480px) {
+        .intro h2 {
+            font-size: 1.75rem;
+            letter-spacing: var(--vercel-tracking-tight);
+        }
+
+        .tag-filter select {
+            width: 100%;
+            min-width: unset;
+        }
+    }
     </style>
     
     <script lang="ts">

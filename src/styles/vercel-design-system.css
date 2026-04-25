@@ -1,0 +1,841 @@
+/**
+ * Vercel Design System - 完整设计令牌系统
+ * 基于 Vercel 的 Geist 设计系统
+ * 
+ * 核心原则：
+ * - 极简主义白色背景 (#ffffff)
+ * - 近黑色文字 (#171717)
+ * - Shadow-as-Border 技术
+ * - 负字间距排版
+ * - 三层权重系统 (400/500/600)
+ * - 工作流强调色 (Ship Red / Preview Pink / Develop Blue)
+ */
+
+/* ===========================================
+   Vercel 设计令牌 (Design Tokens)
+   =========================================== */
+
+:root {
+    /* ---- 色彩系统 (Color System) ---- */
+    
+    /* 主色 */
+    --vercel-black: #171717;
+    --vercel-white: #ffffff;
+    --vercel-true-black: #000000;
+
+    /* 中性灰阶 (Neutral Scale) */
+    --vercel-gray-900: #171717;
+    --vercel-gray-800: #2a2a2a;
+    --vercel-gray-700: #404040;
+    --vercel-gray-600: #4d4d4d;
+    --vercel-gray-500: #666666;
+    --vercel-gray-400: #808080;
+    --vercel-gray-300: #999999;
+    --vercel-gray-200: #b3b3b3;
+    --vercel-gray-100: #ebebeb;
+    --vercel-gray-50: #fafafa;
+
+    /* 工作流强调色 (Workflow Accent Colors) */
+    --vercel-ship-red: #ff5b4f;
+    --vercel-preview-pink: #de1d8d;
+    --vercel-develop-blue: #0a72ef;
+
+    /* 控制台/代码颜色 (Console/Code Colors) */
+    --vercel-console-blue: #0070f3;
+    --vercel-console-purple: #7928ca;
+    --vercel-console-pink: #eb367f;
+
+    /* 交互色彩 (Interactive Colors) */
+    --vercel-link-blue: #0072f5;
+    --vercel-link-hover: #0051cc;
+    --vercel-focus-blue: hsla(212, 100%, 48%, 1);
+    --vercel-ring-color: rgba(147, 197, 253, 0.5);
+
+    /* 表面与覆盖层 (Surface & Overlay) */
+    --vercel-overlay-backdrop: hsla(0, 0%, 98%, 1);
+    --vercel-selection-text: hsla(0, 0%, 95%, 1);
+    --vercel-badge-blue-bg: #ebf5ff;
+    --vercel-badge-blue-text: #0068d6;
+
+    /* ---- 阴影系统 (Shadow-as-Border) ---- */
+    --vercel-shadow-border: rgba(0, 0, 0, 0.08) 0px 0px 0px 1px;
+    --vercel-shadow-light-border: rgb(235, 235, 235) 0px 0px 0px 1px;
+    --vercel-shadow-subtle: rgba(0, 0, 0, 0.04) 0px 2px 2px;
+    --vercel-shadow-card:
+        rgba(0, 0, 0, 0.08) 0px 0px 0px 1px,
+        rgba(0, 0, 0, 0.04) 0px 2px 2px,
+        rgba(0, 0, 0, 0.04) 0px 8px 8px -8px,
+        #fafafa 0px 0px 0px 1px;
+    --vercel-shadow-hover:
+        rgba(0, 0, 0, 0.08) 0px 0px 0px 1px,
+        rgba(0, 0, 0, 0.06) 0px 4px 8px,
+        rgba(0, 0, 0, 0.02) 0px 12px 16px -4px;
+    --vercel-shadow-focus:
+        0 0 0 2px var(--vercel-focus-blue),
+        0 0 0 4px var(--vercel-ring-color);
+
+    /* ---- 排版系统 (Typography) ---- */
+    --vercel-font-family: 'MiSans VF', 'MiSans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+    --vercel-mono-family: ui-monospace, SFMono-Regular, 'SF Mono', Consolas, 'Liberation Mono', Menlo, monospace;
+
+    /* 三层权重系统 */
+    --vercel-weight-normal: 400;
+    --vercel-weight-medium: 500;
+    --vercel-weight-semibold: 600;
+    --vercel-weight-bold: 700;
+
+    /* 负字间距系统 */
+    --vercel-tracking-tightest: -2.4px;
+    --vercel-tracking-tighter: -2.0px;
+    --vercel-tracking-tight: -1.28px;
+    --vercel-tracking-normal: -0.96px;
+    --vercel-tracking-relaxed: -0.32px;
+    --vercel-tracking-none: 0;
+
+    /* 行高系统 */
+    --vercel-leading-tightest: 1.00;
+    --vercel-leading-tight: 1.20;
+    --vercel-leading-snug: 1.25;
+    --vercel-leading-normal: 1.33;
+    --vercel-leading-base: 1.50;
+    --vercel-leading-relaxed: 1.56;
+    --vercel-leading-loose: 1.80;
+    --vercel-leading-button: 1.43;
+    --vercel-leading-caption: 1.33;
+    --vercel-leading-mono: 1.50;
+    --vercel-leading-mono-caption: 1.54;
+    --vercel-leading-mono-tight: 1.00;
+
+    /* 字体大小系统 */
+    --vercel-font-size-display: 3rem;
+    --vercel-font-size-section: 2.5rem;
+    --vercel-font-size-subheading: 2rem;
+    --vercel-font-size-card-title: 1.5rem;
+    --vercel-font-size-body-large: 1.25rem;
+    --vercel-font-size-body: 1.125rem;
+    --vercel-font-size-body-small: 1rem;
+    --vercel-font-size-button: 0.875rem;
+    --vercel-font-size-caption: 0.75rem;
+    --vercel-font-size-mono-caption: 0.81rem;
+    --vercel-font-size-mono-small: 0.75rem;
+    --vercel-font-size-micro: 0.44rem;
+
+    /* ---- 间距系统 (8px Base Unit) ---- */
+    --vercel-space-0: 0;
+    --vercel-space-1: 4px;
+    --vercel-space-2: 8px;
+    --vercel-space-3: 12px;
+    --vercel-space-4: 16px;
+    --vercel-space-5: 20px;
+    --vercel-space-6: 24px;
+    --vercel-space-8: 32px;
+    --vercel-space-10: 40px;
+    --vercel-space-12: 48px;
+    --vercel-space-14: 56px;
+    --vercel-space-16: 64px;
+    --vercel-space-20: 80px;
+    --vercel-space-24: 96px;
+    --vercel-space-32: 128px;
+    --vercel-space-36: 144px;
+    --vercel-space-40: 160px;
+
+    /* ---- 圆角系统 (Border Radius Scale) ---- */
+    --vercel-radius-micro: 2px;
+    --vercel-radius-subtle: 4px;
+    --vercel-radius-standard: 6px;
+    --vercel-radius-comfortable: 8px;
+    --vercel-radius-image: 12px;
+    --vercel-radius-large: 64px;
+    --vercel-radius-xl: 100px;
+    --vercel-radius-pill: 9999px;
+    --vercel-radius-circle: 50%;
+
+    /* ---- 动画时长 ---- */
+    --vercel-duration-instant: 0ms;
+    --vercel-duration-fast: 150ms;
+    --vercel-duration-normal: 250ms;
+    --vercel-duration-slow: 350ms;
+    --vercel-duration-slower: 500ms;
+
+    /* ---- 缓动函数 ---- */
+    --vercel-ease-in: cubic-bezier(0.4, 0, 1, 1);
+    --vercel-ease-out: cubic-bezier(0, 0, 0.2, 1);
+    --vercel-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+    --vercel-ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+
+    /* ---- 布局系统 ---- */
+    --vercel-container-max-width: 1200px;
+    --vercel-container-padding: 32px;
+    --vercel-section-padding: 80px;
+
+    /* ---- 断点系统 ---- */
+    --vercel-breakpoint-xs: 0;
+    --vercel-breakpoint-sm: 400px;
+    --vercel-breakpoint-md: 600px;
+    --vercel-breakpoint-lg: 768px;
+    --vercel-breakpoint-xl: 1024px;
+    --vercel-breakpoint-2xl: 1200px;
+    --vercel-breakpoint-3xl: 1400px;
+}
+
+/* ===========================================
+   全局基础样式
+   =========================================== */
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+*,
+*::before,
+*::after {
+    font-feature-settings: "liga" 1, "kern" 1;
+}
+
+html {
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+}
+
+body {
+    font-family: var(--vercel-font-family);
+    font-weight: var(--vercel-weight-normal);
+    line-height: var(--vercel-leading-relaxed);
+    color: var(--text-color, var(--vercel-black));
+    background: var(--background-color, var(--vercel-white));
+}
+
+::selection {
+    background-color: var(--vercel-selection-text);
+}
+
+::-moz-selection {
+    background-color: var(--vercel-selection-text);
+}
+
+/* ===========================================
+   排版工具类 (Typography Utilities)
+   =========================================== */
+
+.vercel-display-hero {
+    font-size: clamp(2.5rem, 5vw, var(--vercel-font-size-display));
+    font-weight: var(--vercel-weight-semibold);
+    line-height: var(--vercel-leading-tightest);
+    letter-spacing: var(--vercel-tracking-tightest);
+    color: var(--text-color, var(--vercel-black));
+}
+
+.vercel-section-heading {
+    font-size: clamp(2rem, 4vw, var(--vercel-font-size-section));
+    font-weight: var(--vercel-weight-semibold);
+    line-height: var(--vercel-leading-tight);
+    letter-spacing: var(--vercel-tracking-tighter);
+    color: var(--text-color, var(--vercel-black));
+}
+
+.vercel-subheading-large {
+    font-size: var(--vercel-font-size-subheading);
+    font-weight: var(--vercel-weight-semibold);
+    line-height: var(--vercel-leading-snug);
+    letter-spacing: var(--vercel-tracking-tight);
+    color: var(--text-color, var(--vercel-black));
+}
+
+.vercel-subheading {
+    font-size: var(--vercel-font-size-subheading);
+    font-weight: var(--vercel-weight-normal);
+    line-height: var(--vercel-leading-normal);
+    letter-spacing: var(--vercel-tracking-tight);
+    color: var(--text-color, var(--vercel-black));
+}
+
+.vercel-card-title {
+    font-size: var(--vercel-font-size-card-title);
+    font-weight: var(--vercel-weight-semibold);
+    line-height: var(--vercel-leading-normal);
+    letter-spacing: var(--vercel-tracking-normal);
+    color: var(--text-color, var(--vercel-black));
+}
+
+.vercel-card-title-light {
+    font-size: var(--vercel-font-size-card-title);
+    font-weight: var(--vercel-weight-medium);
+    line-height: var(--vercel-leading-normal);
+    letter-spacing: var(--vercel-tracking-normal);
+    color: var(--text-color, var(--vercel-black));
+}
+
+.vercel-body-large {
+    font-size: var(--vercel-font-size-body-large);
+    font-weight: var(--vercel-weight-normal);
+    line-height: var(--vercel-leading-loose);
+    color: var(--text-secondary, var(--vercel-gray-600));
+}
+
+.vercel-body {
+    font-size: var(--vercel-font-size-body);
+    font-weight: var(--vercel-weight-normal);
+    line-height: var(--vercel-leading-relaxed);
+    color: var(--text-secondary, var(--vercel-gray-600));
+}
+
+.vercel-body-small {
+    font-size: var(--vercel-font-size-body-small);
+    font-weight: var(--vercel-weight-normal);
+    line-height: var(--vercel-leading-base);
+    color: var(--text-color, var(--vercel-black));
+}
+
+.vercel-body-medium {
+    font-size: var(--vercel-font-size-body-small);
+    font-weight: var(--vercel-weight-medium);
+    line-height: var(--vercel-leading-base);
+    color: var(--text-color, var(--vercel-black));
+}
+
+.vercel-body-semibold {
+    font-size: var(--vercel-font-size-body-small);
+    font-weight: var(--vercel-weight-semibold);
+    line-height: var(--vercel-leading-base);
+    letter-spacing: var(--vercel-tracking-relaxed);
+    color: var(--text-color, var(--vercel-black));
+}
+
+.vercel-button-text {
+    font-size: var(--vercel-font-size-button);
+    font-weight: var(--vercel-weight-medium);
+    line-height: var(--vercel-leading-button);
+    color: var(--vercel-link-blue);
+}
+
+.vercel-caption {
+    font-size: var(--vercel-font-size-caption);
+    font-weight: var(--vercel-weight-medium);
+    line-height: var(--vercel-leading-caption);
+    color: var(--text-tertiary, var(--vercel-gray-500));
+}
+
+.vercel-mono-body {
+    font-family: var(--vercel-mono-family);
+    font-size: var(--vercel-font-size-body-small);
+    font-weight: var(--vercel-weight-normal);
+    line-height: var(--vercel-leading-mono);
+}
+
+.vercel-mono-caption {
+    font-family: var(--vercel-mono-family);
+    font-size: var(--vercel-font-size-mono-caption);
+    font-weight: var(--vercel-weight-medium);
+    line-height: var(--vercel-leading-mono-caption);
+}
+
+.vercel-mono-small {
+    font-family: var(--vercel-mono-family);
+    font-size: var(--vercel-font-size-mono-small);
+    font-weight: var(--vercel-weight-medium);
+    line-height: var(--vercel-leading-mono-tight);
+    text-transform: uppercase;
+}
+
+.vercel-micro-badge {
+    font-size: var(--vercel-font-size-micro);
+    font-weight: var(--vercel-weight-bold);
+    line-height: var(--vercel-leading-mono-tight);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* ===========================================
+   组件基础样式 (Component Base Styles)
+   =========================================== */
+
+/* ---- 按钮系统 ---- */
+.vercel-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 10px 18px;
+    border-radius: var(--vercel-radius-standard);
+    font-family: var(--vercel-font-family);
+    font-size: 14px;
+    font-weight: var(--vercel-weight-medium);
+    line-height: var(--vercel-leading-button);
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: all var(--vercel-duration-fast) var(--vercel-ease-out);
+    position: relative;
+    overflow: hidden;
+    letter-spacing: var(--vercel-tracking-none);
+}
+
+.vercel-btn-primary {
+    background: var(--vercel-black);
+    color: var(--vercel-white);
+    box-shadow: var(--vercel-shadow-border);
+}
+
+.vercel-btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--vercel-shadow-hover);
+}
+
+.vercel-btn-secondary {
+    background: var(--vercel-white);
+    color: var(--vercel-black);
+    box-shadow: var(--vercel-shadow-border);
+}
+
+.vercel-btn-secondary:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--vercel-shadow-hover);
+}
+
+.vercel-btn:focus-visible {
+    outline: 2px solid var(--vercel-focus-blue);
+    outline-offset: 2px;
+}
+
+/* ---- 徽章/标签 (Pill Badge) ---- */
+.vercel-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: var(--vercel-radius-pill);
+    background: var(--vercel-badge-blue-bg);
+    color: var(--vercel-badge-blue-text);
+    font-size: 12px;
+    font-weight: var(--vercel-weight-medium);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.vercel-badge-red {
+    background: #fff0ed;
+    color: var(--vercel-ship-red);
+}
+
+.vercel-badge-pink {
+    background: #fcebf4;
+    color: var(--vercel-preview-pink);
+}
+
+.vercel-badge-blue {
+    background: var(--vercel-badge-blue-bg);
+    color: var(--vercel-develop-blue);
+}
+
+/* ---- 卡片组件 ---- */
+.vercel-card {
+    background: var(--card-bg, var(--vercel-white));
+    border-radius: var(--vercel-radius-comfortable);
+    padding: var(--vercel-space-8);
+    box-shadow: var(--vercel-shadow-card);
+    transition: all var(--vercel-duration-fast) var(--vercel-ease-out);
+    position: relative;
+    overflow: hidden;
+}
+
+.vercel-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--vercel-shadow-hover);
+}
+
+.vercel-card-featured {
+    border-radius: var(--vercel-radius-image);
+    box-shadow: var(--vercel-shadow-card);
+}
+
+/* ---- 输入框 ---- */
+.vercel-input {
+    width: 100%;
+    padding: 10px 14px;
+    border-radius: var(--vercel-radius-standard);
+    font-family: var(--vercel-font-family);
+    font-size: 14px;
+    font-weight: var(--vercel-weight-normal);
+    color: var(--text-color, var(--vercel-black));
+    background: var(--vercel-white);
+    box-shadow: var(--vercel-shadow-border);
+    transition: all var(--vercel-duration-fast) var(--vercel-ease-out);
+    outline: none;
+}
+
+.vercel-input:focus {
+    box-shadow: var(--vercel-shadow-border), 0 0 0 3px rgba(147, 197, 253, 0.15);
+}
+
+.vercel-input::placeholder {
+    color: var(--vercel-gray-400);
+}
+
+/* ---- 链接 ---- */
+.vercel-link {
+    color: var(--vercel-link-blue);
+    text-decoration: none;
+    font-weight: var(--vercel-weight-medium);
+    transition: color var(--vercel-duration-fast) var(--vercel-ease-out);
+}
+
+.vercel-link:hover {
+    color: var(--vercel-link-hover);
+    text-decoration: underline;
+}
+
+/* ===========================================
+   特色组件 (Distinctive Components)
+   =========================================== */
+
+/* ---- 工作流管道 (Workflow Pipeline) ---- */
+.vercel-workflow-pipeline {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    gap: var(--vercel-space-8);
+    padding: var(--vercel-space-12) 0;
+}
+
+.vercel-workflow-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    max-width: 200px;
+}
+
+.vercel-workflow-step-label {
+    font-family: var(--vercel-mono-family);
+    font-size: var(--vercel-font-size-mono-small);
+    font-weight: var(--vercel-weight-medium);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: var(--vercel-space-2);
+}
+
+.vercel-workflow-step-title {
+    font-size: var(--vercel-font-size-card-title);
+    font-weight: var(--vercel-weight-semibold);
+    line-height: var(--vercel-leading-normal);
+    letter-spacing: var(--vercel-tracking-normal);
+    margin-bottom: var(--vercel-space-2);
+}
+
+.vercel-workflow-step-desc {
+    font-size: var(--vercel-font-size-body-small);
+    font-weight: var(--vercel-weight-normal);
+    line-height: var(--vercel-leading-base);
+    color: var(--vercel-gray-600);
+}
+
+.vercel-workflow-step.develop .vercel-workflow-step-label,
+.vercel-workflow-step.develop .vercel-workflow-step-title {
+    color: var(--vercel-develop-blue);
+}
+
+.vercel-workflow-step.preview .vercel-workflow-step-label,
+.vercel-workflow-step.preview .vercel-workflow-step-title {
+    color: var(--vercel-preview-pink);
+}
+
+.vercel-workflow-step.ship .vercel-workflow-step-label,
+.vercel-workflow-step.ship .vercel-workflow-step-title {
+    color: var(--vercel-ship-red);
+}
+
+/* ---- 指标卡片 (Metric Cards) ---- */
+.vercel-metric-card {
+    background: var(--card-bg, var(--vercel-white));
+    border-radius: var(--vercel-radius-comfortable);
+    padding: var(--vercel-space-8);
+    box-shadow: var(--vercel-shadow-card);
+    text-align: center;
+}
+
+.vercel-metric-value {
+    font-size: var(--vercel-font-size-display);
+    font-weight: var(--vercel-weight-semibold);
+    line-height: var(--vercel-leading-tightest);
+    letter-spacing: var(--vercel-tracking-tightest);
+    color: var(--text-color, var(--vercel-black));
+}
+
+.vercel-metric-label {
+    font-size: var(--vercel-font-size-body-small);
+    font-weight: var(--vercel-weight-normal);
+    line-height: var(--vercel-leading-base);
+    color: var(--vercel-gray-600);
+    margin-top: var(--vercel-space-2);
+}
+
+/* ---- 信任栏/Logo 网格 (Trust Bar / Logo Grid) ---- */
+.vercel-trust-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--vercel-space-10);
+    padding: var(--vercel-space-8) 0;
+    border-top: 1px solid var(--vercel-gray-100);
+    border-bottom: 1px solid var(--vercel-gray-100);
+    flex-wrap: wrap;
+}
+
+.vercel-trust-logo {
+    opacity: 0.5;
+    filter: grayscale(100%);
+    transition: all var(--vercel-duration-fast) var(--vercel-ease-out);
+    max-height: 32px;
+}
+
+.vercel-trust-logo:hover {
+    opacity: 1;
+    filter: grayscale(0%);
+}
+
+/* ===========================================
+   布局工具类 (Layout Utilities)
+   =========================================== */
+
+.vercel-container {
+    max-width: var(--vercel-container-max-width);
+    width: 100%;
+    margin: 0 auto;
+    padding: 0 var(--vercel-container-padding);
+}
+
+.vercel-section {
+    padding: var(--vercel-section-padding) 0;
+    position: relative;
+}
+
+.vercel-grid {
+    display: grid;
+    gap: var(--vercel-space-6);
+}
+
+.vercel-grid-cols-2 { grid-template-columns: repeat(2, 1fr); }
+.vercel-grid-cols-3 { grid-template-columns: repeat(3, 1fr); }
+.vercel-grid-cols-4 { grid-template-columns: repeat(4, 1fr); }
+
+.vercel-flex {
+    display: flex;
+    align-items: center;
+    gap: var(--vercel-space-4);
+}
+
+.vercel-flex-between {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.vercel-flex-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ===========================================
+   动画效果 (Animations)
+   =========================================== */
+
+@keyframes vercel-fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes vercel-fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes vercel-scaleIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.vercel-animate-fadeInUp {
+    animation: vercel-fadeInUp var(--vercel-duration-normal) var(--vercel-ease-out) both;
+}
+
+.vercel-animate-fadeIn {
+    animation: vercel-fadeIn var(--vercel-duration-normal) var(--vercel-ease-out) both;
+}
+
+.vercel-animate-scaleIn {
+    animation: vercel-scaleIn var(--vercel-duration-fast) var(--vercel-ease-bounce) both;
+}
+
+/* ===========================================
+   响应式工具类 (Responsive Utilities)
+   =========================================== */
+
+@media (max-width: 1200px) {
+    :root {
+        --vercel-container-padding: var(--vercel-space-8);
+    }
+
+    .vercel-grid-cols-4 {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .vercel-section {
+        padding: 64px 0;
+    }
+}
+
+@media (max-width: 1024px) {
+    :root {
+        --vercel-container-padding: 24px;
+    }
+
+    .vercel-grid-cols-3 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .vercel-grid-cols-4 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .vercel-section {
+        padding: 64px 0;
+    }
+
+    .vercel-display-hero {
+        font-size: 2.5rem;
+        letter-spacing: var(--vercel-tracking-tighter);
+    }
+
+    .vercel-section-heading {
+        font-size: 2rem;
+        letter-spacing: var(--vercel-tracking-tight);
+    }
+
+    .vercel-workflow-pipeline {
+        flex-direction: column;
+        gap: var(--vercel-space-6);
+    }
+}
+
+@media (max-width: 768px) {
+    :root {
+        --vercel-container-padding: var(--vercel-space-4);
+    }
+
+    .vercel-grid-cols-2,
+    .vercel-grid-cols-3,
+    .vercel-grid-cols-4 {
+        grid-template-columns: 1fr;
+    }
+
+    .vercel-section {
+        padding: 48px 0;
+    }
+
+    .vercel-display-hero {
+        font-size: 2.5rem;
+        letter-spacing: var(--vercel-tracking-tighter);
+    }
+
+    .vercel-section-heading {
+        font-size: 2rem;
+        letter-spacing: var(--vercel-tracking-tight);
+    }
+
+    .vercel-trust-bar {
+        gap: var(--vercel-space-6);
+    }
+}
+
+@media (max-width: 600px) {
+    :root {
+        --vercel-container-padding: var(--vercel-space-4);
+    }
+
+    .vercel-section {
+        padding: 40px 0;
+    }
+
+    .vercel-display-hero {
+        font-size: 2rem;
+        letter-spacing: var(--vercel-tracking-tight);
+    }
+
+    .vercel-section-heading {
+        font-size: 1.75rem;
+        letter-spacing: var(--vercel-tracking-normal);
+    }
+
+    .vercel-metric-value {
+        font-size: 2.5rem;
+    }
+}
+
+@media (max-width: 400px) {
+    :root {
+        --vercel-container-padding: var(--vercel-space-3);
+    }
+
+    .vercel-section {
+        padding: 32px 0;
+    }
+
+    .vercel-display-hero {
+        font-size: 1.75rem;
+        letter-spacing: var(--vercel-tracking-normal);
+    }
+
+    .vercel-section-heading {
+        font-size: 1.5rem;
+        letter-spacing: var(--vercel-tracking-none);
+    }
+}
+
+/* ===========================================
+   无障碍访问 (Accessibility)
+   =========================================== */
+
+.vercel-sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+}
+
+.vercel-focus-ring:focus-visible {
+    outline: 2px solid var(--vercel-focus-blue);
+    outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
