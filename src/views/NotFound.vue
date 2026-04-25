@@ -41,6 +41,21 @@
     margin: 0 0 var(--space-10) 0;
 }
 
+.btn-back-home:hover::before {
+  left: 100%;
+}
+
+.btn-back-home::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left var(--duration-slow) var(--ease-out);
+}
+
 .btn-back-home {
     display: inline-flex;
     align-items: center;

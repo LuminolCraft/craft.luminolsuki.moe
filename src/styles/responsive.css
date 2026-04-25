@@ -752,7 +752,6 @@ iframe {
 
     * {
         -webkit-overflow-scrolling: touch;
-        scroll-behavior: smooth;
     }
 
     html {

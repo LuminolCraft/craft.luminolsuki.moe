@@ -61,7 +61,7 @@ useHead({
 
     a:hover {
         color: var(--link-hover-color);
-        text-decoration: underline;
+        text-decoration: none;
     }
 
     /* 全局部分样式 - 保留原有背景 */
