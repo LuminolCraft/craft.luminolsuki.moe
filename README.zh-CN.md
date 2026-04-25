@@ -7,6 +7,8 @@
 ![Vite](https://img.shields.io/badge/Vite-7.2.4-646cff?style=flat-square&logo=vite)
 ![License](https://img.shields.io/badge/License-AGPL_v3-blue?style=flat-square)
 
+[English](README.en.md) | [简体中文](README.md)
+
 </div>
 
 LuminolCraft 是 LuminolMC 附属的 Minecraft 服务器官方网站，基于 Vue 3 构建的现代化单页应用（SPA）。网站提供服务器状态监控、新闻资讯、服务器规则、支持信息等功能，支持多语言切换和响应式设计。
@@ -62,9 +64,7 @@ pnpm build
 npm run build
 ```
 
-```
 构建产物将输出到 `dist/` 目录。
-```
 
 ### 预览生产构建
 
@@ -111,9 +111,9 @@ luminolcraft-vue/
 │   │   ├── Home.vue         # 首页
 │   │   ├── News.vue         # 新闻列表
 │   │   ├── NewsDetail.vue   # 新闻详情
-│   │   ├── Monitoring.vue    # 服务器监控
 │   │   ├── SimpleRules.vue  # 服务器规则
 │   │   ├── Support.vue      # 支持页面
+│   │   ├── Archive.vue      # 存档页面
 │   │   └── NotFound.vue     # 404 页面
 │   ├── App.vue              # 根组件
 │   └── main.ts              # 应用入口
@@ -135,6 +135,11 @@ export interface AppConfig {
   showLanguageToggle: boolean;    // 显示语言切换按钮
   navbarFixed: boolean;           // 固定导航栏
   showFooterCopyright: boolean;   // 显示页脚版权信息
+  newsPagination: {               // 新闻分页配置
+    desktopItemsPerPage: number;  // 桌面端每页显示新闻数量
+    mobileItemsPerPage: number;   // 移动端每页显示新闻数量
+    maxDisplayedPages: number;    // 分页最大显示页码数
+  };
 }
 ```
 
@@ -147,9 +152,9 @@ export interface AppConfig {
 | `/` | Home | 首页 |
 | `/News` | News | 新闻列表 |
 | `/NewsDetail` | NewsDetail | 新闻详情 |
-| `/Monitoring` | Monitoring | 服务器监控 |
 | `/SimpleRules` | SimpleRules | 服务器规则 |
 | `/Support` | Support | 支持页面 |
+| `/Archive` | Archive | 存档页面 |
 
 ## 测试
 
