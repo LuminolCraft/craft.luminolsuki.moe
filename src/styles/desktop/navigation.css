@@ -1,9 +1,10 @@
 
 
-/* 导航栏样式已经通过CSS变量和媒体查询自动适配深色主题，无需额外的.dark-theme类 */
+
 :root{
     --radius-md: 12px;
 }
+
 /* 导航栏基础样式 */
 nav {
     position: fixed;
@@ -19,7 +20,6 @@ nav {
     background: var(--bases-nav-bg);
     backdrop-filter: blur(20px) saturate(1.5);
     -webkit-backdrop-filter: blur(20px) saturate(1.5);
-    border-bottom: 1px solid var(--border-color);
     transition: all 0.3s ease;
 }
 
@@ -49,6 +49,38 @@ nav a {
 nav a:hover {
     color: var(--button-hover);
 }
+
+/* nav-link {
+    text-decoration: none;
+    font-size: 1rem;
+    font-weight: 500;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    position: relative;
+  }
+  
+  .nav-link::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    width: 0;
+    height: 2px;
+    background-color: var(--bases-primary);
+    transition: all 0.3s ease;
+    transform: translateX(-50%);
+  }
+  
+  .nav-link:hover {
+    color: var(--bases-primary);
+    background-color: rgba(66, 185, 131, 0.1);
+  }
+  
+  .nav-link:hover::after {
+    width: 80%;
+  } */
+
 .burger{
     display: none;
     width: 40px;
@@ -187,7 +219,7 @@ nav a:hover {
     padding: 10px 14px;
     border-radius: var(--radius-sm);
     font-size: 0.85rem;
-    color: var(--text-color);
+    /* color: var(--text-color); */
     text-decoration: none;
     transition: all 0.2s ease;
 }

@@ -123,7 +123,17 @@ const routes = [
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
-  routes
+  routes,
+  // scrollBehavior(to, from, savedPosition) {                       //滚动行为 参数to:要进入的路由对象  from:离开的路由对象 savedPosition:如果是浏览器前进后退按钮触发的导航会有值（如 { left: 0, top: 500 }）
+  //           if (savedPosition) {                                        //如果有保存的位置，返回到该位置。情况一：用户点击浏览器 后退/前进
+  //               return savedPosition
+  //           }else if (to.hash) {                                        //如果有锚点，滚动到锚点  情况二：用户点击带锚点的链接
+  //               return { el: to.hash, behavior: 'smooth' }              //滚动到锚点，并且平滑滚动（behavior:'smooth'）
+  //           }
+  //           else {                                                      //其他情况，滚动到顶部  情况三：用户点击普通链接
+  //               return { left: 0, top: 0 }
+  //           }
+  //       }
 })
 
 

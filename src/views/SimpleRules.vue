@@ -1,28 +1,97 @@
 <template>
-<section class="news-detail-section">
-        <div id="news-detail">
-            <div class="news-content">
-                <h1>{{ t('rules.simple.title') }}</h1>
-                <p><em>{{ t('rules.simple.date') }}</em></p>
-                
-                <ol>
-                    <li v-for="(rule, index) in rules" :key="index">{{ rule }}</li>
+    <section class="rules-section">
+        <div class="container">
+            <div class="rules-content vercel-animate-fadeInUp">
+                <h1 class="vercel-display-hero">{{ t('rules.simple.title') }}</h1>
+                <p class="rules-date vercel-caption"><em>{{ t('rules.simple.date') }}</em></p>
+
+                <ol class="rules-list">
+                    <li v-for="(rule, index) in rules" :key="index" class="vercel-body">{{ rule }}</li>
                 </ol>
 
-                <blockquote>
-                    <p>{{ t('rules.simple.blockquote') }}</p>
+                <blockquote class="rules-quote">
+                    <p class="vercel-body-small">{{ t('rules.simple.blockquote') }}</p>
                 </blockquote>
+
+                <a href="/" class="back-to-home vercel-btn vercel-btn-primary">{{ t('rules.simple.backHome') }}</a>
             </div>
         </div>
-        <a class="back-to-news" href="/">{{ t('rules.simple.backHome') }}</a>
     </section>
 </template>
-  
+
 
 <style scoped>
-@import '../styles/desktop/news-detail-styles.css';
-@import '../styles/mobile/news-detail-mobile.css';
+.rules-section {
+    padding: var(--space-20) 0;
+}
 
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 0 var(--container-padding);
+}
+
+.rules-content {
+    text-align: left;
+}
+
+.rules-content h1 {
+    margin-bottom: var(--space-4);
+}
+
+.rules-date {
+    display: inline-block;
+    margin-bottom: var(--space-8);
+    color: var(--text-tertiary);
+}
+
+.rules-list {
+    padding-left: var(--space-6);
+    margin-bottom: var(--space-8);
+}
+
+.rules-list li {
+    margin-bottom: var(--space-3);
+    line-height: 1.56;
+    color: var(--text-color);
+}
+
+.rules-quote {
+    box-shadow: var(--shadow-border);
+    background-color: hsla(0, 0%, 98%, 1);
+    padding: var(--space-6);
+    margin: var(--space-8) 0;
+    border-radius: var(--radius-comfortable);
+    color: var(--text-secondary);
+    font-style: normal;
+    line-height: 1.56;
+}
+
+.rules-quote p {
+    margin-bottom: 0;
+    color: inherit;
+}
+
+.back-to-home {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: var(--space-6);
+}
+
+@media (max-width: 768px) {
+    .rules-section {
+        padding: var(--space-12) 0;
+    }
+
+    .rules-list {
+        padding-left: var(--space-4);
+    }
+
+    .rules-quote {
+        padding: var(--space-4);
+    }
+}
 </style>
 
 <script setup lang="ts">
@@ -33,7 +102,6 @@ import en from '../i18n/locales/en';
 
 const { t, locale } = useI18n();
 
-// 根据当前语言直接从语言文件中获取规则
 const rules = computed(() => {
   const currentLang = locale.value;
   const rulesObj = currentLang === 'zh' ? zh : en;

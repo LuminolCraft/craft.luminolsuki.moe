@@ -1,68 +1,136 @@
-:root{
-    /* 基础颜色 */
+/**
+ * 色彩系统 - 基于 Vercel Geist Design System + LuminolCraft 紫色主题
+ * 
+ * 核心原则：
+ * - 保留项目紫色渐变背景主题 (#f2eefc)
+ * - 整合 Vercel 中性灰阶色系 (#171717 → #fafafa)
+ * - 添加 Vercel 工作流强调色 (Ship Red / Preview Pink / Develop Blue)
+ * - 添加 Vercel 控制台代码颜色 (Blue / Purple / Pink)
+ * - Shadow-as-Border 阴影色彩系统
+ * 
+ * @author LuminolCraft Team
+ * @version 3.0.0
+ * @since 2025-12-27
+ */
+
+:root {
+    /* ===========================================
+       Vercel 核心色彩系统
+       =========================================== */
+
+    /* ---- 主色 ---- */
+    --vercel-black: #171717;
+    --vercel-white: #ffffff;
+    --vercel-true-black: #000000;
+
+    /* ---- 中性灰阶 (Neutral Scale) ---- */
+    --vercel-gray-900: #171717;
+    --vercel-gray-800: #2a2a2a;
+    --vercel-gray-700: #404040;
+    --vercel-gray-600: #4d4d4d;
+    --vercel-gray-500: #666666;
+    --vercel-gray-400: #808080;
+    --vercel-gray-300: #999999;
+    --vercel-gray-200: #b3b3b3;
+    --vercel-gray-100: #ebebeb;
+    --vercel-gray-50: #fafafa;
+
+    /* ---- 工作流强调色 (Workflow Accent Colors) ---- */
+    --vercel-ship-red: #ff5b4f;
+    --vercel-preview-pink: #de1d8d;
+    --vercel-develop-blue: #0a72ef;
+
+    /* ---- 控制台/代码颜色 (Console/Code Colors) ---- */
+    --vercel-console-blue: #0070f3;
+    --vercel-console-purple: #7928ca;
+    --vercel-console-pink: #eb367f;
+
+    /* ---- 交互色彩 (Interactive Colors) ---- */
+    --vercel-link-blue: #0072f5;
+    --vercel-link-hover: #0051cc;
+    --vercel-focus-blue: hsla(212, 100%, 48%, 1);
+    --vercel-ring-color: rgba(147, 197, 253, 0.5);
+
+    /* ---- 表面与覆盖层 (Surface & Overlay) ---- */
+    --vercel-overlay-backdrop: hsla(0, 0%, 98%, 1);
+    --vercel-selection-text: hsla(0, 0%, 95%, 1);
+    --vercel-badge-blue-bg: #ebf5ff;
+    --vercel-badge-blue-text: #0068d6;
+
+    /* ===========================================
+       LuminolCraft 项目主题色 (保留原有紫色系)
+       =========================================== */
+
+    /* ---- 基础白色系 ---- */
     --bases-white: #ffffff;
     --bases-white-soft: #f8f8f8;
     --bases-white-mute: #f2f2f2;
+
+    /* ---- 基础黑色系 ---- */
     --bases-black: #181818;
     --bases-black-soft: #222222;
     --bases-black-mute: #282828;
+
+    /* ---- 项目主色调 (Indigo/Purple) ---- */
     --bases-indigo: #2c3e50;
     --bases-accent-cyan: #ffffff;
-    
-    /* 文本相关 */
+
+    /* ---- 文本颜色 ---- */
     --bases-text-light-1: var(--bases-indigo);
     --bases-text-light-2: #3c3c3ca8;
     --bases-text-color: var(--bases-text-light-1);
     --bases-text-secondary: var(--bases-text-light-2);
     --bases-text-primary: #f1f5f9;
-    
-    /* 背景相关 */
+
+    /* ---- 背景颜色 (保留紫色渐变主题) ---- */
     --bases-bg: #f2eefc;
     --bases-background-color: #f2eefc;
     --bases-background-gradient: linear-gradient(135deg, var(--bases-white) 0%, var(--bases-white-soft) 50%, var(--bases-white-mute) 100%);
     --bases-section-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
-    
-    /* 卡片相关 */
+
+    /* ---- 卡片相关 ---- */
     --bases-card-bg: rgba(255, 255, 255, 0.8);
     --bases-card-bg-hover: rgba(255, 255, 255, 0.9);
-    
-    /* 导航相关 */
+
+    /* ---- 导航相关 ---- */
     --bases-nav-bg: rgba(0, 0, 0, 0.7);
     --bases-nav-bg-scroll: #2f2f2f;
     --bases-color-navbar-bg: rgba(255, 255, 255, 0.95);
-    /* --bases-side-nav-bg */
-    
-    /* 按钮相关 */
+
+    /* ---- 按钮相关 ---- */
     --bases-button-hover: #c4b5fd;
-    
-    /* 玻璃效果相关 */
+
+    /* ---- 玻璃效果 ---- */
     --bases-glass-bg: rgba(255, 255, 255, 0.6);
     --bases-glass-border: rgba(158, 148, 216, 0.3);
-    
-    /* 阴影相关 */
+
+    /* ---- 阴影色彩 (Vercel Shadow System) ---- */
     --bases-shadow-color: rgba(109, 91, 154, 0.2);
     --bases-shadow-hover: rgba(109, 91, 154, 0.3);
-    
-    /* 页脚相关 */
+
+    /* ---- 页脚相关 ---- */
     --bases-footer-background-color: #000000;
     --bases-footer-text-color: #888888;
     --bases-footer-gradient: linear-gradient(135deg, #0a0f1c 0%, #1a1f2e 100%);
     --bases-color-footer-text: var(--bases-footer-text-color);
-    
-    /* 状态颜色 */
+
+    /* ---- 状态颜色 ---- */
     --bases-success-color: #00BFA6;
     --bases-error-color: #dc3545;
     --bases-warning-color: #ffc107;
     --bases-info-color: #3b82f6;
-    
-    /* 主要颜色 */
+
+    /* ---- 主要颜色 (Purple Theme) ---- */
     --bases-primary: #a78bfa;
     --bases-primary-gradient: linear-gradient(135deg, #9e94d8 0%, #b6ade6 100%);
     --bases-secondary-color: var(--bases-text-light-1);
     --bases-accent-color: #f59e0b;
     --bases-online-dot: #00BFA6;
-    
-    /* 深色模式变量 */
+
+    /* ===========================================
+       深色模式变量 (Dark Mode)
+       =========================================== */
+
     --bases-dark-white: #1a1a1a;
     --bases-dark-white-soft: #2a2a2a;
     --bases-dark-white-mute: #333333;
@@ -71,53 +139,72 @@
     --bases-dark-black-mute: #e0e0e0;
     --bases-dark-indigo: #cbd5e1;
     --bases-dark-accent-cyan: #1a1a1a;
-    
+
     --bases-dark-text-light-1: var(--bases-dark-indigo);
     --bases-dark-text-light-2: rgba(200, 200, 200, 0.66);
     --bases-dark-text-color: #f2eefc;
     --bases-dark-text-secondary: #f2eefc;
     --bases-dark-text-primary: #f1f5f9;
-    
-    --bases-dark-bg: #313647;
+
+    --bases-dark-bg: #0f0f14;
     --bases-dark-background-color: var(--bases-dark-bg);
-    --bases-dark-background-gradient: linear-gradient(135deg, var(--bases-dark-white) 0%, var(--bases-dark-white-soft) 50%, var(--bases-dark-white-mute) 100%);
-    --bases-dark-section-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
-    
-    --bases-dark-card-bg: #5b6483;
-    --bases-dark-card-bg-hover: #6b7493;
-    
+    --bases-dark-background-gradient: linear-gradient(135deg, #0a0a0f 0%, #0f0f14 50%, #14141a 100%);
+    --bases-dark-section-gradient: linear-gradient(135deg, #0a0a0f 0%, #111116 50%, #16161d 100%);
+
+    --bases-dark-card-bg: #18181e;
+    --bases-dark-card-bg-hover: #222228;
+
     --bases-dark-nav-bg: rgba(0, 0, 0, 0.9);
-    --bases-dark-nav-bg-scroll: #1f1f1f;
-    --bases-dark-color-navbar-bg: rgba(26, 26, 26, 0.95);
-    
+    --bases-dark-nav-bg-scroll: #141418;
+    --bases-dark-color-navbar-bg: rgba(15, 15, 20, 0.95);
+
     --bases-dark-button-hover: #9370db;
-    
-    --bases-dark-glass-bg: rgba(49, 54, 71, 0.6);
-    --bases-dark-glass-border: rgba(158, 148, 216, 0.3);
-    
+
+    --bases-dark-glass-bg: rgba(24, 24, 30, 0.6);
+    --bases-dark-glass-border: rgba(158, 148, 216, 0.2);
+
     --bases-dark-shadow-color: rgba(0, 0, 0, 0.3);
     --bases-dark-shadow-hover: rgba(0, 0, 0, 0.4);
-    
-    --bases-dark-footer-background-color: #000000;
-    --bases-dark-footer-text-color: #666666;
-    --bases-dark-footer-gradient: linear-gradient(135deg, #0a0f1c 0%, #1a1f2e 100%);
-    
+
+    --bases-dark-footer-background-color: #080810;
+    --bases-dark-footer-text-color: #555566;
+    --bases-dark-footer-gradient: linear-gradient(180deg, #0a0a0f 0%, #080810 100%);
+
     --bases-dark-success-color: #009688;
     --bases-dark-error-color: #c62828;
     --bases-dark-warning-color: #f57c00;
     --bases-dark-info-color: #1976d2;
-    
+
     --bases-dark-primary: #9370db;
     --bases-dark-primary-gradient: linear-gradient(135deg, #7b68ee 0%, #9370db 100%);
     --bases-dark-secondary-color: var(--bases-dark-text-light-1);
     --bases-dark-accent-color: #f59e0b;
     --bases-dark-online-dot: #009688;
+
+    /* ===========================================
+       阴影系统 (Vercel Shadow-as-Border)
+       =========================================== */
+
+    --shadow-border: rgba(0, 0, 0, 0.08) 0px 0px 0px 1px;
+    --shadow-light-border: rgb(235, 235, 235) 0px 0px 0px 1px;
+    --shadow-subtle: rgba(0, 0, 0, 0.04) 0px 2px 2px;
+    --shadow-card:
+        rgba(0, 0, 0, 0.08) 0px 0px 0px 1px,
+        rgba(0, 0, 0, 0.04) 0px 2px 2px,
+        rgba(0, 0, 0, 0.04) 0px 8px 8px -8px,
+        #fafafa 0px 0px 0px 1px;
+    --shadow-hover:
+        rgba(0, 0, 0, 0.08) 0px 0px 0px 1px,
+        rgba(0, 0, 0, 0.06) 0px 4px 8px,
+        rgba(0, 0, 0, 0.02) 0px 12px 16px -4px;
 }
 
+/* ===========================================
+   语义化变量映射 (Semantic Variables)
+   =========================================== */
 
-
-
-:root{
+:root {
+    /* ---- 背景与文本 ---- */
     --background-color: var(--bases-background-color);
     --text-primary: #f1f5f9;
     --primary-color: var(--bases-primary);
@@ -125,38 +212,59 @@
     --secondary-color: var(--bases-secondary-color);
     --background-gradient: var(--bases-background-gradient);
     --card-bg: var(--bases-card-bg);
-    --card-bg-hover: var(--bases-dark-card-bg-hover);
+    --card-bg-hover: var(--bases-card-bg-hover);
+
+    /* ---- 文本颜色 (使用 Vercel 灰阶) ---- */
     --text-color: var(--bases-text-color);
     --text-secondary: var(--bases-text-secondary);
     --online-color: var(--bases-online-dot);
+
+    /* ---- 导航 ---- */
     --nav-bg: var(--bases-nav-bg);
     --nav-bg-scroll: var(--bases-nav-bg-scroll);
     --button-hover: var(--bases-button-hover);
     --accent-color: var(--bases-accent-color);
+
+    /* ---- 玻璃效果 ---- */
     --glass-bg: var(--bases-glass-bg);
     --glass-border: var(--bases-glass-border);
     --shadow-color: var(--bases-shadow-color);
     --shadow-hover: var(--bases-shadow-hover);
+
+    /* ---- 页脚 ---- */
     --footer-background-color: var(--bases-footer-background-color);
     --footer-gradient: var(--bases-footer-gradient);
     --color-footer-text: var(--bases-footer-text-color);
+
+    /* ---- 基础色 ---- */
     --white: var(--bases-white);
     --black: var(--bases-black);
+
+    /* ---- 状态色 ---- */
     --success-color: var(--bases-success-color);
     --error-color: var(--bases-error-color);
     --warning-color: var(--bases-warning-color);
     --info-color: var(--bases-info-color);
+
+    /* ---- 边框色 (Vercel Gray Scale) ---- */
+    --border-color: var(--vercel-gray-100);
+    --divider-color: var(--vercel-gray-100);
 }
 
+/* ===========================================
+   深色模式语义变量映射
+   =========================================== */
+
 @media (prefers-color-scheme: dark) {
-    :root{
+    :root {
         --background-color: var(--bases-dark-background-color);
         --primary-color: var(--bases-dark-primary);
         --primary-gradient: var(--bases-dark-primary-gradient);
         --secondary-color: var(--bases-dark-secondary-color);
         --background-gradient: var(--bases-dark-background-gradient);
         --card-bg: var(--bases-dark-card-bg);
-        
+        --card-bg-hover: var(--bases-dark-card-bg-hover);
+
         --text-color: var(--bases-dark-text-color);
         --text-secondary: var(--bases-dark-text-secondary);
         --online-color: var(--bases-dark-online-dot);
@@ -176,5 +284,7 @@
         --error-color: var(--bases-dark-error-color);
         --warning-color: var(--bases-dark-warning-color);
         --info-color: var(--bases-dark-info-color);
+        --border-color: var(--vercel-gray-800);
+        --divider-color: var(--vercel-gray-800);
     }
 }

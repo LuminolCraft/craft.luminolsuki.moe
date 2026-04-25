@@ -16,7 +16,7 @@
                     <a href="https://qm.qq.com/q/M29Eyniu8S" target="_blank" rel="noopener noreferrer" class="btn btn-primary">
                         <i class="fas fa-users"></i>
                         {{ t('common.joinGroup') }}
-                    </a>
+                    </a>                         
                     <a href="monitoring" class="btn btn-secondary">
                         <i class="fas fa-chart-line"></i>
                         {{ t('common.monitoring') }}
