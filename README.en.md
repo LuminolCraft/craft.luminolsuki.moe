@@ -7,7 +7,11 @@
 ![Vite](https://img.shields.io/badge/Vite-7.2.4-646cff?style=flat-square&logo=vite)
 ![License](https://img.shields.io/badge/License-AGPL_v3-blue?style=flat-square)
 
+[中文](README.zh-CN.md) | [English](README.md)
+
 </div>
+
+---
 
 LuminolCraft is the official website of the LuminolMC-affiliated Minecraft server, a modern Single Page Application (SPA) built with Vue 3. The website provides server status monitoring, news, server rules, support information, and more, with multi-language support and responsive design.
 
@@ -109,9 +113,9 @@ luminolcraft-vue/
 │   │   ├── Home.vue         # Home page
 │   │   ├── News.vue         # News list
 │   │   ├── NewsDetail.vue   # News detail
-│   │   ├── Monitoring.vue    # Server monitoring
 │   │   ├── SimpleRules.vue  # Server rules
 │   │   ├── Support.vue      # Support page
+│   │   ├── Archive.vue      # Server archive
 │   │   └── NotFound.vue     # 404 page
 │   ├── App.vue              # Root component
 │   └── main.ts              # Application entry
@@ -133,6 +137,11 @@ export interface AppConfig {
   showLanguageToggle: boolean;    // Show language toggle button
   navbarFixed: boolean;           // Fixed navigation bar
   showFooterCopyright: boolean;   // Show footer copyright
+  newsPagination: {               // News pagination settings
+    desktopItemsPerPage: number;  // Items per page on desktop
+    mobileItemsPerPage: number;   // Items per page on mobile
+    maxDisplayedPages: number;    // Max page numbers to display
+  };
 }
 ```
 
@@ -145,9 +154,9 @@ Routes are defined in `src/router/index.ts`:
 | `/` | Home | Home page |
 | `/News` | News | News list |
 | `/NewsDetail` | NewsDetail | News detail |
-| `/Monitoring` | Monitoring | Server monitoring |
 | `/SimpleRules` | SimpleRules | Server rules |
 | `/Support` | Support | Support page |
+| `/Archive` | Archive | Server archive |
 
 ## Testing
 
