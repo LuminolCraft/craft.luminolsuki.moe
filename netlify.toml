@@ -2,7 +2,17 @@
   command = "pnpm run build"
   publish = "dist"
 
-  [[redirects]]
+[[headers]]
+  for = "/*.css"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+[[headers]]
+  for = "/*.js"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+[[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
