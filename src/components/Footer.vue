@@ -56,21 +56,19 @@ const goToVersionCommit = () => {
     if (!canClickVersion.value) {
         return
     }
-    
-    const githubRepoUrl = 'https://github.com/LuminolCraft/craft.luminolsuki.moe'
-    let githubUrl
-    
+
+    const netlifySiteName = 'craft.luminolsuki.moe'
+    let targetUrl
+
     if (websiteVersion.value === 'dev') {
-        githubUrl = `${githubRepoUrl}/tree/main`
-    } else if (websiteFullHash.value && websiteFullHash.value !== 'unknown' && websiteFullHash.value !== 'dev') {
-        githubUrl = `${githubRepoUrl}/commit/${websiteFullHash.value}`
+        targetUrl = `https://app.netlify.com/sites/${netlifySiteName}/deploys`
     } else if (websiteVersion.value && websiteVersion.value !== 'unknown' && websiteVersion.value !== 'dev') {
-        githubUrl = `${githubRepoUrl}/commit/${websiteVersion.value}`
+        targetUrl = `https://app.netlify.com/sites/${netlifySiteName}/deploys/${websiteVersion.value}`
     } else {
-        githubUrl = `${githubRepoUrl}/tree/main`
+        targetUrl = `https://app.netlify.com/sites/${netlifySiteName}/deploys`
     }
-    
-    window.open(githubUrl, '_blank', 'noopener,noreferrer')
+
+    window.open(targetUrl, '_blank', 'noopener,noreferrer')
 }
 
 onMounted(() => {
