@@ -1,25 +1,82 @@
-const headers = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET',
-  'Access-Control-Allow-Headers': 'Content-Type',
-  'Content-Type': 'application/json'
-}
+exports.handler = async (event, context) => {
+    const headers = {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': 'Content-Type',
+        'Access-Control-Allow-Methods': 'GET, OPTIONS',
+        'Content-Type': 'application/json'
+    };
 
-export default async (req, res) => {
-  if (req.method === 'OPTIONS') {
-    return res.status(200).json('', { headers })
-  }
+    if (event.httpMethod === 'OPTIONS') {
+        return {
+            statusCode: 200,
+            headers,
+            body: ''
+        };
+    }
 
-  const deployId = process.env.DEPLOY_ID || 'unknown'
-  const context = process.env.CONTEXT || 'unknown'
-  const branch = process.env.BRANCH || process.env.HEAD || 'unknown'
-  const commitRef = process.env.COMMIT_REF || 'unknown'
+    try {
+        const commitHash = process.env.COMMIT_REF ||
+                          process.env.GIT_COMMIT_REF ||
+                          process.env.NETLIFY_VERSION ||
+                          process.env.DEPLOY_ID;
+        const branch = process.env.BRANCH || 'main';
+        const deployTime = process.env.DEPLOY_TIME || new Date().toISOString();
+        
+        const shortHash = commitHash ? commitHash.substring(0, 7) : null;
 
-  return res.json({
-    version: deployId,
-    fullHash: deployId,
-    context: context,
-    branch: branch,
-    commitRef: commitRef
-  }, { status: 200, headers })
-}
+        if (!commitHash || commitHash === 'unknown') {
+            try {
+                const githubResponse = await fetch('https://api.github.com/repos/LuminolCraft/craft.luminolsuki.moe/commits/main', {
+                    headers: {
+                        'User-Agent': 'Netlify-Function'
+                    }
+                });
+                
+                if (githubResponse.ok) {
+                    const githubData = await githubResponse.json();
+                    const githubHash = githubData.sha;
+                    const githubShortHash = githubHash.substring(0, 7);
+                    
+                    return {
+                        statusCode: 200,
+                        headers,
+                        body: JSON.stringify({
+                            version: githubShortHash,
+                            fullHash: githubHash,
+                            branch: branch || 'main',
+                            deployTime: deployTime,
+                            timestamp: new Date().toISOString(),
+                            source: 'github-api'
+                        })
+                    };
+                }
+            } catch (githubError) {
+                console.error('GitHub API request failed:', githubError);
+            }
+        }
+
+        return {
+            statusCode: 200,
+            headers,
+            body: JSON.stringify({
+                version: shortHash || 'unknown',
+                fullHash: commitHash || 'unknown',
+                branch: branch || 'main',
+                deployTime: deployTime,
+                timestamp: new Date().toISOString(),
+                source: 'netlify-env'
+            })
+        };
+    } catch (error) {
+        console.error('Error getting version:', error);
+        
+        return {
+            statusCode: 500,
+            headers,
+            body: JSON.stringify({
+                error: 'Failed to get version information',
+                version: 'unknown'
+            })
+        };
+    }
+};
