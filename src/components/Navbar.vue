@@ -27,9 +27,9 @@
         <router-link to="/News">
           {{ t('common.news') }}
         </router-link>
-        <router-link to="/Monitoring">
+        <!-- <router-link to="/Monitoring">
           {{ t('common.monitoring') }}
-        </router-link>
+        </router-link> -->
         <LanguageSwitcher v-if="appConfig.showLanguageToggle" />
       </div>
 
@@ -73,9 +73,9 @@
           <router-link to="/News" class="nav-link">
             {{ t('common.news') }}
           </router-link>
-          <router-link to="/Monitoring" class="nav-link">
+          <!-- <router-link to="/Monitoring" class="nav-link">
             {{ t('common.monitoring') }}
-          </router-link>
+          </router-link> -->
           <LanguageSwitcher v-if="appConfig.showLanguageToggle" />
         </div>
         
