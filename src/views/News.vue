@@ -54,7 +54,7 @@
               :key="item.id"
               class="news-item"
               :class="{ pinned: !!item.pinned, 'no-image': !hasImage(item) }"
-              @click="goToDetail(item.id)"
+              @click="goToDetail(item)"
             >
               <h3>
                 <template v-if="item.pinned">
@@ -118,6 +118,8 @@
           </div>
         </section>
       </header>
+      <LastViewedPopup />
+      
     </template>
     
     <style scoped>
@@ -474,6 +476,8 @@
     import { useRouter } from 'vue-router';
     import { useI18n } from 'vue-i18n';
     import { marked } from 'marked'; // 假设已安装 marked 或通过 CDN 加载
+    import { useLastViewedCookie } from '../composables/useLastViewedCookie';
+    import LastViewedPopup from '../components/LastViewedPopup.vue';
     import debounce from 'lodash/debounce'; // 假设使用 lodash 的 debounce
     import { appConfig } from '../config/app-config';
     
@@ -1076,9 +1080,11 @@
       // Vue 组件
     export default defineComponent({
       name: 'News',
+      components: { LastViewedPopup },
       setup() {
         const router = useRouter();
         const { t } = useI18n();
+        const { setLastViewedNews } = useLastViewedCookie();
         const newsManager = new NewsManager();
         const searchQuery = ref('');
         const selectedTag = ref('');
@@ -1200,8 +1206,9 @@
           refreshTrigger.value++; // 触发响应式更新
         };
     
-        const goToDetail = (id: number) => {
-          router.push({ name: 'newsdetail', query: { id: id.toString() } });
+        const goToDetail = (item: NewsItem) => {
+          setLastViewedNews(item.id, item.title);
+          router.push({ name: 'newsdetail', query: { id: item.id.toString() } });
         };
     
         const hasImage = (item: NewsItem) => {
