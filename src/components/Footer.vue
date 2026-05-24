@@ -7,10 +7,16 @@ const { t } = useI18n()
 
 const websiteVersion = ref('加载中...')
 const websiteFullHash = ref('')
+const websiteBranch = ref('main')
 const websiteUptime = ref('计算中...')
 
 const canClickVersion = computed(() => {
     return websiteVersion.value !== '加载中...' && websiteVersion.value !== '计算中...'
+})
+
+const displayVersion = computed(() => {
+    if (websiteVersion.value === '加载中...' || websiteVersion.value === '计算中...') return websiteVersion.value
+    return websiteVersion.value.slice(0, 7)
 })
 
 const fetchVersion = async () => {
@@ -36,6 +42,7 @@ const fetchVersion = async () => {
             if (data.version && data.version !== 'unknown') {
                 websiteVersion.value = data.version
                 websiteFullHash.value = data.fullHash || data.version
+                websiteBranch.value = data.branch || 'main'
             } else {
                 websiteVersion.value = __APP_VERSION__
                 websiteFullHash.value = __APP_VERSION__
@@ -61,18 +68,9 @@ const goToVersionCommit = () => {
         return
     }
 
-    const netlifySiteName = 'craft.luminolsuki.moe'
-    let targetUrl
-
-    if (websiteVersion.value === 'dev') {
-        targetUrl = `https://app.netlify.com/sites/${netlifySiteName}/deploys`
-    } else if (websiteVersion.value && websiteVersion.value !== 'unknown' && websiteVersion.value !== 'dev') {
-        targetUrl = `https://app.netlify.com/sites/${netlifySiteName}/deploys/${websiteVersion.value}`
-    } else {
-        targetUrl = `https://app.netlify.com/sites/${netlifySiteName}/deploys`
-    }
-
-    window.open(targetUrl, '_blank', 'noopener,noreferrer')
+    const repoUrl = 'https://github.com/LuminolCraft/craft.luminolsuki.moe'
+    const branch = websiteBranch.value || 'main'
+    window.open(`${repoUrl}/commits/${branch}`, '_blank', 'noopener,noreferrer')
 }
 
 onMounted(() => {
@@ -129,7 +127,7 @@ onMounted(() => {
             @click="goToVersionCommit"
         >
             <i class="fas fa-code-branch"></i>
-            <span>{{ t('footer.version') }} <span>{{ websiteVersion }}</span></span>
+            <span>{{ t('footer.version') }} <span>{{ displayVersion }}</span></span>
         </div>
         <div class="status-item">
             <i class="fas fa-clock"></i>
