@@ -11,6 +11,11 @@ interface ImportMeta {
 
 // 添加BackgroundSlider到window对象的类型定义
 declare global {
+  var __APP_VERSION__: string
+  var __BUILD_TIME__: string
+}
+
+declare global {
   interface Window {
     BackgroundSlider: any;
   }
