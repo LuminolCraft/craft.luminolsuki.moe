@@ -36,11 +36,15 @@ const fetchVersion = async () => {
             if (data.version && data.version !== 'unknown') {
                 websiteVersion.value = data.version
                 websiteFullHash.value = data.fullHash || data.version
+            } else {
+                websiteVersion.value = __APP_VERSION__
+                websiteFullHash.value = __APP_VERSION__
             }
         }
     } catch (error) {
-        console.error('获取版本失败:', error)
-        websiteVersion.value = 'unknown'
+      console.error('获取版本失败:', error)
+      websiteVersion.value = __APP_VERSION__
+      websiteFullHash.value = __APP_VERSION__
     }
 }
 
