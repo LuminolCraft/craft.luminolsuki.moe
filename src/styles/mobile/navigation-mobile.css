@@ -145,6 +145,15 @@
     vertical-align: middle;
   }
 
+  .external-link-icon {
+    margin-left: 4px;
+    width: 14px;
+    height: 14px;
+    vertical-align: middle;
+    flex-shrink: 0;
+    opacity: 0.7;
+  }
+
 
   .nav-links {
     display: none;

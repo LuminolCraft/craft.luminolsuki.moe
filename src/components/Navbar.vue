@@ -17,7 +17,7 @@
         </router-link>
         <a class="dropdown-ico" href="https://docs.qq.com/pdf/DQUZYS0FKenFmYWZx" target="_blank" rel="noopener noreferrer">
           {{ t('common.rules') }} ({{ t('common.detailedRules') }})
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1.5" class="h-4 w-4 ml-1 align-sub" viewBox="0 0 24 24">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1.5" class="external-link-icon" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"></path>
             </svg>
         </a>
@@ -41,7 +41,7 @@
             </div>
             <div class="text-wrap">
                 <a href="https://luminolsuki.moe/" target="_blank" rel="noopener noreferrer"  class="logo-and-text "><span style="color: #818cf8;">Luminol</span>MC
-                    <svg  xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1.5" class="h-4 w-4 ml-1 align-sub" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"></path></svg>
+                    <svg  xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1.5" class="external-link-icon" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"></path></svg>
                 </a>
             </div>
         </div>
@@ -51,22 +51,13 @@
           <router-link to="/" class="nav-link">
           {{ t('common.home') }}
         </router-link>
-          <div class="dropdown">
-            <a href="#" class="dropdown-toggle">{{ t('common.rules') }}
-                <svg class="menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M6 9l6 6 6-6"/>
-                </svg>
-            </a>
-            <div class="dropdown-menu">
-                <router-link to="/SimpleRules" class="dropdown-item nav-link">
-                  {{ t('common.simpleRules') }}
-                </router-link>
-                    <!-- <svg  xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1.5" class="h-4 w-4 ml-1 align-sub" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"></path></svg> -->
-                <a href="https://docs.qq.com/pdf/DQUZYS0FKenFmYWZx" target="_blank" rel="noopener noreferrer"  class="dropdown-item">{{ t('common.detailedRules') }}
-                    <svg  xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1.5" class="h-4 w-4 ml-1 align-sub" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"></path></svg>
-                </a>
-            </div>
-        </div>
+        
+          <router-link to="/SimpleRules" class="nav-link">
+            {{ t('common.rules') }}
+          </router-link>
+          <!-- <a href="https://docs.qq.com/pdf/DQUZYS0FKenFmYWZx" target="_blank" rel="noopener noreferrer" class="nav-link">{{ t('common.detailedRules') }}
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1.5" class="external-link-icon" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"></path></svg>
+          </a> -->
           <router-link to="/Support" class="nav-link">
             {{ t('common.support') }}
           </router-link>
@@ -90,81 +81,95 @@
 import { useI18n } from 'vue-i18n'
 import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import gsap from 'gsap'
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import TocToggles from './TocToggles.vue'
 import { appConfig } from '../config/app-config'
+import { useGsap } from '@/composables/useGsap'
 
 const { t } = useI18n()
 const router = useRouter()
 
-// 获取元素
 const burgerInput = ref<HTMLInputElement | null>(null)
 const sideNav = ref<HTMLElement | null>(null)
 const burger = ref<HTMLElement | null>(null)
 const overlay = ref<HTMLElement | null>(null)
+const navRef = ref<HTMLElement | null>(null)
 
-// 关闭侧边栏的函数
-const closeSidebar = () => {
-  if (burgerInput.value) {
-    burgerInput.value.checked = false
-  }
+const { create } = useGsap({ scope: navRef })
+
+let sidebarTimeline: gsap.core.Timeline | null = null
+let closeSidebar: () => void
+
+create(() => {
+  // --- 桌面端：滚动感知背景 ---
+  const mm = gsap.matchMedia()
+  mm.add('(min-width: 1024px)', () => {
+    ScrollTrigger.create({
+      start: 'top -50px',
+      end: 99999,
+      onUpdate: (self) => {
+        const progress = Math.min(1, self.progress * 3)
+        gsap.to('.navbar-glass-bg', {
+          '--nav-alpha': progress,
+          duration: 0.1,
+        })
+      },
+    })
+  })
+
+  // --- 移动端侧边栏 timeline ---
+  sidebarTimeline = gsap.timeline({ paused: true })
+    .to(overlay.value, { autoAlpha: 1, duration: 0.25, ease: 'power2.out' }, 0)
+    .fromTo(sideNav.value,
+      { x: '100%' },
+      { x: '0%', duration: 0.35, ease: 'power3.out' },
+      0,
+    )
+
+})
+
+// --- 侧边栏控制 ---
+closeSidebar = () => {
+  if (burgerInput.value) burgerInput.value.checked = false
+  sidebarTimeline?.reverse()
 }
 
-// 点击外部区域关闭侧边栏的处理函数
 const handleClickOutside = (event: MouseEvent) => {
-  // 确保所有元素已获取
   if (!burgerInput.value || !sideNav.value || !burger.value) return
-  
-  // 检查点击目标是否在侧边栏、汉堡菜单或遮罩层外部
   if (
-    !sideNav.value.contains(event.target as Node) && 
+    !sideNav.value.contains(event.target as Node) &&
     !burger.value.contains(event.target as Node) &&
     event.target !== burgerInput.value
   ) {
-    // 关闭侧边栏
     closeSidebar()
   }
-  
-  // 点击遮罩层时也关闭侧边栏
   if (overlay.value && overlay.value.contains(event.target as Node)) {
     closeSidebar()
   }
 }
 
-// 处理侧边栏链接点击事件
 const handleSideNavClick = (event: Event) => {
   const target = event.target as HTMLElement
-  
-  // 检查点击的是否是链接元素
   const link = target.closest('a, .router-link-active')
-  
   if (link) {
-    // 延迟关闭侧边栏，确保路由跳转完成
-    setTimeout(() => {
-      closeSidebar()
-    }, 100)
+    setTimeout(() => closeSidebar(), 100)
   }
 }
 
-// 监听路由变化，路由改变时自动关闭侧边栏并滚动到顶部
 watch(() => router.currentRoute.value, () => {
   closeSidebar()
 })
 
-// 组件挂载时添加事件监听
 onMounted(() => {
   document.addEventListener('click', handleClickOutside)
-  
-  // 添加侧边栏点击事件监听
   if (sideNav.value) {
     sideNav.value.addEventListener('click', handleSideNavClick)
   }
 })
 
-// 组件卸载时移除事件监听，避免内存泄漏
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
-  
-  // 移除侧边栏点击事件监听
   if (sideNav.value) {
     sideNav.value.removeEventListener('click', handleSideNavClick)
   }

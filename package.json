@@ -18,7 +18,7 @@
     "generate-sitemap": "tsx src/utils/generate-sitemap.ts"
   },
   "dependencies": {
-    "@gsap/react": "^2.1.2",
+
     "@unhead/ssr": "^2.0.19",
     "@unhead/vue": "^1.9.5",
     "chart.js": "^4.5.1",

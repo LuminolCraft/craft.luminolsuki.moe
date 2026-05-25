@@ -2,8 +2,8 @@
   <Transition name="popup-slide">
     <div
       v-if="visible && newsData"
+      ref="popupRef"
       class="last-viewed-popup"
-      :class="{ 'popup-exiting': isExiting }"
       role="alert"
       aria-live="polite"
       @mouseenter="pauseTimer"
@@ -36,15 +36,18 @@
           <line x1="6" y1="6" x2="18" y2="18"/>
         </svg>
       </button>
+      <div class="popup-progress-bar"></div>
     </div>
   </Transition>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import gsap from 'gsap'
 import { useLastViewedCookie, type LastViewedNews } from '../composables/useLastViewedCookie'
 import { useCookieConsent } from '../composables/useCookieConsent'
+import { EASINGS } from '@/gsap'
 
 const emit = defineEmits<{
   dismissed: []
@@ -57,37 +60,49 @@ const router = useRouter()
 const newsData = ref<LastViewedNews | null>(null)
 const visible = ref(false)
 const isExiting = ref(false)
-const PROGRESS_DURATION = 5000
+const popupRef = ref<HTMLElement | null>(null)
+const PROGRESS_DURATION = 5
 
 let dismissTimer: ReturnType<typeof setTimeout> | null = null
-let remainingTime = PROGRESS_DURATION
-let timerStartTime = 0
-let popupElement: HTMLElement | null = null
+let progressTween: gsap.core.Tween | null = null
 
 function navigateToNews() {
   if (isExiting.value || !newsData.value) return
-  startExit()
-  visible.value = false
-  setTimeout(() => {
+  exitAndCleanup(() => {
     router.push({ name: 'newsdetail', query: { id: newsData.value!.id.toString() } })
     clearLastViewedNews()
     emit('dismissed')
-  }, 500)
-}
-
-function startExit() {
-  isExiting.value = true
-  clearDismissTimer()
+  })
 }
 
 function dismiss() {
   if (isExiting.value) return
-  startExit()
-  visible.value = false
-  setTimeout(() => {
+  exitAndCleanup(() => {
     clearLastViewedNews()
     emit('dismissed')
-  }, 500)
+  })
+}
+
+function exitAndCleanup(onDone: () => void) {
+  isExiting.value = true
+  clearDismissTimer()
+  progressTween?.kill()
+
+  if (popupRef.value) {
+    gsap.to(popupRef.value, {
+      autoAlpha: 0,
+      x: '120%',
+      duration: 0.4,
+      ease: EASINGS.exit,
+      onComplete: () => {
+        visible.value = false
+        onDone()
+      },
+    })
+  } else {
+    visible.value = false
+    setTimeout(onDone, 400)
+  }
 }
 
 function clearDismissTimer() {
@@ -97,34 +112,40 @@ function clearDismissTimer() {
   }
 }
 
+function startProgressBar() {
+  const bar = popupRef.value?.querySelector('.popup-progress-bar') as HTMLElement
+  if (!bar) return
+  progressTween = gsap.to(bar, {
+    width: '0%',
+    duration: PROGRESS_DURATION,
+    ease: 'none',
+  })
+}
+
 function pauseTimer() {
   if (isExiting.value) return
-  if (dismissTimer !== null) {
-    remainingTime = Math.max(0, remainingTime - (Date.now() - timerStartTime))
-    clearDismissTimer()
-  }
-  if (popupElement) {
-    popupElement.classList.add('popup-paused')
-  }
+  clearDismissTimer()
+  progressTween?.pause()
 }
 
 function resumeTimer() {
   if (isExiting.value) return
-  timerStartTime = Date.now()
-  dismissTimer = setTimeout(() => {
-    dismiss()
-  }, remainingTime)
-  if (popupElement) {
-    popupElement.classList.remove('popup-paused')
-  }
+  const remaining = progressTween ? progressTween.duration() - progressTween.time() : PROGRESS_DURATION
+  dismissTimer = setTimeout(() => dismiss(), remaining * 1000)
+  progressTween?.resume()
 }
 
-function startDismissTimer() {
-  timerStartTime = Date.now()
-  dismissTimer = setTimeout(() => {
-    dismiss()
-  }, PROGRESS_DURATION)
-}
+watch(visible, async (val) => {
+  if (val && popupRef.value) {
+    await nextTick()
+    gsap.fromTo(popupRef.value,
+      { autoAlpha: 0, x: '120%' },
+      { autoAlpha: 1, x: '0%', duration: 0.55, ease: 'back.out(1.2)' },
+    )
+    startProgressBar()
+    dismissTimer = setTimeout(() => dismiss(), PROGRESS_DURATION * 1000)
+  }
+})
 
 onMounted(() => {
   const consent = getConsent()
@@ -134,18 +155,15 @@ onMounted(() => {
   if (!news) return
 
   newsData.value = news
-  popupElement = document.querySelector('.last-viewed-popup')
 
   setTimeout(() => {
     visible.value = true
-    requestAnimationFrame(() => {
-      startDismissTimer()
-    })
   }, 1000)
 })
 
 onUnmounted(() => {
   clearDismissTimer()
+  progressTween?.kill()
 })
 </script>
 
@@ -242,66 +260,19 @@ onUnmounted(() => {
   outline-offset: 2px;
 }
 
-.last-viewed-popup::after {
-  content: '';
+.popup-progress-bar {
   position: absolute;
   bottom: 0;
   left: 0;
   height: 3px;
+  width: 100%;
   background: var(--bases-primary-gradient, linear-gradient(135deg, #9e94d8 0%, #b6ade6 100%));
-  animation: progressShrink 5s linear forwards;
 }
 
-.popup-paused::after {
-  animation-play-state: paused;
-}
-
-@keyframes progressShrink {
-  0% {
-    width: 100%;
-  }
-  100% {
-    width: 0%;
-  }
-}
-
-/* Transition classes */
-.popup-slide-enter-active {
-  animation: slideInBounce 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
-}
-
+/* Transition classes — 保留空的用于兼容，实际动画由 GSAP 驱动 */
+.popup-slide-enter-active,
 .popup-slide-leave-active {
-  animation: slideOutBounce 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
-}
-
-.popup-slide-enter-from {
-  opacity: 0;
-}
-
-.popup-slide-leave-to {
-  opacity: 0;
-}
-
-@keyframes slideInBounce {
-  0% {
-    opacity: 0;
-    transform: translateX(120%);
-  }
-  100% {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-@keyframes slideOutBounce {
-  0% {
-    opacity: 1;
-    transform: translateX(0);
-  }
-  100% {
-    opacity: 0;
-    transform: translateX(120%);
-  }
+  transition: none;
 }
 
 /* Responsive */

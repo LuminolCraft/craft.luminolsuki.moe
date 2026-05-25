@@ -1,5 +1,5 @@
 export default {
-  "404":{
+  "404": {
     "description": "恭喜！您找到了隐藏页面，凭此页面截图可以找管理员兑换神秘奖励。",
     "backhome": "返回主页"
   },
@@ -73,7 +73,7 @@ export default {
     "github": "GitHub",
     "version": "版本",
     "uptime": "运行",
-    "upday":"天",
+    "upday": "天",
     "Number": "加载中...",
     "copyright": "© {year} LuminolCraft- 保留所有权利",
     "disclaimer": "\"Minecraft\" 以及\"我的世界\"为 Mojang Studios 的商标，LuminolCraft 与 Mojang 以及 Microsoft 没有任何从属关系。LuminolCraft 不是 Minecraft 官方的服务器。",
@@ -123,7 +123,9 @@ export default {
         "服务器为公益性质，接受自愿赞助。赞助玩家将获得\"赞助者\"称号（无任何特殊权限），感谢您的支持！",
         "本服务器遵守中华人民共和国相关法律法规和Minecraft EULA协议，所有规则在法律框架内执行，所有规则的最终解释权归服务器管理部所有。"
       ],
-      "blockquote": "此文档仅供玩家快速了解 LuminolCraft 服务器基本规则使用，若需详细的规则细则（包括管理流程、数据处理机制、插件列表等），请参考《LuminolCraft 服务器规则》。",
+      "blockquoteBefore": "此文档仅供玩家快速了解 LuminolCraft 服务器基本规则使用，若需详细的规则细则（包括管理流程、数据处理机制、插件列表等），请参考",
+      "blockquoteLink": "《LuminolCraft 服务器规则》",
+      "blockquoteAfter": "。",
       "backHome": "返回主页"
     }
   },

@@ -362,7 +362,7 @@
     width: 300px;
     height: 300px;
     background: rgba(99, 102, 241, 0.3);
-    animation: gentleShift 8s ease-in-out infinite;
+    /* GSAP 替代 */
 }
 
 .hero-orb-2 {
@@ -371,7 +371,7 @@
     width: 250px;
     height: 250px;
     background: rgba(34, 211, 238, 0.3);
-    animation: gentleShift 10s ease-in-out infinite reverse;
+    /* GSAP 替代 */
 }
 
 .hero-content {
@@ -388,9 +388,6 @@
 }
 
 
-.hero-text {
-    animation: fadeInUp 0.8s ease forwards;
-}
 
 .hero-title {
     font-size: clamp(2.2rem, 5vw, 3.5rem);
@@ -425,9 +422,11 @@
     animation: cursorBlink 0.8s step-end infinite;
 }
 
-@keyframes cursorBlink {
-    0%, 100% { border-right-color: var(--text-primary); }
-    50% { border-right-color: transparent; }
+.typed-cursor {
+    display: inline;
+    color: var(--text-primary);
+    font-weight: 300;
+    animation: none;
 }
 
 .hero-description {
@@ -444,9 +443,6 @@
     flex-wrap: wrap;
 }
 
-.hero-visual {
-    animation: fadeInUp 0.6s ease-out 0.15s both;
-}
 
 .btn-hero {
     display: inline-flex;
@@ -606,7 +602,7 @@
     right: -2px;
     bottom: -2px;
     border-radius: 50%;
-    animation: pulse 2s infinite;
+    /* GSAP yoyo repeat 替代 */
     z-index: -1;
   }
   
@@ -626,22 +622,7 @@
     background-color: var(--bases-error-color);
   }
   
-  /* 脉冲动画 */
-  @keyframes pulse {
-    0%, 100% {
-      opacity: 1;
-      transform: scale(1);
-    }
-    50% {
-      opacity: 0.6;
-      transform: scale(1.2);
-    }
-  }
-  
-@keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
-}
+  /* pulse 动画由 GSAP repeat/yoyo 替代 */
 
 .status-text {
     font-size: 1.2rem;
@@ -699,7 +680,7 @@
 /* 波浪动画效果 */
 .wave-divider svg path,
 .footer-wave-divider svg path {
-    animation: wave-animation 20s ease-in-out infinite alternate;
+    /* GSAP Footer 波浪动画替代 */
 }
 
 /* 为不同层次的波浪设置不同的动画延迟和时长，创造更自然的波浪效果 */
@@ -786,13 +767,13 @@
     max-width: 1200px;
     margin: 0 auto;
     padding: 0 20px;
-    animation: fadeInUp 0.5s ease-out 0.2s both;
+    /* GSAP ScrollTrigger 替代 */
 }
 
 .section-header {
     text-align: center;
     margin-bottom: 60px;
-    animation: fadeInUp 0.5s ease-out 0.25s both;
+    /* GSAP ScrollTrigger 替代 */
 }
 
 .section-title {
@@ -813,7 +794,7 @@
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
     gap: 40px;
-    animation: fadeInUp 0.5s ease-out 0.3s both;
+    /* GSAP ScrollTrigger 替代 */
 }
 
 .feature-card {
@@ -1390,7 +1371,7 @@
     width: 8px;
     height: 8px;
     border-radius: 50%;
-    animation: pulse 2s infinite;
+    /* GSAP yoyo repeat 替代 */
 }
 
 #server-status .status-indicator.loading {
@@ -1673,7 +1654,7 @@
 /* 波浪动画效果 */
 .wave-divider svg path,
 .footer-wave-divider svg path {
-    animation: wave-animation 20s ease-in-out infinite alternate;
+    /* GSAP Footer 波浪动画替代 */
 }
 
 /* 为不同层次的波浪设置不同的动画延迟和时长，创造更自然的波浪效果 */
@@ -1760,13 +1741,13 @@
     max-width: 1200px;
     margin: 0 auto;
     padding: 0 20px;
-    animation: fadeInUp 0.5s ease-out 0.2s both;
+    /* GSAP ScrollTrigger 替代 */
 }
 
 .section-header {
     text-align: center;
     margin-bottom: 60px;
-    animation: fadeInUp 0.5s ease-out 0.25s both;
+    /* GSAP ScrollTrigger 替代 */
 }
 
 .section-title {
@@ -1787,7 +1768,7 @@
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
     gap: 40px;
-    animation: fadeInUp 0.5s ease-out 0.3s both;
+    /* GSAP ScrollTrigger 替代 */
 }
 
 .feature-card {
@@ -2364,7 +2345,7 @@
     width: 8px;
     height: 8px;
     border-radius: 50%;
-    animation: pulse 2s infinite;
+    /* GSAP yoyo repeat 替代 */
 }
 
 #server-status .status-indicator.loading {
@@ -2420,131 +2401,301 @@
 </style>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue';
-import { useI18n } from 'vue-i18n';
-import LastViewedPopup from '../components/LastViewedPopup.vue';
-import CookieConsentBanner from '../components/CookieConsentBanner.vue';
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
+import { useI18n } from 'vue-i18n'
+import gsap from 'gsap'
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import LastViewedPopup from '../components/LastViewedPopup.vue'
+import CookieConsentBanner from '../components/CookieConsentBanner.vue'
+import { useGsap } from '@/composables/useGsap'
+import { EASINGS, STAGGERS } from '@/gsap'
 
-const { t } = useI18n();
+const { t } = useI18n()
 
 const backgroundImages = [
-    '/images/Image_1764466849.avif',
-    '/images/Image_1764467382.avif',
-    '/images/Image_1764468583.avif',
-    '/images/Image_1764468914.avif',
-    '/images/Image_1764392636.avif',
-    '/images/Image_1764468731.avif',
-    '/images/Image_1764465651.avif',
-    '/images/3cda066bccaefea3eb268d4ca10f018a.webp',
-    '/images/Image_585018650004905.webp',
-    '/images/Image_585012522922876.webp',
-    '/images/Image_585000138805953.webp',
-    '/images/Image_669234245588716.webp',
-    '/images/Image_669226165759604.webp',
-    '/images/Image_669218057352159.webp',
-    '/images/Image_669214276923463.webp',
-    '/images/Image_669203224465863.webp',
-    '/images/Image_669202127295447.webp',
-    '/images/Image_669192564244096.webp',
-    '/images/Image_669027140045097.webp',
-    '/images/Image_585061010780930.webp',
-    '/images/9ae17d2b-8fb3-4f05-8a75-48c40de55bd0.webp',
-    '/images/Image_669276986426772.webp',
-    '/images/Image_669276986426772.webp',
-];
+  '/images/Image_1764466849.avif',
+  '/images/Image_1764467382.avif',
+  '/images/Image_1764468583.avif',
+  '/images/Image_1764468914.avif',
+  '/images/Image_1764392636.avif',
+  '/images/Image_1764468731.avif',
+  '/images/Image_1764465651.avif',
+  '/images/3cda066bccaefea3eb268d4ca10f018a.webp',
+  '/images/Image_585018650004905.webp',
+  '/images/Image_585012522922876.webp',
+  '/images/Image_585000138805953.webp',
+  '/images/Image_669234245588716.webp',
+  '/images/Image_669226165759604.webp',
+  '/images/Image_669218057352159.webp',
+  '/images/Image_669214276923463.webp',
+  '/images/Image_669203224465863.webp',
+  '/images/Image_669202127295447.webp',
+  '/images/Image_669192564244096.webp',
+  '/images/Image_669027140045097.webp',
+  '/images/Image_585061010780930.webp',
+  '/images/9ae17d2b-8fb3-4f05-8a75-48c40de55bd0.webp',
+  '/images/Image_669276986426772.webp',
+]
 
-const currentIndex = ref(0);
-const currentImage1 = ref(backgroundImages[0]);
-const currentImage2 = ref(backgroundImages[0]);
-const activeLayer = ref(1);
+const currentIndex = ref(0)
+const currentImage1 = ref(backgroundImages[0])
+const currentImage2 = ref(backgroundImages[0])
+const activeLayer = ref(1)
 
 const nextRandomImage = () => {
-    if (backgroundImages.length <= 1) return;
+  if (backgroundImages.length <= 1) return
+  let newIndex: number
+  do {
+    newIndex = Math.floor(Math.random() * backgroundImages.length)
+  } while (newIndex === currentIndex.value)
+  currentIndex.value = newIndex
+  if (activeLayer.value === 1) {
+    currentImage2.value = backgroundImages[newIndex]
+    activeLayer.value = 2
+  } else {
+    currentImage1.value = backgroundImages[newIndex]
+    activeLayer.value = 1
+  }
+}
 
-    let newIndex;
-    do {
-        newIndex = Math.floor(Math.random() * backgroundImages.length);
-    } while (newIndex === currentIndex.value);
+let intervalId: ReturnType<typeof setInterval> | null = null
 
-    currentIndex.value = newIndex;
-
-    if (activeLayer.value === 1) {
-        currentImage2.value = backgroundImages[newIndex];
-        activeLayer.value = 2;
-    } else {
-        currentImage1.value = backgroundImages[newIndex];
-        activeLayer.value = 1;
-    }
-};
-
-let intervalId: ReturnType<typeof setInterval> | null = null;
-
-const serverOnline = ref(true);
-const onlinePlayers = ref('加载中...');
-const serverStatus = ref('服务器在线');
+const serverOnline = ref(true)
+const onlinePlayers = ref('加载中...')
+const serverStatus = ref('服务器在线')
 
 const fetchServerStatus = async () => {
-    try {
-        const response = await fetch('https://api.mcsrvstat.us/3/craft.luminolsuki.moe');
-        if (response.ok) {
-            const data = await response.json();
-            serverOnline.value = data.online || false;
-            onlinePlayers.value = data.online ? `${data.players?.online || 0}/${data.players?.max || 0}` : '0/0';
-            serverStatus.value = data.online ? '服务器在线' : '服务器离线';
-        } else {
-            throw new Error('API 请求失败');
-        }
-    } catch (error) {
-        console.error('获取服务器状态失败:', error);
-        serverOnline.value = false;
-        onlinePlayers.value = 'N/A';
-        serverStatus.value = '服务器离线';
+  try {
+    const response = await fetch('https://api.mcsrvstat.us/3/craft.luminolsuki.moe')
+    if (response.ok) {
+      const data = await response.json()
+      serverOnline.value = data.online || false
+      onlinePlayers.value = data.online ? `${data.players?.online || 0}/${data.players?.max || 0}` : '0/0'
+      serverStatus.value = data.online ? '服务器在线' : '服务器离线'
+    } else {
+      throw new Error('API 请求失败')
     }
-};
+  } catch {
+    serverOnline.value = false
+    onlinePlayers.value = 'N/A'
+    serverStatus.value = '服务器离线'
+  }
+}
+
+const { create } = useGsap()
 
 onMounted(async () => {
-    intervalId = setInterval(nextRandomImage, 3600);
-    
-    await fetchServerStatus();
-    setInterval(fetchServerStatus, 30000);
-    
-    // 打字机效果
-    nextTick(() => {
-        const el = document.getElementById('typedText');
-        if (el) {
-            const text = t('hero.subtitle');
-            let i = 0;
-            const speed = 80;
+  intervalId = setInterval(nextRandomImage, 3600)
 
-            function typeChar() {
-                if (el && i < text.length) {
-                    el.textContent += text.charAt(i);
-                    i++;
-                    setTimeout(typeChar, speed);
-                } else if (el) {
-                    el.classList.add('done');
-                }
-            }
+  await fetchServerStatus()
+  setInterval(fetchServerStatus, 30000)
 
-            setTimeout(typeChar, 600);
-        }
-    });
-    
-    // 滚动相关
-    window.addEventListener('scroll', function() {
-        const y = window.scrollY;
-        // 为背景轮播图添加滚动视差效果
-        const headers = document.querySelectorAll('.header-background');
-        headers.forEach(header => {
-            if (y < window.innerHeight) {
-                (header as HTMLElement).style.transform = `scale(${1.05 + y * 0.0001}) translateY(${y * 0.15}px)`;
-            }
-        });
-    }, { passive: true });
-});
+  await nextTick()
+
+  create((g) => {
+    const mm = gsap.matchMedia()
+
+    // 延迟刷新确保 DOM 就绪
+    requestAnimationFrame(() => ScrollTrigger.refresh())
+
+    // ============ 真实打字机效果 ============
+    mm.add('(prefers-reduced-motion: no-preference)', () => {
+      const el = document.getElementById('typedText')
+      if (!el) return
+
+      const text = t('hero.subtitle')
+      el.textContent = ''
+      el.style.visibility = 'visible'
+
+      // 可变速度 — 标点处停顿
+      const pauses = new Set([',', '，', '.', '。', '!', '！', '?', '？', ';', '；', ':', '：'])
+      let time = 0
+      const chars: { char: string; time: number }[] = []
+
+      for (let i = 0; i < text.length; i++) {
+        const ch = text[i]
+        chars.push({ char: ch, time })
+        time += pauses.has(ch) ? 0.25 : 0.04 + Math.random() * 0.04
+      }
+
+      const textEl = el
+      const tl = gsap.timeline({ delay: 0.6 })
+
+      chars.forEach(({ char, time: t }) => {
+        tl.call(() => { textEl.textContent += char }, undefined, t)
+      })
+
+      // 通过 border-right 模拟光标闪烁
+      tl.call(() => {
+        textEl.classList.add('done')
+        textEl.style.borderRight = '2px solid var(--text-primary)'
+        g.to(textEl, {
+          borderRightColor: 'transparent',
+          duration: 0.5,
+          repeat: -1,
+          yoyo: true,
+          ease: 'steps(1)',
+        } as any)
+      })
+    })
+
+    // ============ Hero 文本入场 ============
+    g.from('.hero-title', {
+      autoAlpha: 0,
+      y: 30,
+      duration: 0.8,
+      ease: EASINGS.entrance,
+      delay: 0.2,
+    })
+    g.from('.hero-description', {
+      autoAlpha: 0,
+      y: 20,
+      duration: 0.7,
+      ease: EASINGS.entrance,
+      delay: 0.5,
+    })
+    g.from('.hero-actions', {
+      autoAlpha: 0,
+      y: 20,
+      duration: 0.6,
+      ease: EASINGS.entrance,
+      delay: 0.8,
+    })
+    g.from('.status-card', {
+      autoAlpha: 0,
+      scale: 0.9,
+      y: 30,
+      duration: 0.7,
+      ease: 'back.out(1.2)',
+      delay: 1.0,
+    })
+
+    // ============ 状态指示灯 (替代 CSS @keyframes pulse) ============
+    g.to('.status-dot::before', {
+      scale: 1.2,
+      autoAlpha: 0.6,
+      duration: 1.0,
+      repeat: -1,
+      yoyo: true,
+      ease: 'sine.inOut',
+    })
+
+    // ============ Hero 视差滚动 (替代 JS scroll 事件) ============
+    g.to('.header-background', {
+      scale: 1.08,
+      y: '12%',
+      ease: 'none',
+      scrollTrigger: {
+        trigger: '.hero-section',
+        start: 'top top',
+        end: 'bottom top',
+        scrub: 1,
+      },
+    })
+
+    // ============ Features 入场 ============
+    ScrollTrigger.batch('.feature-card', {
+      onEnter: (elements) => {
+        g.fromTo(elements,
+          { autoAlpha: 0, y: 60, scale: 0.95 },
+          { autoAlpha: 1, y: 0, scale: 1, stagger: STAGGERS.cards, duration: 0.8, ease: EASINGS.entrance },
+        )
+      },
+      start: 'top 85%',
+      once: true,
+    })
+
+    // ============ Server 入场 ============
+    g.fromTo('.server-card',
+      { autoAlpha: 0, y: 50 },
+      {
+        autoAlpha: 1,
+        y: 0,
+        stagger: 0.15,
+        duration: 0.8,
+        ease: EASINGS.entrance,
+        scrollTrigger: { trigger: '.servers-grid', start: 'top 85%', once: true },
+      },
+    )
+
+    // ============ Team 入场 ============
+    g.fromTo('.contributor-card',
+      {
+        autoAlpha: 0,
+        y: 40,
+        scale: gsap.utils.distribute({ base: 0.85, amount: 0.15, from: 'center' }),
+      },
+      {
+        autoAlpha: 1,
+        y: 0,
+        scale: 1,
+        stagger: { each: 0.06, from: 'center', grid: 'auto' as any },
+        duration: 0.7,
+        ease: EASINGS.entrance,
+        scrollTrigger: { trigger: '.team-section', start: 'top 85%', once: true },
+      },
+    )
+
+    // ============ 卡片 hover 动画 (GSAP 替代 CSS :hover) ============
+    const bindCardHover = (selector: string, hoverVars: gsap.TweenVars = {}) => {
+      g.utils.toArray<HTMLElement>(selector).forEach((card) => {
+        let enterTween: gsap.core.Tween | null = null
+        let leaveTween: gsap.core.Tween | null = null
+
+        card.addEventListener('mouseenter', () => {
+          leaveTween?.kill()
+          enterTween = g.to(card, {
+            y: -6,
+            scale: 1.02,
+            duration: 0.25,
+            ease: EASINGS.hover,
+            overwrite: 'auto',
+            ...hoverVars,
+          })
+        })
+        card.addEventListener('mouseleave', () => {
+          enterTween?.kill()
+          leaveTween = g.to(card, {
+            y: 0,
+            scale: 1,
+            duration: 0.25,
+            ease: EASINGS.hover,
+            overwrite: 'auto',
+            clearProps: 'transform',
+          })
+        })
+      })
+    }
+
+    bindCardHover('.feature-card')
+    bindCardHover('.server-card')
+    bindCardHover('.contributor-card', { y: -3, scale: 1.03 })
+
+    // ============ 按钮 hover (GSAP 替代 CSS :hover) ============
+    g.utils.toArray<HTMLElement>('.btn').forEach((btn) => {
+      btn.addEventListener('mouseenter', () => {
+        g.to(btn, { y: -3, duration: 0.2, ease: EASINGS.hover })
+      })
+      btn.addEventListener('mouseleave', () => {
+        g.to(btn, { y: 0, duration: 0.2, ease: EASINGS.hover })
+      })
+    })
+
+    // ============ Section headers 入场 ============
+    g.fromTo('.section-header',
+      { autoAlpha: 0, y: 30 },
+      {
+        autoAlpha: 1,
+        y: 0,
+        duration: 0.7,
+        ease: EASINGS.entrance,
+        scrollTrigger: { trigger: '.features-section', start: 'top 85%', once: true },
+      },
+    )
+  })
+})
 
 onUnmounted(() => {
-    if (intervalId) clearInterval(intervalId);
-    window.removeEventListener('scroll', () => {});
-});
+  if (intervalId) clearInterval(intervalId)
+})
 </script>

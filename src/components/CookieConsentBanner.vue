@@ -2,6 +2,7 @@
   <Transition name="consent-slide">
     <div
       v-if="visible && !hasConsented"
+      ref="bannerRef"
       class="cookie-consent-banner"
       :class="[`consent-${position}`, { 'consent-exiting': isExiting }]"
       :style="{ zIndex }"
@@ -49,9 +50,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import gsap from 'gsap'
 import { useCookieConsent } from '../composables/useCookieConsent'
+import { EASINGS } from '@/gsap'
 
 const props = withDefaults(
   defineProps<{
@@ -67,7 +70,7 @@ const props = withDefaults(
     declineText: '',
     position: 'bottom',
     zIndex: 999,
-  }
+  },
 )
 
 const emit = defineEmits<{
@@ -83,10 +86,41 @@ const isExiting = ref(false)
 const hasConsented = ref(false)
 const acceptBtn = ref<HTMLButtonElement | null>(null)
 const declineBtn = ref<HTMLButtonElement | null>(null)
+const bannerRef = ref<HTMLElement | null>(null)
 
 const consentMessage = computed(() => props.message || t('cookieConsent.message'))
 const consentAcceptText = computed(() => props.acceptText || t('cookieConsent.accept'))
 const consentDeclineText = computed(() => props.declineText || t('cookieConsent.decline'))
+
+let ctx: gsap.Context | null = null
+
+function animateIn(el: HTMLElement) {
+  gsap.fromTo(el,
+    { autoAlpha: 0, y: 60 },
+    {
+      autoAlpha: 1,
+      y: 0,
+      duration: 0.45,
+      ease: 'back.out(1.2)',
+    },
+  )
+}
+
+function animateOut(el: HTMLElement): gsap.core.Tween {
+  return gsap.to(el, {
+    autoAlpha: 0,
+    y: 40,
+    duration: 0.3,
+    ease: EASINGS.exit,
+  })
+}
+
+watch(visible, async (val) => {
+  if (val) {
+    await nextTick()
+    if (bannerRef.value) animateIn(bannerRef.value)
+  }
+})
 
 function handleAccept() {
   if (isExiting.value) return
@@ -94,6 +128,7 @@ function handleAccept() {
   hasConsented.value = true
   isExiting.value = true
   emit('accepted')
+  if (bannerRef.value) animateOut(bannerRef.value)
 }
 
 function handleDecline() {
@@ -102,6 +137,7 @@ function handleDecline() {
   hasConsented.value = true
   isExiting.value = true
   emit('declined')
+  if (bannerRef.value) animateOut(bannerRef.value)
 }
 
 function handleKeydown(e: KeyboardEvent) {
@@ -134,6 +170,7 @@ onMounted(async () => {
 
 onUnmounted(() => {
   document.removeEventListener('keydown', handleKeydown)
+  ctx?.revert()
 })
 </script>
 
@@ -253,65 +290,10 @@ onUnmounted(() => {
   max-width: 480px;
 }
 
-/* Transition classes */
-.consent-slide-enter-active {
-  animation: consentSlideIn 0.4s cubic-bezier(0.22, 0.61, 0.36, 1) both;
-}
-
+/* Transition classes — 保留空的用于兼容，实际动画由 GSAP 驱动 */
+.consent-slide-enter-active,
 .consent-slide-leave-active {
-  animation: consentSlideOut 0.3s cubic-bezier(0.55, 0.06, 0.68, 0.19) both;
-}
-
-@keyframes consentSlideIn {
-  0% {
-    opacity: 0;
-    transform: translateY(60px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.consent-bottom.consent-slide-enter-active {
-  animation-name: consentSlideInCenter;
-}
-
-@keyframes consentSlideInCenter {
-  0% {
-    opacity: 0;
-    transform: translateX(-50%) translateY(60px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0);
-  }
-}
-
-.consent-bottom.consent-slide-leave-active {
-  animation-name: consentSlideOutCenter;
-}
-
-@keyframes consentSlideOutCenter {
-  0% {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0);
-  }
-  100% {
-    opacity: 0;
-    transform: translateX(-50%) translateY(60px);
-  }
-}
-
-@keyframes consentSlideOut {
-  0% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-  100% {
-    opacity: 0;
-    transform: translateY(60px);
-  }
+  transition: none;
 }
 
 /* Responsive */

@@ -1,5 +1,5 @@
 export default {
-  "404":{
+  "404": {
     "description": "Oops! The page you're looking for doesn't exist.",
     "backhome": "Go back to home"
   },
@@ -122,7 +122,9 @@ export default {
         "The server is a non-profit nature and accepts voluntary sponsorship. Sponsoring players will receive a \"Sponsor\" title (without any special permissions), thank you for your support!",
         "This server complies with relevant laws and regulations of the People's Republic of China and the Minecraft EULA agreement, all rules are implemented within the legal framework, and the final interpretation of all rules belongs to the server management department."
       ],
-      "blockquote": "This document is only for players to quickly understand the basic rules of LuminolCraft server. For detailed rules (including management processes, data processing mechanisms, plugin lists, etc.), please refer to the \"LuminolCraft Server Rules\".",
+      "blockquoteBefore": "This document is only for players to quickly understand the basic rules of LuminolCraft server. For detailed rules (including management processes, data processing mechanisms, plugin lists, etc.), please refer to the ",
+      "blockquoteLink": "\"LuminolCraft Server Rules\"",
+      "blockquoteAfter": ".",
       "backHome": "Back to Home"
     }
   },

@@ -14,34 +14,62 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
-import { useI18n } from 'vue-i18n';
+import { ref, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
+import gsap from 'gsap'
+import { useGsap } from '@/composables/useGsap'
+import { DURATIONS, EASINGS } from '@/gsap'
 
-const { t } = useI18n();
+const { t } = useI18n()
+const containerRef = ref<HTMLDivElement | null>(null)
+const { create } = useGsap({ scope: containerRef })
 
 interface ColorScheme {
-  id: string;
-  nameKey: string;
-  primary: string;
+  id: string
+  nameKey: string
+  primary: string
 }
 
 const colorSchemes: ColorScheme[] = [
   { id: 'tech-purple', nameKey: 'colorScheme.techPurple', primary: '#8b5cf6' },
   { id: 'ocean-blue', nameKey: 'colorScheme.oceanBlue', primary: '#3b82f6' },
-  { id: 'forest-green', nameKey: 'colorScheme.forestGreen', primary: '#10b981' }
-];
+  { id: 'forest-green', nameKey: 'colorScheme.forestGreen', primary: '#10b981' },
+]
 
-const currentScheme = ref(localStorage.getItem('colorScheme') || 'tech-purple');
+const currentScheme = ref(localStorage.getItem('colorScheme') || 'tech-purple')
 
 const switchScheme = (schemeId: string) => {
-  currentScheme.value = schemeId;
-  document.documentElement.setAttribute('data-color-scheme', schemeId);
-  localStorage.setItem('colorScheme', schemeId);
-};
+  currentScheme.value = schemeId
+  document.documentElement.setAttribute('data-color-scheme', schemeId)
+  localStorage.setItem('colorScheme', schemeId)
+}
 
 onMounted(() => {
-  document.documentElement.setAttribute('data-color-scheme', currentScheme.value);
-});
+  document.documentElement.setAttribute('data-color-scheme', currentScheme.value)
+
+  create((g) => {
+    const buttons = g.utils.toArray<HTMLButtonElement>(
+      containerRef.value?.querySelectorAll('button') ?? [],
+    )
+
+    buttons.forEach((btn) => {
+      btn.addEventListener('mouseenter', () => {
+        if (btn.classList.contains('active')) return
+        g.to(btn, { scale: 1.08, y: -2, duration: DURATIONS.hover, ease: EASINGS.hover })
+      })
+      btn.addEventListener('mouseleave', () => {
+        if (btn.classList.contains('active')) return
+        g.to(btn, { scale: 1, y: 0, duration: DURATIONS.hover, ease: EASINGS.hover })
+      })
+      btn.addEventListener('pointerdown', () => {
+        g.to(btn, { scale: 0.95, duration: DURATIONS.press, ease: EASINGS.press })
+      })
+      btn.addEventListener('pointerup', () => {
+        g.to(btn, { scale: 1, duration: 0.15, ease: 'back.out(1.7)' })
+      })
+    })
+  })
+})
 </script>
 
 <style scoped>

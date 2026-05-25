@@ -252,7 +252,51 @@
 </style>
 
 <script setup lang="ts">
-import { useI18n } from 'vue-i18n';
-console.log('✅ Monitoring.vue 组件已成功加载！采用 Vercel Design System')
-const { t } = useI18n();
+import { onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
+import gsap from 'gsap'
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { useGsap } from '@/composables/useGsap'
+import { EASINGS } from '@/gsap'
+
+const { t } = useI18n()
+const { create } = useGsap()
+
+onMounted(() => {
+  create((g) => {
+    g.fromTo('.monitoring-header',
+      { autoAlpha: 0, y: 30 },
+      { autoAlpha: 1, y: 0, duration: 0.7, ease: EASINGS.entrance },
+    )
+    g.fromTo('.status-card',
+      { autoAlpha: 0, scale: 0.9 },
+      { autoAlpha: 1, scale: 1, duration: 0.6, ease: 'back.out(1.2)', delay: 0.2 },
+    )
+    g.fromTo('.preview-card',
+      { autoAlpha: 0, y: 40 },
+      {
+        autoAlpha: 1,
+        y: 0,
+        stagger: 0.1,
+        duration: 0.7,
+        ease: EASINGS.entrance,
+        delay: 0.4,
+        scrollTrigger: {
+          trigger: '.monitoring-content',
+          start: 'top 85%',
+          once: true,
+        },
+      },
+    )
+
+    g.to('.badge', {
+      scale: 1.05,
+      autoAlpha: 0.8,
+      duration: 1.2,
+      repeat: -1,
+      yoyo: true,
+      ease: 'sine.inOut',
+    })
+  })
+})
 </script>
