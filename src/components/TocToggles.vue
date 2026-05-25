@@ -354,7 +354,13 @@ function langToggle() {
   opacity: 0;
   transform: rotate(90deg) scale(0.5);
   transition: opacity 200ms ease, transform 200ms ease;
-  color: var(--text-color);
+  
+}
+@media screen and (max-width: 768px) {
+  .theme-toggle {
+    color: var(--text-color);
+  }
+  
 }
 
 .theme-icon.active {

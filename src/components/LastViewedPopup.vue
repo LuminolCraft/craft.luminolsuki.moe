@@ -115,11 +115,10 @@ function clearDismissTimer() {
 function startProgressBar() {
   const bar = popupRef.value?.querySelector('.popup-progress-bar') as HTMLElement
   if (!bar) return
-  progressTween = gsap.to(bar, {
-    width: '0%',
-    duration: PROGRESS_DURATION,
-    ease: 'none',
-  })
+  progressTween = gsap.fromTo(bar,
+    { scaleX: 1 },
+    { scaleX: 0, transformOrigin: 'left center', duration: PROGRESS_DURATION, ease: 'none' },
+  )
 }
 
 function pauseTimer() {
@@ -136,15 +135,21 @@ function resumeTimer() {
 }
 
 watch(visible, async (val) => {
-  if (val && popupRef.value) {
-    await nextTick()
-    gsap.fromTo(popupRef.value,
-      { autoAlpha: 0, x: '120%' },
-      { autoAlpha: 1, x: '0%', duration: 0.55, ease: 'back.out(1.2)' },
-    )
-    startProgressBar()
-    dismissTimer = setTimeout(() => dismiss(), PROGRESS_DURATION * 1000)
-  }
+  if (!val) return
+  await nextTick()
+  if (!popupRef.value) return
+
+  gsap.fromTo(popupRef.value,
+    { autoAlpha: 0, x: '120%' },
+    { autoAlpha: 1, x: '0%', duration: 0.55, ease: 'back.out(1.2)' },
+  )
+  const bodyItems = popupRef.value.querySelectorAll('.popup-body > *')
+  gsap.fromTo(bodyItems,
+    { autoAlpha: 0, y: 10 },
+    { autoAlpha: 1, y: 0, duration: 0.4, stagger: 0.08, ease: 'power2.out', delay: 0.3 },
+  )
+  startProgressBar()
+  dismissTimer = setTimeout(() => dismiss(), PROGRESS_DURATION * 1000)
 })
 
 onMounted(() => {
@@ -267,6 +272,7 @@ onUnmounted(() => {
   height: 3px;
   width: 100%;
   background: var(--bases-primary-gradient, linear-gradient(135deg, #9e94d8 0%, #b6ade6 100%));
+  transform-origin: left center;
 }
 
 /* Transition classes — 保留空的用于兼容，实际动画由 GSAP 驱动 */
