@@ -644,32 +644,7 @@ body {
    动画效果 (Animations)
    =========================================== */
 
-@keyframes vercel-fadeInUp {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-@keyframes vercel-fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-}
-
-@keyframes vercel-scaleIn {
-    from {
-        opacity: 0;
-        transform: scale(0.95);
-    }
-    to {
-        opacity: 1;
-        transform: scale(1);
-    }
-}
+/* @keyframes vercel-fadeInUp/vercel-fadeIn/vercel-scaleIn 已由 GSAP 替代 */
 
 .vercel-animate-fadeInUp {
     animation: vercel-fadeInUp var(--vercel-duration-normal) var(--vercel-ease-out) both;

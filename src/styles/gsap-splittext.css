@@ -1,0 +1,13 @@
+.split-char {
+  font-kerning: none;
+  text-rendering: optimizeSpeed;
+}
+
+.split-word {
+  display: inline-block;
+}
+
+.split-line {
+  display: block;
+  overflow: hidden;
+}

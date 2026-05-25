@@ -473,15 +473,18 @@
     </style>
     
     <script lang="ts">
-    import { defineComponent, ref, onMounted, onUnmounted, computed, watch } from 'vue';
+    import { defineComponent, ref, onMounted, onUnmounted, computed, watch, nextTick } from 'vue';
     import { useRouter } from 'vue-router';
     import { useI18n } from 'vue-i18n';
-    import { marked } from 'marked'; // 假设已安装 marked 或通过 CDN 加载
+    import { marked } from 'marked';
+    import gsap from 'gsap';
+    import { ScrollTrigger } from 'gsap/ScrollTrigger';
     import { useLastViewedCookie } from '../composables/useLastViewedCookie';
     import LastViewedPopup from '../components/LastViewedPopup.vue';
     import CookieConsentBanner from '../components/CookieConsentBanner.vue';
-    import debounce from 'lodash/debounce'; // 假设使用 lodash 的 debounce
+    import debounce from 'lodash/debounce';
     import { appConfig } from '../config/app-config';
+    import { EASINGS, STAGGERS } from '@/gsap';
     
     // 类型定义
     interface NewsItem {
@@ -1252,9 +1255,27 @@
     
         onMounted(async () => {
           await newsManager.initializeApp();
-          refreshTrigger.value++; // 触发响应式更新
+          refreshTrigger.value++;
           filterNews();
           newsManager.initMarked();
+
+          // GSAP 入场动画
+          await nextTick();
+          gsap.fromTo('.news-card',
+            { autoAlpha: 0, y: 40 },
+            {
+              autoAlpha: 1,
+              y: 0,
+              stagger: STAGGERS.cards,
+              duration: 0.7,
+              ease: EASINGS.entrance,
+              scrollTrigger: {
+                trigger: '.news-grid',
+                start: 'top 90%',
+                once: true,
+              },
+            },
+          );
         });
     
         onUnmounted(() => {

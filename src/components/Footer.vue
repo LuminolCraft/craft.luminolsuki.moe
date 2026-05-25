@@ -1,7 +1,10 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import gsap from 'gsap'
+import 'gsap/MorphSVGPlugin'
 import { appConfig } from '../config/app-config'
+import { EASINGS } from '@/gsap'
 
 const { t } = useI18n()
 
@@ -76,16 +79,96 @@ const goToVersionCommit = () => {
 onMounted(() => {
     fetchVersion()
     calculateUptime()
-})
+
+    // 波浪 SVG — MorphSVG 形变，三层不同周期
+    const paths = document.querySelectorAll<SVGPathElement>('.footer-wave-path')
+    if (paths.length > 0) {
+      const shapes = [
+        'M0,120V73.71c47.79-22.2,103.59-32.17,158-28,70.36,5.37,136.33,33.31,206.8,37.5C438.64,87.57,512.34,66.33,583,47.95c69.27-18,138.3-24.88,209.4-13.08,36.15,6,69.85,17.84,104.45,29.34C989.49,95,1113,134.29,1200,67.53V120Z',
+        'M0,120V80.71c47.79-18.2,103.59-28.17,158-24,70.36,7.37,136.33,35.31,206.8,39.5C438.64,90.57,512.34,69.33,583,50.95c69.27-15,138.3-21.88,209.4-10.08,36.15,8,69.85,19.84,104.45,31.34C989.49,98,1113,137.29,1200,70.53V120Z',
+        'M0,120V70.71c47.79-25.2,103.59-35.17,158-31,70.36,4.37,136.33,32.31,206.8,36.5C438.64,85.57,512.34,64.33,583,45.95c69.27-20,138.3-27.88,209.4-16.08,36.15,5,69.85,16.84,104.45,28.34C989.49,93,1113,132.29,1200,65.53V120Z',
+        'M0,120V85.71c47.79-16.2,103.59-26.17,158-22,70.36,8.37,136.33,36.31,206.8,40.5C438.64,92.57,512.34,71.33,583,52.95c69.27-13,138.3-19.88,209.4-8.08,36.15,9,69.85,20.84,104.45,32.34C989.49,100,1113,139.29,1200,72.53V120Z',
+        'M0,120V68.71c47.79-27.2,103.59-37.17,158-33,70.36,3.37,136.33,31.31,206.8,35.5C438.64,84.57,512.34,63.33,583,44.95c69.27-22,138.3-29.88,209.4-18.08,36.15,4,69.85,15.84,104.45,27.34C989.49,92,1113,131.29,1200,64.53V120Z',
+      ]
+
+      // 对应原 CSS: path:nth-child(1)=25s, (2)=20s, (3)=15s
+      const durations = [25, 20, 15]
+      const segment = 5  // 5 个 shape，每段等分
+
+      paths.forEach((path, i) => {
+        const dur = durations[i] || 20
+        const tl = gsap.timeline({ repeat: -1, yoyo: true })
+
+        // 从当前 shape (shapes[0]) 依次形变到 shapes[1..4]
+        for (let s = 1; s < shapes.length; s++) {
+          tl.to(path, {
+            morphSVG: { shape: shapes[s] },
+            duration: dur / segment,
+            ease: 'linear',
+          })
+        }
+      })
+    }
+
+    // Footer 内容入场 — 用 fromTo + immediateRender:false 避免等待滚动时元素不可见
+    gsap.fromTo('.footer-links .footer-column',
+      { autoAlpha: 0, y: 40 },
+      {
+        autoAlpha: 1,
+        y: 0,
+        stagger: 0.15,
+        duration: 0.8,
+        ease: EASINGS.entrance,
+        scrollTrigger: {
+          trigger: 'footer',
+          start: 'top 85%',
+          once: true,
+        },
+      },
+    )
+
+    gsap.fromTo('.website-status-info .status-item',
+      { autoAlpha: 0, y: 20 },
+      {
+        autoAlpha: 1,
+        y: 0,
+        stagger: 0.1,
+        duration: 0.6,
+        ease: EASINGS.entrance,
+        scrollTrigger: {
+          trigger: '.website-status-info',
+          start: 'top 90%',
+          once: true,
+        },
+      },
+    )
+  })
 </script>
 
 <template>
     <div class="footer-transition-section">
         <div class="footer-wave-divider">
             <svg viewBox="0 0 1200 120" preserveAspectRatio="none">
-                <path class="footer-wave-path" opacity=".3" fill="var(--bases-footer-background-color)"></path>
-                <path class="footer-wave-path" opacity=".6" fill="var(--bases-footer-background-color)"></path>
-                <path class="footer-wave-path" fill="var(--bases-footer-background-color)"></path>
+                <defs>
+                  <linearGradient id="wave-grad-1" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="var(--bases-footer-background-color)" stop-opacity="0" />
+                    <stop offset="40%" stop-color="var(--bases-footer-background-color)" stop-opacity="0.15" />
+                    <stop offset="100%" stop-color="var(--bases-footer-background-color)" stop-opacity="0.35" />
+                  </linearGradient>
+                  <linearGradient id="wave-grad-2" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="var(--bases-footer-background-color)" stop-opacity="0.1" />
+                    <stop offset="50%" stop-color="var(--bases-footer-background-color)" stop-opacity="0.45" />
+                    <stop offset="100%" stop-color="var(--bases-footer-background-color)" stop-opacity="0.7" />
+                  </linearGradient>
+                  <linearGradient id="wave-grad-3" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="var(--bases-footer-background-color)" stop-opacity="0.3" />
+                    <stop offset="60%" stop-color="var(--bases-footer-background-color)" stop-opacity="0.8" />
+                    <stop offset="100%" stop-color="var(--bases-footer-background-color)" stop-opacity="1" />
+                  </linearGradient>
+                </defs>
+                <path class="footer-wave-path" fill="url(#wave-grad-1)" d="M0,120V73.71c47.79-22.2,103.59-32.17,158-28,70.36,5.37,136.33,33.31,206.8,37.5C438.64,87.57,512.34,66.33,583,47.95c69.27-18,138.3-24.88,209.4-13.08,36.15,6,69.85,17.84,104.45,29.34C989.49,95,1113,134.29,1200,67.53V120Z"></path>
+                <path class="footer-wave-path" fill="url(#wave-grad-2)" d="M0,120V80.71c47.79-18.2,103.59-28.17,158-24,70.36,7.37,136.33,35.31,206.8,39.5C438.64,90.57,512.34,69.33,583,50.95c69.27-15,138.3-21.88,209.4-10.08,36.15,8,69.85,19.84,104.45,31.34C989.49,98,1113,137.29,1200,70.53V120Z"></path>
+                <path class="footer-wave-path" fill="url(#wave-grad-3)" d="M0,120V70.71c47.79-25.2,103.59-35.17,158-31,70.36,4.37,136.33,32.31,206.8,36.5C438.64,85.57,512.34,64.33,583,45.95c69.27-20,138.3-27.88,209.4-16.08,36.15,5,69.85,16.84,104.45,28.34C989.49,93,1113,132.29,1200,65.53V120Z"></path>
             </svg>
         </div>
     </div>
@@ -179,44 +262,24 @@ p{
 .footer-wave-divider svg path {
     animation: wave-animation 20s ease-in-out infinite alternate;
 }
-
-/* 为不同层次的波浪设置不同的动画延迟和时长，创造更自然的波浪效果 */
 .footer-wave-divider svg path:nth-child(1) {
     animation-duration: 25s;
     animation-delay: -1s;
 }
-
 .footer-wave-divider svg path:nth-child(2) {
     animation-duration: 20s;
     animation-delay: -2s;
 }
-
 .footer-wave-divider svg path:nth-child(3) {
     animation-duration: 15s;
     animation-delay: -3s;
 }
-
-/* 波浪动画关键帧 */
 @keyframes wave-animation {
-    0% {
-        d: path('M0,120V73.71c47.79-22.2,103.59-32.17,158-28,70.36,5.37,136.33,33.31,206.8,37.5C438.64,87.57,512.34,66.33,583,47.95c69.27-18,138.3-24.88,209.4-13.08,36.15,6,69.85,17.84,104.45,29.34C989.49,95,1113,134.29,1200,67.53V120Z');
-    }
-    25% {
-        d: path('M0,120V80.71c47.79-18.2,103.59-28.17,158-24,70.36,7.37,136.33,35.31,206.8,39.5C438.64,90.57,512.34,69.33,583,50.95c69.27-15,138.3-21.88,209.4-10.08,36.15,8,69.85,19.84,104.45,31.34C989.49,98,1113,137.29,1200,70.53V120Z');
-    }
-    50% {
-        d: path('M0,120V70.71c47.79-25.2,103.59-35.17,158-31,70.36,4.37,136.33,32.31,206.8,36.5C438.64,85.57,512.34,64.33,583,45.95c69.27-20,138.3-27.88,209.4-16.08,36.15,5,69.85,16.84,104.45,28.34C989.49,93,1113,132.29,1200,65.53V120Z');
-    }
-    75% {
-        d: path('M0,120V85.71c47.79-16.2,103.59-26.17,158-22,70.36,8.37,136.33,36.31,206.8,40.5C438.64,92.57,512.34,71.33,583,52.95c69.27-13,138.3-19.88,209.4-8.08,36.15,9,69.85,20.84,104.45,32.34C989.49,100,1113,139.29,1200,72.53V120Z');
-    }
-    100% {
-        d: path('M0,120V68.71c47.79-27.2,103.59-37.17,158-33,70.36,3.37,136.33,31.31,206.8,35.5C438.64,84.57,512.34,63.33,583,44.95c69.27-22,138.3-29.88,209.4-18.08,36.15,4,69.85,15.84,104.45,27.34C989.49,92,1113,131.29,1200,64.53V120Z');
-    }
-}
-
-.footer-wave-path {
-    fill: var(--bases-footer-background-color);
+    0% { d: path('M0,120V73.71c47.79-22.2,103.59-32.17,158-28,70.36,5.37,136.33,33.31,206.8,37.5C438.64,87.57,512.34,66.33,583,47.95c69.27-18,138.3-24.88,209.4-13.08,36.15,6,69.85,17.84,104.45,29.34C989.49,95,1113,134.29,1200,67.53V120Z'); }
+    25% { d: path('M0,120V80.71c47.79-18.2,103.59-28.17,158-24,70.36,7.37,136.33,35.31,206.8,39.5C438.64,90.57,512.34,69.33,583,50.95c69.27-15,138.3-21.88,209.4-10.08,36.15,8,69.85,19.84,104.45,31.34C989.49,98,1113,137.29,1200,70.53V120Z'); }
+    50% { d: path('M0,120V70.71c47.79-25.2,103.59-35.17,158-31,70.36,4.37,136.33,32.31,206.8,36.5C438.64,85.57,512.34,64.33,583,45.95c69.27-20,138.3-27.88,209.4-16.08,36.15,5,69.85,16.84,104.45,28.34C989.49,93,1113,132.29,1200,65.53V120Z'); }
+    75% { d: path('M0,120V85.71c47.79-16.2,103.59-26.17,158-22,70.36,8.37,136.33,36.31,206.8,40.5C438.64,92.57,512.34,71.33,583,52.95c69.27-13,138.3-19.88,209.4-8.08,36.15,9,69.85,20.84,104.45,32.34C989.49,100,1113,139.29,1200,72.53V120Z'); }
+    100% { d: path('M0,120V68.71c47.79-27.2,103.59-37.17,158-33,70.36,3.37,136.33,31.31,206.8,35.5C438.64,84.57,512.34,63.33,583,44.95c69.27-22,138.3-29.88,209.4-18.08,36.15,4,69.85,15.84,104.45,27.34C989.49,92,1113,131.29,1200,64.53V120Z'); }
 }
 
 /* Footer base */

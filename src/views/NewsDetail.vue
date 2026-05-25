@@ -585,8 +585,11 @@ import { defineComponent, ref, onMounted, onUnmounted, computed, watch, nextTick
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { marked } from 'marked';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import Navbar from '../components/Navbar.vue';
 import Footer from '../components/Footer.vue';
+import { EASINGS } from '@/gsap';
 
 // 类型定义
 interface NewsItem {
@@ -984,12 +987,37 @@ export default defineComponent({
       }
     };
 
+    let gsapCtx: gsap.Context | null = null
+
     onMounted(async () => {
       await loadNews();
       document.addEventListener('keydown', handleKeydown);
+
+      await nextTick();
+      gsapCtx = gsap.context(() => {
+        gsap.from('.news-article', {
+          autoAlpha: 0,
+          y: 30,
+          duration: 0.6,
+          ease: EASINGS.entrance,
+        });
+        gsap.from('.news-content p, .news-content h2, .news-content h3', {
+          autoAlpha: 0,
+          y: 20,
+          stagger: 0.06,
+          duration: 0.5,
+          ease: EASINGS.entrance,
+          scrollTrigger: {
+            trigger: '.news-content',
+            start: 'top 85%',
+            once: true,
+          },
+        });
+      });
     });
 
     onUnmounted(() => {
+      gsapCtx?.revert();
       document.removeEventListener('keydown', handleKeydown);
       document.body.style.overflow = '';
     });

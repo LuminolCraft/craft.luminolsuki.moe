@@ -65,10 +65,14 @@
 
 <script setup lang="ts">
 import { ref, watch, onMounted, onUnmounted } from 'vue'
-import { gsap } from 'gsap'
+import gsap from 'gsap'
 import { useI18n } from '../composables/useI18n'
+import { useGsap } from '@/composables/useGsap'
+import { DURATIONS, EASINGS } from '@/gsap'
 
 const { lang, toggleLang, t } = useI18n()
+const containerRef = ref<HTMLDivElement | null>(null)
+const { create } = useGsap({ scope: containerRef })
 
 const isDark = ref(false)
 const overlayRef = ref<HTMLDivElement | null>(null)
@@ -230,14 +234,29 @@ function themeToggle(e: MouseEvent) {
 }
 
 onMounted(() => {
-  if (!zhIconRef.value || !enIconRef.value) return
-  if (lang.value === 'zh') {
-    gsap.set(enIconRef.value, { opacity: 0, rotateY: 90, scale: 0.8 })
-    gsap.set(zhIconRef.value, { opacity: 1, rotateY: 0, scale: 1 })
-  } else {
-    gsap.set(zhIconRef.value, { opacity: 0, rotateY: 90, scale: 0.8 })
-    gsap.set(enIconRef.value, { opacity: 1, rotateY: 0, scale: 1 })
-  }
+  create((g) => {
+    if (!zhIconRef.value || !enIconRef.value) return
+
+    // 初始状态设置
+    if (lang.value === 'zh') {
+      g.set(enIconRef.value, { opacity: 0, rotateY: 90, scale: 0.8 })
+      g.set(zhIconRef.value, { opacity: 1, rotateY: 0, scale: 1 })
+    } else {
+      g.set(zhIconRef.value, { opacity: 0, rotateY: 90, scale: 0.8 })
+      g.set(enIconRef.value, { opacity: 1, rotateY: 0, scale: 1 })
+    }
+
+    // 主题切换按钮 hover
+    const themeBtn = document.getElementById('theme-btn')
+    if (themeBtn) {
+      themeBtn.addEventListener('mouseenter', () => {
+        g.to('.theme-icon.active', { scale: 1.1, duration: DURATIONS.hover, ease: EASINGS.hover })
+      })
+      themeBtn.addEventListener('mouseleave', () => {
+        g.to('.theme-icon.active', { scale: 1, duration: DURATIONS.hover, ease: EASINGS.hover })
+      })
+    }
+  })
 
   function onPointerDown(e: PointerEvent) {
     if (!animatingRef.value || !revealAnim.value) return
@@ -275,20 +294,20 @@ function langToggle() {
   const inEl = isZh ? enIconRef.value : zhIconRef.value
 
   if (!matchMedia('(prefers-reduced-motion: reduce)').matches && outEl && inEl) {
-    gsap.to(outEl, {
+    const tl = gsap.timeline({ defaults: { overwrite: 'auto' } })
+    tl.to(outEl, {
       opacity: 0,
       rotateY: 90,
       scale: 0.8,
       duration: 0.15,
       ease: 'power2.in',
-      onComplete: () => {
-        toggleLang()
-        gsap.fromTo(inEl,
-          { opacity: 0, rotateY: -90, scale: 0.8 },
-          { opacity: 1, rotateY: 0, scale: 1, duration: 0.3, ease: 'power2.out' }
-        )
-      }
+      onComplete: () => toggleLang(),
     })
+    .fromTo(inEl,
+      { opacity: 0, rotateY: -90, scale: 0.8 },
+      { opacity: 1, rotateY: 0, scale: 1, duration: 0.3, ease: 'power2.out' },
+      '-=0.05',
+    )
     return
   }
   toggleLang()

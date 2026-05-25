@@ -10,7 +10,7 @@
                 </ol>
 
                 <blockquote class="rules-quote">
-                    <p class="vercel-body-small">{{ t('rules.simple.blockquote') }}</p>
+                    <p class="vercel-body-small">{{ t('rules.simple.blockquoteBefore') }}<a href="https://docs.qq.com/pdf/DQUZYS0FKenFmYWZx" target="_blank" rel="noopener noreferrer" class="rules-link">{{ t('rules.simple.blockquoteLink') }}<svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1.5" class="external-link-icon" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"></path></svg></a>{{ t('rules.simple.blockquoteAfter') }}</p>
                 </blockquote>
 
                 <a href="/" class="back-to-home vercel-btn vercel-btn-primary">{{ t('rules.simple.backHome') }}</a>
@@ -74,6 +74,28 @@
     color: inherit;
 }
 
+.rules-link {
+    color: var(--primary-color);
+    text-decoration: none;
+    border-bottom: 1px dashed var(--primary-color);
+}
+
+.rules-link:hover {
+    border-bottom-style: solid;
+}
+
+.external-link-icon {
+    width: 14px;
+    height: 14px;
+    margin-left: 3px;
+    vertical-align: -1px;
+    transition: transform 150ms ease-out;
+}
+
+.rules-link:hover .external-link-icon {
+    transform: translateX(2px);
+}
+
 .back-to-home {
     display: inline-flex;
 	align-items: center;
@@ -124,16 +146,42 @@
 </style>
 
 <script setup lang="ts">
-import { useI18n } from 'vue-i18n';
-import { computed } from 'vue';
-import zh from '../i18n/locales/zh';
-import en from '../i18n/locales/en';
+import { computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
+import gsap from 'gsap'
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import zh from '../i18n/locales/zh'
+import en from '../i18n/locales/en'
+import { useGsap } from '@/composables/useGsap'
+import { EASINGS, STAGGERS } from '@/gsap'
 
-const { t, locale } = useI18n();
+const { t, locale } = useI18n()
 
 const rules = computed(() => {
-  const currentLang = locale.value;
-  const rulesObj = currentLang === 'zh' ? zh : en;
-  return rulesObj.rules.simple.rules || [];
-});
+  const currentLang = locale.value
+  const rulesObj = currentLang === 'zh' ? zh : en
+  return rulesObj.rules.simple.rules || []
+})
+
+const { create } = useGsap()
+
+onMounted(() => {
+  create((g) => {
+    g.fromTo('.rules-list li',
+      { autoAlpha: 0, x: -30 },
+      {
+        autoAlpha: 1,
+        x: 0,
+        stagger: STAGGERS.rules,
+        duration: 0.6,
+        ease: EASINGS.entrance,
+        scrollTrigger: {
+          trigger: '.rules-section',
+          start: 'top 85%',
+          once: true,
+        },
+      },
+    )
+  })
+})
 </script>

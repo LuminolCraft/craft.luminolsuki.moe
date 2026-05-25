@@ -34,7 +34,8 @@ useHead({
   @import './styles/theme-colors.css';
   @import './styles/typography.css';
   @import './styles/vercel-design-system.css';  /* Vercel Design System */
-  @import './styles/responsive.css'; 
+  @import './styles/responsive.css';
+  @import './styles/gsap-splittext.css'; 
     * {
         margin: 0;
         padding: 0;

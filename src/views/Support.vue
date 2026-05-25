@@ -210,6 +210,37 @@
 </style>
 
 <script setup lang="ts">
-import { useI18n } from 'vue-i18n';
-const { t } = useI18n();
+import { onMounted, nextTick } from 'vue'
+import { useI18n } from 'vue-i18n'
+import gsap from 'gsap'
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { useGsap } from '@/composables/useGsap'
+import { EASINGS, STAGGERS } from '@/gsap'
+
+const { t } = useI18n()
+const { create } = useGsap()
+
+onMounted(async () => {
+  await nextTick()
+  ScrollTrigger.refresh()
+
+  create((g) => {
+    g.fromTo('.method-item',
+      { autoAlpha: 0, y: 50, scale: 0.95 },
+      {
+        autoAlpha: 1,
+        y: 0,
+        scale: 1,
+        stagger: STAGGERS.cards,
+        duration: 0.8,
+        ease: EASINGS.entrance,
+        scrollTrigger: {
+          trigger: '.sponsorship-methods',
+          start: 'top 85%',
+          once: true,
+        },
+      },
+    )
+  })
+})
 </script>

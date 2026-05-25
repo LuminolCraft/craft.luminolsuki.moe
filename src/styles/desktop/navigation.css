@@ -137,6 +137,14 @@ nav a:hover {
     margin-left: 8px;
     width: 16px;
     height: 16px;
+    vertical-align: middle;
+    flex-shrink: 0;
+    opacity: 0.7;
+    transition: opacity 0.2s ease;
+}
+
+.logo-and-title .logo-and-text:hover svg {
+    opacity: 1;
 }
 
 .logo-and-title .logo-and-text {
@@ -259,6 +267,29 @@ nav a:hover {
     margin-left: 8px;
     width: 16px;
     height: 16px;
+}
+
+/* 外部链接图标 */
+.external-link-icon {
+    margin-left: 4px;
+    width: 14px;
+    height: 14px;
+    vertical-align: middle;
+    flex-shrink: 0;
+    opacity: 0.7;
+    transition: opacity 0.2s ease;
+}
+
+a:hover .external-link-icon {
+    opacity: 1;
+}
+
+.nav-link svg {
+    margin-left: 4px;
+    width: 14px;
+    height: 14px;
+    vertical-align: middle;
+    flex-shrink: 0;
 }
 
 .item-icon {
