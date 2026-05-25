@@ -2,8 +2,8 @@
 
 // 包含所有可配置选项
 export interface AppConfig {
-  // 控制双语切换按钮的显示状态（显示/隐藏）
-  showLanguageToggle: boolean;
+  // 控制 TocToggles 组件（主题切换+语言切换）的显示状态
+  showTocToggles: boolean;
   // 控制导航栏固定/滚动显示状态
   navbarFixed: boolean;
   // 控制页脚版权信息显示状态
@@ -21,7 +21,7 @@ export interface AppConfig {
 
 // 默认配置
 export const appConfig: AppConfig = {
-  showLanguageToggle: false,
+  showTocToggles: true,
   navbarFixed: true,
   showFooterCopyright: true,
   newsPagination: {

@@ -4,7 +4,6 @@ import { createHead } from '@unhead/vue'
 import App from './App.vue'
 import router from './router'
 import i18n from './i18n'
-import './styles/theme-colors.css'
 
 const app = createApp(App)
 const head = createHead()
@@ -17,8 +16,8 @@ app.use(router)
 head.push({
     script: [
         {
-            src:'https://cloud.umami.is/script.js',
-            'data-website-id':'99722dca-d63f-4f8a-91f0-429d18477455',
+            src: 'https://cloud.umami.is/script.js',
+            'data-website-id': '99722dca-d63f-4f8a-91f0-429d18477455',
             defer: true,
         },
     ],

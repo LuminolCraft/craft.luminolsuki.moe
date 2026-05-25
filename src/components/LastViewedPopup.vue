@@ -44,12 +44,14 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useLastViewedCookie, type LastViewedNews } from '../composables/useLastViewedCookie'
+import { useCookieConsent } from '../composables/useCookieConsent'
 
 const emit = defineEmits<{
   dismissed: []
 }>()
 
 const { getLastViewedNews, clearLastViewedNews } = useLastViewedCookie()
+const { getConsent } = useCookieConsent()
 const router = useRouter()
 
 const newsData = ref<LastViewedNews | null>(null)
@@ -125,6 +127,9 @@ function startDismissTimer() {
 }
 
 onMounted(() => {
+  const consent = getConsent()
+  if (consent !== 'accepted') return
+
   const news = getLastViewedNews()
   if (!news) return
 

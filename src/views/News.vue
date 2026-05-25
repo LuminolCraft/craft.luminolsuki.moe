@@ -118,8 +118,9 @@
           </div>
         </section>
       </header>
-      <LastViewedPopup />
-      
+      <!-- <LastViewedPopup />
+      <CookieConsentBanner />
+       -->
     </template>
     
     <style scoped>
@@ -478,6 +479,7 @@
     import { marked } from 'marked'; // 假设已安装 marked 或通过 CDN 加载
     import { useLastViewedCookie } from '../composables/useLastViewedCookie';
     import LastViewedPopup from '../components/LastViewedPopup.vue';
+    import CookieConsentBanner from '../components/CookieConsentBanner.vue';
     import debounce from 'lodash/debounce'; // 假设使用 lodash 的 debounce
     import { appConfig } from '../config/app-config';
     
@@ -1080,7 +1082,7 @@
       // Vue 组件
     export default defineComponent({
       name: 'News',
-      components: { LastViewedPopup },
+      components: { LastViewedPopup, CookieConsentBanner },
       setup() {
         const router = useRouter();
         const { t } = useI18n();

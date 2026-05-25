@@ -37,7 +37,6 @@
             </div>
         </div>
     </header>
-
     <!-- 特色区域 -->
     <section class="features-section">
         <div class="features-container">
@@ -292,7 +291,7 @@
         </div>
     </section>
     <LastViewedPopup />
-
+    <CookieConsentBanner />
 
 </template>
 
@@ -2424,33 +2423,34 @@
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue';
 import { useI18n } from 'vue-i18n';
 import LastViewedPopup from '../components/LastViewedPopup.vue';
+import CookieConsentBanner from '../components/CookieConsentBanner.vue';
 
 const { t } = useI18n();
 
 const backgroundImages = [
-    'https://imagehosting-ez2.pages.dev/avif/Image_1764466849.avif',
-    'https://imagehosting-ez2.pages.dev/avif/Image_1764467382.avif',
-    'https://imagehosting-ez2.pages.dev/avif/Image_1764468583.avif',
-    'https://imagehosting-ez2.pages.dev/avif/Image_1764468914.avif',
-    'https://imagehosting-ez2.pages.dev/avif/Image_1764392636.avif',
-    'https://imagehosting-ez2.pages.dev/avif/Image_1764468731.avif',
-    'https://imagehosting-ez2.pages.dev/avif/Image_1764465651.avif',
-    'https://imagehosting-ez2.pages.dev/images/3cda066bccaefea3eb268d4ca10f018a.webp',
-    'https://imagehosting-ez2.pages.dev/images/Image_585018650004905.webp',
-    'https://imagehosting-ez2.pages.dev/images/Image_585012522922876.webp',
-    'https://imagehosting-ez2.pages.dev/images/Image_585000138805953.webp',
-    'https://imagehosting-ez2.pages.dev/images/Image_669234245588716.webp',
-    'https://imagehosting-ez2.pages.dev/images/Image_669226165759604.webp',
-    'https://imagehosting-ez2.pages.dev/images/Image_669218057352159.webp',
-    'https://imagehosting-ez2.pages.dev/images/Image_669214276923463.webp',
-    'https://imagehosting-ez2.pages.dev/images/Image_669203224465863.webp',
-    'https://imagehosting-ez2.pages.dev/images/Image_669202127295447.webp',
-    'https://imagehosting-ez2.pages.dev/images/Image_669192564244096.webp',
-    'https://imagehosting-ez2.pages.dev/images/Image_669027140045097.webp',
-    'https://imagehosting-ez2.pages.dev/images/Image_585061010780930.webp',
-    'https://imagehosting-ez2.pages.dev/images/9ae17d2b-8fb3-4f05-8a75-48c40de55bd0.webp',
-    'https://imagehosting-ez2.pages.dev/images/Image_669276986426772.webp',
-    'https://imagehosting-ez2.pages.dev/images/Image_669276986426772.webp',
+    '/images/Image_1764466849.avif',
+    '/images/Image_1764467382.avif',
+    '/images/Image_1764468583.avif',
+    '/images/Image_1764468914.avif',
+    '/images/Image_1764392636.avif',
+    '/images/Image_1764468731.avif',
+    '/images/Image_1764465651.avif',
+    '/images/3cda066bccaefea3eb268d4ca10f018a.webp',
+    '/images/Image_585018650004905.webp',
+    '/images/Image_585012522922876.webp',
+    '/images/Image_585000138805953.webp',
+    '/images/Image_669234245588716.webp',
+    '/images/Image_669226165759604.webp',
+    '/images/Image_669218057352159.webp',
+    '/images/Image_669214276923463.webp',
+    '/images/Image_669203224465863.webp',
+    '/images/Image_669202127295447.webp',
+    '/images/Image_669192564244096.webp',
+    '/images/Image_669027140045097.webp',
+    '/images/Image_585061010780930.webp',
+    '/images/9ae17d2b-8fb3-4f05-8a75-48c40de55bd0.webp',
+    '/images/Image_669276986426772.webp',
+    '/images/Image_669276986426772.webp',
 ];
 
 const currentIndex = ref(0);
@@ -2460,14 +2460,14 @@ const activeLayer = ref(1);
 
 const nextRandomImage = () => {
     if (backgroundImages.length <= 1) return;
-    
+
     let newIndex;
     do {
         newIndex = Math.floor(Math.random() * backgroundImages.length);
     } while (newIndex === currentIndex.value);
-    
+
     currentIndex.value = newIndex;
-    
+
     if (activeLayer.value === 1) {
         currentImage2.value = backgroundImages[newIndex];
         activeLayer.value = 2;
@@ -2545,7 +2545,6 @@ onMounted(async () => {
 
 onUnmounted(() => {
     if (intervalId) clearInterval(intervalId);
-    // 清理事件监听器
     window.removeEventListener('scroll', () => {});
 });
 </script>
