@@ -126,7 +126,7 @@ nav a:hover {
     text-decoration: none;
     font-size: 1.1em;
     transition: color 0.3s;
-    margin-left: 15px;
+    margin-left: 5px;
 }
 
 .logo-and-title .logo-and-text:hover {

@@ -177,6 +177,7 @@
   }
 
   .logo-and-title .logo-container img {
+    display: none;
     width: auto;
     height: 35px;
     margin-right: 10px;
