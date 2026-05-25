@@ -83,7 +83,7 @@ let pointerdownCleanup: (() => void) | null = null
 
 function getCookie(name: string): string | null {
   const match = document.cookie.match(new RegExp('(?:^|; )' + name.replace(/([\.$?*|{}\(\)\[\]\\\/\+^])/g, '\\$1') + '=([^;]*)'))
-  return match ? decodeURIComponent(match[1]) : null
+  return match ? decodeURIComponent(match[1] ?? '') : null
 }
 const stored = getCookie('theme')
 if (stored === 'dark') {

@@ -92,8 +92,6 @@ const consentMessage = computed(() => props.message || t('cookieConsent.message'
 const consentAcceptText = computed(() => props.acceptText || t('cookieConsent.accept'))
 const consentDeclineText = computed(() => props.declineText || t('cookieConsent.decline'))
 
-let ctx: gsap.Context | null = null
-
 function animateIn(el: HTMLElement) {
   gsap.fromTo(el,
     { autoAlpha: 0, y: 60 },
@@ -170,7 +168,6 @@ onMounted(async () => {
 
 onUnmounted(() => {
   document.removeEventListener('keydown', handleKeydown)
-  ctx?.revert()
 })
 </script>
 

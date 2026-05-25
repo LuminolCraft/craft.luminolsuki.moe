@@ -2513,7 +2513,7 @@ onMounted(async () => {
       const chars: { char: string; time: number }[] = []
 
       for (let i = 0; i < text.length; i++) {
-        const ch = text[i]
+        const ch = text[i] ?? ''
         chars.push({ char: ch, time })
         time += pauses.has(ch) ? 0.25 : 0.04 + Math.random() * 0.04
       }
