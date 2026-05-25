@@ -87,9 +87,20 @@ luminolcraft-vue/
 │   │   ├── Navbar.vue       # Navigation bar
 │   │   ├── Footer.vue       # Footer
 │   │   ├── MarkdownRenderer.vue  # Markdown renderer
-│   │   ├── ThemeToggle.vue  # Theme toggle
-│   │   ├── LanguageSwitcher.vue  # Language switcher
-│   │   └── ColorSchemeSwitcher.vue  # Color scheme switcher
+│   │   ├── ColorSchemeSwitcher.vue  # Color scheme switcher
+│   │   ├── CookieConsentBanner.vue  # Cookie consent banner
+│   │   ├── LastViewedPopup.vue     # Last viewed popup
+│   │   └── TocToggles.vue          # Table of contents toggle
+│   ├── composables/         # Composables
+│   │   ├── useCookieConsent.ts    # Cookie consent
+│   │   ├── useEntranceAnimation.ts # Entrance animation
+│   │   ├── useGsap.ts             # GSAP utilities
+│   │   ├── useHoverAnimation.ts   # Hover animation
+│   │   ├── useI18n.ts             # i18n utilities
+│   │   ├── useLastViewedCookie.ts # Last viewed cookie
+│   │   ├── usePageTransition.ts   # Page transition
+│   │   ├── useScrollTrigger.ts    # Scroll trigger
+│   │   └── useSplitText.ts        # Split text
 │   ├── config/              # Application configuration
 │   │   └── app-config.ts    # Configuration file
 │   ├── i18n/                # Internationalization
@@ -104,11 +115,14 @@ luminolcraft-vue/
 │   │   ├── desktop/         # Desktop styles
 │   │   ├── mobile/          # Mobile styles
 │   │   ├── fonts.css        # Fonts
+│   │   ├── gsap-splittext.css    # GSAP split text styles
+│   │   ├── responsive.css   # Responsive styles
 │   │   ├── theme-colors.css # Theme colors
 │   │   ├── typography.css   # Typography
-│   │   └── responsive.css   # Responsive styles
+│   │   └── vercel-design-system.css  # Vercel design system
 │   ├── utils/               # Utility functions
-│   │   └── netlify/         # Netlify Functions
+│   │   ├── generate-sitemap.ts  # Sitemap generation
+│   │   └── utils.ts             # Common utilities
 │   ├── views/               # Page components
 │   │   ├── Home.vue         # Home page
 │   │   ├── News.vue         # News list
@@ -157,6 +171,7 @@ Routes are defined in `src/router/index.ts`:
 | `/SimpleRules` | SimpleRules | Server rules |
 | `/Support` | Support | Support page |
 | `/Archive` | Archive | Server archive |
+| `*` | NotFound | 404 page |
 
 ## Testing
 
@@ -246,6 +261,10 @@ This project is licensed under the GNU Affero General Public License v3.0 - see 
 - [Chart.js](https://www.chartjs.org/) - Simple yet flexible JavaScript charting library
 - [Marked](https://marked.js.org/) - A markdown parser and compiler
 - [Highlight.js](https://highlightjs.org/) - Syntax highlighting for the Web
+- [GSAP](https://gsap.com/) - Professional-grade animation for the modern web
+- [Lodash](https://lodash.com/) - A modern JavaScript utility library
+- [KaTeX](https://katex.org/) - Fast math typesetting for the web
+- [Unhead](https://unhead.unjs.io/) - Universal head tag manager for Vue
 
 ## Contact
 

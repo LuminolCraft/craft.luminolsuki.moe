@@ -54,7 +54,6 @@ import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import gsap from 'gsap'
 import { useCookieConsent } from '../composables/useCookieConsent'
-import { EASINGS } from '@/gsap'
 
 const props = withDefaults(
   defineProps<{
@@ -93,24 +92,65 @@ const consentAcceptText = computed(() => props.acceptText || t('cookieConsent.ac
 const consentDeclineText = computed(() => props.declineText || t('cookieConsent.decline'))
 
 function animateIn(el: HTMLElement) {
-  gsap.fromTo(el,
+  const tl = gsap.timeline()
+
+  tl.fromTo(el,
     { autoAlpha: 0, y: 60 },
-    {
-      autoAlpha: 1,
-      y: 0,
-      duration: 0.45,
-      ease: 'back.out(1.2)',
-    },
+    { autoAlpha: 1, y: 0, duration: 0.5, ease: 'back.out(1.2)' },
   )
+
+  const icon = el.querySelector('.consent-icon')
+  const message = el.querySelector('.consent-message')
+  const actions = el.querySelector('.consent-actions')
+
+  if (icon) {
+    tl.fromTo(icon,
+      { autoAlpha: 0, scale: 0.5 },
+      { autoAlpha: 1, scale: 1, duration: 0.32, ease: 'power2.out' },
+    '-=0.25')
+  }
+  if (message) {
+    tl.fromTo(message,
+      { autoAlpha: 0, y: 10 },
+      { autoAlpha: 1, y: 0, duration: 0.32, ease: 'power2.out' },
+    '-=0.08')
+  }
+  if (actions) {
+    tl.fromTo(actions,
+      { autoAlpha: 0, y: 10 },
+      { autoAlpha: 1, y: 0, duration: 0.32, ease: 'power2.out' },
+    '-=0.08')
+  }
 }
 
-function animateOut(el: HTMLElement): gsap.core.Tween {
-  return gsap.to(el, {
-    autoAlpha: 0,
-    y: 40,
-    duration: 0.3,
-    ease: EASINGS.exit,
-  })
+function animateOut(el: HTMLElement): gsap.core.Timeline {
+  const tl = gsap.timeline()
+
+  const icon = el.querySelector('.consent-icon')
+  const message = el.querySelector('.consent-message')
+  const actions = el.querySelector('.consent-actions')
+
+  if (actions) {
+    tl.to(actions,
+      { autoAlpha: 0, y: -8, duration: 0.26, ease: 'power2.in' },
+    0)
+  }
+  if (message) {
+    tl.to(message,
+      { autoAlpha: 0, y: -8, duration: 0.26, ease: 'power2.in' },
+    0.05)
+  }
+  if (icon) {
+    tl.to(icon,
+      { autoAlpha: 0, scale: 0.5, duration: 0.26, ease: 'power2.in' },
+    0.1)
+  }
+
+  tl.to(el,
+    { autoAlpha: 0, y: 40, duration: 0.4, ease: 'back.in(1.4)' },
+  '-=0.08')
+
+  return tl
 }
 
 watch(visible, async (val) => {
@@ -123,19 +163,29 @@ watch(visible, async (val) => {
 function handleAccept() {
   if (isExiting.value) return
   setConsent('accepted')
-  hasConsented.value = true
   isExiting.value = true
   emit('accepted')
-  if (bannerRef.value) animateOut(bannerRef.value)
+  if (bannerRef.value) {
+    animateOut(bannerRef.value).eventCallback('onComplete', () => {
+      hasConsented.value = true
+    })
+  } else {
+    hasConsented.value = true
+  }
 }
 
 function handleDecline() {
   if (isExiting.value) return
   setConsent('declined')
-  hasConsented.value = true
   isExiting.value = true
   emit('declined')
-  if (bannerRef.value) animateOut(bannerRef.value)
+  if (bannerRef.value) {
+    animateOut(bannerRef.value).eventCallback('onComplete', () => {
+      hasConsented.value = true
+    })
+  } else {
+    hasConsented.value = true
+  }
 }
 
 function handleKeydown(e: KeyboardEvent) {

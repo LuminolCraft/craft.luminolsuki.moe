@@ -85,9 +85,20 @@ luminolcraft-vue/
 │   │   ├── Navbar.vue       # 导航栏
 │   │   ├── Footer.vue       # 页脚
 │   │   ├── MarkdownRenderer.vue  # Markdown 渲染器
-│   │   ├── ThemeToggle.vue  # 主题切换
-│   │   ├── LanguageSwitcher.vue  # 语言切换
-│   │   └── ColorSchemeSwitcher.vue  # 配色方案切换
+│   │   ├── ColorSchemeSwitcher.vue  # 配色方案切换
+│   │   ├── CookieConsentBanner.vue  # Cookie 同意横幅
+│   │   ├── LastViewedPopup.vue  # 最近浏览弹窗
+│   │   └── TocToggles.vue  # 目录切换
+│   ├── composables/         # 组合式函数
+│   │   ├── useCookieConsent.ts    # Cookie 同意
+│   │   ├── useEntranceAnimation.ts # 入场动画
+│   │   ├── useGsap.ts             # GSAP 工具
+│   │   ├── useHoverAnimation.ts   # 悬停动画
+│   │   ├── useI18n.ts             # 国际化工具
+│   │   ├── useLastViewedCookie.ts # 最近浏览
+│   │   ├── usePageTransition.ts   # 页面过渡
+│   │   ├── useScrollTrigger.ts    # 滚动触发
+│   │   └── useSplitText.ts        # 文字分割
 │   ├── config/              # 应用配置
 │   │   └── app-config.ts    # 配置文件
 │   ├── i18n/                # 国际化
@@ -102,11 +113,14 @@ luminolcraft-vue/
 │   │   ├── desktop/         # 桌面端样式
 │   │   ├── mobile/          # 移动端样式
 │   │   ├── fonts.css        # 字体
+│   │   ├── gsap-splittext.css    # GSAP 文字分割样式
+│   │   ├── responsive.css   # 响应式
 │   │   ├── theme-colors.css # 主题颜色
 │   │   ├── typography.css   # 排版
-│   │   └── responsive.css   # 响应式
+│   │   └── vercel-design-system.css  # Vercel 设计系统
 │   ├── utils/               # 工具函数
-│   │   └── netlify/         # Netlify Functions
+│   │   ├── generate-sitemap.ts  # 站点地图生成
+│   │   └── utils.ts             # 通用工具
 │   ├── views/               # 页面组件
 │   │   ├── Home.vue         # 首页
 │   │   ├── News.vue         # 新闻列表
@@ -155,6 +169,7 @@ export interface AppConfig {
 | `/SimpleRules` | SimpleRules | 服务器规则 |
 | `/Support` | Support | 支持页面 |
 | `/Archive` | Archive | 存档页面 |
+| `*` | NotFound | 404 页面 |
 
 ## 测试
 
@@ -244,6 +259,10 @@ npm run format
 - [Chart.js](https://www.chartjs.org/) - 图表库
 - [Marked](https://marked.js.org) - Markdown 解析器
 - [Highlight.js](https://highlightjs.org/) - 语法高亮库
+- [GSAP](https://gsap.com/) - 高性能动画库
+- [Lodash](https://lodash.com/) - JavaScript 实用工具库
+- [KaTeX](https://katex.org/) - 快速数学公式渲染
+- [Unhead](https://unhead.unjs.io/) - Vue Head 标签管理
 
 ## 联系方式
 
