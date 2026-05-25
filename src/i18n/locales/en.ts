@@ -223,6 +223,11 @@ export default {
       "backHome": "Back to Home"
     }
   },
+  "cookieConsent": {
+    "message": "This website uses cookies to remember your browsing preferences (such as recently viewed news). We do not use cookies for advertising or tracking purposes.",
+    "accept": "Accept",
+    "decline": "Decline"
+  },
   "home": {
     "hero": {
       "description": "LuminolCraft is a Minecraft public server group based on the Luminol server, offering players multiple choices between comprehensive survival and pure survival. It supports cross-platform play without requiring a genuine account, combines stable operation with backup guarantees, integrates unique gameplay, and creates a pure and experiential survival space with players."

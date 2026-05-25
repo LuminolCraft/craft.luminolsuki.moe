@@ -224,6 +224,11 @@ export default {
       "backHome": "返回首页"
     }
   },
+  "cookieConsent": {
+    "message": "本网站使用 Cookie 来记住您的浏览偏好（如最近查看的新闻）。我们不会将 Cookie 用于广告或追踪目的。",
+    "accept": "同意",
+    "decline": "拒绝"
+  },
   "home": {
     "hero": {
       "description": "LuminolCraft 是基于 Luminol 系服务端的 Minecraft 公益群组服，综合生存与纯净生存两开花给予玩家多种选择，支持多端互通且无正版门槛，兼具稳定运行与备份保障，融入特色玩法，与玩家共创纯粹又富体验感的生存空间。"

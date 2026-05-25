@@ -28,40 +28,70 @@
     --font-weight-bold: 700;
 
     /* ---- 字体大小 (Vercel Scale) ---- */
-    --font-size-display: 3rem;       /* 48px Display Hero */
-    --font-size-section: 2.5rem;     /* 40px Section Heading */
-    --font-size-subheading: 2rem;    /* 32px Sub-heading Large */
-    --font-size-card-title: 1.5rem;  /* 24px Card Title */
-    --font-size-body-large: 1.25rem; /* 20px Body Large */
-    --font-size-body: 1.125rem;      /* 18px Body */
-    --font-size-body-small: 1rem;    /* 16px Body Small */
-    --font-size-button: 0.875rem;    /* 14px Button/Link */
-    --font-size-caption: 0.75rem;    /* 12px Caption */
-    --font-size-mono-caption: 0.81rem; /* 13px Mono Caption */
-    --font-size-mono-small: 0.75rem; /* 12px Mono Small */
-    --font-size-micro: 0.44rem;      /* 7px Micro Badge */
+    --font-size-display: 3rem;
+    /* 48px Display Hero */
+    --font-size-section: 2.5rem;
+    /* 40px Section Heading */
+    --font-size-subheading: 2rem;
+    /* 32px Sub-heading Large */
+    --font-size-card-title: 1.5rem;
+    /* 24px Card Title */
+    --font-size-body-large: 1.25rem;
+    /* 20px Body Large */
+    --font-size-body: 1.125rem;
+    /* 18px Body */
+    --font-size-body-small: 1rem;
+    /* 16px Body Small */
+    --font-size-button: 0.875rem;
+    /* 14px Button/Link */
+    --font-size-caption: 0.75rem;
+    /* 12px Caption */
+    --font-size-mono-caption: 0.81rem;
+    /* 13px Mono Caption */
+    --font-size-mono-small: 0.75rem;
+    /* 12px Mono Small */
+    --font-size-micro: 0.44rem;
+    /* 7px Micro Badge */
 
     /* ---- 负字间距系统 ---- */
-    --letter-spacing-tightest: -2.4px;   /* 48px Display Hero */
-    --letter-spacing-tighter: -2.0px;    /* 40px Section Heading */
-    --letter-spacing-tight: -1.28px;     /* 32px Sub-heading */
-    --letter-spacing-normal: -0.96px;    /* 24px Card Title */
-    --letter-spacing-relaxed: -0.32px;   /* 16px Body Semibold */
-    --letter-spacing-none: 0;            /* 14px 及以下 */
+    --letter-spacing-tightest: -2.4px;
+    /* 48px Display Hero */
+    --letter-spacing-tighter: -2.0px;
+    /* 40px Section Heading */
+    --letter-spacing-tight: -1.28px;
+    /* 32px Sub-heading */
+    --letter-spacing-normal: -0.96px;
+    /* 24px Card Title */
+    --letter-spacing-relaxed: -0.32px;
+    /* 16px Body Semibold */
+    --letter-spacing-none: 0;
+    /* 14px 及以下 */
 
     /* ---- 行高系统 (Vercel Scale) ---- */
-    --line-height-tightest: 1.00;      /* Display Hero */
-    --line-height-tight: 1.20;         /* Section Heading */
-    --line-height-snug: 1.25;          /* Sub-heading Large */
-    --line-height-normal: 1.33;        /* Card Title */
-    --line-height-base: 1.50;          /* Body Small/Medium */
-    --line-height-relaxed: 1.56;       /* Body */
-    --line-height-loose: 1.80;         /* Body Large */
-    --line-height-button: 1.43;        /* Button/Link */
-    --line-height-caption: 1.33;       /* Caption */
-    --line-height-mono: 1.50;          /* Mono Body */
-    --line-height-mono-caption: 1.54;  /* Mono Caption */
-    --line-height-mono-tight: 1.00;    /* Mono Small/Micro */
+    --line-height-tightest: 1.00;
+    /* Display Hero */
+    --line-height-tight: 1.20;
+    /* Section Heading */
+    --line-height-snug: 1.25;
+    /* Sub-heading Large */
+    --line-height-normal: 1.33;
+    /* Card Title */
+    --line-height-base: 1.50;
+    /* Body Small/Medium */
+    --line-height-relaxed: 1.56;
+    /* Body */
+    --line-height-loose: 1.80;
+    /* Body Large */
+    --line-height-button: 1.43;
+    /* Button/Link */
+    --line-height-caption: 1.33;
+    /* Caption */
+    --line-height-mono: 1.50;
+    /* Mono Body */
+    --line-height-mono-caption: 1.54;
+    /* Mono Caption */
+    --line-height-mono-tight: 1.00;
+    /* Mono Small/Micro */
 
     /* ---- 间距系统 (8px Base Unit) ---- */
     --spacing-0: 0;
@@ -110,14 +140,8 @@
         rgba(0, 0, 0, 0.06) 0px 4px 8px,
         rgba(0, 0, 0, 0.02) 0px 12px 16px -4px;
 
-    /* ---- 文本颜色 (兼容现有主题) ---- */
-    --text-color: var(--bases-text-color, #171717);
-    --text-secondary: var(--bases-text-secondary, #666666);
-    --text-tertiary: var(--bases-text-light-2, #808080);
-
     /* ---- 链接颜色 (项目紫色主题) ---- */
     --link-color: var(--bases-primary);
-    --link-hover-color: var(--button-hover);
     --focus-ring-color: var(--bases-primary);
 
     /* ---- 标题样式 ---- */
@@ -505,32 +529,61 @@ hr {
    排版工具类 - 文本对齐
    =========================================== */
 
-.text-left { text-align: left; }
-.text-center { text-align: center; }
-.text-right { text-align: right; }
-.text-justify { text-align: justify; }
+.text-left {
+    text-align: left;
+}
+
+.text-center {
+    text-align: center;
+}
+
+.text-right {
+    text-align: right;
+}
+
+.text-justify {
+    text-align: justify;
+}
 
 /* ===========================================
    排版工具类 - 文本转换
    =========================================== */
 
-.text-uppercase { text-transform: uppercase; }
-.text-lowercase { text-transform: lowercase; }
-.text-capitalize { text-transform: capitalize; }
+.text-uppercase {
+    text-transform: uppercase;
+}
+
+.text-lowercase {
+    text-transform: lowercase;
+}
+
+.text-capitalize {
+    text-transform: capitalize;
+}
 
 /* ===========================================
    排版工具类 - 文本装饰
    =========================================== */
 
-.text-underline { text-decoration: underline; }
-.text-no-underline { text-decoration: none; }
+.text-underline {
+    text-decoration: underline;
+}
+
+.text-no-underline {
+    text-decoration: none;
+}
 
 /* ===========================================
    排版工具类 - 字体样式
    =========================================== */
 
-.text-normal { font-style: normal; }
-.text-italic { font-style: italic; }
+.text-normal {
+    font-style: normal;
+}
+
+.text-italic {
+    font-style: italic;
+}
 
 /* ===========================================
    排版工具类 - 文本溢出
@@ -551,65 +604,119 @@ hr {
    排版工具类 - 字体权重 (三层权重系统)
    =========================================== */
 
-.font-normal { font-weight: 400; }
-.font-medium { font-weight: 500; }
-.font-semibold { font-weight: 600; }
+.font-normal {
+    font-weight: 400;
+}
+
+.font-medium {
+    font-weight: 500;
+}
+
+.font-semibold {
+    font-weight: 600;
+}
 
 /* ===========================================
    排版工具类 - 行高 (Vercel Scale)
    =========================================== */
 
-.leading-tightest { line-height: 1.00; }
-.leading-tight { line-height: 1.20; }
-.leading-snug { line-height: 1.25; }
-.leading-normal { line-height: 1.33; }
-.leading-base { line-height: 1.50; }
-.leading-relaxed { line-height: 1.56; }
-.leading-loose { line-height: 1.80; }
+.leading-tightest {
+    line-height: 1.00;
+}
+
+.leading-tight {
+    line-height: 1.20;
+}
+
+.leading-snug {
+    line-height: 1.25;
+}
+
+.leading-normal {
+    line-height: 1.33;
+}
+
+.leading-base {
+    line-height: 1.50;
+}
+
+.leading-relaxed {
+    line-height: 1.56;
+}
+
+.leading-loose {
+    line-height: 1.80;
+}
 
 /* ===========================================
    排版工具类 - 字母间距 (Vercel Negative Tracking)
    =========================================== */
 
-.tracking-tightest { letter-spacing: -2.4px; }
-.tracking-tighter { letter-spacing: -2.0px; }
-.tracking-tight { letter-spacing: -1.28px; }
-.tracking-normal { letter-spacing: -0.96px; }
-.tracking-relaxed { letter-spacing: -0.32px; }
-.tracking-none { letter-spacing: 0; }
+.tracking-tightest {
+    letter-spacing: -2.4px;
+}
+
+.tracking-tighter {
+    letter-spacing: -2.0px;
+}
+
+.tracking-tight {
+    letter-spacing: -1.28px;
+}
+
+.tracking-normal {
+    letter-spacing: -0.96px;
+}
+
+.tracking-relaxed {
+    letter-spacing: -0.32px;
+}
+
+.tracking-none {
+    letter-spacing: 0;
+}
 
 /* ===========================================
    排版工具类 - 间距 (8px Base Unit)
    =========================================== */
 
-.space-y-0 > :not([hidden]) ~ :not([hidden]) {
+.space-y-0> :not([hidden])~ :not([hidden]) {
     margin-top: 0;
 }
-.space-y-1 > :not([hidden]) ~ :not([hidden]) {
+
+.space-y-1> :not([hidden])~ :not([hidden]) {
     margin-top: 4px;
 }
-.space-y-2 > :not([hidden]) ~ :not([hidden]) {
+
+.space-y-2> :not([hidden])~ :not([hidden]) {
     margin-top: 8px;
 }
-.space-y-3 > :not([hidden]) ~ :not([hidden]) {
+
+.space-y-3> :not([hidden])~ :not([hidden]) {
     margin-top: 12px;
 }
-.space-y-4 > :not([hidden]) ~ :not([hidden]) {
+
+.space-y-4> :not([hidden])~ :not([hidden]) {
     margin-top: 16px;
 }
-.space-y-5 > :not([hidden]) ~ :not([hidden]) {
+
+.space-y-5> :not([hidden])~ :not([hidden]) {
     margin-top: 20px;
 }
-.space-y-6 > :not([hidden]) ~ :not([hidden]) {
+
+.space-y-6> :not([hidden])~ :not([hidden]) {
     margin-top: 24px;
 }
-.space-y-8 > :not([hidden]) ~ :not([hidden]) {
+
+.space-y-8> :not([hidden])~ :not([hidden]) {
     margin-top: 32px;
 }
-.space-y-10 > :not([hidden]) ~ :not([hidden]) {
+
+.space-y-10> :not([hidden])~ :not([hidden]) {
     margin-top: 40px;
 }
-.space-y-12 > :not([hidden]) ~ :not([hidden]) {
+
+.space-y-12> :not([hidden])~ :not([hidden]) {
     margin-top: 48px;
 }
 
@@ -618,44 +725,54 @@ hr {
    =========================================== */
 
 @media (max-width: 1024px) {
-    h1, .h1 {
+
+    h1,
+    .h1 {
         font-size: var(--font-size-section);
         letter-spacing: var(--letter-spacing-tighter);
     }
 
-    h2, .h2 {
+    h2,
+    .h2 {
         font-size: var(--font-size-subheading);
         letter-spacing: var(--letter-spacing-tight);
     }
 
-    h3, .h3 {
+    h3,
+    .h3 {
         font-size: var(--font-size-card-title);
         letter-spacing: var(--letter-spacing-normal);
     }
 
-    h4, .h4 {
+    h4,
+    .h4 {
         font-size: var(--font-size-body-large);
         letter-spacing: var(--letter-spacing-none);
     }
 }
 
 @media (max-width: 768px) {
-    h1, .h1 {
+
+    h1,
+    .h1 {
         font-size: 2.5rem;
         letter-spacing: var(--letter-spacing-tighter);
     }
 
-    h2, .h2 {
+    h2,
+    .h2 {
         font-size: var(--font-size-subheading);
         letter-spacing: var(--letter-spacing-tight);
     }
 
-    h3, .h3 {
+    h3,
+    .h3 {
         font-size: var(--font-size-body-large);
         letter-spacing: var(--letter-spacing-none);
     }
 
-    h4, .h4 {
+    h4,
+    .h4 {
         font-size: var(--font-size-body);
         letter-spacing: var(--letter-spacing-none);
     }
@@ -668,28 +785,34 @@ hr {
         line-height: var(--line-height-relaxed);
     }
 
-    ul, ol {
+    ul,
+    ol {
         --list-padding-left: var(--spacing-4);
     }
 }
 
 @media (max-width: 480px) {
-    h1, .h1 {
+
+    h1,
+    .h1 {
         font-size: var(--font-size-subheading);
         letter-spacing: var(--letter-spacing-tight);
     }
 
-    h2, .h2 {
+    h2,
+    .h2 {
         font-size: var(--font-size-card-title);
         letter-spacing: var(--letter-spacing-normal);
     }
 
-    h3, .h3 {
+    h3,
+    .h3 {
         font-size: var(--font-size-body-large);
         letter-spacing: var(--letter-spacing-none);
     }
 
-    h4, .h4 {
+    h4,
+    .h4 {
         font-size: var(--font-size-body-small);
         letter-spacing: var(--letter-spacing-none);
     }
@@ -710,6 +833,7 @@ hr {
 }
 
 @media (prefers-reduced-motion: reduce) {
+
     *,
     *::before,
     *::after {
@@ -738,15 +862,26 @@ hr {
         text-shadow: none !important;
     }
 
-    a, a:visited {
+    a,
+    a:visited {
         text-decoration: underline;
     }
 
-    h1, h2, h3, h4, h5, h6 {
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
         page-break-after: avoid;
     }
 
-    p, blockquote, ul, ol, dl, table {
+    p,
+    blockquote,
+    ul,
+    ol,
+    dl,
+    table {
         page-break-inside: avoid;
     }
 
@@ -755,7 +890,8 @@ hr {
         page-break-inside: avoid;
     }
 
-    pre, code {
+    pre,
+    code {
         border: 1px solid #999;
         page-break-inside: avoid;
     }

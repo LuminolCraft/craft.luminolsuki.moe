@@ -30,7 +30,7 @@
         <!-- <router-link to="/Monitoring">
           {{ t('common.monitoring') }}
         </router-link> -->
-        <LanguageSwitcher v-if="appConfig.showLanguageToggle" />
+        <TocToggles v-if="appConfig.showTocToggles" />
       </div>
 
       <div class="side-nav-overlay" ref="overlay"></div>
@@ -76,7 +76,7 @@
           <!-- <router-link to="/Monitoring" class="nav-link">
             {{ t('common.monitoring') }}
           </router-link> -->
-          <LanguageSwitcher v-if="appConfig.showLanguageToggle" />
+          <TocToggles v-if="appConfig.showTocToggles" />
         </div>
         
       </div>
@@ -90,7 +90,7 @@
 import { useI18n } from 'vue-i18n'
 import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import LanguageSwitcher from './LanguageSwitcher.vue'
+import TocToggles from './TocToggles.vue'
 import { appConfig } from '../config/app-config'
 
 const { t } = useI18n()
