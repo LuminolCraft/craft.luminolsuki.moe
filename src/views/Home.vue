@@ -17,10 +17,10 @@
                         <i class="fas fa-users"></i>
                         {{ t('common.joinGroup') }}
                     </a>                         
-                    <a href="monitoring" class="btn btn-secondary">
+                    <!-- <a href="monitoring" class="btn btn-secondary">
                         <i class="fas fa-chart-line"></i>
                         {{ t('common.monitoring') }}
-                    </a>
+                    </a> -->
                 </div>
             </div>
             <div class="status-card" id="statusCard">
