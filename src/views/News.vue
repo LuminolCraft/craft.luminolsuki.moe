@@ -1,6 +1,6 @@
 <template>
       <header>
-        <section class="news-section">
+        <section class="news-section" ref="newsSectionRef">
           <div class="intro">
             <h2>{{ t('news.list.title') }}</h2>
             <p>{{ t('news.list.subtitle') }}</p>
@@ -30,66 +30,73 @@
               </option>
             </select>
           </div>
-          <!-- 缓存状态指示器 -->
-          <div id="cache-status-indicator" class="cache-status-indicator">
-            <span v-html="cacheStatusText"></span>
-            <button
-              v-if="cacheStatus.isStale"
-              @click="forceRefresh"
-              style="margin-left: 10px; padding: 2px 8px; font-size: 12px;"
-            >
-              {{ t('news.list.error.forceRefresh') }}
-            </button>
-            <button
-              v-else-if="loadError"
-              @click="retryDataLoad"
-              style="margin-left: 10px; padding: 2px 8px; font-size: 12px;"
-            >
-              {{ t('news.list.error.retry') }}
-            </button>
-          </div>
           <div id="news-grid" class="news-grid">
-            <div
-              v-for="item in paginatedNews"
-              :key="item.id"
-              class="news-item"
-              :class="{ pinned: !!item.pinned, 'no-image': !hasImage(item) }"
-              @click="goToDetail(item)"
-            >
-              <h3>
-                <template v-if="item.pinned">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" viewBox="0 0 384 512" style="vertical-align: middle; margin-right: 8px;">
-                    <path d="M32 32C32 14.3 46.3 0 64 0L320 0c17.7 0 32 14.3 32 32s-14.3 32-32 32l-29.5 0 10.3 134.1c37.1 21.2 65.8 56.4 78.2 99.7l3.8 13.4c2.8 9.7 .8 20-5.2 28.1S362 352 352 352L32 352c-10 0-19.5-4.7-25.5-12.7s-8-18.4-5.2-28.1L5 297.8c12.4-43.3 41-78.5 78.2-99.7L93.5 64 64 64C46.3 64 32 49.7 32 32zM160 400l64 0 0 112c0 17.7-14.3 32-32 32s-32-14.3-32-32l0-112z" fill="#bfb4f3" stroke="#f2eefc" stroke-width="2.5"/>
-                  </svg>
-                  {{ item.title }}
-                </template>
-                <template v-else>
-                  {{ item.title }}
-                </template>
-              </h3>
-              <div class="news-meta">
-                <span class="news-date">{{
-                  new Date(item.date).toLocaleDateString('zh-CN')
-                }}</span>
-                <div class="news-tags">
-                  <span v-for="tag in item.tags" :key="tag" class="tag">{{
-                    tag
-                  }}</span>
+            <template v-if="isLoading">
+              <div
+                v-for="n in itemsPerPage"
+                :key="'skeleton-' + n"
+                class="skeleton-card"
+              >
+                <!-- 标题占位 -->
+                <div class="skeleton-block skeleton-title"><div class="skeleton-shimmer"></div></div>
+                <!-- 元数据占位 -->
+                <div class="skeleton-meta">
+                  <div class="skeleton-block skeleton-date"><div class="skeleton-shimmer"></div></div>
+                  <div class="skeleton-block skeleton-tag"><div class="skeleton-shimmer"></div></div>
+                </div>
+                <!-- 图片占位 -->
+                <div class="skeleton-block skeleton-img"><div class="skeleton-shimmer"></div></div>
+                <!-- 内容占位 -->
+                <div class="skeleton-content">
+                  <div class="skeleton-block skeleton-line"><div class="skeleton-shimmer"></div></div>
+                  <div class="skeleton-block skeleton-line"><div class="skeleton-shimmer"></div></div>
+                  <div class="skeleton-block skeleton-line"><div class="skeleton-shimmer"></div></div>
                 </div>
               </div>
+            </template>
+            <template v-else>
               <div
-                v-if="hasImage(item)"
-                class="news-img"
-                :style="hasImage(item) ? { backgroundImage: `url('${cleanImageUrl(item.image)}')` } : {}"
-              ></div>
-              <div class="news-content" v-html="renderShortContent(item)"></div>
-            </div>
-            <div v-if="loadError" class="error-message">
-              <h3>{{ t('news.list.error.title') }}</h3>
-              <p>{{ t('news.list.error.description') }}</p>
-            </div>
+                v-for="item in paginatedNews"
+                :key="item.id"
+                class="news-item"
+                :class="{ pinned: !!item.pinned, 'no-image': !hasImage(item) }"
+                @click="goToDetail(item)"
+              >
+                <h3>
+                  <template v-if="item.pinned">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" viewBox="0 0 384 512" style="vertical-align: middle; margin-right: 8px;">
+                      <path d="M32 32C32 14.3 46.3 0 64 0L320 0c17.7 0 32 14.3 32 32s-14.3 32-32 32l-29.5 0 10.3 134.1c37.1 21.2 65.8 56.4 78.2 99.7l3.8 13.4c2.8 9.7 .8 20-5.2 28.1S362 352 352 352L32 352c-10 0-19.5-4.7-25.5-12.7s-8-18.4-5.2-28.1L5 297.8c12.4-43.3 41-78.5 78.2-99.7L93.5 64 64 64C46.3 64 32 49.7 32 32zM160 400l64 0 0 112c0 17.7-14.3 32-32 32s-32-14.3-32-32l0-112z" fill="#bfb4f3" stroke="#f2eefc" stroke-width="2.5"/>
+                    </svg>
+                    {{ item.title }}
+                  </template>
+                  <template v-else>
+                    {{ item.title }}
+                  </template>
+                </h3>
+                <div class="news-meta">
+                  <span class="news-date">{{
+                    new Date(item.date).toLocaleDateString('zh-CN')
+                  }}</span>
+                  <div class="news-tags">
+                    <span v-for="tag in item.tags" :key="tag" class="tag">{{
+                      tag
+                    }}</span>
+                  </div>
+                </div>
+                <div
+                  v-if="hasImage(item)"
+                  class="news-img"
+                  :style="hasImage(item) ? { backgroundImage: `url('${cleanImageUrl(item.image)}')` } : {}"
+                ></div>
+                <div class="news-content" v-html="renderShortContent(item)"></div>
+              </div>
+              <div v-if="loadError" class="error-message">
+                <h3>{{ t('news.list.error.title') }}</h3>
+                <p>{{ t('news.list.error.description') }}</p>
+              </div>
+            </template>
           </div>
-          <div id="news-pagination" class="news-pagination">
+          <div id="news-pagination" class="news-pagination" v-if="!isLoading">
             <button
               class="pagination-btn"
               :disabled="currentPage === 0"
@@ -433,6 +440,86 @@
         line-height: var(--vercel-leading-relaxed);
     }
 
+    /* 骨架卡片 - Skeleton Card */
+    .skeleton-card {
+        background: var(--card-bg);
+        border-radius: var(--vercel-radius-comfortable);
+        box-shadow: var(--vercel-shadow-card);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .skeleton-block {
+        background: rgba(255, 255, 255, 0.06);
+        border-radius: var(--vercel-radius-subtle);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .skeleton-title {
+        height: 24px;
+        width: 70%;
+        margin: 20px 20px 12px;
+    }
+
+    .skeleton-meta {
+        display: flex;
+        gap: 12px;
+        padding: 0 20px 16px;
+    }
+
+    .skeleton-date {
+        height: 14px;
+        width: 80px;
+    }
+
+    .skeleton-tag {
+        height: 18px;
+        width: 50px;
+        border-radius: 9999px;
+    }
+
+    .skeleton-img {
+        width: 100%;
+        height: 180px;
+        margin-top: 12px;
+        border-radius: 0;
+    }
+
+    .skeleton-content {
+        padding: 16px 20px 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .skeleton-line {
+        height: 12px;
+    }
+
+    .skeleton-line:nth-child(1) {
+        width: 100%;
+    }
+
+    .skeleton-line:nth-child(2) {
+        width: 90%;
+    }
+
+    .skeleton-line:nth-child(3) {
+        width: 60%;
+    }
+
+    .skeleton-shimmer {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08), transparent);
+        transform: translateX(-100%);
+        will-change: transform;
+    }
+
     /* 响应式设计 */
     @media (max-width: 768px) {
         .news-section {
@@ -484,7 +571,7 @@
     import CookieConsentBanner from '../components/CookieConsentBanner.vue';
     import debounce from 'lodash/debounce';
     import { appConfig } from '../config/app-config';
-    import { EASINGS, STAGGERS } from '@/gsap';
+    import { EASINGS, STAGGERS, DURATIONS } from '@/gsap';
     
     // 类型定义
     interface NewsItem {
@@ -1095,23 +1182,22 @@
         const selectedTag = ref('');
         const currentPage = ref(newsManager.currentPage);
         const loadError = ref(newsManager.loadError);
-        const cacheStatus = ref(newsManager.cacheStatus);
         const refreshTrigger = ref(0); // 用于触发响应式更新
-    
+        const isLoading = ref(true);
+        const newsSectionRef = ref<HTMLElement | null>(null);
+        const itemsPerPage = computed(() => newsManager.itemsPerPage);
+        let ctx: gsap.Context | undefined;
+        let mm: gsap.MatchMedia | undefined;
+
         // 同步 newsManager.currentPage 到 currentPage ref
         watch(() => newsManager.currentPage, (newPage) => {
           currentPage.value = newPage;
         });
-    
+
         // 同步 newsManager.loadError 到 loadError ref
         watch(() => newsManager.loadError, (newError) => {
           loadError.value = newError;
         });
-    
-        // 同步 newsManager.cacheStatus 到 cacheStatus ref
-        watch(() => newsManager.cacheStatus, (newStatus) => {
-          cacheStatus.value = { ...newStatus };
-        }, { deep: true });
     
         const uniqueTags = computed(() =>
           newsManager.getUniqueTags(newsManager.allNewsWithContent)
@@ -1170,20 +1256,6 @@
           return pages;
         });
     
-        const cacheStatusText = computed(() => {
-          refreshTrigger.value;
-          if (newsManager.loadError) {
-            return `<span style="color: #ff6b6b;">❌ 数据加载失败</span>`;
-          }
-          if (newsManager.cacheStatus.isStale) {
-            return `<span style="color: #ff6b6b;"><i class="fa-jelly-fill fa-regular fa-triangle-exclamation"></i> 数据可能不是最新</span>`;
-          }
-          const minutesAgo = Math.floor(
-            (Date.now() - (newsManager.cacheStatus.lastUpdate || 0)) / 60000
-          );
-          return `<span style="color: #51cf66;">✔ 数据已更新 ${minutesAgo}分钟前</span>`;
-        });
-    
         const filterNews = () => {
           newsManager.filterNews(selectedTag.value, searchQuery.value.toLowerCase().trim());
           refreshTrigger.value++; // 触发响应式更新
@@ -1240,45 +1312,69 @@
           }
         };
     
-        const forceRefresh = async () => {
-          await newsManager.forceRefresh();
-          refreshTrigger.value++; // 触发响应式更新
-          filterNews();
-        };
-    
-        const retryDataLoad = async () => {
-          loadError.value = false;
-          await newsManager.retryDataLoad();
-          refreshTrigger.value++; // 触发响应式更新
-          filterNews();
-        };
-    
         onMounted(async () => {
-          await newsManager.initializeApp();
+          // 骨架卡片已渲染（isLoading 初始为 true），先设置 shimmer 动画
+          await nextTick();
+          if (newsSectionRef.value) {
+            ctx = gsap.context(() => {
+              mm = gsap.matchMedia();
+              mm.add({
+                isDesktop: '(min-width: 769px)',
+                isMobile: '(max-width: 768px)',
+                reduceMotion: '(prefers-reduced-motion: reduce)',
+              }, (context) => {
+                const reduceMotion = context.conditions?.reduceMotion;
+                if (reduceMotion) return; // 跳过动画
+                gsap.to('.skeleton-shimmer', {
+                  xPercent: 100,
+                  repeat: -1,
+                  ease: EASINGS.smooth,
+                  duration: 1.5,
+                });
+              });
+            }, newsSectionRef.value);
+          }
+
+          // 启动数据加载（期间骨架 + shimmer 可见）
+          try {
+            await newsManager.initializeApp();
+          } finally {
+            isLoading.value = false;
+          }
           refreshTrigger.value++;
           filterNews();
           newsManager.initMarked();
-
-          // GSAP 入场动画
-          await nextTick();
-          gsap.fromTo('.news-card',
-            { autoAlpha: 0, y: 40 },
-            {
-              autoAlpha: 1,
-              y: 0,
-              stagger: STAGGERS.cards,
-              duration: 0.7,
-              ease: EASINGS.entrance,
-              scrollTrigger: {
-                trigger: '.news-grid',
-                start: 'top 90%',
-                once: true,
-              },
-            },
-          );
         });
-    
+
+        // 骨架到真实卡片过渡时间线
+        watch(isLoading, async (newVal, oldVal) => {
+          if (oldVal && !newVal && !loadError.value) {
+            await nextTick();
+            if (!newsSectionRef.value) return;
+            const tl = gsap.timeline({
+              defaults: { ease: EASINGS.entrance },
+              onComplete: () => {
+                mm?.revert();
+              }
+            });
+            const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            if (reduceMotion) {
+              gsap.set('.skeleton-card', { autoAlpha: 0 });
+              gsap.set('.news-item', { autoAlpha: 1 });
+              return;
+            }
+            tl.to('.skeleton-card', { autoAlpha: 0, duration: DURATIONS.exit })
+              .fromTo('.news-item',
+                { autoAlpha: 0, y: 20 },
+                { autoAlpha: 1, y: 0, stagger: STAGGERS.cards, duration: DURATIONS.entrance },
+                '+=0.05'
+              );
+          }
+        });
+
         onUnmounted(() => {
+          ctx?.revert();
+          mm?.revert();
           // 清理定时器等
           if (newsManager.cacheStatus.backgroundRefreshTimer) {
             clearInterval(newsManager.cacheStatus.backgroundRefreshTimer);
@@ -1293,8 +1389,10 @@
           paginatedNews,
           pageCount,
           displayedPages,
-          cacheStatusText,
           loadError,
+          isLoading,
+          newsSectionRef,
+          itemsPerPage,
           filterNews,
           prevPage,
           nextPage,
@@ -1303,9 +1401,6 @@
           hasImage,
           cleanImageUrl,
           renderShortContent,
-          forceRefresh,
-          retryDataLoad,
-          cacheStatus, // 用于 v-if
           t
         };
       },
