@@ -47,7 +47,8 @@ import { useRouter } from 'vue-router'
 import gsap from 'gsap'
 import { useLastViewedCookie, type LastViewedNews } from '../composables/useLastViewedCookie'
 import { useCookieConsent } from '../composables/useCookieConsent'
-import { EASINGS } from '@/gsap'
+import { useGsap } from '@/composables/useGsap'
+import { EASINGS, DURATIONS } from '@/gsap'
 
 const emit = defineEmits<{
   dismissed: []
@@ -62,6 +63,7 @@ const visible = ref(false)
 const isExiting = ref(false)
 const popupRef = ref<HTMLElement | null>(null)
 const PROGRESS_DURATION = 5
+const { create, reduceMotion } = useGsap({ scope: popupRef })
 
 let dismissTimer: ReturnType<typeof setTimeout> | null = null
 let progressTween: gsap.core.Tween | null = null
@@ -88,11 +90,17 @@ function exitAndCleanup(onDone: () => void) {
   clearDismissTimer()
   progressTween?.kill()
 
+  if (reduceMotion()) {
+    visible.value = false
+    onDone()
+    return
+  }
+
   if (popupRef.value) {
     gsap.to(popupRef.value, {
       autoAlpha: 0,
       x: '120%',
-      duration: 0.4,
+      duration: DURATIONS.exit,
       ease: EASINGS.exit,
       onComplete: () => {
         visible.value = false
@@ -101,7 +109,7 @@ function exitAndCleanup(onDone: () => void) {
     })
   } else {
     visible.value = false
-    setTimeout(onDone, 400)
+    setTimeout(onDone, DURATIONS.exit * 1000)
   }
 }
 
@@ -139,20 +147,31 @@ watch(visible, async (val) => {
   await nextTick()
   if (!popupRef.value) return
 
-  gsap.fromTo(popupRef.value,
+  if (reduceMotion()) {
+    gsap.set(popupRef.value, { autoAlpha: 1, x: 0, y: 0 })
+    startProgressBar()
+    dismissTimer = setTimeout(() => dismiss(), PROGRESS_DURATION * 1000)
+    return
+  }
+
+  const tl = gsap.timeline()
+  tl.fromTo(popupRef.value,
     { autoAlpha: 0, x: '120%' },
-    { autoAlpha: 1, x: '0%', duration: 0.55, ease: 'back.out(1.2)' },
+    { autoAlpha: 1, x: '0%', duration: DURATIONS.pageIn, ease: EASINGS.bounce },
   )
   const bodyItems = popupRef.value.querySelectorAll('.popup-body > *')
-  gsap.fromTo(bodyItems,
+  tl.fromTo(bodyItems,
     { autoAlpha: 0, y: 10 },
-    { autoAlpha: 1, y: 0, duration: 0.4, stagger: 0.08, ease: 'power2.out', delay: 0.3 },
+    { autoAlpha: 1, y: 0, duration: DURATIONS.standard, stagger: 0.08, ease: EASINGS.hover },
+    '-=0.2',
   )
   startProgressBar()
   dismissTimer = setTimeout(() => dismiss(), PROGRESS_DURATION * 1000)
 })
 
 onMounted(() => {
+  create(() => {})
+
   const consent = getConsent()
   if (consent !== 'accepted') return
 
@@ -185,6 +204,7 @@ onUnmounted(() => {
   font-family: var(--font-primary, var(--vercel-font-family, sans-serif));
   cursor: pointer;
   user-select: none;
+  will-change: transform, opacity;
 }
 
 .popup-accent {
@@ -199,6 +219,10 @@ onUnmounted(() => {
 .popup-body {
   padding: var(--vercel-space-4, 16px) var(--vercel-space-10, 40px) var(--vercel-space-4, 16px) var(--vercel-space-4, 16px);
   position: relative;
+}
+
+.popup-body > * {
+  will-change: transform, opacity;
 }
 
 .popup-header {

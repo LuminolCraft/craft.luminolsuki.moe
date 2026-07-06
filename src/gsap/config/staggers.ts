@@ -26,4 +26,12 @@ export const STAGGERS = {
     each: DURATIONS.wordStagger,
     from: 'start' as const,
   },
+  parallaxChars: {
+    each: 0.04,
+    from: 'center' as const,
+  },
+  tiltIcons: {
+    each: 0.06,
+    from: 'random' as const,
+  },
 } as const
