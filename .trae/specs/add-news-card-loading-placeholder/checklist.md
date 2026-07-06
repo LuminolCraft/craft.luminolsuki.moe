@@ -1,0 +1,26 @@
+- [x] 模板中已删除 `#cache-status-indicator` 整块 DOM
+- [x] `setup` 返回对象中已移除 `cacheStatus`、`cacheStatusText`、`forceRefresh`、`retryDataLoad`
+- [x] `cacheStatusText` computed 与未使用的 `watch(() => newsManager.cacheStatus)` 已清理
+- [x] `NewsManager` 内部的缓存/重试逻辑保留未受影响
+- [x] `isLoading` 响应式状态已添加并在 `onMounted` 中正确切换（成功与失败路径）
+- [x] `.news-section` 已添加 `ref="newsSectionRef"`
+- [x] 骨架卡片 DOM 包含标题、元数据、图片、内容四类占位块，每块含 `.skeleton-shimmer` 高光子元素
+- [x] 骨架卡片数量等于 `itemsPerPage`
+- [x] 骨架卡片样式与真实卡片尺寸对齐（复用 CSS 变量）
+- [x] `.skeleton-shimmer` CSS 中已声明 `will-change: transform`
+- [x] 真实 `.news-item` 用 `v-else` 与骨架互斥渲染
+- [x] 分页组件在 `isLoading` 期间隐藏
+- [x] GSAP 动画用 `gsap.context` 限定作用域
+- [x] shimmer 动画用 `xPercent`/`x` 变换（不动画 `left`/`width`），`repeat: -1`
+- [x] 用 `gsap.matchMedia()` 处理 `prefers-reduced-motion: reduce`，动画被禁用且内容可见
+- [x] 用 `gsap.matchMedia()` 处理移动端断点（≤768px）
+- [x] 过渡用 `gsap.timeline` + 位置参数（不用 delay 链）
+- [x] 真实 `.news-item` 初始 `autoAlpha: 0` 通过 `gsap.set` 预设，避免闪烁
+- [x] 过渡使用 `autoAlpha` 而非 `opacity`
+- [x] 原有错误的 `.news-card` 选择器入场动画已修正为 `.news-item`
+- [x] `onUnmounted` 中 `ctx.revert()` 与 `mm.revert()` 清理所有 GSAP 动画
+- [x] 加载失败时骨架消失且 `.error-message` 正常显示
+- [ ] 移动端（≤768px）骨架布局正确 <!-- FAILED: 需运行时视觉验证。静态确认 CSS @media (max-width:768px) 已将 .news-grid 设为单列，骨架卡片继承该布局，但"布局正确"的视觉实际渲染效果无法仅凭静态分析确认 -->
+- [ ] `npm run dev` 本地验证首次加载、重试、强制刷新三种场景正常 <!-- FAILED: 需运行 `npm run dev` 在浏览器中实际验证三种加载场景。注意：模板已移除 cache-status-indicator（含强制刷新/重试按钮），用户侧仅能通过刷新页面重试，需确认该交互路径符合预期 -->
+- [x] 切换 `prefers-reduced-motion: reduce` 后动画被禁用且内容可见
+- [x] 组件卸载后无 GSAP 动画残留

@@ -1,0 +1,22 @@
+- [ ] `package.json` 中已移除 `marked`、`highlight.js`、`chart.js`，并新增 `markdown-it`、`@shikijs/markdown-it` 等依赖
+- [ ] `pnpm-lock.yaml` 已同步更新，无旧依赖残留
+- [ ] `vite.config.ts` 的 `manualChunks` 已移除 `marked`/`highlight` 并调整 markdown/shiki 分包
+- [ ] `src/composables/useMarkdownRenderer.ts` 已创建并正确导出 markdown-it + Shiki 渲染器
+- [ ] `src/components/MarkdownRenderer.vue` 已重写，使用 `useMarkdownRenderer`，支持 katex、表格、代码块、链接、图片、引用、列表
+- [ ] `MarkdownRenderer.vue` 不再包含 `.markdown-*` 专用样式，仅使用项目 CSS 变量
+- [ ] `src/utils/stripMarkdown.ts` 已创建并可用于生成纯文本摘要
+- [ ] `src/views/NewsDetail.vue` 已移除 `marked`、`highlight.js` CDN 加载、`initMarked`、`parseTokens`、`initCodeHighlight`
+- [ ] `NewsDetail.vue` 使用 `<MarkdownRenderer>` 渲染新闻详情内容
+- [ ] `NewsDetail.vue` 中 `.news-content` 不再包含 Markdown 元素专用样式
+- [ ] `src/views/News.vue` 已移除 `marked`、`simpleMarkdownRender`、`initMarked`、`parseTokens`
+- [ ] `News.vue` 的 `renderShortContent` 返回纯文本摘要，不再渲染 Markdown HTML
+- [ ] `News.vue` 搜索功能仍正常工作（可搜索标题/纯文本摘要/日期）
+- [ ] `src/views/SimpleRules.vue` 无 `marked`/`highlight.js` 引用，样式使用项目配色变量
+- [ ] `src/styles/desktop/news-detail-styles.css` 与 `src/styles/mobile/news-detail-mobile.css` 中无 Markdown 元素专用样式残留
+- [ ] `src/styles` 下无其他 `.markdown-*` 样式类残留
+- [ ] `theme-colors.css` 与 `vercel-design-system.css` 未被删除或意外修改
+- [ ] `README.md`、`README.en.md`、`README.zh-CN.md` 技术栈描述已更新
+- [ ] `pnpm run type-check` 通过，无 TypeScript 错误
+- [ ] `pnpm run lint` 通过，无 ESLint 错误
+- [ ] `pnpm run build-only` 构建成功
+- [ ] 开发服务器中新闻列表、新闻详情、暗色模式、代码高亮均正常显示
