@@ -1,13 +1,14 @@
 <template>
   <div>
     <section class="news-detail-section">
+      <div class="reading-progress"><span ref="progressBarRef" class="reading-progress-bar"></span></div>
       <div v-if="loading" class="loading-message">{{ t('news.detail.loading') }}</div>
       <div v-else-if="error" class="error-message">
         <h3>{{ t('news.detail.error.title') }}</h3>
         <p>{{ error }}</p>
         <button @click="retryLoad" style="margin-top: 10px; padding: 8px 16px;">{{ t('news.detail.error.retry') }}</button>
       </div>
-      <div v-else-if="newsItem" id="news-detail">
+      <div v-else-if="newsItem" ref="articleRef" id="news-detail">
         <h2>
           <template v-if="newsItem.pinned">
             <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" viewBox="0 0 384 512" style="vertical-align: middle; margin-right: 8px;">
@@ -36,7 +37,7 @@
               v-for="(imgUrl, index) in newsItem.additionalImages"
               :key="index"
               class="gallery-item"
-              @click="openLightbox(imgUrl, index)"
+              @click="openLightbox(imgUrl, index, $event)"
             >
               <img :src="imgUrl" :alt="t('news.detail.additionalImages') + ' ' + (index + 1)" @error="handleImageError" loading="lazy" />
             </div>
@@ -62,7 +63,7 @@
       <span class="lightbox-close" @click.stop="closeLightbox">×</span>
       <span v-if="hasPreviousImage" class="lightbox-prev" @click.stop="prevImage">‹</span>
       <span v-if="hasNextImage" class="lightbox-next" @click.stop="nextImage">›</span>
-      <img class="lightbox-image" :src="currentLightboxImage" alt="Lightbox image" @error="handleLightboxImageError" />
+      <img class="lightbox-image" data-flip-id="news-lightbox-img" ref="lightboxImageRef" :src="currentLightboxImage" alt="Lightbox image" @error="handleLightboxImageError" />
     </div>
 
   </div>
@@ -537,6 +538,41 @@
     transform: translateY(-50%) scale(1.1);
 }
 
+/* =============================================
+   GSAP - Reading Progress Bar (顶部阅读进度条)
+   ============================================= */
+.reading-progress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    z-index: 100;
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.reading-progress-bar {
+    display: block;
+    height: 100%;
+    width: 100%;
+    background: var(--bases-primary-gradient, linear-gradient(135deg, #9e94d8 0%, #b6ade6 100%));
+    transform-origin: left center;
+    will-change: transform;
+}
+
+/* will-change 性能提示 - 应用于 GSAP 动画元素 */
+#news-detail h2,
+.news-date,
+.news-tags,
+.news-img,
+.gallery-item {
+    will-change: transform, opacity;
+}
+
+:deep(.news-content > *) {
+    will-change: transform, opacity;
+}
+
 /* 响应式设计 */
 @media (max-width: 768px) {
     .news-detail-section {
@@ -585,11 +621,13 @@ import { defineComponent, ref, onMounted, onUnmounted, computed, watch, nextTick
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { marked } from 'marked';
-import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { SplitText } from 'gsap/SplitText';
+import { Flip } from 'gsap/Flip';
 import Navbar from '../components/Navbar.vue';
 import Footer from '../components/Footer.vue';
-import { EASINGS } from '@/gsap';
+import { useGsap } from '@/composables/useGsap';
+import { EASINGS, DURATIONS, STAGGERS } from '@/gsap';
 
 // 类型定义
 interface NewsItem {
@@ -808,6 +846,14 @@ export default defineComponent({
     const currentLightboxImage = ref('');
     const currentLightboxIndex = ref(0);
 
+    // GSAP / Flip 相关 refs
+    const articleRef = ref<HTMLElement | null>(null);
+    const progressBarRef = ref<HTMLElement | null>(null);
+    const lightboxImageRef = ref<HTMLImageElement | null>(null);
+    const flipState = ref<ReturnType<typeof Flip.getState> | null>(null);
+    const FLIP_ID = 'news-lightbox-img';
+    const { create, reduceMotion } = useGsap({ scope: articleRef });
+
     const newsId = computed(() => {
       const id = route.query.id;
       if (!id) return null;
@@ -862,16 +908,69 @@ export default defineComponent({
       img.src = 'https://via.placeholder.com/300x200/9e94d8/ffffff?text=图片不可用';
     };
 
-    const openLightbox = (imgUrl: string, index: number) => {
+    // 点击图片：使用 Flip 插件优雅地展开为全屏 lightbox
+    const openLightbox = async (imgUrl: string, index: number, event: MouseEvent) => {
       currentLightboxImage.value = imgUrl;
       currentLightboxIndex.value = index;
+      if (reduceMotion()) {
+        lightboxVisible.value = true;
+        document.body.style.overflow = 'hidden';
+        return;
+      }
+      // 捕获被点击缩略图的初始状态（用于 Flip 展开）
+      const target = event.currentTarget as HTMLElement | null;
+      const thumbImg = (target?.querySelector('img') as HTMLImageElement | null) ?? null;
+      if (thumbImg) {
+        thumbImg.setAttribute('data-flip-id', FLIP_ID);
+        flipState.value = Flip.getState(thumbImg);
+        thumbImg.removeAttribute('data-flip-id');
+      }
       lightboxVisible.value = true;
       document.body.style.overflow = 'hidden';
+      if (flipState.value) {
+        await nextTick();
+        if (lightboxImageRef.value) {
+          // lightbox 图片在模板中带有相同的 data-flip-id，Flip.from 会将其从缩略图位置展开到全屏位置
+          Flip.from(flipState.value, {
+            duration: DURATIONS.slow,
+            ease: EASINGS.smooth,
+            absolute: true,
+          });
+        }
+      }
     };
 
+    // 关闭 lightbox：使用 Flip 从全屏位置收缩回缩略图位置
     const closeLightbox = () => {
+      if (reduceMotion() || !lightboxImageRef.value || !flipState.value) {
+        lightboxVisible.value = false;
+        document.body.style.overflow = '';
+        flipState.value = null;
+        return;
+      }
+      // 捕获当前 lightbox 图片状态，然后移除 lightbox（DOM 变化），再让缩略图作为目标收缩回去
+      const closingState = Flip.getState(lightboxImageRef.value);
       lightboxVisible.value = false;
       document.body.style.overflow = '';
+      const thumbs = document.querySelectorAll<HTMLImageElement>('#news-detail .gallery-item img');
+      const thumbImg = thumbs[currentLightboxIndex.value] ?? null;
+      if (thumbImg) {
+        thumbImg.setAttribute('data-flip-id', FLIP_ID);
+        nextTick(() => {
+          Flip.from(closingState, {
+            targets: thumbImg,
+            duration: DURATIONS.slow,
+            ease: EASINGS.smooth,
+            absoluteOnLeave: true,
+            onComplete: () => {
+              thumbImg.removeAttribute('data-flip-id');
+              flipState.value = null;
+            },
+          });
+        });
+      } else {
+        flipState.value = null;
+      }
     };
 
     const prevImage = () => {
@@ -987,37 +1086,90 @@ export default defineComponent({
       }
     };
 
-    let gsapCtx: gsap.Context | null = null
-
     onMounted(async () => {
       await loadNews();
       document.addEventListener('keydown', handleKeydown);
 
       await nextTick();
-      gsapCtx = gsap.context(() => {
-        gsap.from('.news-article', {
-          autoAlpha: 0,
-          y: 30,
-          duration: 0.6,
-          ease: EASINGS.entrance,
+      create((gsap) => {
+        if (!articleRef.value) return;
+        const mm = gsap.matchMedia();
+
+        // 减少动画偏好：将所有元素设为可见终态
+        mm.add('(prefers-reduced-motion: reduce)', () => {
+          gsap.set(
+            '#news-detail h2, .news-date, .news-tags, .news-img, #news-detail .news-content > *, .gallery-item',
+            { autoAlpha: 1, y: 0, yPercent: 0, rotateZ: 0, scale: 1 }
+          );
+          gsap.set(progressBarRef.value, { scaleX: 0 });
         });
-        gsap.from('.news-content p, .news-content h2, .news-content h3', {
-          autoAlpha: 0,
-          y: 20,
-          stagger: 0.06,
-          duration: 0.5,
-          ease: EASINGS.entrance,
-          scrollTrigger: {
-            trigger: '.news-content',
+
+        // 正常动画
+        mm.add('(prefers-reduced-motion: no-preference)', () => {
+          // ============ 顶部阅读进度条 ============
+          gsap.set(progressBarRef.value, { transformOrigin: 'left center', scaleX: 0 });
+          ScrollTrigger.create({
+            trigger: '#news-detail',
+            start: 'top top',
+            end: 'bottom bottom',
+            scrub: true,
+            onUpdate: (self) =>
+              gsap.to(progressBarRef.value, { scaleX: self.progress, duration: 0.1, overwrite: true }),
+          });
+
+          // ============ 标题 SplitText 逐字入场 ============
+          const titleSplit = new SplitText('#news-detail h2', { type: 'chars,words' });
+          gsap.from(titleSplit.chars, {
+            yPercent: 120,
+            autoAlpha: 0,
+            rotateZ: 6,
+            stagger: STAGGERS.parallaxChars,
+            duration: DURATIONS.slow,
+            ease: EASINGS.heroReveal,
+            scrollTrigger: { trigger: '#news-detail h2', start: 'top 85%', once: true },
+          });
+
+          // ============ 日期 / 标签 / 封面图 淡入上移 ============
+          gsap.from('.news-date, .news-tags, .news-img', {
+            autoAlpha: 0,
+            y: 20,
+            stagger: 0.1,
+            duration: DURATIONS.entrance,
+            ease: EASINGS.entrance,
+            scrollTrigger: { trigger: '#news-detail', start: 'top 75%', once: true },
+          });
+
+          // ============ 正文子元素（段落/列表/引用/表格/图片）顺序淡入 ============
+          gsap.from('#news-detail .news-content > *', {
+            autoAlpha: 0,
+            y: 30,
+            stagger: STAGGERS.list,
+            duration: DURATIONS.entrance,
+            ease: EASINGS.entrance,
+            scrollTrigger: { trigger: '.news-content', start: 'top 80%', once: true },
+          });
+
+          // ============ 画廊缩略图批量入场 ============
+          ScrollTrigger.batch('.gallery-item', {
             start: 'top 85%',
-            once: true,
-          },
+            batchMax: 6,
+            onEnter: (batch) =>
+              gsap.from(batch, {
+                autoAlpha: 0,
+                y: 40,
+                scale: 0.9,
+                stagger: 0.08,
+                duration: DURATIONS.entrance,
+                ease: EASINGS.entrance,
+                overwrite: true,
+              }),
+            onLeaveBack: (batch) => gsap.set(batch, { autoAlpha: 1, y: 0, scale: 1 }),
+          });
         });
       });
     });
 
     onUnmounted(() => {
-      gsapCtx?.revert();
       document.removeEventListener('keydown', handleKeydown);
       document.body.style.overflow = '';
     });
@@ -1042,6 +1194,9 @@ export default defineComponent({
       prevImage,
       nextImage,
       retryLoad,
+      articleRef,
+      progressBarRef,
+      lightboxImageRef,
     };
   },
 });

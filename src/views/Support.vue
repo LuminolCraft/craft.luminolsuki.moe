@@ -1,94 +1,96 @@
 <template>
-    <main class="support-page">
-        <div class="container">
-            <section class="intro vercel-animate-fadeInUp">
-                <h1 class="vercel-section-heading">{{ t('support.title') }}</h1>
-                <p class="vercel-body-large">{{ t('support.intro') }}</p>
-            </section>
+    <div ref="supportRef">
+        <main class="support-page">
+            <div class="container">
+                <section class="intro">
+                    <h1 class="vercel-section-heading">{{ t('support.title') }}</h1>
+                    <p class="vercel-body-large">{{ t('support.intro') }}</p>
+                </section>
 
-            <section class="sponsorship-methods">
-                <div class="methods-grid vercel-grid vercel-grid-cols-3">
-                    <div class="method-item vercel-card vercel-animate-fadeInUp" style="animation-delay: 0.1s;">
-                        <div class="method-header">
-                            <i class="fas fa-thumbtack method-icon"></i>
-                            <h3 class="method-title vercel-card-title">{{ t('support.methods.minebbs.title') }}</h3>
+                <section class="sponsorship-methods">
+                    <div class="methods-grid vercel-grid vercel-grid-cols-3">
+                        <div class="method-item vercel-card">
+                            <div class="method-header">
+                                <i class="fas fa-thumbtack method-icon"></i>
+                                <h3 class="method-title vercel-card-title">{{ t('support.methods.minebbs.title') }}</h3>
+                            </div>
+                            <p class="method-desc vercel-body-small">{{ t('support.methods.minebbs.desc') }}</p>
+                            <a href="https://www.minebbs.com/threads/luminolcraft.35730/" target="_blank" rel="noopener noreferrer" class="btn vercel-btn vercel-btn-primary">
+                                {{ t('support.actions.goTo') }}
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1.5" class="link-icon" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"></path></svg>
+                            </a>
                         </div>
-                        <p class="method-desc vercel-body-small">{{ t('support.methods.minebbs.desc') }}</p>
-                        <a href="https://www.minebbs.com/threads/luminolcraft.35730/" target="_blank" rel="noopener noreferrer" class="btn vercel-btn vercel-btn-primary">
-                            {{ t('support.actions.goTo') }}
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1.5" class="link-icon" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"></path></svg>
-                        </a>
-                    </div>
 
-                    <div class="method-item vercel-card vercel-animate-fadeInUp" style="animation-delay: 0.15s;">
-                        <div class="method-header">
-                            <i class="fas fa-fire method-icon"></i>
-                            <h3 class="method-title vercel-card-title">{{ t('support.methods.klpbbs.title') }}</h3>
+                        <div class="method-item vercel-card">
+                            <div class="method-header">
+                                <i class="fas fa-fire method-icon"></i>
+                                <h3 class="method-title vercel-card-title">{{ t('support.methods.klpbbs.title') }}</h3>
+                            </div>
+                            <p class="method-desc vercel-body-small">{{ t('support.methods.klpbbs.desc') }}</p>
+                            <a href="https://klpbbs.com/thread-162318-1-1.html" target="_blank" rel="noopener noreferrer" class="btn vercel-btn vercel-btn-primary">
+                                {{ t('support.actions.goTo') }}
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1.5" class="link-icon" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"></path></svg>
+                            </a>
                         </div>
-                        <p class="method-desc vercel-body-small">{{ t('support.methods.klpbbs.desc') }}</p>
-                        <a href="https://klpbbs.com/thread-162318-1-1.html" target="_blank" rel="noopener noreferrer" class="btn vercel-btn vercel-btn-primary">
-                            {{ t('support.actions.goTo') }}
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1.5" class="link-icon" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"></path></svg>
-                        </a>
-                    </div>
 
-                    <div class="method-item vercel-card vercel-animate-fadeInUp" style="animation-delay: 0.2s;">
-                        <div class="method-header">
-                            <i class="fas fa-thumbs-up method-icon"></i>
-                            <h3 class="method-title vercel-card-title">{{ t('support.methods.mcmod.title') }}</h3>
+                        <div class="method-item vercel-card">
+                            <div class="method-header">
+                                <i class="fas fa-thumbs-up method-icon"></i>
+                                <h3 class="method-title vercel-card-title">{{ t('support.methods.mcmod.title') }}</h3>
+                            </div>
+                            <p class="method-desc vercel-body-small">{{ t('support.methods.mcmod.desc') }}</p>
+                            <a href="https://play.mcmod.cn/sv20188263.html" target="_blank" rel="noopener noreferrer" class="btn vercel-btn vercel-btn-primary">
+                                {{ t('support.actions.goTo') }}
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1.5" class="link-icon" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"></path></svg>
+                            </a>
                         </div>
-                        <p class="method-desc vercel-body-small">{{ t('support.methods.mcmod.desc') }}</p>
-                        <a href="https://play.mcmod.cn/sv20188263.html" target="_blank" rel="noopener noreferrer" class="btn vercel-btn vercel-btn-primary">
-                            {{ t('support.actions.goTo') }}
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1.5" class="link-icon" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"></path></svg>
-                        </a>
-                    </div>
 
-                    <div class="method-item vercel-card vercel-animate-fadeInUp" style="animation-delay: 0.25s;">
-                        <div class="method-header">
-                            <i class="fas fa-heart method-icon"></i>
-                            <h3 class="method-title vercel-card-title">{{ t('support.methods.afdian.title') }}</h3>
+                        <div class="method-item vercel-card">
+                            <div class="method-header">
+                                <i class="fas fa-heart method-icon"></i>
+                                <h3 class="method-title vercel-card-title">{{ t('support.methods.afdian.title') }}</h3>
+                            </div>
+                            <p class="method-desc vercel-body-small">{{ t('support.methods.afdian.desc') }}</p>
+                            <a href="https://afdian.com/a/Luminol" target="_blank" rel="noopener noreferrer" class="btn vercel-btn vercel-btn-primary">
+                                {{ t('support.actions.goToSponsor') }}
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1.5" class="link-icon" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"></path></svg>
+                            </a>
                         </div>
-                        <p class="method-desc vercel-body-small">{{ t('support.methods.afdian.desc') }}</p>
-                        <a href="https://afdian.com/a/Luminol" target="_blank" rel="noopener noreferrer" class="btn vercel-btn vercel-btn-primary">
-                            {{ t('support.actions.goToSponsor') }}
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1.5" class="link-icon" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"></path></svg>
-                        </a>
-                    </div>
 
-                    <div class="method-item vercel-card vercel-animate-fadeInUp" style="animation-delay: 0.3s;">
-                        <div class="method-header">
-                            <i class="fas fa-star method-icon"></i>
-                            <h3 class="method-title vercel-card-title">{{ t('support.methods.luminolcraft.title') }}</h3>
+                        <div class="method-item vercel-card">
+                            <div class="method-header">
+                                <i class="fas fa-star method-icon"></i>
+                                <h3 class="method-title vercel-card-title">{{ t('support.methods.luminolcraft.title') }}</h3>
+                            </div>
+                            <p class="method-desc vercel-body-small">{{ t('support.methods.luminolcraft.desc') }}</p>
+                            <a href="https://github.com/LuminolCraft/" target="_blank" rel="noopener noreferrer" class="btn vercel-btn vercel-btn-primary">
+                                {{ t('support.actions.viewProject') }}
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1.5" class="link-icon" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"></path></svg>
+                            </a>
                         </div>
-                        <p class="method-desc vercel-body-small">{{ t('support.methods.luminolcraft.desc') }}</p>
-                        <a href="https://github.com/LuminolCraft/" target="_blank" rel="noopener noreferrer" class="btn vercel-btn vercel-btn-primary">
-                            {{ t('support.actions.viewProject') }}
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1.5" class="link-icon" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"></path></svg>
-                        </a>
-                    </div>
 
-                    <div class="method-item vercel-card vercel-animate-fadeInUp" style="animation-delay: 0.35s;">
-                        <div class="method-header">
-                            <i class="fas fa-code method-icon"></i>
-                            <h3 class="method-title vercel-card-title">{{ t('support.methods.webSource.title') }}</h3>
+                        <div class="method-item vercel-card">
+                            <div class="method-header">
+                                <i class="fas fa-code method-icon"></i>
+                                <h3 class="method-title vercel-card-title">{{ t('support.methods.webSource.title') }}</h3>
+                            </div>
+                            <p class="method-desc vercel-body-small">{{ t('support.methods.webSource.desc') }}</p>
+                            <a href="https://github.com/LuminolCraft/craft.luminolsuki.moe" target="_blank" rel="noopener noreferrer" class="btn vercel-btn vercel-btn-primary">
+                                {{ t('support.actions.viewProject') }}
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1.5" class="link-icon" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"></path></svg>
+                            </a>
                         </div>
-                        <p class="method-desc vercel-body-small">{{ t('support.methods.webSource.desc') }}</p>
-                        <a href="https://github.com/LuminolCraft/craft.luminolsuki.moe" target="_blank" rel="noopener noreferrer" class="btn vercel-btn vercel-btn-primary">
-                            {{ t('support.actions.viewProject') }}
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1.5" class="link-icon" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"></path></svg>
-                        </a>
                     </div>
-                </div>
-            </section>
+                </section>
 
-            <section class="thank-you vercel-animate-fadeInUp" style="animation-delay: 0.4s;">
-                <h3 class="vercel-subheading-large">{{ t('support.thankYou.title') }}</h3>
-                <p class="vercel-body">{{ t('support.thankYou.desc1') }}</p>
-                <p class="vercel-body">{{ t('support.thankYou.desc2') }}</p>
-            </section>
-        </div>
-    </main>
+                <section class="thank-you">
+                    <h3 class="vercel-subheading-large">{{ t('support.thankYou.title') }}</h3>
+                    <p class="vercel-body">{{ t('support.thankYou.desc1') }}</p>
+                    <p class="vercel-body">{{ t('support.thankYou.desc2') }}</p>
+                </section>
+            </div>
+        </main>
+    </div>
 </template>
 
 
@@ -106,6 +108,7 @@
 .intro {
     text-align: center;
     margin-bottom: var(--space-16);
+    will-change: transform, opacity;
 }
 
 .intro p {
@@ -117,10 +120,17 @@
     margin-bottom: var(--space-16);
 }
 
+.methods-grid {
+    perspective: 800px;
+    transform-style: preserve-3d;
+}
+
 .method-item {
     display: flex;
     flex-direction: column;
     gap: var(--space-3);
+    transform-style: preserve-3d;
+    will-change: transform, opacity;
 }
 
 .method-header {
@@ -168,6 +178,7 @@
 .thank-you {
     text-align: center;
     padding: var(--space-10);
+    will-change: transform, opacity;
 }
 
 .thank-you h3 {
@@ -210,37 +221,113 @@
 </style>
 
 <script setup lang="ts">
-import { onMounted, nextTick } from 'vue'
+import { onMounted, onUnmounted, nextTick, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useGsap } from '@/composables/useGsap'
-import { EASINGS, STAGGERS } from '@/gsap'
+import { EASINGS, DURATIONS, STAGGERS } from '@/gsap'
 
 const { t } = useI18n()
-const { create } = useGsap()
+
+const supportRef = ref<HTMLElement | null>(null)
+const { create, reduceMotion } = useGsap({ scope: supportRef })
+
+const tiltHandlers: Array<{ el: HTMLElement; move: (e: MouseEvent) => void; leave: () => void }> = []
 
 onMounted(async () => {
   await nextTick()
   ScrollTrigger.refresh()
 
   create((g) => {
-    g.fromTo('.method-item',
-      { autoAlpha: 0, y: 50, scale: 0.95 },
+    const mm = g.matchMedia()
+
+    mm.add(
       {
-        autoAlpha: 1,
-        y: 0,
-        scale: 1,
-        stagger: STAGGERS.cards,
-        duration: 0.8,
-        ease: EASINGS.entrance,
-        scrollTrigger: {
-          trigger: '.sponsorship-methods',
-          start: 'top 85%',
-          once: true,
-        },
+        reduceMotion: '(prefers-reduced-motion: reduce)',
+      },
+      (context) => {
+        if (context.conditions?.reduceMotion) {
+          g.set('.intro, .method-item, .thank-you', { autoAlpha: 1, y: 0, scale: 1 })
+          return
+        }
+
+        // Intro entrance
+        g.from('.intro', {
+          autoAlpha: 0,
+          y: 30,
+          duration: DURATIONS.entrance,
+          ease: EASINGS.entrance,
+        })
+
+        // Method cards batch entrance
+        g.from('.method-item', {
+          autoAlpha: 0,
+          y: 50,
+          scale: 0.95,
+          stagger: STAGGERS.cards,
+          duration: DURATIONS.scrollReveal,
+          ease: EASINGS.entrance,
+          scrollTrigger: {
+            trigger: '.sponsorship-methods',
+            start: 'top 85%',
+            once: true,
+          },
+        })
+
+        // Thank-you section entrance
+        g.from('.thank-you', {
+          autoAlpha: 0,
+          y: 30,
+          duration: DURATIONS.entrance,
+          ease: EASINGS.entrance,
+          scrollTrigger: {
+            trigger: '.thank-you',
+            start: 'top 85%',
+            once: true,
+          },
+        })
       },
     )
+
+    // 3D tilt interaction (skip if reduceMotion)
+    if (!reduceMotion()) {
+      const cards = Array.from(supportRef.value?.querySelectorAll<HTMLElement>('.method-item') ?? [])
+      cards.forEach((card) => {
+        const onMove = (e: MouseEvent) => {
+          const rect = card.getBoundingClientRect()
+          const xPct = g.utils.mapRange(0, rect.width, -10, 10, e.clientX - rect.left)
+          const yPct = g.utils.mapRange(0, rect.height, -10, 10, e.clientY - rect.top)
+          g.to(card, {
+            rotateY: xPct,
+            rotateX: -yPct,
+            transformPerspective: 800,
+            transformOrigin: 'center',
+            duration: DURATIONS.hover,
+            ease: EASINGS.hover,
+            overwrite: 'auto',
+          })
+        }
+        const onLeave = () => {
+          g.to(card, {
+            rotateY: 0,
+            rotateX: 0,
+            duration: DURATIONS.standard,
+            ease: EASINGS.smooth,
+          })
+        }
+        card.addEventListener('mousemove', onMove)
+        card.addEventListener('mouseleave', onLeave)
+        tiltHandlers.push({ el: card, move: onMove, leave: onLeave })
+      })
+    }
   })
+})
+
+onUnmounted(() => {
+  tiltHandlers.forEach(({ el, move, leave }) => {
+    el.removeEventListener('mousemove', move)
+    el.removeEventListener('mouseleave', leave)
+  })
+  tiltHandlers.length = 0
 })
 </script>

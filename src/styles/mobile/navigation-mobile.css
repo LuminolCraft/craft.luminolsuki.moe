@@ -3,18 +3,17 @@
     display: none;
   }
 
-
   .side-nav {
     display: block;
     position: fixed;
     top: 0;
-    left: -290px;
+    left: 0;
     width: 290px;
     height: 100vh;
     background-color: var(--background-color);
     box-shadow: 2px 0 5px rgba(0, 0, 0, 0.15);
     z-index: 9999;
-    transition: left 0.3s ease;
+    will-change: transform;
     padding: 20px 0;
     margin-top: 64px;
     overflow-y: auto;
@@ -65,18 +64,9 @@
     height: 100vh;
     background: rgba(0, 0, 0, 0.5);
     z-index: 9998;
-    display: none;
+    visibility: hidden;
+    opacity: 0;
   }
-
-
-  #burger:checked~.side-nav {
-    left: 0;
-  }
-
-  #burger:checked~.side-nav-overlay {
-    display: block;
-  }
-
 
   .burger {
     position: relative;
@@ -98,44 +88,22 @@
     border-radius: 9px;
     opacity: 1;
     left: 0;
-    transform: rotate(0deg);
-    transition: .25s ease-in-out;
+    will-change: transform, opacity;
   }
-
 
   .burger span:nth-of-type(1) {
     top: 0px;
-    transform-origin: left center;
+    transform-origin: center;
   }
 
   .burger span:nth-of-type(2) {
-    top: 50%;
-    transform: translateY(-50%);
-    transform-origin: left center;
+    top: 8px;
+    transform-origin: center;
   }
 
   .burger span:nth-of-type(3) {
-    top: 100%;
-    transform-origin: left center;
-    transform: translateY(-100%);
-  }
-
-
-  #burger:checked~.burger span:nth-of-type(1) {
-    transform: rotate(45deg);
-    top: 0px;
-    left: 5px;
-  }
-
-  #burger:checked~.burger span:nth-of-type(2) {
-    width: 0%;
-    opacity: 0;
-  }
-
-  #burger:checked~.burger span:nth-of-type(3) {
-    transform: rotate(-45deg);
-    top: 21px;
-    left: 5px;
+    top: 16px;
+    transform-origin: center;
   }
 
   .dropdown-ico svg {
@@ -154,7 +122,6 @@
     opacity: 0.7;
   }
 
-
   .nav-links {
     display: none;
   }
@@ -163,11 +130,9 @@
     width: 136px;
   }
 
-
   .logo-and-title .logo-container {
     order: 1;
     margin-left: 0;
-
   }
 
   .logo-and-title {
@@ -191,7 +156,6 @@
     width: 100%;
     justify-content: center;
   }
-
   .side-nav .theme-toggle {
     color: rgba(255, 255, 255, 0.7);
     width: 36px;

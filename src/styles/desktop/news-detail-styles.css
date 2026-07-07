@@ -1,4 +1,3 @@
-
 * {
     margin: 0;
     padding: 0;
@@ -8,7 +7,7 @@
 
 body {
     background: var(--background-color);
-    
+
     line-height: 1.6;
 }
 
@@ -32,7 +31,6 @@ body::before {
     pointer-events: none;
     background: var(--background-gradient);
     background-size: 200% 200%;
-    animation: gradientShift 14s ease-in-out infinite alternate;
 }
 
 /* 漂移光晕层（不随滚动位移） */
@@ -50,35 +48,43 @@ body::after {
     animation: blobShift 18s ease-in-out infinite alternate;
 }
 
-@keyframes gradientShift {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
-}
-
 @keyframes blobShift {
-    0% { background-position: 0% 0%, 100% 0%, 50% 100%; }
-    50% { background-position: 10% 5%, 90% 8%, 55% 90%; }
-    100% { background-position: 0% 0%, 100% 0%, 50% 100%; }
+    0% {
+        background-position: 0% 0%, 100% 0%, 50% 100%;
+    }
+
+    50% {
+        background-position: 10% 5%, 90% 8%, 55% 90%;
+    }
+
+    100% {
+        background-position: 0% 0%, 100% 0%, 50% 100%;
+    }
 }
 
 /* 兼容性：用户偏好减少动画时停用 */
 @media (prefers-reduced-motion: reduce) {
-    body::before, body::after {
+
+    body::before,
+    body::after {
         animation: none;
     }
 }
 
 
 /* 前景隔离 */
-.news-detail-section, .gallery-section, .lightbox {
+.news-detail-section,
+.gallery-section,
+.lightbox {
     position: relative;
     z-index: 1;
-    background: var(--card-bg); /* 90% 不透明，背景可见 */
+    background: var(--card-bg);
+    /* 90% 不透明，背景可见 */
 }
 
 /* Markdown 标题样式 */
-.news-content h1, .news-detail-section h1 {
+.news-content h1,
+.news-detail-section h1 {
     font-size: 2.2em;
     color: var(--secondary-color);
     margin: 1.5em 0 0.8em 0;
@@ -88,7 +94,8 @@ body::after {
     padding-bottom: 0.3em;
 }
 
-.news-content h2, .news-detail-section h2 {
+.news-content h2,
+.news-detail-section h2 {
     font-size: 1.8em;
     color: var(--secondary-color);
     margin: 1.3em 0 0.6em 0;
@@ -97,7 +104,8 @@ body::after {
     /* border-bottom: 3px solid var(--bases-primary); */
 }
 
-.news-content h3, .news-detail-section h3 {
+.news-content h3,
+.news-detail-section h3 {
     font-size: 1.5em;
     color: var(--secondary-color);
     margin: 1.2em 0 0.5em 0;
@@ -105,21 +113,24 @@ body::after {
     line-height: 1.4;
 }
 
-.news-content h4, .news-detail-section h4 {
+.news-content h4,
+.news-detail-section h4 {
     font-size: 1.3em;
     color: var(--secondary-color);
     margin: 1em 0 0.4em 0;
     font-weight: 600;
 }
 
-.news-content h5, .news-detail-section h5 {
+.news-content h5,
+.news-detail-section h5 {
     font-size: 1.1em;
     color: var(--secondary-color);
     margin: 0.8em 0 0.3em 0;
     font-weight: 600;
 }
 
-.news-content h6, .news-detail-section h6 {
+.news-content h6,
+.news-detail-section h6 {
     font-size: 1em;
     color: var(--secondary-color);
     margin: 0.6em 0 0.2em 0;
@@ -127,7 +138,8 @@ body::after {
 }
 
 /* Markdown 列表样式 */
-.news-content ul, .news-content ol {
+.news-content ul,
+.news-content ol {
     padding-left: 2em;
     margin: 1em 0;
     line-height: 1.8;
@@ -146,20 +158,25 @@ body::after {
     list-style-type: decimal;
 }
 
-.news-content ul ul, .news-content ol ol, .news-content ul ol, .news-content ol ul {
+.news-content ul ul,
+.news-content ol ol,
+.news-content ul ol,
+.news-content ol ul {
     margin: 0.3em 0;
     padding-left: 1.5em;
 }
 
 /* Markdown 强调样式 */
-.news-content strong, .news-detail-section strong {
+.news-content strong,
+.news-detail-section strong {
     color: var(--bases-primary);
     font-weight: 700;
 }
 
-.news-content em, .news-detail-section em {
+.news-content em,
+.news-detail-section em {
     font-style: italic;
-    
+
 }
 
 /* Markdown 引用样式 */
@@ -197,15 +214,17 @@ body::after {
     font-family: var(--font-primary);
     font-size: 1.1em;
     text-align: center;
-    
+
 }
 
 
 
 .news-markdown strong,
 .news-content strong {
-    color: var(--bases-primary); /* #9e94d8 */
-    font-weight: bold; /* 保持粗体效果 */
+    color: var(--bases-primary);
+    /* #9e94d8 */
+    font-weight: bold;
+    /* 保持粗体效果 */
 }
 
 
@@ -224,34 +243,37 @@ body::after {
     background: none;
     padding: 0;
     border: none;
-    font-size: 1.1em; /* 增大字体大小 */
-    line-height: 1.7; /* 增加行高 */
+    font-size: 1.1em;
+    /* 增大字体大小 */
+    line-height: 1.7;
+    /* 增加行高 */
     font-family: MiSans, var(--font-primary);
 }
 
 /* Prism.js 代码块字体大小调整 */
 .news-content pre[class*="language-"] {
-    font-size: 1.1em ; /* 确保 Prism.js 代码块字体更大 */
-    line-height: 1.7 ;
+    font-size: 1.1em;
+    /* 确保 Prism.js 代码块字体更大 */
+    line-height: 1.7;
 }
 
 .news-content pre[class*="language-"] code {
-    font-size: 1.1em ;
-    line-height: 1.7 ;
+    font-size: 1.1em;
+    line-height: 1.7;
 }
 
 /* GitHub 风格代码高亮 */
 .news-content pre[class*="language-"] {
-    background: var(--card-bg) ;
-    border: none ;
-    border-radius: 6px ;
-    color: var(--text-color) ;
-    text-shadow: none ;
+    background: var(--card-bg);
+    border: none;
+    border-radius: 6px;
+    color: var(--text-color);
+    text-shadow: none;
 }
 
 .news-content pre[class*="language-"] code {
-    color: var(--text-color) ;
-    text-shadow: none ;
+    color: var(--text-color);
+    text-shadow: none;
 }
 
 
@@ -261,15 +283,15 @@ body::after {
 .news-content .token.prolog,
 .news-content .token.doctype,
 .news-content .token.cdata {
-    color: var(--text-secondary) ;
+    color: var(--text-secondary);
 }
 
 
 
 /* 确保 token.tag 没有背景色 */
 .news-content .token.tag {
-    background: none ;
-    color: var(--info-color) ;
+    background: none;
+    color: var(--info-color);
 }
 
 
@@ -281,24 +303,24 @@ body::after {
 .news-content .token.url,
 .news-content .language-css .token.string,
 .news-content .style .token.string {
-    color: var(--error-color) ;
+    color: var(--error-color);
 }
 
 .news-content .token.atrule,
 .news-content .token.attr-value,
 .news-content .token.keyword {
-    color: var(--error-color) ;
+    color: var(--error-color);
 }
 
 .news-content .token.function,
 .news-content .token.class-name {
-    color: var(--bases-primary) ;
+    color: var(--bases-primary);
 }
 
 .news-content .token.regex,
 .news-content .token.important,
 .news-content .token.variable {
-    color: var(--accent-color) ;
+    color: var(--accent-color);
 }
 
 .news-content code {
@@ -423,7 +445,7 @@ body::after {
 .news-detail-section .news-date {
     font-family: var(--font-primary);
     font-size: 0.9em;
-    
+
     opacity: 0.8;
     margin-bottom: 10px;
     display: block;
@@ -467,10 +489,10 @@ body::after {
 .news-detail-section p {
     font-family: var(--font-primary);
     font-size: 1.15em;
-    
+
     line-height: 1.9;
     margin-bottom: 1.2em;
-    
+
 }
 
 /* Markdown 图片样式 */
@@ -514,14 +536,14 @@ body::after {
     font-family: var(--font-primary);
     font-size: 1.1em;
     text-align: center;
-    
+
 }
 
 /* 图片画廊样式 */
 .gallery-section {
     padding: 20px;
     max-width: 800px;
-    
+
 }
 
 .gallery-section h3 {
@@ -558,7 +580,7 @@ body::after {
     font-family: var(--font-primary);
     font-size: 1.1em;
     text-align: center;
-    
+
 }
 
 /* 灯箱样式 */
@@ -572,7 +594,8 @@ body::after {
     background: var(--footer-background-color);
     align-items: center;
     justify-content: center;
-    z-index: 2000; /* 提高 z-index */
+    z-index: 2000;
+    /* 提高 z-index */
 }
 
 .lightbox-image {
@@ -608,12 +631,6 @@ body::after {
 
 
 /* Footer样式已移至 footer.css */
-
-
-@keyframes fadeIn {/* 页头文字、页头按钮动画 */
-    from { opacity: 0; transform: translateY(15px); }
-    to { opacity: 1; transform: translateY(0); }
-}
 
 
 /* Footer链接样式已移至 footer.css */
@@ -698,4 +715,3 @@ body::after {
 /* 响应式设计（移动端规则已整合至 news-detail-mobile.css） */
 
 /* 响应式设计（移动端规则已整合至 news-detail-mobile.css） */
-

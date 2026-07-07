@@ -1,7 +1,7 @@
 <template>
   <div class="color-scheme-switcher">
-    <button 
-      v-for="scheme in colorSchemes" 
+    <button
+      v-for="scheme in colorSchemes"
       :key="scheme.id"
       :class="{ active: currentScheme === scheme.id }"
       @click="switchScheme(scheme.id)"
@@ -51,7 +51,6 @@ onMounted(() => {
     const buttons = g.utils.toArray<HTMLButtonElement>(
       containerRef.value?.querySelectorAll('button') ?? [],
     )
-
     buttons.forEach((btn) => {
       btn.addEventListener('mouseenter', () => {
         if (btn.classList.contains('active')) return
@@ -59,7 +58,7 @@ onMounted(() => {
       })
       btn.addEventListener('mouseleave', () => {
         if (btn.classList.contains('active')) return
-        g.to(btn, { scale: 1, y: 0, duration: DURATIONS.hover, ease: EASINGS.hover })
+        g.to(btn, { scale: 1, y: 0, duration: DURATIONS.hover, ease: EASINGS.hover, clearProps: 'transform' })
       })
       btn.addEventListener('pointerdown', () => {
         g.to(btn, { scale: 0.95, duration: DURATIONS.press, ease: EASINGS.press })
@@ -87,7 +86,7 @@ onMounted(() => {
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.3s ease;
+  will-change: transform;
   opacity: 0.8;
   min-width: 80px;
   text-align: center;
@@ -96,7 +95,6 @@ onMounted(() => {
 
 .color-scheme-switcher button:hover {
   opacity: 1;
-  transform: translateY(-2px);
   box-shadow: var(--shadow-md);
 }
 
@@ -112,7 +110,7 @@ onMounted(() => {
     margin: 10px 0;
     justify-content: center;
   }
-  
+
   .color-scheme-switcher button {
     min-width: 60px;
     padding: 6px 10px;

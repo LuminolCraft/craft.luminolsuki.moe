@@ -54,6 +54,8 @@ import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import gsap from 'gsap'
 import { useCookieConsent } from '../composables/useCookieConsent'
+import { useGsap } from '@/composables/useGsap'
+import { EASINGS, DURATIONS } from '@/gsap'
 
 const props = withDefaults(
   defineProps<{
@@ -86,17 +88,23 @@ const hasConsented = ref(false)
 const acceptBtn = ref<HTMLButtonElement | null>(null)
 const declineBtn = ref<HTMLButtonElement | null>(null)
 const bannerRef = ref<HTMLElement | null>(null)
+const { create, reduceMotion } = useGsap({ scope: bannerRef })
 
 const consentMessage = computed(() => props.message || t('cookieConsent.message'))
 const consentAcceptText = computed(() => props.acceptText || t('cookieConsent.accept'))
 const consentDeclineText = computed(() => props.declineText || t('cookieConsent.decline'))
 
 function animateIn(el: HTMLElement) {
+  if (reduceMotion()) {
+    gsap.set(el, { autoAlpha: 1, x: 0, y: 0 })
+    return
+  }
+
   const tl = gsap.timeline()
 
   tl.fromTo(el,
     { autoAlpha: 0, y: 60 },
-    { autoAlpha: 1, y: 0, duration: 0.5, ease: 'back.out(1.2)' },
+    { autoAlpha: 1, y: 0, duration: DURATIONS.pageIn, ease: EASINGS.bounce },
   )
 
   const icon = el.querySelector('.consent-icon')
@@ -106,24 +114,29 @@ function animateIn(el: HTMLElement) {
   if (icon) {
     tl.fromTo(icon,
       { autoAlpha: 0, scale: 0.5 },
-      { autoAlpha: 1, scale: 1, duration: 0.32, ease: 'power2.out' },
+      { autoAlpha: 1, scale: 1, duration: DURATIONS.standard, ease: EASINGS.hover },
     '-=0.25')
   }
   if (message) {
     tl.fromTo(message,
       { autoAlpha: 0, y: 10 },
-      { autoAlpha: 1, y: 0, duration: 0.32, ease: 'power2.out' },
+      { autoAlpha: 1, y: 0, duration: DURATIONS.standard, ease: EASINGS.hover },
     '-=0.08')
   }
   if (actions) {
     tl.fromTo(actions,
       { autoAlpha: 0, y: 10 },
-      { autoAlpha: 1, y: 0, duration: 0.32, ease: 'power2.out' },
+      { autoAlpha: 1, y: 0, duration: DURATIONS.standard, ease: EASINGS.hover },
     '-=0.08')
   }
 }
 
 function animateOut(el: HTMLElement): gsap.core.Timeline {
+  if (reduceMotion()) {
+    // Skip animation; timeline completes immediately so onComplete fires
+    return gsap.timeline().set(el, { autoAlpha: 0, y: 0 })
+  }
+
   const tl = gsap.timeline()
 
   const icon = el.querySelector('.consent-icon')
@@ -132,22 +145,23 @@ function animateOut(el: HTMLElement): gsap.core.Timeline {
 
   if (actions) {
     tl.to(actions,
-      { autoAlpha: 0, y: -8, duration: 0.26, ease: 'power2.in' },
+      { autoAlpha: 0, y: -8, duration: DURATIONS.exit, ease: EASINGS.exit },
     0)
   }
   if (message) {
     tl.to(message,
-      { autoAlpha: 0, y: -8, duration: 0.26, ease: 'power2.in' },
+      { autoAlpha: 0, y: -8, duration: DURATIONS.exit, ease: EASINGS.exit },
     0.05)
   }
   if (icon) {
     tl.to(icon,
-      { autoAlpha: 0, scale: 0.5, duration: 0.26, ease: 'power2.in' },
+      { autoAlpha: 0, scale: 0.5, duration: DURATIONS.exit, ease: EASINGS.exit },
     0.1)
   }
 
+  // back.in(1.4) has no matching EASINGS constant (EASINGS.bounce is back.out); keep literal
   tl.to(el,
-    { autoAlpha: 0, y: 40, duration: 0.4, ease: 'back.in(1.4)' },
+    { autoAlpha: 0, y: 40, duration: DURATIONS.standard, ease: 'back.in(1.4)' },
   '-=0.08')
 
   return tl
@@ -202,6 +216,8 @@ function handleKeydown(e: KeyboardEvent) {
 }
 
 onMounted(async () => {
+  create(() => {})
+
   const existing = getConsent()
   if (existing !== null) {
     hasConsented.value = true
@@ -231,6 +247,7 @@ onUnmounted(() => {
     0 8px 32px rgba(109, 91, 154, 0.18),
     0 0 0 1px rgba(158, 148, 216, 0.12);
   font-family: var(--font-primary, var(--vercel-font-family, sans-serif));
+  will-change: transform, opacity;
 }
 
 .consent-accent {
@@ -254,6 +271,7 @@ onUnmounted(() => {
   color: var(--primary-color, #a78bfa);
   display: flex;
   align-items: center;
+  will-change: transform, opacity;
 }
 
 .consent-message {
@@ -262,12 +280,14 @@ onUnmounted(() => {
   line-height: var(--vercel-leading-base, 1.6);
   color: var(--text-color, #171717);
   margin: 0;
+  will-change: transform, opacity;
 }
 
 .consent-actions {
   display: flex;
   gap: var(--vercel-space-2, 8px);
   flex-shrink: 0;
+  will-change: transform, opacity;
 }
 
 .consent-btn {
