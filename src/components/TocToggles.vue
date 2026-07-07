@@ -1,5 +1,5 @@
 <template>
-  <div class="toc-toggles">
+  <div ref="containerRef" class="toc-toggles">
     <div ref="overlayRef" class="theme-reveal" />
     <button
       id="theme-btn"
@@ -64,7 +64,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, onUnmounted } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 import gsap from 'gsap'
 import { useI18n } from '../composables/useI18n'
 import { useGsap } from '@/composables/useGsap'
@@ -72,14 +72,14 @@ import { DURATIONS, EASINGS } from '@/gsap'
 
 const { lang, toggleLang, t } = useI18n()
 const containerRef = ref<HTMLDivElement | null>(null)
-const { create } = useGsap({ scope: containerRef })
+const { create, reduceMotion } = useGsap({ scope: containerRef })
 
 const isDark = ref(false)
 const overlayRef = ref<HTMLDivElement | null>(null)
-const revealAnim = ref<Animation | null>(null)
 const appliedDark = ref(false)
-const animatingRef = ref(false)
-let pointerdownCleanup: (() => void) | null = null
+
+const zhIconRef = ref<SVGElement | null>(null)
+const enIconRef = ref<SVGElement | null>(null)
 
 function getCookie(name: string): string | null {
   const match = document.cookie.match(new RegExp('(?:^|; )' + name.replace(/([\.$?*|{}\(\)\[\]\\\/\+^])/g, '\\$1') + '=([^;]*)'))
@@ -104,146 +104,43 @@ function applyTheme(dark: boolean) {
 
 function themeToggle(e: MouseEvent) {
   const next = !appliedDark.value
-
-  if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
+  if (reduceMotion()) {
     applyTheme(next)
     return
   }
-
   const x = e.clientX
   const y = e.clientY
-  const maxDist = Math.hypot(
-    Math.max(x, window.innerWidth - x),
-    Math.max(y, window.innerHeight - y)
-  )
-  const endSize = maxDist * 2
-
-  const size = 32
-  let rects = ''
-  const r = size / 2
-  for (let i = 0; i < size; i++) {
-    for (let j = 0; j < size; j++) {
-      const dx = j - r + 0.5
-      const dy = i - r + 0.5
-      if (dx * dx + dy * dy <= r * r) {
-        rects += `<rect x="${j}" y="${i}" width="1.1" height="1.1" fill="black"/>`
-      }
-    }
-  }
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}" shape-rendering="crispEdges">${rects}</svg>`
-  const encodedSvg = `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`
-
-  if (document.startViewTransition) {
-    if (animatingRef.value) {
-      if (revealAnim.value) revealAnim.value.reverse()
-      return
-    }
-
-    animatingRef.value = true
-
-    const transition = document.startViewTransition(() => {
-      document.documentElement.setAttribute('data-vt', '')
+  // 同步读取新主题背景色（避免闪烁）
+  const prevTheme = appliedDark.value ? 'dark' : 'light'
+  const nextTheme = next ? 'dark' : 'light'
+  document.documentElement.setAttribute('data-theme', nextTheme)
+  const targetBg = getComputedStyle(document.documentElement).getPropertyValue('--background-color').trim()
+  document.documentElement.setAttribute('data-theme', prevTheme)
+  // 创建遮罩层，用 clipPath 圆形扩散揭示新主题
+  const overlay = document.createElement('div')
+  overlay.style.cssText = `position:fixed;inset:0;background:${targetBg};clip-path:circle(0% at ${x}px ${y}px);z-index:9999;pointer-events:none;`
+  document.body.appendChild(overlay)
+  gsap.to(overlay, {
+    clipPath: `circle(150% at ${x}px ${y}px)`,
+    duration: DURATIONS.slow,
+    ease: EASINGS.smooth,
+    onComplete: () => {
       applyTheme(next)
-      getComputedStyle(document.documentElement).opacity
-      document.documentElement.removeAttribute('data-vt')
-    })
-
-    transition.ready.then(() => {
-      let styleEl = document.querySelector('style[data-theme-reveal]')
-      if (!styleEl) {
-        styleEl = document.createElement('style')
-        styleEl.setAttribute('data-theme-reveal', '')
-        document.head.appendChild(styleEl)
-      }
-      styleEl.textContent = `
-        ::view-transition-new(root) {
-          mask-image: url("${encodedSvg}");
-          mask-repeat: no-repeat;
-          mask-size: var(--reveal-size) var(--reveal-size);
-          mask-position: calc(${x}px - var(--reveal-size) / 2) calc(${y}px - var(--reveal-size) / 2);
-          -webkit-mask-image: url("${encodedSvg}");
-          -webkit-mask-repeat: no-repeat;
-          -webkit-mask-size: var(--reveal-size) var(--reveal-size);
-          -webkit-mask-position: calc(${x}px - var(--reveal-size) / 2) calc(${y}px - var(--reveal-size) / 2);
-        }
-      `
-
-      const anim = document.documentElement.animate(
-        { '--reveal-size': ['0px', `${endSize}px`] } as PropertyIndexedKeyframes,
-        {
-          duration: 800,
-          easing: 'cubic-bezier(0.4, 0, 0.2, 1)',
-          pseudoElement: '::view-transition-new(root)',
-          fill: 'both' as FillMode
-        }
-      )
-      revealAnim.value = anim
-
-      anim.onfinish = () => {
-        if (anim.playbackRate < 0) {
-          document.documentElement.setAttribute('data-vt', '')
-          applyTheme(!appliedDark.value)
-          getComputedStyle(document.documentElement).opacity
-          document.documentElement.removeAttribute('data-vt')
-        }
-        animatingRef.value = false
-        revealAnim.value = null
-      }
-    })
-    return
-  }
-
-  const overlay = overlayRef.value
-  if (!overlay) return
-
-  const currentAnim = revealAnim.value
-  if (currentAnim && currentAnim.playState !== 'finished' && currentAnim.playState !== 'idle') {
-    currentAnim.reverse()
-    return
-  }
-  if (currentAnim) {
-    currentAnim.cancel()
-    overlay.style.display = 'none'
-    revealAnim.value = null
-  }
-
-  const oldBg = getComputedStyle(document.documentElement)
-    .getPropertyValue('--background-color')
-    .trim()
-  applyTheme(next)
-
-  overlay.style.background = oldBg
-  overlay.style.maskImage = 'none'
-  overlay.style.webkitMaskImage = 'none'
-  overlay.style.display = 'block'
-
-  const anim = overlay.animate(
-    { opacity: [1, 0] },
-    { duration: 400, easing: 'ease', fill: 'both' as FillMode }
-  )
-  revealAnim.value = anim
-
-  anim.addEventListener('finish', () => {
-    if (revealAnim.value !== anim) return
-    if (anim.playbackRate < 0) {
-      applyTheme(!appliedDark.value)
-    }
-    overlay.style.display = 'none'
-    revealAnim.value = null
+      overlay.remove()
+    },
   })
 }
 
 onMounted(() => {
   create((g) => {
     if (!zhIconRef.value || !enIconRef.value) return
-
-    // 初始状态设置
+    // 初始图标状态
     if (lang.value === 'zh') {
-      g.set(enIconRef.value, { opacity: 0, rotateY: 90, scale: 0.8 })
-      g.set(zhIconRef.value, { opacity: 1, rotateY: 0, scale: 1 })
+      g.set(enIconRef.value, { autoAlpha: 0, rotate: 90 })
+      g.set(zhIconRef.value, { autoAlpha: 1, rotate: 0 })
     } else {
-      g.set(zhIconRef.value, { opacity: 0, rotateY: 90, scale: 0.8 })
-      g.set(enIconRef.value, { opacity: 1, rotateY: 0, scale: 1 })
+      g.set(zhIconRef.value, { autoAlpha: 0, rotate: 90 })
+      g.set(enIconRef.value, { autoAlpha: 1, rotate: 0 })
     }
 
     // 主题切换按钮 hover
@@ -253,60 +150,30 @@ onMounted(() => {
         g.to('.theme-icon.active', { scale: 1.1, duration: DURATIONS.hover, ease: EASINGS.hover })
       })
       themeBtn.addEventListener('mouseleave', () => {
-        g.to('.theme-icon.active', { scale: 1, duration: DURATIONS.hover, ease: EASINGS.hover })
+        g.to('.theme-icon.active', { scale: 1, duration: DURATIONS.hover, ease: EASINGS.hover, clearProps: 'transform' })
       })
     }
   })
-
-  function onPointerDown(e: PointerEvent) {
-    if (!animatingRef.value || !revealAnim.value) return
-    const btn = document.getElementById('theme-btn')
-    if (!btn) return
-    const r = btn.getBoundingClientRect()
-    if (
-      e.clientX >= r.left && e.clientX <= r.right &&
-      e.clientY >= r.top && e.clientY <= r.bottom
-    ) {
-      e.stopPropagation()
-      revealAnim.value.reverse()
-    }
-  }
-  document.addEventListener('pointerdown', onPointerDown, true)
-  pointerdownCleanup = () => {
-    document.removeEventListener('pointerdown', onPointerDown, true)
-    if (revealAnim.value) {
-      revealAnim.value.cancel()
-      revealAnim.value = null
-    }
-  }
 })
-
-onUnmounted(() => {
-  pointerdownCleanup?.()
-})
-
-const zhIconRef = ref<SVGElement | null>(null)
-const enIconRef = ref<SVGElement | null>(null)
 
 function langToggle() {
   const isZh = lang.value === 'zh'
   const outEl = isZh ? zhIconRef.value : enIconRef.value
   const inEl = isZh ? enIconRef.value : zhIconRef.value
 
-  if (!matchMedia('(prefers-reduced-motion: reduce)').matches && outEl && inEl) {
+  if (!reduceMotion() && outEl && inEl) {
     const tl = gsap.timeline({ defaults: { overwrite: 'auto' } })
     tl.to(outEl, {
-      opacity: 0,
-      rotateY: 90,
-      scale: 0.8,
-      duration: 0.15,
-      ease: 'power2.in',
+      rotate: 90,
+      autoAlpha: 0,
+      duration: DURATIONS.fast,
+      ease: EASINGS.hover,
       onComplete: () => toggleLang(),
     })
     .fromTo(inEl,
-      { opacity: 0, rotateY: -90, scale: 0.8 },
-      { opacity: 1, rotateY: 0, scale: 1, duration: 0.3, ease: 'power2.out' },
-      '-=0.05',
+      { rotate: -90, autoAlpha: 0 },
+      { rotate: 0, autoAlpha: 1, duration: DURATIONS.fast, ease: EASINGS.hover },
+      '-=0.1',
     )
     return
   }
@@ -353,14 +220,13 @@ function langToggle() {
   position: absolute;
   opacity: 0;
   transform: rotate(90deg) scale(0.5);
-  transition: opacity 200ms ease, transform 200ms ease;
-  
+  will-change: transform, opacity;
 }
+
 @media screen and (max-width: 768px) {
   .theme-toggle {
     color: var(--text-color);
   }
-  
 }
 
 .theme-icon.active {
@@ -378,5 +244,6 @@ function langToggle() {
 
 .lang-icon {
   position: absolute;
+  will-change: transform, opacity;
 }
 </style>

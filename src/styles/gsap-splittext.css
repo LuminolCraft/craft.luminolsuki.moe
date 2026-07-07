@@ -1,13 +1,23 @@
 .split-char {
   font-kerning: none;
   text-rendering: optimizeSpeed;
+  will-change: transform, opacity;
 }
 
 .split-word {
   display: inline-block;
+  will-change: transform, opacity;
 }
 
 .split-line {
   display: block;
   overflow: hidden;
+  will-change: transform, opacity;
+}
+
+.split-char.is-visible,
+.split-word.is-visible,
+.split-line.is-visible {
+  opacity: 1;
+  transform: none;
 }

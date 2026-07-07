@@ -1,6 +1,11 @@
 <template>
     <Navbar />
     <div class="container">
+        <svg class="bg-sketch" viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+            <path class="bg-path" d="M50,200 Q300,100 600,250 T1150,200" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.3" />
+            <path class="bg-path" d="M50,400 Q300,500 600,350 T1150,400" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.2" />
+            <path class="bg-path" d="M50,600 Q300,700 600,550 T1150,600" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.25" />
+        </svg>
         <div class="not-found-content">
             <h1 class="error-code">404</h1>
             <p class="error-description">{{ t('404.description') }}</p>
@@ -13,13 +18,30 @@
 
 <style scoped>
 .container {
+    position: relative;
     min-height: 100vh;
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
+.bg-sketch {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    color: var(--primary-color, #9e94d8);
+    pointer-events: none;
+    z-index: 0;
+}
+
+.bg-path {
+    will-change: transform, opacity;
+}
+
 .not-found-content {
+    position: relative;
+    z-index: 1;
     text-align: center;
     padding: var(--space-10) var(--space-5);
 }
@@ -31,6 +53,7 @@
     letter-spacing: -2.0px;
     color: var(--primary-color);
     margin: 0 0 var(--space-6) 0;
+    will-change: transform, opacity;
 }
 
 .error-description {
@@ -39,6 +62,7 @@
     line-height: 1.80;
     color: var(--text-secondary);
     margin: 0 0 var(--space-10) 0;
+    will-change: transform, opacity;
 }
 
 .btn-back-home:hover::before {
@@ -69,14 +93,14 @@
     font-weight: 500;
     line-height: 1.43;
     letter-spacing: 0;
-    transition: all 150ms ease-out;
+    transition: box-shadow 150ms ease-out;
     box-shadow: var(--shadow-border);
     position: relative;
     overflow: hidden;
+    will-change: transform, opacity;
 }
 
 .btn-back-home:hover {
-    transform: translateY(-2px);
     box-shadow: var(--shadow-hover);
 }
 
@@ -86,7 +110,7 @@
 }
 
 .btn-back-home:active {
-    transform: translateY(0);
+    box-shadow: var(--shadow-border);
 }
 
 @media (max-width: 768px) {
@@ -113,8 +137,9 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { SplitText } from 'gsap/SplitText'
 import { useGsap } from '@/composables/useGsap'
-import { EASINGS } from '@/gsap'
+import { EASINGS, DURATIONS, STAGGERS } from '@/gsap'
 import Navbar from '../components/Navbar.vue'
 
 const { t } = useI18n()
@@ -122,19 +147,57 @@ const { create } = useGsap()
 
 onMounted(() => {
   create((g) => {
-    const tl = g.timeline({ defaults: { ease: EASINGS.entrance } })
-    tl.fromTo('.error-code',
-      { autoAlpha: 0, scale: 0.3, y: -60 },
-      { autoAlpha: 1, scale: 1, y: 0, duration: 0.8, ease: 'back.out(1.7)' },
-    )
-    tl.fromTo('.error-description',
-      { autoAlpha: 0, y: 20 },
-      { autoAlpha: 1, y: 0, duration: 0.5 },
-    '-=0.2')
-    tl.fromTo('.btn-back-home',
-      { autoAlpha: 0, y: 20 },
-      { autoAlpha: 1, y: 0, duration: 0.5 },
-    '-=0.1')
+    g.set('.error-code, .error-description, .btn-back-home', { autoAlpha: 0 })
+
+    const mm = g.matchMedia()
+
+    // reduceMotion: simple fade-in only
+    mm.add('(prefers-reduced-motion: reduce)', () => {
+      g.set('.error-code, .error-description, .btn-back-home', { autoAlpha: 1 })
+      g.set('.bg-path', { drawSVG: '100%' })
+    })
+
+    // normal animation
+    mm.add('(prefers-reduced-motion: no-preference)', () => {
+      // Background SVG draw — pen-sketch effect
+      g.from('.bg-path', {
+        drawSVG: '0%',
+        duration: 2.4,
+        ease: 'power2.inOut',
+        stagger: 0.2,
+      })
+
+      // Split "404" into chars with rotation stagger
+      const split = new SplitText('.error-code', { type: 'chars' })
+      // Reveal the parent (hidden for FOUC) so the chars are visible while animating in
+      g.set('.error-code', { autoAlpha: 1 })
+      const tl = g.timeline({ defaults: { ease: EASINGS.bounce } })
+      tl.from(split.chars, {
+        autoAlpha: 0,
+        y: -80,
+        rotation: () => g.utils.random(-12, 12),
+        scale: 0.3,
+        stagger: { each: 0.12, from: 'center' },
+        duration: DURATIONS.slow,
+      })
+      tl.fromTo('.error-description',
+        { autoAlpha: 0, y: 20 },
+        { autoAlpha: 1, y: 0, duration: DURATIONS.entrance },
+      '-=0.3')
+      tl.fromTo('.btn-back-home',
+        { autoAlpha: 0, y: 20 },
+        { autoAlpha: 1, y: 0, duration: DURATIONS.entrance },
+      '-=0.2')
+
+      // Continuous float on error-code (yoyo)
+      g.to('.error-code', {
+        y: -16,
+        duration: 2.4,
+        ease: 'sine.inOut',
+        repeat: -1,
+        yoyo: true,
+      })
+    })
   })
 })
 </script>

@@ -6,6 +6,7 @@ import { Flip } from 'gsap/Flip'
 import { CustomEase } from 'gsap/CustomEase'
 import { DrawSVGPlugin } from 'gsap/DrawSVGPlugin'
 import { MotionPathPlugin } from 'gsap/MotionPathPlugin'
+import { MorphSVGPlugin } from 'gsap/MorphSVGPlugin'
 
 export function registerGsapPlugins(): void {
   gsap.registerPlugin(
@@ -16,5 +17,6 @@ export function registerGsapPlugins(): void {
     CustomEase,
     DrawSVGPlugin,
     MotionPathPlugin,
+    MorphSVGPlugin,
   )
 }

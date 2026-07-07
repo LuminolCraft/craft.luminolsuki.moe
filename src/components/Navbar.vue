@@ -1,6 +1,6 @@
 <template>
-    <nav :class="{ 'navbar-fixed': appConfig.navbarFixed }">
-      <input type="checkbox" id="burger" class="burger-input" ref="burgerInput">
+    <nav ref="navRef" :class="{ 'navbar-fixed': appConfig.navbarFixed }">
+      <input type="checkbox" id="burger" class="burger-input" ref="burgerInput" @change="onBurgerChange">
       <label class="burger" for="burger" ref="burger">
         <span></span>
         <span></span>
@@ -34,7 +34,7 @@
       </div>
 
       <div class="side-nav-overlay" ref="overlay"></div>
-  
+
       <div class="logo-and-title">
             <div class="logo-container">
                 <img src="https://imagehosting-ez2.pages.dev/images/c25a955166388e1257c23d01c78a62e6.webp" alt="logo" loading="lazy">
@@ -45,13 +45,13 @@
                 </a>
             </div>
         </div>
-  
+
       <div class="AAA">
         <div class="nav-links">
           <router-link to="/" class="nav-link">
           {{ t('common.home') }}
         </router-link>
-        
+
           <router-link to="/SimpleRules" class="nav-link">
             {{ t('common.rules') }}
           </router-link>
@@ -69,7 +69,7 @@
           </router-link> -->
           <TocToggles v-if="appConfig.showTocToggles" />
         </div>
-        
+
       </div>
     </nav>
   </template>
@@ -86,6 +86,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import TocToggles from './TocToggles.vue'
 import { appConfig } from '../config/app-config'
 import { useGsap } from '@/composables/useGsap'
+import { EASINGS, DURATIONS } from '@/gsap'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -96,42 +97,47 @@ const burger = ref<HTMLElement | null>(null)
 const overlay = ref<HTMLElement | null>(null)
 const navRef = ref<HTMLElement | null>(null)
 
-const { create } = useGsap({ scope: navRef })
+const { create, reduceMotion } = useGsap({ scope: navRef })
 
+const menuOpen = ref(false)
 let sidebarTimeline: gsap.core.Timeline | null = null
-let closeSidebar: () => void
+let burgerLines: HTMLElement[] = []
 
-create(() => {
-  // --- 桌面端：滚动感知背景 ---
-  const mm = gsap.matchMedia()
-  mm.add('(min-width: 1024px)', () => {
-    ScrollTrigger.create({
-      start: 'top -50px',
-      end: 99999,
-      onUpdate: (self) => {
-        const progress = Math.min(1, self.progress * 3)
-        gsap.to('.navbar-glass-bg', {
-          '--nav-alpha': progress,
-          duration: 0.1,
-        })
-      },
-    })
-  })
+function setMenuInstant(open: boolean) {
+  if (!sideNav.value || !overlay.value || burgerLines.length < 3) return
+  if (open) {
+    gsap.set(overlay.value, { autoAlpha: 1 })
+    gsap.set(sideNav.value, { xPercent: 0, autoAlpha: 1 })
+    gsap.set(burgerLines[0]!, { rotate: 45, y: 8 })
+    gsap.set(burgerLines[1]!, { autoAlpha: 0 })
+    gsap.set(burgerLines[2]!, { rotate: -45, y: -8 })
+  } else {
+    gsap.set(overlay.value, { autoAlpha: 0 })
+    gsap.set(sideNav.value, { xPercent: -100, autoAlpha: 0 })
+    gsap.set(burgerLines[0]!, { rotate: 0, y: 0 })
+    gsap.set(burgerLines[1]!, { autoAlpha: 1 })
+    gsap.set(burgerLines[2]!, { rotate: 0, y: 0 })
+  }
+}
 
-  // --- 移动端侧边栏 timeline ---
-  sidebarTimeline = gsap.timeline({ paused: true })
-    .to(overlay.value, { autoAlpha: 1, duration: 0.25, ease: 'power2.out' }, 0)
-    .fromTo(sideNav.value,
-      { x: '100%' },
-      { x: '0%', duration: 0.35, ease: 'power3.out' },
-      0,
-    )
+function onBurgerChange() {
+  const open = burgerInput.value?.checked ?? false
+  menuOpen.value = open
+  if (reduceMotion()) {
+    setMenuInstant(open)
+    return
+  }
+  if (open) sidebarTimeline?.play()
+  else sidebarTimeline?.reverse()
+}
 
-})
-
-// --- 侧边栏控制 ---
-closeSidebar = () => {
+function closeSidebar() {
   if (burgerInput.value) burgerInput.value.checked = false
+  menuOpen.value = false
+  if (reduceMotion()) {
+    setMenuInstant(false)
+    return
+  }
   sidebarTimeline?.reverse()
 }
 
@@ -162,6 +168,71 @@ watch(() => router.currentRoute.value, () => {
 })
 
 onMounted(() => {
+  create((g) => {
+    const mm = g.matchMedia()
+
+    // --- 桌面端：滚动感知背景 ---
+    mm.add('(min-width: 1024px)', () => {
+      ScrollTrigger.create({
+        start: 'top -50px',
+        end: 99999,
+        onUpdate: (self) => {
+          const progress = Math.min(1, self.progress * 3)
+          g.to('.navbar-glass-bg', {
+            '--nav-alpha': progress,
+            duration: 0.1,
+          })
+        },
+      })
+    })
+
+    // --- 移动端：侧边栏 + 汉堡按钮变形成 X ---
+    mm.add('(max-width: 896px)', () => {
+      if (!sideNav.value || !overlay.value) return
+
+      burgerLines = g.utils.toArray<HTMLElement>('.burger span')
+      if (burgerLines.length < 3) return
+
+      // 初始隐藏状态
+      g.set(overlay.value, { autoAlpha: 0 })
+      g.set(sideNav.value, { xPercent: -100, autoAlpha: 0 })
+
+      sidebarTimeline = g.timeline({ paused: true })
+        .to(overlay.value, {
+          autoAlpha: 1,
+          duration: DURATIONS.standard,
+          ease: EASINGS.smooth,
+        }, 0)
+        .fromTo(sideNav.value,
+          { xPercent: -100, autoAlpha: 0 },
+          {
+            xPercent: 0,
+            autoAlpha: 1,
+            duration: DURATIONS.slow,
+            ease: EASINGS.heroReveal,
+          },
+          0,
+        )
+        .to(burgerLines[0]!, {
+          rotate: 45,
+          y: 8,
+          duration: DURATIONS.hover,
+          ease: EASINGS.hover,
+        }, 0)
+        .to(burgerLines[1]!, {
+          autoAlpha: 0,
+          duration: DURATIONS.hover,
+          ease: EASINGS.hover,
+        }, '-=0.1')
+        .to(burgerLines[2]!, {
+          rotate: -45,
+          y: -8,
+          duration: DURATIONS.hover,
+          ease: EASINGS.hover,
+        }, '-=0.1')
+    })
+  })
+
   document.addEventListener('click', handleClickOutside)
   if (sideNav.value) {
     sideNav.value.addEventListener('click', handleSideNavClick)

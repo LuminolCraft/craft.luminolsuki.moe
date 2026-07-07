@@ -646,18 +646,6 @@ body {
 
 /* @keyframes vercel-fadeInUp/vercel-fadeIn/vercel-scaleIn 已由 GSAP 替代 */
 
-.vercel-animate-fadeInUp {
-    animation: vercel-fadeInUp var(--vercel-duration-normal) var(--vercel-ease-out) both;
-}
-
-.vercel-animate-fadeIn {
-    animation: vercel-fadeIn var(--vercel-duration-normal) var(--vercel-ease-out) both;
-}
-
-.vercel-animate-scaleIn {
-    animation: vercel-scaleIn var(--vercel-duration-fast) var(--vercel-ease-bounce) both;
-}
-
 /* ===========================================
    响应式工具类 (Responsive Utilities)
    =========================================== */
