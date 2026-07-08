@@ -450,7 +450,7 @@
     }
 
     .skeleton-block {
-        background: rgba(255, 255, 255, 0.06);
+        background: var(--skeleton-block-bg);
         border-radius: var(--vercel-radius-subtle);
         position: relative;
         overflow: hidden;
@@ -515,7 +515,7 @@
         left: 0;
         width: 100%;
         height: 100%;
-        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08), transparent);
+        background: linear-gradient(90deg, transparent, var(--skeleton-shimmer-color), transparent);
         transform: translateX(-100%);
         will-change: transform;
     }
@@ -1328,6 +1328,7 @@
                 gsap.to('.skeleton-shimmer', {
                   xPercent: 100,
                   repeat: -1,
+                  yoyo: true,
                   ease: EASINGS.smooth,
                   duration: 1.5,
                 });

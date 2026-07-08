@@ -64,7 +64,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch, onMounted, onUnmounted } from 'vue'
 import gsap from 'gsap'
 import { useI18n } from '../composables/useI18n'
 import { useGsap } from '@/composables/useGsap'
@@ -77,6 +77,10 @@ const { create, reduceMotion } = useGsap({ scope: containerRef })
 const isDark = ref(false)
 const overlayRef = ref<HTMLDivElement | null>(null)
 const appliedDark = ref(false)
+
+const animatingRef = ref(false)
+const revealTween = ref<gsap.core.Tween | null>(null)
+const keepaliveStyleEl = ref<HTMLStyleElement | null>(null)
 
 const zhIconRef = ref<SVGElement | null>(null)
 const enIconRef = ref<SVGElement | null>(null)
@@ -104,31 +108,140 @@ function applyTheme(dark: boolean) {
 
 function themeToggle(e: MouseEvent) {
   const next = !appliedDark.value
+
+  // 减少动效：直接切换
   if (reduceMotion()) {
     applyTheme(next)
     return
   }
+
+  // 动画进行中再次点击 → 单次切换方向（避免双重反转相互抵消）
+  if (animatingRef.value && revealTween.value) {
+    revealTween.value.reversed() ? revealTween.value.play() : revealTween.value.reverse()
+    return
+  }
+
   const x = e.clientX
   const y = e.clientY
-  // 同步读取新主题背景色（避免闪烁）
-  const prevTheme = appliedDark.value ? 'dark' : 'light'
-  const nextTheme = next ? 'dark' : 'light'
-  document.documentElement.setAttribute('data-theme', nextTheme)
-  const targetBg = getComputedStyle(document.documentElement).getPropertyValue('--background-color').trim()
-  document.documentElement.setAttribute('data-theme', prevTheme)
-  // 创建遮罩层，用 clipPath 圆形扩散揭示新主题
-  const overlay = document.createElement('div')
-  overlay.style.cssText = `position:fixed;inset:0;background:${targetBg};clip-path:circle(0% at ${x}px ${y}px);z-index:9999;pointer-events:none;`
-  document.body.appendChild(overlay)
-  gsap.to(overlay, {
-    clipPath: `circle(150% at ${x}px ${y}px)`,
-    duration: DURATIONS.slow,
-    ease: EASINGS.smooth,
-    onComplete: () => {
+  const maxDist = Math.hypot(
+    Math.max(x, window.innerWidth - x),
+    Math.max(y, window.innerHeight - y)
+  )
+  const endSize = maxDist * 2
+
+  // 生成 32×32 像素化 SVG 圆形 mask
+  const size = 32
+  let rects = ''
+  const r = size / 2
+  for (let i = 0; i < size; i++) {
+    for (let j = 0; j < size; j++) {
+      const dx = j - r + 0.5
+      const dy = i - r + 0.5
+      if (dx * dx + dy * dy <= r * r) {
+        rects += `<rect x="${j}" y="${i}" width="1.1" height="1.1" fill="black"/>`
+      }
+    }
+  }
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}" shape-rendering="crispEdges">${rects}</svg>`
+  const encodedSvg = `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`
+
+  // 主路径：View Transitions API
+  const startViewTransition: typeof document.startViewTransition | undefined = (document as any).startViewTransition
+  if (startViewTransition) {
+    animatingRef.value = true
+
+    const transition = startViewTransition.call(document, () => {
+      document.documentElement.setAttribute('data-vt', '')
       applyTheme(next)
-      overlay.remove()
+      // 强制 reflow，确保新主题被快照
+      void getComputedStyle(document.documentElement).opacity
+      document.documentElement.removeAttribute('data-vt')
+    })
+
+    transition.ready.then(() => {
+      // 注入 mask 规则 + no-op keepalive 动画（维持 ::view-transition-new(root) 伪元素存活）
+      let styleEl = document.querySelector<HTMLStyleElement>('style[data-theme-reveal]')
+      if (!styleEl) {
+        styleEl = document.createElement('style')
+        styleEl.setAttribute('data-theme-reveal', '')
+        document.head.appendChild(styleEl)
+      }
+      styleEl.textContent = `
+        @keyframes theme-reveal-keepalive { from { opacity: 1 } to { opacity: 1 } }
+        ::view-transition-new(root) {
+          animation: theme-reveal-keepalive 10s forwards;
+          mask-image: url("${encodedSvg}");
+          mask-repeat: no-repeat;
+          mask-size: var(--reveal-size) var(--reveal-size);
+          mask-position: calc(${x}px - var(--reveal-size) / 2) calc(${y}px - var(--reveal-size) / 2);
+          -webkit-mask-image: url("${encodedSvg}");
+          -webkit-mask-repeat: no-repeat;
+          -webkit-mask-size: var(--reveal-size) var(--reveal-size);
+          -webkit-mask-position: calc(${x}px - var(--reveal-size) / 2) calc(${y}px - var(--reveal-size) / 2);
+        }
+      `
+      keepaliveStyleEl.value = styleEl
+
+      const tween = gsap.fromTo(document.documentElement,
+        { '--reveal-size': '0px' } as gsap.TweenVars,
+        {
+          '--reveal-size': `${endSize}px`,
+          duration: 0.8,
+          ease: EASINGS.smooth,
+          onComplete: () => cleanupReveal(),
+          onReverseComplete: () => {
+            applyTheme(!appliedDark.value)
+            cleanupReveal()
+          },
+        } as gsap.TweenVars
+      )
+      revealTween.value = tween
+    }).catch(() => {
+      cleanupReveal()
+    })
+
+    function cleanupReveal() {
+      if (keepaliveStyleEl.value) {
+        keepaliveStyleEl.value.remove()
+        keepaliveStyleEl.value = null
+      }
+      revealTween.value = null
+      animatingRef.value = false
+    }
+    return
+  }
+
+  // 回退路径：不支持 View Transitions，用 .theme-reveal overlay 淡出
+  const overlay = overlayRef.value
+  if (!overlay) {
+    applyTheme(next)
+    return
+  }
+  const oldBg = getComputedStyle(document.documentElement)
+    .getPropertyValue('--background-color')
+    .trim()
+  applyTheme(next)
+  overlay.style.background = oldBg
+  overlay.style.display = 'block'
+  gsap.set(overlay, { autoAlpha: 1 })
+  animatingRef.value = true
+  const tween = gsap.to(overlay, {
+    autoAlpha: 0,
+    duration: 0.4,
+    ease: 'power1.out',
+    onComplete: () => {
+      overlay.style.display = 'none'
+      revealTween.value = null
+      animatingRef.value = false
+    },
+    onReverseComplete: () => {
+      applyTheme(!appliedDark.value)
+      overlay.style.display = 'none'
+      revealTween.value = null
+      animatingRef.value = false
     },
   })
+  revealTween.value = tween
 }
 
 onMounted(() => {
@@ -179,6 +292,18 @@ function langToggle() {
   }
   toggleLang()
 }
+
+onUnmounted(() => {
+  if (revealTween.value) {
+    revealTween.value.kill()
+    revealTween.value = null
+  }
+  if (keepaliveStyleEl.value) {
+    keepaliveStyleEl.value.remove()
+    keepaliveStyleEl.value = null
+  }
+  animatingRef.value = false
+})
 </script>
 
 <style scoped>

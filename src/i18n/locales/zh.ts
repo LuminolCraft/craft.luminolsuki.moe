@@ -282,17 +282,12 @@ export default {
         "title": "服务器管理",
         "subtitle": "负责服务器的日常管理和维护工作"
       },
-      "community": {
-        "title": "社区与开发",
-        "subtitle": "负责社区运营和网站开发维护"
-      },
       "roles": {
         "owner": "物理服主 & Luminol 服务端开发人员",
         "admin": "管理员",
-        "community": "社区管理",
-        "developer": "网站开发",
         "survivalAdmin": "纯净生存服务器管理员",
-        "creativeAdmin": "综合生存服务器管理员"
+        "creativeAdmin": "综合生存服务器管理员",
+        "serverAdmin": "服务器管理员"
       }
     }
   }
