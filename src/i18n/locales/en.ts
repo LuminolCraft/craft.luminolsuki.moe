@@ -281,17 +281,12 @@ export default {
         "title": "Server Management",
         "subtitle": "Responsible for daily server management and maintenance"
       },
-      "community": {
-        "title": "Community & Development",
-        "subtitle": "Responsible for community operations and website development and maintenance"
-      },
       "roles": {
         "owner": "Physical Server Owner & Luminol Server Developer",
         "admin": "Administrator",
-        "community": "Community Management",
-        "developer": "Website Development",
         "survivalAdmin": "Survival Server Administrator",
-        "creativeAdmin": "Creative Server Administrator"
+        "creativeAdmin": "Creative Server Administrator",
+        "serverAdmin": "Server Administrator"
       }
     }
   }

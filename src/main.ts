@@ -1,12 +1,51 @@
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import { createHead } from '@unhead/vue'
+import Lenis from 'lenis'
+import gsap from 'gsap'
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import App from './App.vue'
 import router from './router'
 import i18n from './i18n'
 import { setupGsap } from '@/gsap'
 
 setupGsap()
+
+// Lenis 惯性滚动初始化（触屏与 reduce-motion 跳过）
+const lenisMm = gsap.matchMedia()
+let lenisInstance: Lenis | null = null
+
+lenisMm.add(
+    {
+        isDesktop: '(min-width: 769px) and (pointer: fine)',
+        reduceMotion: '(prefers-reduced-motion: reduce)',
+    },
+    (context) => {
+        const { isDesktop, reduceMotion } = context.conditions!
+        if (!isDesktop || reduceMotion) return
+
+        lenisInstance = new Lenis({
+            duration: 1.2,
+            easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+            smoothWheel: true,
+            wheelMultiplier: 1.2,
+            touchMultiplier: 1.5,
+        })
+
+        // Lenis scroll 事件同步到 ScrollTrigger
+        lenisInstance.on('scroll', ScrollTrigger.update)
+
+        // 用 gsap.ticker 驱动 lenis.raf()
+        gsap.ticker.add((time) => {
+            lenisInstance?.raf(time * 1000)
+        })
+
+        return () => {
+            lenisInstance?.destroy()
+            lenisInstance = null
+        }
+    },
+)
 
 const app = createApp(App)
 const head = createHead()

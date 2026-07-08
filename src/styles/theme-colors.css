@@ -213,6 +213,9 @@
    --background-gradient: var(--bases-background-gradient);
    --card-bg: var(--bases-card-bg);
    --card-bg-hover: var(--bases-card-bg-hover);
+   /* 骨架占位 - 主题感知 */
+   --skeleton-block-bg: rgba(0, 0, 0, 0.06);
+   --skeleton-shimmer-color: rgba(255, 255, 255, 0.7);
 
    /* ---- 文本颜色 (使用 Vercel 灰阶) ---- */
    --text-color: var(--bases-text-color);
@@ -264,6 +267,9 @@ html[data-theme="dark"] {
    --background-gradient: var(--bases-dark-background-gradient);
    --card-bg: var(--bases-dark-card-bg);
    --card-bg-hover: var(--bases-dark-card-bg-hover);
+   /* 骨架占位 - 主题感知 */
+   --skeleton-block-bg: rgba(255, 255, 255, 0.06);
+   --skeleton-shimmer-color: rgba(255, 255, 255, 0.12);
 
    --text-color: var(--bases-dark-text-color);
    --text-secondary: var(--bases-dark-text-secondary);
