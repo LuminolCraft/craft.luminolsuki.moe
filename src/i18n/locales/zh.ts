@@ -12,14 +12,14 @@ export default {
     "news": "新闻",
     "monitoring": "监控",
     "joinGroup": "加入交流群",
-    "copyright": "© {year} LuminolMC. 保留所有权利.",
+    "copyright": "© 2025-{year} LuminolMC. 保留所有权利.",
     "madeWith": "使用 {tech} 构建",
     "switchToChinese": "切换到中文",
     "switchToEnglish": "切换到英文"
   },
   "hero": {
-    "title": "欢迎来到 LuminolMC",
-    "subtitle": "基于 Luminol 系服务端的 Minecraft 公益群组服",
+    "title": "欢迎来到 LuminolCraft",
+    "subtitle": "一个由热情的管理员和玩家社区共建的 Minecraft 公益服",
     "playNow": "立即加入",
     "learnMore": "了解更多"
   },
@@ -233,7 +233,7 @@ export default {
   },
   "home": {
     "hero": {
-      "description": "LuminolCraft 是基于 Luminol 系服务端的 Minecraft 公益群组服，综合生存与纯净生存两开花给予玩家多种选择，支持多端互通且无正版门槛，兼具稳定运行与备份保障，融入特色玩法，与玩家共创纯粹又富体验感的生存空间。"
+      "description": "LuminolCraft 是一个由热情的管理员和玩家社区共建的 Minecraft 公益服务器，综合生存与纯净生存两开花给予玩家多种游玩选择，支持多端互通且无正版门槛，兼具稳定运行与备份保障，融入特色玩法，与玩家共创纯粹又富体验感的生存空间。"
     },
     "serverStatus": {
       "loading": "状态查询中...",
@@ -283,11 +283,11 @@ export default {
         "subtitle": "负责服务器的日常管理和维护工作"
       },
       "roles": {
-        "owner": "物理服主 & Luminol 服务端开发人员",
+        "owner": "物理服主",
         "admin": "管理员",
         "survivalAdmin": "纯净生存服务器管理员",
         "creativeAdmin": "综合生存服务器管理员",
-        "serverAdmin": "服务器管理员"
+        "serverAdmin": "网站开发、活动策划管理"
       }
     }
   }
