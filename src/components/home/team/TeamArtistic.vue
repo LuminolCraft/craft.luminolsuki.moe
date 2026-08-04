@@ -568,7 +568,6 @@ onMounted(async () => {
                             end: '+=120%', // 微调点：pin 略长以容纳 6 张卡片
                             pin: true,
                             scrub: 1, // 微调点：scrub 缓冲秒数
-                            refreshPriority: 30, // 微调点：team 最后刷新，确保父 features=10 / servers=20 的 pin-spacer 插入后再算 team 位置
                         },
                         defaults: { ease: EASINGS.smooth },
                     })

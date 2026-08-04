@@ -580,8 +580,7 @@ onMounted(async () => {
 
     // ============ reduceMotion: 仅设置终态，不播放动画 ============
     mm.add('(prefers-reduced-motion: reduce)', () => {
-      g.set('.feature-card, .server-panel', { autoAlpha: 1, y: 0, scale: 1 })
-      g.set('.features-section .section-header, .servers-section .section-header', { autoAlpha: 1, y: 0, scale: 1 })
+      g.set('.feature-card, .server-panel, .features-section .section-header, .servers-section .section-header', { autoAlpha: 1, y: 0, scale: 1 })
     })
 
     // ============ no-preference: 全部动画 ============
@@ -701,7 +700,6 @@ onMounted(async () => {
               end: '+=100%',
               pin: true,
               scrub: 1,
-              refreshPriority: 10,
             },
             defaults: { ease: EASINGS.smooth },
           })
@@ -754,7 +752,6 @@ onMounted(async () => {
               end: '+=100%',
               pin: true,
               scrub: 1,
-              refreshPriority: 20,
             },
             defaults: { ease: EASINGS.smooth },
           })
@@ -827,12 +824,8 @@ onMounted(async () => {
           iconFloat.play()
         }
       })
+      ScrollTrigger.refresh()
     })
-
-    // 在所有 pin-scrub ScrollTrigger 创建之后再次刷新，
-    // 确保 team 子组件的 pin 位置在父级 pin-spacer 插入后被重新计算
-    ScrollTrigger.refresh()
-    requestAnimationFrame(() => ScrollTrigger.refresh())
   }, rootRef.value ?? undefined)
 })
 

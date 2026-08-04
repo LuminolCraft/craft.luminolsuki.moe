@@ -542,6 +542,9 @@ onMounted(() => {
     ctx = gsap.context(() => {
         const mm = gsap.matchMedia()
 
+        // 延迟刷新确保 DOM 就绪
+        requestAnimationFrame(() => ScrollTrigger.refresh())
+
         // ============ reduceMotion：仅设置终态 ============
         mm.add('(prefers-reduced-motion: reduce)', () => {
             gsap.set('.features-section .section-header, .servers-section .section-header', { autoAlpha: 1, y: 0, x: 0 })
@@ -578,7 +581,6 @@ onMounted(() => {
                                 end: () => '+=' + Math.round(window.innerHeight * 0.8), // 微调点：pin 滚动距离 = 0.8 × 视口高度，越大停留越久
                                 pin: true,
                                 scrub: 1, // 微调点：scrub 缓冲秒数，0 = 1:1 跟手，1 = 平滑缓冲
-                                refreshPriority: 10,
                             },
                             defaults: { ease: EASINGS.smooth },
                         })
@@ -647,7 +649,6 @@ onMounted(() => {
                                 pin: true,
                                 scrub: 1,
                                 invalidateOnRefresh: true,
-                                refreshPriority: 20,
                             },
                             defaults: { ease: EASINGS.smooth },
                         })
@@ -726,11 +727,7 @@ onMounted(() => {
                 },
             )
         })
-
-        // 在父 pin-spacers 加入后重新刷新，确保 team 子组件的 pin 位置被重新计算
         ScrollTrigger.refresh()
-        // 微调点：再走一个 rAF 确保父级 pin-spacer 完全插入布局后再全局刷新
-        requestAnimationFrame(() => ScrollTrigger.refresh())
     }, rootRef.value)
 })
 

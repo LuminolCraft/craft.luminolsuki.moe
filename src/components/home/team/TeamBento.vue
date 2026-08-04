@@ -460,7 +460,6 @@ onMounted(async () => {
                     trigger: teamHeaderEl || sectionRef.value,
                     start: 'top 75%',
                     once: true,
-                    refreshPriority: 30, // 微调点：team section 最后刷新（10<20<30）
                 },
             })
 
@@ -577,7 +576,6 @@ onMounted(async () => {
                         trigger: sectionRef.value,
                         start: 'top 80%',
                         once: true,
-                        refreshPriority: 30, // 微调点：team section 最后刷新（10<20<30）
                     },
                 })
                 const ownerBall = balls.find((b) => b.classList.contains('team-ball--owner'))
@@ -622,7 +620,6 @@ onMounted(async () => {
                         trigger: sectionRef.value,
                         start: 'top 80%',
                         once: true,
-                        refreshPriority: 30, // 微调点：team section 最后刷新（10<20<30）
                     },
                 })
             })

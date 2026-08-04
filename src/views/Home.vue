@@ -149,7 +149,7 @@
     font-size: clamp(3rem, 10vw, 8rem);
     font-weight: 800;
     line-height: 0.95;
-    letter-spacing: -0.04em;
+    letter-spacing: -0.02em;
     text-align: left;
     margin-bottom: 24px;
     background: linear-gradient(135deg, #f1f5f9 0%, #818cf8 50%, #22d3ee 100%);
@@ -157,16 +157,16 @@
     background-clip: text;
     color: transparent;
     will-change: transform, opacity;
-}
-
-/* SplitText 拆分后的字符/词 div：
-   font-kerning: none + text-rendering: optimizeSpeed 是 GSAP SplitText 官方推荐的
-   避免 kerning shift 的组合；letter-spacing:0 抵消父级负字距对拆分后盒子的影响 */
-.hero-char,
-.hero-word {
     font-kerning: none;
     text-rendering: optimizeSpeed;
+    contain: layout style paint;
+}
+
+.hero-title .hero-char,
+.hero-title [data-split="char"] {
     letter-spacing: 0;
+    display: inline-block;
+    transform: translateZ(0);
 }
 
 .hero-subtitle {
@@ -515,110 +515,104 @@ onMounted(async () => {
       g.set('.scroll-indicator', { autoAlpha: 0 })
     })
 
-    // ============ no-preference: hero 相关动画 ============
-    mm.add('(prefers-reduced-motion: no-preference)', () => {
-      // 1. Hero 标题 SplitText (chars + words)
-      // 微调点：charsClass/wordsClass 给 SplitText 拆分的字符/词 div 加类，便于 CSS 精准控制字体渲染
-      const titleSplit = new SplitText('.hero-title', { type: 'chars,words', charsClass: 'hero-char', wordsClass: 'hero-word' })
+    // // ============ no-preference: hero 相关动画 ============
+    // mm.add('(prefers-reduced-motion: no-preference)', () => {
+    //   // 1. Hero 标题 SplitText (chars + words)
+    //   const titleSplit = new SplitText('.hero-title', { type: 'chars,words', charsClass: 'hero-char', wordsClass: 'hero-word' })
+    //   g.set(titleSplit.chars, { letterSpacing: 0 })
 
-      // 2. Hero 副标题 SplitText (lines)
-      const subtitleSplit = new SplitText('.hero-subtitle', { type: 'lines' })
+    //   // 2. Hero 副标题 SplitText (lines)
+    //   const subtitleSplit = new SplitText('.hero-subtitle', { type: 'lines' })
 
-      // 初始隐藏，防止 FOUC
-      g.set('.hero-description', { autoAlpha: 0, y: 20 })
-      g.set('.hero-actions', { autoAlpha: 0, y: 20 })
-      g.set('.status-card--float', { autoAlpha: 0, y: 40, rotation: -8 })
-      g.set('.scroll-indicator', { autoAlpha: 1 })
+    //   // 初始隐藏，防止 FOUC
+    //   g.set('.hero-description', { autoAlpha: 0, y: 20 })
+    //   g.set('.hero-actions', { autoAlpha: 0, y: 20 })
+    //   g.set('.status-card--float', { autoAlpha: 0, y: 40, rotation: -8 })
+    //   g.set('.scroll-indicator', { autoAlpha: 1 })
 
-      const heroTl = g.timeline()
+    //   const heroTl = g.timeline()
 
-      heroTl
-        .fromTo(titleSplit.chars,
-          { yPercent: 120, autoAlpha: 0, rotateZ: 8 },
-          {
-            yPercent: 0,
-            autoAlpha: 1,
-            rotateZ: 0,
-            stagger: g.utils.distribute({ from: 'center', amount: 0.6 }),
-            duration: DURATIONS.slow,
-            ease: EASINGS.heroReveal,
-            // 微调点：clearProps 动画结束后清除内联 transform/visibility/opacity，
-            // 避免 Chromium 对「有 transform 内联样式的 inline-block」+ 负 letter-spacing 组合触发字形重计算导致重叠
-            clearProps: 'transform,visibility,opacity',
-          }
-        )
-        .from(subtitleSplit.lines, {
-          yPercent: 100,
-          autoAlpha: 0,
-          duration: DURATIONS.standard,
-          ease: EASINGS.entrance,
-          stagger: 0.1,
-        }, '-=0.4')
-        .to('.hero-description', {
-          autoAlpha: 1,
-          y: 0,
-          duration: DURATIONS.entrance,
-          ease: EASINGS.entrance,
-        }, '-=0.3')
-        .to('.hero-actions', {
-          autoAlpha: 1,
-          y: 0,
-          duration: DURATIONS.entrance,
-          ease: EASINGS.entrance,
-        }, '-=0.3')
-        // 5. 状态卡入场
-        .to('.status-card--float', {
-          autoAlpha: 1,
-          y: 0,
-          rotation: -2,
-          duration: DURATIONS.slow,
-          ease: EASINGS.heroReveal,
-        }, '-=0.4')
+    //   heroTl
+    //     .from(titleSplit.chars, {
+    //       yPercent: 120,
+    //       autoAlpha: 0,
+    //       rotateZ: 8,
+    //       stagger: g.utils.distribute({ from: 'center', amount: 0.6 }),
+    //       duration: DURATIONS.slow,
+    //       ease: EASINGS.heroReveal,
+    //     })
+    //     .from(subtitleSplit.lines, {
+    //       yPercent: 100,
+    //       autoAlpha: 0,
+    //       duration: DURATIONS.standard,
+    //       ease: EASINGS.entrance,
+    //       stagger: 0.1,
+    //     }, '-=0.4')
+    //     .to('.hero-description', {
+    //       autoAlpha: 1,
+    //       y: 0,
+    //       duration: DURATIONS.entrance,
+    //       ease: EASINGS.entrance,
+    //     }, '-=0.3')
+    //     .to('.hero-actions', {
+    //       autoAlpha: 1,
+    //       y: 0,
+    //       duration: DURATIONS.entrance,
+    //       ease: EASINGS.entrance,
+    //     }, '-=0.3')
+    //     // 5. 状态卡入场
+    //     .to('.status-card--float', {
+    //       autoAlpha: 1,
+    //       y: 0,
+    //       rotation: -2,
+    //       duration: DURATIONS.slow,
+    //       ease: EASINGS.heroReveal,
+    //     }, '-=0.4')
 
-      // 3. 背景视差滚动
-      g.to('.header-background', {
-        yPercent: 30,
-        scale: 1.1,
-        ease: 'none',
-        scrollTrigger: {
-          trigger: '.hero-section',
-          start: 'top top',
-          end: 'bottom top',
-          scrub: true,
-        },
-      })
+    //   // 3. 背景视差滚动
+    //   g.to('.header-background', {
+    //     yPercent: 30,
+    //     scale: 1.1,
+    //     ease: 'none',
+    //     scrollTrigger: {
+    //       trigger: '.hero-section',
+    //       start: 'top top',
+    //       end: 'bottom top',
+    //       scrub: true,
+    //     },
+    //   })
 
-      // 4. SCROLL ↓ 指示器：持续浮动 + 滚动淡出
-      g.to('.scroll-indicator', {
-        y: 8,
-        duration: 1.4,
-        ease: 'sine.inOut',
-        repeat: -1,
-        yoyo: true,
-      })
-      g.to('.scroll-indicator', {
-        autoAlpha: 0,
-        duration: 0.4,
-        scrollTrigger: {
-          trigger: '.hero-section',
-          start: 'top top',
-          end: '+=200',
-          scrub: true,
-        },
-      })
+    //   // 4. SCROLL ↓ 指示器：持续浮动 + 滚动淡出
+    //   g.to('.scroll-indicator', {
+    //     y: 8,
+    //     duration: 1.4,
+    //     ease: 'sine.inOut',
+    //     repeat: -1,
+    //     yoyo: true,
+    //   })
+    //   g.to('.scroll-indicator', {
+    //     autoAlpha: 0,
+    //     duration: 0.4,
+    //     scrollTrigger: {
+    //       trigger: '.hero-section',
+    //       start: 'top top',
+    //       end: '+=200',
+    //       scrub: true,
+    //     },
+    //   })
 
-      // 6. hero → features 渐变混合过渡层（::after height 通过 --reveal-size 驱动）
-      g.fromTo('.hero-section', { '--reveal-size': '0px' } as gsap.TweenVars, {
-        '--reveal-size': '120px',
-        ease: 'none',
-        scrollTrigger: {
-          trigger: '.hero-section',
-          start: 'bottom 80%',
-          end: 'bottom 20%',
-          scrub: true,
-        },
-      } as gsap.TweenVars)
-    })
+    //   // 6. hero → features 渐变混合过渡层（::after height 通过 --reveal-size 驱动）
+    //   g.fromTo('.hero-section', { '--reveal-size': '0px' } as gsap.TweenVars, {
+    //     '--reveal-size': '120px',
+    //     ease: 'none',
+    //     scrollTrigger: {
+    //       trigger: '.hero-section',
+    //       start: 'bottom 80%',
+    //       end: 'bottom 20%',
+    //       scrub: true,
+    //     },
+    //   } as gsap.TweenVars)
+    // })
   })
 })
 
