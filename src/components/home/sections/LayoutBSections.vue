@@ -544,7 +544,7 @@ onMounted(() => {
 
         // ============ reduceMotion：仅设置终态 ============
         mm.add('(prefers-reduced-motion: reduce)', () => {
-            gsap.set('.section-header', { autoAlpha: 1, y: 0, x: 0 })
+            gsap.set('.features-section .section-header, .servers-section .section-header', { autoAlpha: 1, y: 0, x: 0 })
             gsap.set('.feature-card, .server-panel', { autoAlpha: 1, y: 0, x: 0, scale: 1, rotation: 0, rotationY: 0, rotationZ: 0 })
             gsap.set('.section-index-watermark', { autoAlpha: 0.08, scale: 1, yPercent: 0 })
             gsap.set('.bg-layer', { yPercent: 0 })
@@ -553,7 +553,7 @@ onMounted(() => {
 
         // ============ no-preference：先设初始隐藏态，再按设备分支 ============
         mm.add('(prefers-reduced-motion: no-preference)', () => {
-            gsap.set('.section-header', { autoAlpha: 0 })
+            gsap.set('.features-section .section-header, .servers-section .section-header', { autoAlpha: 0 })
             gsap.set('.feature-card', { autoAlpha: 0 })
             gsap.set('.server-panel', { autoAlpha: 0 })
             gsap.set('.section-index-watermark', { autoAlpha: 0.08 })
@@ -578,6 +578,7 @@ onMounted(() => {
                                 end: () => '+=' + Math.round(window.innerHeight * 0.8), // 微调点：pin 滚动距离 = 0.8 × 视口高度，越大停留越久
                                 pin: true,
                                 scrub: 1, // 微调点：scrub 缓冲秒数，0 = 1:1 跟手，1 = 平滑缓冲
+                                refreshPriority: 10,
                             },
                             defaults: { ease: EASINGS.smooth },
                         })
@@ -646,6 +647,7 @@ onMounted(() => {
                                 pin: true,
                                 scrub: 1,
                                 invalidateOnRefresh: true,
+                                refreshPriority: 20,
                             },
                             defaults: { ease: EASINGS.smooth },
                         })
@@ -685,7 +687,7 @@ onMounted(() => {
                     // ---------- 触屏 / 窄屏降级：once 入场（无 pin、无大幅变换）----------
                     if (fallback) {
                         // section-header once
-                        gsap.utils.toArray<HTMLElement>('.section-header').forEach((header) => {
+                        gsap.utils.toArray<HTMLElement>('.features-section .section-header, .servers-section .section-header').forEach((header) => {
                             gsap.to(header, {
                                 autoAlpha: 1,
                                 y: 0,
@@ -724,6 +726,11 @@ onMounted(() => {
                 },
             )
         })
+
+        // 在父 pin-spacers 加入后重新刷新，确保 team 子组件的 pin 位置被重新计算
+        ScrollTrigger.refresh()
+        // 微调点：再走一个 rAF 确保父级 pin-spacer 完全插入布局后再全局刷新
+        requestAnimationFrame(() => ScrollTrigger.refresh())
     }, rootRef.value)
 })
 

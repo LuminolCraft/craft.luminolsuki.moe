@@ -510,7 +510,8 @@ onMounted(async () => {
 
     // ============ reduceMotion: 仅设置终态，不播放动画 ============
     mm.add('(prefers-reduced-motion: reduce)', () => {
-      g.set('.feature-card, .server-panel, .section-header', { autoAlpha: 1, y: 0, scale: 1 })
+      g.set('.feature-card, .server-panel', { autoAlpha: 1, y: 0, scale: 1 })
+      g.set('.features-section .section-header, .servers-section .section-header', { autoAlpha: 1, y: 0, scale: 1 })
     })
 
     // ============ no-preference: 全部动效 ============
@@ -518,7 +519,7 @@ onMounted(async () => {
       // 初始隐藏，防止 FOUC
       g.set('.feature-card', { autoAlpha: 0, y: 60 })
       g.set('.server-panel', { autoAlpha: 0, y: 50 })
-      g.set('.section-header', { autoAlpha: 0, y: 30 })
+      g.set('.features-section .section-header, .servers-section .section-header', { autoAlpha: 0, y: 30 })
 
       // 7. Features 入场 timeline：大卡片先入场 + 小卡片 stagger 跟进 + 入场后启动图标浮动
       const iconFloat = g.to('.feature-icon', {
@@ -539,6 +540,7 @@ onMounted(async () => {
           trigger: '.features-grid',
           start: 'top 75%',
           once: true,
+          refreshPriority: 10,
         },
         defaults: { ease: EASINGS.entrance, duration: DURATIONS.scrollReveal },
       })
@@ -558,6 +560,7 @@ onMounted(async () => {
           trigger: '.servers-grid',
           start: 'top 85%',
           once: true,
+          refreshPriority: 20,
         },
       })
 
@@ -631,8 +634,9 @@ onMounted(async () => {
       })
 
       // ===== section-header 入场动画（features/servers/team 三处） =====
-      g.utils.toArray<HTMLElement>('.section-header').forEach((header) => {
+      g.utils.toArray<HTMLElement>('.features-section .section-header, .servers-section .section-header').forEach((header) => {
         const triggerEl = header.closest('section')
+        const isFeatures = triggerEl?.classList.contains('features-section')
         g.to(header, {
           autoAlpha: 1,
           y: 0,
@@ -642,10 +646,16 @@ onMounted(async () => {
             trigger: triggerEl || header,
             start: 'top 75%',
             once: true,
+            refreshPriority: isFeatures ? 10 : 20,
           },
         })
       })
     })
+
+    // 重新计算 ScrollTrigger 位置：确保团队子组件的 pin 在父级 pin-spacer 添加后正确刷新
+    ScrollTrigger.refresh()
+    // 微调点：
+    requestAnimationFrame(() => ScrollTrigger.refresh())
   })
 })
 

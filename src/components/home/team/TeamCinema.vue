@@ -478,6 +478,7 @@ onMounted(() => {
                             end: () => '+=' + Math.round(window.innerHeight * 0.8), // 微调点：pin 滚动距离 = 0.8 × 视口高度
                             pin: true,
                             scrub: 1,
+                            refreshPriority: 30, // 微调点：team 最后刷新，确保父 features=10 / servers=20 的 pin-spacer 插入后再算 team 位置
                         },
                         defaults: { ease: EASINGS.smooth },
                     })
