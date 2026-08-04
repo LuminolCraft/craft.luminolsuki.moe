@@ -536,6 +536,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
+import type { Component } from 'vue'
 import { useI18n } from 'vue-i18n'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
@@ -543,7 +544,8 @@ import { MotionPathPlugin } from 'gsap/MotionPathPlugin'
 import { DURATIONS } from '@/gsap/config/durations'
 import { EASINGS } from '@/gsap/config/easings'
 import { STAGGERS } from '@/gsap/config/staggers'
-import { CURRENT_TEAM_STYLE } from '@/config/home-layout'
+import { CURRENT_TEAM_STYLE, resolveTeamStyle } from '@/config/home-layout'
+import type { ResolvedTeamStyle } from '@/config/home-layout'
 import TeamArtistic from '../team/TeamArtistic.vue'
 import TeamCinema from '../team/TeamCinema.vue'
 import TeamBento from '../team/TeamBento.vue'
@@ -556,16 +558,15 @@ const { t } = useI18n()
 const rootRef = ref<HTMLElement | null>(null)
 let ctx: gsap.Context | null = null
 
+const TEAM_STYLE_COMPONENT_MAP: Record<ResolvedTeamStyle, Component> = {
+  artistic: TeamArtistic,
+  cinema: TeamCinema,
+  bento: TeamBento,
+} as const
+
 const teamComponent = computed(() => {
-    switch (CURRENT_TEAM_STYLE) {
-        case 'cinema':
-            return TeamCinema
-        case 'bento':
-            return TeamBento
-        case 'artistic':
-        default:
-            return TeamArtistic
-    }
+  const style = resolveTeamStyle(CURRENT_TEAM_STYLE)
+  return TEAM_STYLE_COMPONENT_MAP[style]
 })
 
 onMounted(async () => {
