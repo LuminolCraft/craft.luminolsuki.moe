@@ -109,11 +109,11 @@ Dynamic news list and detail pages with Markdown rendering, KaTeX math formulas,
 
 The project's core feature — a **configuration-driven multi-layout switching system**. The homepage (`Home.vue`) renders via `<component :is="layoutComponent">` dynamic component, switchable between three layouts:
 
-| Layout | Identifier | Style Description |
-|--------|------------|-------------------|
-| Artistic | `'artistic'` | Z-shaped diagonal flow + organic rotating cards + Pin-Scrub scroll storytelling |
-| Cinema | `'cinema'` | Cinema-style asymmetric impact composition (full-screen color blocks + giant numbers + four-corner asymmetry) |
-| Bento | `'bento'` | Classic Bento Grid (features 2×3 + servers auto-fit + team spherical avatars) |
+| Layout   | Identifier   | Style Description                                                                                             |
+| -------- | ------------ | ------------------------------------------------------------------------------------------------------------- |
+| Artistic | `'artistic'` | Z-shaped diagonal flow + organic rotating cards + Pin-Scrub scroll storytelling                               |
+| Cinema   | `'cinema'`   | Cinema-style asymmetric impact composition (full-screen color blocks + giant numbers + four-corner asymmetry) |
+| Bento    | `'bento'`    | Classic Bento Grid (features 2×3 + servers auto-fit + team spherical avatars)                                 |
 
 Switching: Modify the `CURRENT_LAYOUT` constant in `src/config/home-layout.ts` and refresh (Vite HMR auto-reloads).
 
@@ -160,56 +160,56 @@ Integrated Umami privacy-first analytics platform, injected via `@unhead/vue` in
 
 ### 3.1 Runtime Dependencies
 
-| Library | Version | Purpose | Docs |
-|---------|---------|---------|------|
-| vue | ^3.5.25 | Progressive JavaScript framework | [vuejs.org](https://vuejs.org/) |
-| vue-router | ^4.6.3 | Official router for Vue.js | [router.vuejs.org](https://router.vuejs.org/) |
-| pinia | ^3.0.4 | State management | [pinia.vuejs.org](https://pinia.vuejs.org/) |
-| vue-i18n | ^9.14.4 | Internationalization | [vue-i18n.intlify.dev](https://vue-i18n.intlify.dev/) |
-| @unhead/vue | ^1.9.5 | Head tag management (SEO) | [unhead.unjs.io](https://unhead.unjs.io/) |
-| @unhead/ssr | ^2.0.19 | SSR head management utilities | [unhead.unjs.io](https://unhead.unjs.io/) |
-| gsap | ^3.15.0 | Professional animation library | [gsap.com](https://gsap.com/) |
-| lenis | ^1.3.25 | Inertia scrolling library | [lenis.darkroom.engineering](https://lenis.darkroom.engineering/) |
-| chart.js | ^4.5.1 | Data visualization charts | [chartjs.org](https://www.chartjs.org/) |
-| marked | ^17.0.1 | Markdown parser | [marked.js.org](https://marked.js.org/) |
-| highlight.js | ^11.11.1 | Syntax highlighting | [highlightjs.org](https://highlightjs.org/) |
-| katex | ^0.16.27 | Math formula rendering | [katex.org](https://katex.org/) |
-| lodash | ^4.17.21 | Utility functions | [lodash.com](https://lodash.com/) |
+| Library      | Version  | Purpose                          | Docs                                                              |
+| ------------ | -------- | -------------------------------- | ----------------------------------------------------------------- |
+| vue          | ^3.5.25  | Progressive JavaScript framework | [vuejs.org](https://vuejs.org/)                                   |
+| vue-router   | ^4.6.3   | Official router for Vue.js       | [router.vuejs.org](https://router.vuejs.org/)                     |
+| pinia        | ^3.0.4   | State management                 | [pinia.vuejs.org](https://pinia.vuejs.org/)                       |
+| vue-i18n     | ^9.14.4  | Internationalization             | [vue-i18n.intlify.dev](https://vue-i18n.intlify.dev/)             |
+| @unhead/vue  | ^1.9.5   | Head tag management (SEO)        | [unhead.unjs.io](https://unhead.unjs.io/)                         |
+| @unhead/ssr  | ^2.0.19  | SSR head management utilities    | [unhead.unjs.io](https://unhead.unjs.io/)                         |
+| gsap         | ^3.15.0  | Professional animation library   | [gsap.com](https://gsap.com/)                                     |
+| lenis        | ^1.3.25  | Inertia scrolling library        | [lenis.darkroom.engineering](https://lenis.darkroom.engineering/) |
+| chart.js     | ^4.5.1   | Data visualization charts        | [chartjs.org](https://www.chartjs.org/)                           |
+| marked       | ^17.0.1  | Markdown parser                  | [marked.js.org](https://marked.js.org/)                           |
+| highlight.js | ^11.11.1 | Syntax highlighting              | [highlightjs.org](https://highlightjs.org/)                       |
+| katex        | ^0.16.27 | Math formula rendering           | [katex.org](https://katex.org/)                                   |
+| lodash       | ^4.17.21 | Utility functions                | [lodash.com](https://lodash.com/)                                 |
 
 ### 3.2 Dev Dependencies
 
-| Library | Version | Purpose |
-|---------|---------|---------|
-| vite | ^7.2.4 | Build tool |
-| @vitejs/plugin-vue | ^6.0.2 | Vue SFC support |
-| vite-plugin-vue-devtools | ^8.0.5 | Developer tools |
-| typescript | ~5.9.0 | Type checking |
-| vue-tsc | ^3.2.1 | Vue type checking |
-| vitest | ^4.0.14 | Unit testing framework |
-| @vue/test-utils | ^2.4.6 | Vue testing utilities |
-| jsdom | ^27.2.0 | Test DOM environment |
-| eslint | ^9.39.1 | Code linting |
-| eslint-plugin-vue | ~10.5.1 | Vue ESLint rules |
-| prettier | 3.6.2 | Code formatting |
-| terser | ^5.44.1 | JS minification |
-| tsx | ^4.21.0 | TypeScript execution |
-| sitemap | ^9.0.0 | Sitemap generation |
-| npm-run-all2 | ^8.0.4 | Parallel script runner |
+| Library                  | Version | Purpose                |
+| ------------------------ | ------- | ---------------------- |
+| vite                     | ^7.2.4  | Build tool             |
+| @vitejs/plugin-vue       | ^6.0.2  | Vue SFC support        |
+| vite-plugin-vue-devtools | ^8.0.5  | Developer tools        |
+| typescript               | ~5.9.0  | Type checking          |
+| vue-tsc                  | ^3.2.1  | Vue type checking      |
+| vitest                   | ^4.0.14 | Unit testing framework |
+| @vue/test-utils          | ^2.4.6  | Vue testing utilities  |
+| jsdom                    | ^27.2.0 | Test DOM environment   |
+| eslint                   | ^9.39.1 | Code linting           |
+| eslint-plugin-vue        | ~10.5.1 | Vue ESLint rules       |
+| prettier                 | 3.6.2   | Code formatting        |
+| terser                   | ^5.44.1 | JS minification        |
+| tsx                      | ^4.21.0 | TypeScript execution   |
+| sitemap                  | ^9.0.0  | Sitemap generation     |
+| npm-run-all2             | ^8.0.4  | Parallel script runner |
 
 ### 3.3 GSAP Plugins
 
 The following plugins are registered in `src/gsap/plugin-setup.ts`:
 
-| Plugin | Purpose |
-|--------|---------|
-| ScrollTrigger | Scroll-triggered animations (core) |
-| ScrollToPlugin | Smooth scroll animations |
-| SplitText | Text splitting animations |
-| Flip | Layout transition animations |
-| CustomEase | Custom easing curves |
-| DrawSVGPlugin | SVG drawing animations |
-| MotionPathPlugin | Path-based motion animations |
-| MorphSVGPlugin | SVG morphing animations |
+| Plugin           | Purpose                            |
+| ---------------- | ---------------------------------- |
+| ScrollTrigger    | Scroll-triggered animations (core) |
+| ScrollToPlugin   | Smooth scroll animations           |
+| SplitText        | Text splitting animations          |
+| Flip             | Layout transition animations       |
+| CustomEase       | Custom easing curves               |
+| DrawSVGPlugin    | SVG drawing animations             |
+| MotionPathPlugin | Path-based motion animations       |
+| MorphSVGPlugin   | SVG morphing animations            |
 
 ---
 
@@ -217,12 +217,12 @@ The following plugins are registered in `src/gsap/plugin-setup.ts`:
 
 ### 4.1 Prerequisites
 
-| Requirement | Version | Notes |
-|-------------|---------|-------|
-| Node.js | `^20.19.0` or `>=22.12.0` | See `package.json` `engines` field |
-| Package Manager | pnpm (recommended) or npm | pnpm is faster and uses less disk |
-| Git | Any version | Version control |
-| Browser | Modern browser (latest Chrome/Firefox/Edge/Safari) | Development and testing |
+| Requirement     | Version                                            | Notes                              |
+| --------------- | -------------------------------------------------- | ---------------------------------- |
+| Node.js         | `^20.19.0` or `>=22.12.0`                          | See `package.json` `engines` field |
+| Package Manager | pnpm (recommended) or npm                          | pnpm is faster and uses less disk  |
+| Git             | Any version                                        | Version control                    |
+| Browser         | Modern browser (latest Chrome/Firefox/Edge/Safari) | Development and testing            |
 
 ### 4.2 Development Environment Setup
 
@@ -288,17 +288,17 @@ pnpm dev
 
 ### 5.2 Complete Command Reference
 
-| Command | Description |
-|---------|-------------|
-| `pnpm dev` | Start dev server (port 51640, auto-opens browser) |
-| `pnpm build` | Type check + build + generate Sitemap |
-| `pnpm preview` | Preview production build |
-| `pnpm test:unit` | Run unit tests (Vitest) |
-| `pnpm type-check` | TypeScript type checking (vue-tsc) |
-| `pnpm lint` | ESLint check and auto-fix |
-| `pnpm format` | Prettier format `src/` |
-| `pnpm generate-sitemap` | Generate Sitemap only |
-| `pnpm build-only` | Build only (no type check or Sitemap) |
+| Command                 | Description                                       |
+| ----------------------- | ------------------------------------------------- |
+| `pnpm dev`              | Start dev server (port 51640, auto-opens browser) |
+| `pnpm build`            | Type check + build + generate Sitemap             |
+| `pnpm preview`          | Preview production build                          |
+| `pnpm test:unit`        | Run unit tests (Vitest)                           |
+| `pnpm type-check`       | TypeScript type checking (vue-tsc)                |
+| `pnpm lint`             | ESLint check and auto-fix                         |
+| `pnpm format`           | Prettier format `src/`                            |
+| `pnpm generate-sitemap` | Generate Sitemap only                             |
+| `pnpm build-only`       | Build only (no type check or Sitemap)             |
 
 ### 5.3 Build for Production
 
@@ -482,14 +482,14 @@ graph TB
 
 ### 6.3 Key Directory Notes
 
-| Directory | Description |
-|-----------|-------------|
-| `src/components/home/sections/` | Three homepage layout components, switched by `CURRENT_LAYOUT` |
-| `src/config/` | Centralized config: layout switching, team data, app config |
-| `src/gsap/` | GSAP module: plugin registration, defaults, matchMedia |
-| `src/composables/` | Vue composables, reusable logic |
-| `src/styles/desktop/` & `mobile/` | Desktop/mobile separated styles |
-| `src/i18n/locales/` | Chinese/English translation files |
+| Directory                         | Description                                                    |
+| --------------------------------- | -------------------------------------------------------------- |
+| `src/components/home/sections/`   | Three homepage layout components, switched by `CURRENT_LAYOUT` |
+| `src/config/`                     | Centralized config: layout switching, team data, app config    |
+| `src/gsap/`                       | GSAP module: plugin registration, defaults, matchMedia         |
+| `src/composables/`                | Vue composables, reusable logic                                |
+| `src/styles/desktop/` & `mobile/` | Desktop/mobile separated styles                                |
+| `src/i18n/locales/`               | Chinese/English translation files                              |
 
 ---
 
@@ -505,11 +505,7 @@ The homepage layout system is the project's core architectural feature, using a 
 
 ```vue
 <!-- src/views/Home.vue -->
-<component
-    :is="layoutComponent"
-    :server-online="serverOnline"
-    :online-players="onlinePlayers"
-/>
+<component :is="layoutComponent" :server-online="serverOnline" :online-players="onlinePlayers" />
 ```
 
 Layout components are lazy-loaded via `shallowRef` + dynamic `import()`:
@@ -518,23 +514,23 @@ Layout components are lazy-loaded via `shallowRef` + dynamic `import()`:
 // Home.vue internal logic (simplified)
 const layoutComponent = shallowRef()
 watchEffect(async () => {
-    const modules = {
-        artistic: () => import('@/components/home/sections/LayoutASections.vue'),
-        cinema: () => import('@/components/home/sections/LayoutBSections.vue'),
-        bento: () => import('@/components/home/sections/LayoutCSections.vue'),
-    }
-    const mod = await modules[CURRENT_LAYOUT]()
-    layoutComponent.value = mod.default
+  const modules = {
+    artistic: () => import('@/components/home/sections/LayoutASections.vue'),
+    cinema: () => import('@/components/home/sections/LayoutBSections.vue'),
+    bento: () => import('@/components/home/sections/LayoutCSections.vue'),
+  }
+  const mod = await modules[CURRENT_LAYOUT]()
+  layoutComponent.value = mod.default
 })
 ```
 
 #### 7.1.2 Three Layouts
 
-| Layout | Component | Visual Characteristics |
-|--------|-----------|------------------------|
+| Layout       | Component             | Visual Characteristics                                                                                                                                            |
+| ------------ | --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Artistic** | `LayoutASections.vue` | Z-shaped diagonal flow (features/team offset -3% left, servers right) + organic rotating cards (-2°/3°/-1°) + GSAP Pin-Scrub scroll storytelling (pin + scrub: 1) |
-| **Cinema** | `LayoutBSections.vue` | Cinema-style asymmetric impact: full-screen color blocks + giant numbers + four-corner asymmetry + servers horizontal strip + cinematic pin parallax |
-| **Bento** | `LayoutCSections.vue` | Classic Bento Grid: features 2×3 grid + servers auto-fit grid + team spherical avatars (random positions + cursor repulsion + safe zone) |
+| **Cinema**   | `LayoutBSections.vue` | Cinema-style asymmetric impact: full-screen color blocks + giant numbers + four-corner asymmetry + servers horizontal strip + cinematic pin parallax              |
+| **Bento**    | `LayoutCSections.vue` | Classic Bento Grid: features 2×3 grid + servers auto-fit grid + team spherical avatars (random positions + cursor repulsion + safe zone)                          |
 
 #### 7.1.3 Configuration File
 
@@ -580,7 +576,7 @@ graph LR
 ```
 
 ```typescript
-export const CURRENT_LAYOUT: HomeLayout = 'cinema'  // from 'bento' to 'cinema'
+export const CURRENT_LAYOUT: HomeLayout = 'cinema' // from 'bento' to 'cinema'
 ```
 
 Vite HMR auto-reloads on save; the homepage switches to cinema layout without restarting the server.
@@ -616,19 +612,24 @@ All three layouts' servers-section use CSS counter for auto-generated numbering.
 
 ```css
 /* Layout component CSS */
-.servers-grid { counter-reset: server-counter; }
-.server-panel { counter-increment: server-counter; }
+.servers-grid {
+  counter-reset: server-counter;
+}
+.server-panel {
+  counter-increment: server-counter;
+}
 .server-index::before {
-    content: counter(server-counter, decimal-leading-zero);
-    /* number styles (gradient text effect must be on ::before, as background-clip:text is not inheritable) */
+  content: counter(server-counter, decimal-leading-zero);
+  /* number styles (gradient text effect must be on ::before, as background-clip:text is not inheritable) */
 }
 ```
 
 ```html
 <!-- To add a server: copy the node below; number auto-increments to 03 -->
 <div class="server-panel">
-    <span class="server-index"></span>  <!-- number generated by CSS -->
-    <!-- server info -->
+  <span class="server-index"></span>
+  <!-- number generated by CSS -->
+  <!-- server info -->
 </div>
 ```
 
@@ -650,8 +651,14 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger'
 
 export function registerGsapPlugins(): void {
   gsap.registerPlugin(
-    ScrollTrigger, ScrollToPlugin, SplitText, Flip,
-    CustomEase, DrawSVGPlugin, MotionPathPlugin, MorphSVGPlugin,
+    ScrollTrigger,
+    ScrollToPlugin,
+    SplitText,
+    Flip,
+    CustomEase,
+    DrawSVGPlugin,
+    MotionPathPlugin,
+    MorphSVGPlugin,
   )
 }
 ```
@@ -668,44 +675,47 @@ const lenisMm = gsap.matchMedia()
 let lenisInstance: Lenis | null = null
 
 lenisMm.add(
-    {
-        isDesktop: '(min-width: 769px) and (pointer: fine)',
-        reduceMotion: '(prefers-reduced-motion: reduce)',
-    },
-    (context) => {
-        const { isDesktop, reduceMotion } = context.conditions!
-        if (!isDesktop || reduceMotion) return  // skip on touch or reduceMotion
+  {
+    isDesktop: '(min-width: 769px) and (pointer: fine)',
+    reduceMotion: '(prefers-reduced-motion: reduce)',
+  },
+  (context) => {
+    const { isDesktop, reduceMotion } = context.conditions!
+    if (!isDesktop || reduceMotion) return // skip on touch or reduceMotion
 
-        lenisInstance = new Lenis({
-            duration: 1.2,
-            easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-            smoothWheel: true,
-            wheelMultiplier: 1.2,
-            touchMultiplier: 1.5,
-        })
+    lenisInstance = new Lenis({
+      duration: 1.2,
+      easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      smoothWheel: true,
+      wheelMultiplier: 1.2,
+      touchMultiplier: 1.5,
+    })
 
-        // Sync Lenis scroll events to ScrollTrigger
-        lenisInstance.on('scroll', ScrollTrigger.update)
+    // Sync Lenis scroll events to ScrollTrigger
+    lenisInstance.on('scroll', ScrollTrigger.update)
 
-        // Drive lenis.raf() with gsap.ticker
-        gsap.ticker.add((time) => {
-            lenisInstance?.raf(time * 1000)
-        })
+    // Drive lenis.raf() with gsap.ticker
+    gsap.ticker.add((time) => {
+      lenisInstance?.raf(time * 1000)
+    })
 
-        return () => { lenisInstance?.destroy(); lenisInstance = null }
-    },
+    return () => {
+      lenisInstance?.destroy()
+      lenisInstance = null
+    }
+  },
 )
 ```
 
 **Configuration:**
 
-| Parameter | Value | Description |
-|-----------|-------|-------------|
-| `duration` | `1.2` | Scroll animation duration (seconds) |
-| `easing` | `t => Math.min(1, 1.001 - Math.pow(2, -10 * t))` | Exponential easing, smoother reverse scrolling |
-| `smoothWheel` | `true` | Enable smooth mouse wheel |
-| `wheelMultiplier` | `1.2` | Wheel speed multiplier |
-| `touchMultiplier` | `1.5` | Touch speed multiplier |
+| Parameter         | Value                                            | Description                                    |
+| ----------------- | ------------------------------------------------ | ---------------------------------------------- |
+| `duration`        | `1.2`                                            | Scroll animation duration (seconds)            |
+| `easing`          | `t => Math.min(1, 1.001 - Math.pow(2, -10 * t))` | Exponential easing, smoother reverse scrolling |
+| `smoothWheel`     | `true`                                           | Enable smooth mouse wheel                      |
+| `wheelMultiplier` | `1.2`                                            | Wheel speed multiplier                         |
+| `touchMultiplier` | `1.5`                                            | Touch speed multiplier                         |
 
 #### 7.2.3 matchMedia Degradation Strategy
 
@@ -725,23 +735,21 @@ flowchart TD
 **Example (Artistic layout Pin-Scrub):**
 
 ```typescript
-gsap.matchMedia().add(
-    '(min-width: 1024px) and (pointer: fine)',
-    () => {
-        // Desktop: Pin-Scrub scroll storytelling
-        gsap.timeline({
-            scrollTrigger: {
-                trigger: '.features-section',
-                start: 'top top',
-                end: '+=300%',
-                pin: true,
-                scrub: 1,
-            },
-        })
-        .to('.feature-card-1', { rotation: -2, y: -50 })
-        .to('.feature-card-2', { rotation: 3, y: 30 }, '-=0.5')
-    }
-)
+gsap.matchMedia().add('(min-width: 1024px) and (pointer: fine)', () => {
+  // Desktop: Pin-Scrub scroll storytelling
+  gsap
+    .timeline({
+      scrollTrigger: {
+        trigger: '.features-section',
+        start: 'top top',
+        end: '+=300%',
+        pin: true,
+        scrub: 1,
+      },
+    })
+    .to('.feature-card-1', { rotation: -2, y: -50 })
+    .to('.feature-card-2', { rotation: 3, y: 30 }, '-=0.5')
+})
 ```
 
 #### 7.2.4 Pin-Scrub Design Principles
@@ -757,7 +765,9 @@ Code contains `微调点：` (tuning point) comments marking adjustable values:
 
 ```css
 /* 微调点：0 - card rotation angle (artistic layout) */
-.feature-card:nth-child(1) { transform: rotate(-2deg); }
+.feature-card:nth-child(1) {
+  transform: rotate(-2deg);
+}
 
 /* 微调点：1 - Pin-Scrub scroll distance */
 /* 微调点：2 - stagger interval */
@@ -781,10 +791,10 @@ const savedLocale = localStorage.getItem('locale')
 const defaultLocale = savedLocale || 'zh'
 
 const i18n = createI18n({
-  legacy: false,           // use Composition API
-  locale: defaultLocale,   // default Chinese
-  fallbackLocale: 'en',    // fallback English
-  messages: { zh, en }
+  legacy: false, // use Composition API
+  locale: defaultLocale, // default Chinese
+  fallbackLocale: 'en', // fallback English
+  messages: { zh, en },
 })
 ```
 
@@ -812,11 +822,11 @@ export default {
   home: {
     team: {
       roles: {
-        owner: '服主',           // new
+        owner: '服主', // new
         survivalAdmin: '生存管理',
-      }
-    }
-  }
+      },
+    },
+  },
 }
 ```
 
@@ -826,11 +836,11 @@ export default {
   home: {
     team: {
       roles: {
-        owner: 'Owner',           // corresponding English
+        owner: 'Owner', // corresponding English
         survivalAdmin: 'Survival Admin',
-      }
-    }
-  }
+      },
+    },
+  },
 }
 ```
 
@@ -844,15 +854,15 @@ Theme-related CSS variables are centralized in `src/styles/theme-colors.css`:
 
 ```css
 :root {
-    --color-bg: #ffffff;
-    --color-text: #1a1a1a;
-    /* ... other variables */
+  --color-bg: #ffffff;
+  --color-text: #1a1a1a;
+  /* ... other variables */
 }
 
 :root[data-vt] {
-    /* dark mode fallback (triggered by data-vt attribute) */
-    --color-bg: #0a0a0a;
-    --color-text: #f5f5f5;
+  /* dark mode fallback (triggered by data-vt attribute) */
+  --color-bg: #0a0a0a;
+  --color-text: #f5f5f5;
 }
 ```
 
@@ -874,15 +884,15 @@ Theme toggle uses a **spherical diffusion effect** (no full-screen overlay), imp
 
 #### 7.5.1 Route Table
 
-| Route | Name | Component | Description |
-|-------|------|-----------|-------------|
-| `/` | Home | Home.vue | Homepage (Hero + layout component) |
-| `/SimpleRules` | SimpleRules | SimpleRules.vue | Server rules |
-| `/Support` | support | Support.vue | Support page |
-| `/News` | news | News.vue | News list |
-| `/NewsDetail` | newsdetail | NewsDetail.vue | News detail (aliases: `/news-detail`, `/news-detail.html`, `/NewsDetail.html`) |
-| `/Archive` | Archive | Archive.vue | Server monitoring |
-| `/:pathMatch(.*)*` | NotFound | NotFound.vue | 404 fallback |
+| Route              | Name        | Component       | Description                                                                    |
+| ------------------ | ----------- | --------------- | ------------------------------------------------------------------------------ |
+| `/`                | Home        | Home.vue        | Homepage (Hero + layout component)                                             |
+| `/SimpleRules`     | SimpleRules | SimpleRules.vue | Server rules                                                                   |
+| `/Support`         | support     | Support.vue     | Support page                                                                   |
+| `/News`            | news        | News.vue        | News list                                                                      |
+| `/NewsDetail`      | newsdetail  | NewsDetail.vue  | News detail (aliases: `/news-detail`, `/news-detail.html`, `/NewsDetail.html`) |
+| `/Archive`         | Archive     | Archive.vue     | Server monitoring                                                              |
+| `/:pathMatch(.*)*` | NotFound    | NotFound.vue    | 404 fallback                                                                   |
 
 #### 7.5.2 Route Diagram
 
@@ -944,11 +954,7 @@ The homepage Hero section displays a server status card, fetching data via the m
 Status data is passed to layout components via props:
 
 ```vue
-<component
-    :is="layoutComponent"
-    :server-online="serverOnline"
-    :online-players="onlinePlayers"
-/>
+<component :is="layoutComponent" :server-online="serverOnline" :online-players="onlinePlayers" />
 ```
 
 The `/Archive` page uses Chart.js for server status history and visualization.
@@ -990,24 +996,24 @@ Each route configures independent Open Graph tags via `meta.og`, injected in `ma
 
 ```typescript
 router.beforeEach((to) => {
-    const og = to.meta.og as any
-    if (!og) return
+  const og = to.meta.og as any
+  if (!og) return
 
-    head.push({
-        title: og.title,
-        meta: [
-            { name: 'description', content: og.description },
-            { property: 'og:title', content: og.title },
-            { property: 'og:description', content: og.description },
-            { property: 'og:image', content: og.image.url },
-            { property: 'og:image:width', content: og.image.width || 1200 },
-            { property: 'og:image:height', content: og.image.height || 630 },
-            { property: 'og:type', content: to.name === 'newsdetail' ? 'article' : 'website' },
-            { name: 'twitter:card', content: 'summary_large_image' },
-            // ...
-        ],
-        link: [{ rel: 'canonical', href: currentUrl.split('?')[0] }]
-    })
+  head.push({
+    title: og.title,
+    meta: [
+      { name: 'description', content: og.description },
+      { property: 'og:title', content: og.title },
+      { property: 'og:description', content: og.description },
+      { property: 'og:image', content: og.image.url },
+      { property: 'og:image:width', content: og.image.width || 1200 },
+      { property: 'og:image:height', content: og.image.height || 630 },
+      { property: 'og:type', content: to.name === 'newsdetail' ? 'article' : 'website' },
+      { name: 'twitter:card', content: 'summary_large_image' },
+      // ...
+    ],
+    link: [{ rel: 'canonical', href: currentUrl.split('?')[0] }],
+  })
 })
 ```
 
@@ -1034,23 +1040,23 @@ export type TeamStyle = 'artistic' | 'cinema' | 'bento'
 export const CURRENT_TEAM_STYLE: TeamStyle = 'artistic'
 ```
 
-| Config | Type | Options | Default | Description |
-|--------|------|---------|---------|-------------|
-| `CURRENT_LAYOUT` | `HomeLayout` | `'artistic'` / `'cinema'` / `'bento'` | `'bento'` | Overall homepage layout |
-| `CURRENT_TEAM_STYLE` | `TeamStyle` | `'artistic'` / `'cinema'` / `'bento'` | `'artistic'` | Team section style (decoupled from layout) |
+| Config               | Type         | Options                               | Default      | Description                                |
+| -------------------- | ------------ | ------------------------------------- | ------------ | ------------------------------------------ |
+| `CURRENT_LAYOUT`     | `HomeLayout` | `'artistic'` / `'cinema'` / `'bento'` | `'bento'`    | Overall homepage layout                    |
+| `CURRENT_TEAM_STYLE` | `TeamStyle`  | `'artistic'` / `'cinema'` / `'bento'` | `'artistic'` | Team section style (decoupled from layout) |
 
 ### 8.2 app-config.ts (Application Config)
 
 ```typescript
 // src/config/app-config.ts
 export interface AppConfig {
-  showTocToggles: boolean          // theme/language toggle visibility
-  navbarFixed: boolean             // navbar fixed
-  showFooterCopyright: boolean     // footer copyright visibility
+  showTocToggles: boolean // theme/language toggle visibility
+  navbarFixed: boolean // navbar fixed
+  showFooterCopyright: boolean // footer copyright visibility
   newsPagination: {
-    desktopItemsPerPage: number    // desktop items per page
-    mobileItemsPerPage: number     // mobile items per page
-    maxDisplayedPages: number      // max displayed page numbers
+    desktopItemsPerPage: number // desktop items per page
+    mobileItemsPerPage: number // mobile items per page
+    maxDisplayedPages: number // max displayed page numbers
   }
 }
 
@@ -1061,8 +1067,8 @@ export const appConfig: AppConfig = {
   newsPagination: {
     desktopItemsPerPage: 6,
     mobileItemsPerPage: 2,
-    maxDisplayedPages: 5
-  }
+    maxDisplayedPages: 5,
+  },
 }
 ```
 
@@ -1071,15 +1077,17 @@ export const appConfig: AppConfig = {
 ```typescript
 // src/config/team-members.ts
 export interface Contributor {
-    name: string
-    avatar: string
-    roleKey: string
-    githubHref: string
-    githubLabel: string
-    isOwner: boolean
-    extraLinks?: Array<{ type: 'qq' | 'email'; href: string }>
+  name: string
+  avatar: string
+  roleKey: string
+  githubHref: string
+  githubLabel: string
+  isOwner: boolean
+  extraLinks?: Array<{ type: 'qq' | 'email'; href: string }>
 }
-export const contributors: Contributor[] = [ /* 6 members */ ]
+export const contributors: Contributor[] = [
+  /* 6 members */
+]
 ```
 
 ### 8.4 vite.config.ts Key Config
@@ -1088,11 +1096,11 @@ export const contributors: Contributor[] = [ /* 6 members */ ]
 // vite.config.ts (key items)
 export default defineConfig({
   define: {
-    __APP_VERSION__: JSON.stringify(appVersion),  // Git commit hash
+    __APP_VERSION__: JSON.stringify(appVersion), // Git commit hash
     __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
   },
   resolve: {
-    alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) }
+    alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
   },
   build: {
     minify: 'terser',
@@ -1100,8 +1108,8 @@ export default defineConfig({
       output: {
         manualChunks: {
           'vue-vendor': ['vue', 'vue-router', 'vue-i18n', 'pinia'],
-          'markdown': ['marked'],
-          'highlight': ['highlight.js'],
+          markdown: ['marked'],
+          highlight: ['highlight.js'],
         },
       },
     },
@@ -1109,8 +1117,8 @@ export default defineConfig({
     sourcemap: false,
   },
   server: {
-    port: 51640,    // dev server port
-    open: true,     // auto-open browser
+    port: 51640, // dev server port
+    open: true, // auto-open browser
   },
 })
 ```
@@ -1119,16 +1127,16 @@ export default defineConfig({
 
 Global variables injected at build time (via Vite `define`):
 
-| Variable | Source | Description |
-|----------|--------|-------------|
+| Variable          | Source                                                            | Description     |
+| ----------------- | ----------------------------------------------------------------- | --------------- |
 | `__APP_VERSION__` | `COMMIT_REF` / `CF_PAGES_COMMIT_SHA` / `GIT_COMMIT` / git command | Git commit hash |
-| `__BUILD_TIME__` | `new Date().toISOString()` | Build timestamp |
+| `__BUILD_TIME__`  | `new Date().toISOString()`                                        | Build timestamp |
 
 Deployment platform environment variables:
 
-| Platform | Variable | Value |
-|----------|----------|-------|
-| Netlify | `NODE_VERSION` | `22` (see `netlify.toml`) |
+| Platform | Variable       | Value                     |
+| -------- | -------------- | ------------------------- |
+| Netlify  | `NODE_VERSION` | `22` (see `netlify.toml`) |
 
 ---
 
@@ -1152,15 +1160,15 @@ pnpm format
 
 ### 9.2 Naming Conventions
 
-| Type | Convention | Example |
-|------|-----------|---------|
-| Component files | PascalCase.vue | `Home.vue`, `Navbar.vue` |
-| Composables | camelCase, use prefix | `useGsap.ts`, `useScrollTrigger.ts` |
-| Config files | kebab-case.ts | `home-layout.ts`, `app-config.ts` |
-| CSS classes | kebab-case | `.hero-section`, `.server-panel` |
-| TypeScript types | PascalCase | `HomeLayout`, `Contributor` |
-| Constants | UPPER_SNAKE_CASE | `CURRENT_LAYOUT`, `CURRENT_TEAM_STYLE` |
-| Route names | PascalCase or camelCase | `Home`, `news` |
+| Type             | Convention              | Example                                |
+| ---------------- | ----------------------- | -------------------------------------- |
+| Component files  | PascalCase.vue          | `Home.vue`, `Navbar.vue`               |
+| Composables      | camelCase, use prefix   | `useGsap.ts`, `useScrollTrigger.ts`    |
+| Config files     | kebab-case.ts           | `home-layout.ts`, `app-config.ts`      |
+| CSS classes      | kebab-case              | `.hero-section`, `.server-panel`       |
+| TypeScript types | PascalCase              | `HomeLayout`, `Contributor`            |
+| Constants        | UPPER_SNAKE_CASE        | `CURRENT_LAYOUT`, `CURRENT_TEAM_STYLE` |
+| Route names      | PascalCase or camelCase | `Home`, `news`                         |
 
 ### 9.3 Commit Convention
 
@@ -1172,16 +1180,16 @@ Recommended [Conventional Commits](https://www.conventionalcommits.org/) format:
 <body>
 ```
 
-| type | Description |
-|------|-------------|
-| `feat` | New feature |
-| `fix` | Bug fix |
-| `docs` | Documentation changes |
-| `style` | Code formatting (no functional change) |
+| type       | Description                               |
+| ---------- | ----------------------------------------- |
+| `feat`     | New feature                               |
+| `fix`      | Bug fix                                   |
+| `docs`     | Documentation changes                     |
+| `style`    | Code formatting (no functional change)    |
 | `refactor` | Refactoring (neither new feature nor fix) |
-| `perf` | Performance improvement |
-| `test` | Test related |
-| `chore` | Build/tooling changes |
+| `perf`     | Performance improvement                   |
+| `test`     | Test related                              |
+| `chore`    | Build/tooling changes                     |
 
 **Examples:**
 
@@ -1262,6 +1270,7 @@ pnpm build
 ```
 
 When build fails, check:
+
 1. TypeScript type errors → `pnpm type-check` for details
 2. Vite build errors → check import paths and syntax
 3. Sitemap generation failure → check `src/utils/generate-sitemap.ts`
@@ -1383,6 +1392,7 @@ pnpm type-check
 ```
 
 Common causes:
+
 - Wrong import path (confirm using `@/` alias pointing to `src/`)
 - Missing type definitions (check `tsconfig.app.json` `include`)
 - Vue SFC `<script setup lang="ts">` syntax errors
@@ -1390,6 +1400,7 @@ Common causes:
 ### Q4: GSAP animations not working?
 
 Checklist:
+
 1. Confirm plugins are registered (`src/gsap/plugin-setup.ts`)
 2. Confirm `setupGsap()` is called in `main.ts`
 3. Confirm `gsap.context()` wraps animation logic
@@ -1403,6 +1414,7 @@ Lenis only activates on **desktop** (`min-width: 769px` and `pointer: fine`) and
 ### Q6: Homepage layout doesn't change after switching?
 
 After modifying `CURRENT_LAYOUT` in `src/config/home-layout.ts`, Vite HMR should auto-reload. If not:
+
 1. Confirm the file was saved
 2. Confirm the value is one of `'artistic'` / `'cinema'` / `'bento'`
 3. Manually refresh the browser
@@ -1412,9 +1424,15 @@ After modifying `CURRENT_LAYOUT` in `src/config/home-layout.ts`, Vite HMR should
 Confirm CSS counter is correctly configured:
 
 ```css
-.servers-grid { counter-reset: server-counter; }
-.server-panel { counter-increment: server-counter; }
-.server-index::before { content: counter(server-counter, decimal-leading-zero); }
+.servers-grid {
+  counter-reset: server-counter;
+}
+.server-panel {
+  counter-increment: server-counter;
+}
+.server-index::before {
+  content: counter(server-counter, decimal-leading-zero);
+}
 ```
 
 Note: Numbers are generated by CSS counter; the `.server-index` in HTML should be empty (`<span class="server-index"></span>`).
@@ -1422,6 +1440,7 @@ Note: Numbers are generated by CSS counter; the `.server-index` in HTML should b
 ### Q8: Element flickers during theme toggle?
 
 Known issue: `will-change: transform` and `contain: layout style paint` may cause flickering. Solutions:
+
 - Remove `will-change: transform`
 - Use `contain: layout style` (not `paint`, which acts like overflow:hidden and clips overflow)
 
@@ -1432,6 +1451,7 @@ Pin-Scrub requires **continuous visual transformation** during pin. If only pinn
 ### Q10: Sitemap not generated after build?
 
 Sitemap runs separately as `tsx src/utils/generate-sitemap.ts` after build. If not generated:
+
 1. Confirm `pnpm build` completed fully (including the last step)
 2. Run `pnpm generate-sitemap` separately to check errors
 3. Check `dist/` directory permissions
@@ -1439,6 +1459,7 @@ Sitemap runs separately as `tsx src/utils/generate-sitemap.ts` after build. If n
 ### Q11: Mobile animations laggy?
 
 Mobile already degrades via `matchMedia`, keeping only essential animations. If still laggy:
+
 1. Check if desktop styles are loaded (media query should be `max-width: 1023px`)
 2. Reduce the number of simultaneously animated elements
 3. Use `will-change` to hint the browser (use cautiously, may cause flickering)
@@ -1454,10 +1475,11 @@ The servers-section uses CSS counter for auto-numbering. **Just copy a `server-p
 ```html
 <!-- Copy the node below inside .servers-grid -->
 <div class="server-panel">
-    <span class="server-index"></span>  <!-- number auto-increments -->
-    <h3 class="server-name">New Server Name</h3>
-    <p class="server-description">Description</p>
-    <!-- other info -->
+  <span class="server-index"></span>
+  <!-- number auto-increments -->
+  <h3 class="server-name">New Server Name</h3>
+  <p class="server-description">Description</p>
+  <!-- other info -->
 </div>
 ```
 
@@ -1469,19 +1491,19 @@ Edit `src/config/team-members.ts`, add a new object to the `contributors` array:
 
 ```typescript
 export const contributors: Contributor[] = [
-    // ... existing members
-    {
-        name: 'New Member',
-        avatar: 'https://q1.qlogo.cn/g?b=qq&nk=QQ_NUMBER&s=0',
-        roleKey: 'admin',           // corresponds to i18n home.team.roles.admin
-        githubHref: 'https://github.com/username',
-        githubLabel: 'username',
-        isOwner: false,
-        extraLinks: [
-            { type: 'qq', href: 'https://qm.qq.com/q/xxx' },
-            { type: 'email', href: 'mailto:email@example.com' },
-        ],
-    },
+  // ... existing members
+  {
+    name: 'New Member',
+    avatar: 'https://q1.qlogo.cn/g?b=qq&nk=QQ_NUMBER&s=0',
+    roleKey: 'admin', // corresponds to i18n home.team.roles.admin
+    githubHref: 'https://github.com/username',
+    githubLabel: 'username',
+    isOwner: false,
+    extraLinks: [
+      { type: 'qq', href: 'https://qm.qq.com/q/xxx' },
+      { type: 'email', href: 'mailto:email@example.com' },
+    ],
+  },
 ]
 ```
 
@@ -1497,8 +1519,8 @@ Also add the corresponding `roleKey` translation in `src/i18n/locales/zh.ts` and
 3. Add to the lazy-load mapping in `Home.vue`:
    ```typescript
    const modules = {
-       // ...
-       newLayout: () => import('@/components/home/sections/LayoutXSections.vue'),
+     // ...
+     newLayout: () => import('@/components/home/sections/LayoutXSections.vue'),
    }
    ```
 4. Change `CURRENT_LAYOUT` to the new value to test
@@ -1534,6 +1556,7 @@ pnpm update vue
 ```
 
 **GSAP upgrade notes:**
+
 - Check the [GSAP Changelog](https://gsap.com/docs/v3/AllPlugins/) for breaking changes
 - Confirm plugin registration method unchanged (`plugin-setup.ts`)
 - Confirm `matchMedia` API compatibility
@@ -1543,11 +1566,11 @@ pnpm update vue
 
 Lenis config is in `src/main.ts`; adjust parameters:
 
-| Parameter | Current | Adjustment Tip |
-|-----------|---------|----------------|
-| `duration` | `1.2` | Increase for slower/smoother, decrease for more responsive |
-| `wheelMultiplier` | `1.2` | Increase for faster scrolling |
-| `touchMultiplier` | `1.5` | Touch scroll speed |
+| Parameter         | Current | Adjustment Tip                                             |
+| ----------------- | ------- | ---------------------------------------------------------- |
+| `duration`        | `1.2`   | Increase for slower/smoother, decrease for more responsive |
+| `wheelMultiplier` | `1.2`   | Increase for faster scrolling                              |
+| `touchMultiplier` | `1.5`   | Touch scroll speed                                         |
 
 ---
 

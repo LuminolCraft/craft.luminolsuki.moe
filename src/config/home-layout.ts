@@ -17,7 +17,7 @@ export type HomeLayout = 'artistic' | 'cinema' | 'bento'
  * 修改此值后刷新页面即可切换布局（Vite HMR 也会自动重载）。
  * 默认 `'artistic'` 以保留现有体验。
  */
-export const CURRENT_LAYOUT: HomeLayout = 'bento'
+export const CURRENT_LAYOUT: HomeLayout = 'artistic'
 
 /**
  * team 区域（团队成员展示）的样式风格。
@@ -39,4 +39,4 @@ export type TeamStyle = 'artistic' | 'cinema' | 'bento'
  * 修改此值后刷新页面即可切换 team section 样式（Vite HMR 也会自动重载）。
  * 默认 `'artistic'`，与 CURRENT_LAYOUT 解耦，可自由搭配。
  */
-export const CURRENT_TEAM_STYLE: TeamStyle = 'artistic'
+export const CURRENT_TEAM_STYLE: TeamStyle = 'bento'
