@@ -159,6 +159,16 @@
     will-change: transform, opacity;
 }
 
+/* SplitText 拆分后的字符/词 div：
+   font-kerning: none + text-rendering: optimizeSpeed 是 GSAP SplitText 官方推荐的
+   避免 kerning shift 的组合；letter-spacing:0 抵消父级负字距对拆分后盒子的影响 */
+.hero-char,
+.hero-word {
+    font-kerning: none;
+    text-rendering: optimizeSpeed;
+    letter-spacing: 0;
+}
+
 .hero-subtitle {
     font-size: clamp(1.1rem, 2vw, 1.4rem);
     color: #aac2da;
@@ -508,7 +518,8 @@ onMounted(async () => {
     // ============ no-preference: hero 相关动画 ============
     mm.add('(prefers-reduced-motion: no-preference)', () => {
       // 1. Hero 标题 SplitText (chars + words)
-      const titleSplit = new SplitText('.hero-title', { type: 'chars,words' })
+      // 微调点：charsClass/wordsClass 给 SplitText 拆分的字符/词 div 加类，便于 CSS 精准控制字体渲染
+      const titleSplit = new SplitText('.hero-title', { type: 'chars,words', charsClass: 'hero-char', wordsClass: 'hero-word' })
 
       // 2. Hero 副标题 SplitText (lines)
       const subtitleSplit = new SplitText('.hero-subtitle', { type: 'lines' })
@@ -522,14 +533,20 @@ onMounted(async () => {
       const heroTl = g.timeline()
 
       heroTl
-        .from(titleSplit.chars, {
-          yPercent: 120,
-          autoAlpha: 0,
-          rotateZ: 8,
-          stagger: g.utils.distribute({ from: 'center', amount: 0.6 }),
-          duration: DURATIONS.slow,
-          ease: EASINGS.heroReveal,
-        })
+        .fromTo(titleSplit.chars,
+          { yPercent: 120, autoAlpha: 0, rotateZ: 8 },
+          {
+            yPercent: 0,
+            autoAlpha: 1,
+            rotateZ: 0,
+            stagger: g.utils.distribute({ from: 'center', amount: 0.6 }),
+            duration: DURATIONS.slow,
+            ease: EASINGS.heroReveal,
+            // 微调点：clearProps 动画结束后清除内联 transform/visibility/opacity，
+            // 避免 Chromium 对「有 transform 内联样式的 inline-block」+ 负 letter-spacing 组合触发字形重计算导致重叠
+            clearProps: 'transform,visibility,opacity',
+          }
+        )
         .from(subtitleSplit.lines, {
           yPercent: 100,
           autoAlpha: 0,
