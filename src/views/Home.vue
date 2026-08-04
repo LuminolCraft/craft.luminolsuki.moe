@@ -393,6 +393,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, nextTick, computed } from 'vue'
+import type { Component } from 'vue'
 import { useI18n } from 'vue-i18n'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
@@ -401,7 +402,8 @@ import LastViewedPopup from '../components/LastViewedPopup.vue'
 import CookieConsentBanner from '../components/CookieConsentBanner.vue'
 import { useGsap } from '@/composables/useGsap'
 import { EASINGS, STAGGERS, DURATIONS } from '@/gsap'
-import { CURRENT_LAYOUT } from '../config/home-layout'
+import { CURRENT_LAYOUT, resolveLayout } from '../config/home-layout'
+import type { ResolvedHomeLayout } from '../config/home-layout'
 import LayoutASections from '../components/home/sections/LayoutASections.vue'
 import LayoutBSections from '../components/home/sections/LayoutBSections.vue'
 import LayoutCSections from '../components/home/sections/LayoutCSections.vue'
@@ -410,16 +412,15 @@ const { t } = useI18n()
 
 const rootRef = ref<HTMLElement | null>(null)
 
+const HOME_LAYOUT_COMPONENT_MAP: Record<ResolvedHomeLayout, Component> = {
+    artistic: LayoutASections,
+    cinema: LayoutBSections,
+    bento: LayoutCSections,
+} as const
+
 const layoutComponent = computed(() => {
-    switch (CURRENT_LAYOUT) {
-        case 'cinema':
-            return LayoutBSections
-        case 'bento':
-            return LayoutCSections
-        case 'artistic':
-        default:
-            return LayoutASections
-    }
+    const layout = resolveLayout(CURRENT_LAYOUT)
+    return HOME_LAYOUT_COMPONENT_MAP[layout]
 })
 
 const backgroundImages = [
