@@ -580,7 +580,8 @@ onMounted(async () => {
 
     // ============ reduceMotion: 仅设置终态，不播放动画 ============
     mm.add('(prefers-reduced-motion: reduce)', () => {
-      g.set('.feature-card, .server-panel, .section-header', { autoAlpha: 1, y: 0, scale: 1 })
+      g.set('.feature-card, .server-panel', { autoAlpha: 1, y: 0, scale: 1 })
+      g.set('.features-section .section-header, .servers-section .section-header', { autoAlpha: 1, y: 0, scale: 1 })
     })
 
     // ============ no-preference: 全部动画 ============
@@ -588,7 +589,7 @@ onMounted(async () => {
       // 初始隐藏，防止 FOUC
       g.set('.feature-card', { autoAlpha: 0, y: 60 })
       g.set('.server-panel', { autoAlpha: 0, y: 50 })
-      g.set('.section-header', { autoAlpha: 0, y: 30 })
+      g.set('.features-section .section-header, .servers-section .section-header', { autoAlpha: 0, y: 30 })
 
       // 7. Features 入场 timeline：大卡片先入场 + 小卡片 stagger 跟进 + 入场后启动图标浮动
       const iconFloat = g.to('.feature-icon', {
@@ -700,6 +701,7 @@ onMounted(async () => {
               end: '+=100%',
               pin: true,
               scrub: 1,
+              refreshPriority: 10,
             },
             defaults: { ease: EASINGS.smooth },
           })
@@ -752,6 +754,7 @@ onMounted(async () => {
               end: '+=100%',
               pin: true,
               scrub: 1,
+              refreshPriority: 20,
             },
             defaults: { ease: EASINGS.smooth },
           })
@@ -791,7 +794,7 @@ onMounted(async () => {
         // ============ 触屏 / 窄屏降级：常规滚动 + 入场 once（无 pin、无 rotate 动画） ============
         if (fallback) {
           // section-header 入场（once）
-          g.utils.toArray<HTMLElement>('.section-header').forEach((header) => {
+          g.utils.toArray<HTMLElement>('.features-section .section-header, .servers-section .section-header').forEach((header) => {
             g.to(header, {
               autoAlpha: 1,
               y: 0,
@@ -825,6 +828,11 @@ onMounted(async () => {
         }
       })
     })
+
+    // 在所有 pin-scrub ScrollTrigger 创建之后再次刷新，
+    // 确保 team 子组件的 pin 位置在父级 pin-spacer 插入后被重新计算
+    ScrollTrigger.refresh()
+    requestAnimationFrame(() => ScrollTrigger.refresh())
   }, rootRef.value ?? undefined)
 })
 
