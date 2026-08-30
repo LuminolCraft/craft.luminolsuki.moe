@@ -559,851 +559,1251 @@
     }
     </style>
     
-    <script lang="ts">
-    import { defineComponent, ref, onMounted, onUnmounted, computed, watch, nextTick } from 'vue';
-    import { useRouter } from 'vue-router';
-    import { useI18n } from 'vue-i18n';
-    import { marked } from 'marked';
-    import gsap from 'gsap';
-    import { ScrollTrigger } from 'gsap/ScrollTrigger';
-    import { useLastViewedCookie } from '../composables/useLastViewedCookie';
-    import LastViewedPopup from '../components/LastViewedPopup.vue';
-    import CookieConsentBanner from '../components/CookieConsentBanner.vue';
-    import debounce from 'lodash/debounce';
-    import { appConfig } from '../config/app-config';
-    import { EASINGS, STAGGERS, DURATIONS } from '@/gsap';
-    
-    // 类型定义
-    interface NewsItem {
-      id: number;
-      title: string;
-      content: string;
-      markdownContent?: string;
-      date: string;
-      tags: string[];
-      image?: string;
-      additionalImages?: string[];
-      pinned?: boolean;
-    }
-    
-    interface CacheStatus {
+<script lang="ts">
+  import {
+  defineComponent,
+  ref,
+  onMounted,
+  onUnmounted,
+  computed,
+  watch,
+  nextTick,
+} from 'vue';
+import { useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
+import { marked } from 'marked';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { useLastViewedCookie } from '../composables/useLastViewedCookie';
+import LastViewedPopup from '../components/LastViewedPopup.vue';
+import CookieConsentBanner from '../components/CookieConsentBanner.vue';
+import debounce from 'lodash/debounce';
+import { appConfig } from '../config/app-config';
+import { EASINGS, STAGGERS, DURATIONS } from '@/gsap';
+import { NewsCacheDB, type CachedNewsItem } from '@/utils/news-cache';
+
+  gsap.registerPlugin(ScrollTrigger);
+
+  interface NewsItem {
+  id: number;
+  title: string;
+  content: string;
+  markdownContent?: string;
+  date: string;
+  tags: string[];
+  image?: string;
+  additionalImages?: string[];
+  pinned?: boolean;
+  /** 推荐由服务端提供。用于精确识别正文是否发生变化。 */
+  updatedAt?: string;
+  /** 推荐由服务端提供。优先级高于 updatedAt。 */
+  contentVersion?: string;
+  /** 推荐用于列表摘要，避免为了搜索/列表而提前拉全文。 */
+  summary?: string;
+  }
+
+  interface CacheStatus {
   isStale: boolean;
   lastUpdate: number | null;
-  backgroundRefreshTimer: NodeJS.Timeout | number | null;
+  backgroundRefreshTimer: number | null;
   userActivityTimer: number | null;
-}
-    
-    // NewsManager 类转换为 TypeScript
-    class NewsManager {
-      currentPage = 0;
-      itemsPerPage = window.innerWidth <= 768 ? appConfig.newsPagination.mobileItemsPerPage : appConfig.newsPagination.desktopItemsPerPage;
-      filteredNews: NewsItem[] | null = null;
-      allNewsWithContent: NewsItem[] = [];
-      NEWS_STORAGE_KEY = 'session_news_data';
-      CACHE_DURATION = 2 * 60 * 60 * 1000; // 2小时
-      STALE_DURATION = 30 * 60 * 1000; // 30分钟
-      BACKGROUND_REFRESH_INTERVAL = 10 * 60 * 1000; // 10分钟
-      USER_ACTIVE_THRESHOLD = 5 * 60 * 1000; // 5分钟
-      GITHUB_RAW_BASE = 'https://luminolcraft-news.pages.dev/';
-      GITEJSON_URL = 'https://luminolcraft-news.pages.dev/news.json';
-      SITE_DOMAIN = window.location.hostname || '';
-      errorLogged = new Set<string>();
-      cacheStatus: CacheStatus = {
-        isStale: false,
-        lastUpdate: null,
-        backgroundRefreshTimer: null,
-        userActivityTimer: null,
-      };
-      isRetrying = false;
-      loadError = false;
-    
-      constructor() {
-        this.init();
-      }
-    
-      debugLog(...args: any[]) {
-        if ((window as any).debugMode) {
-          console.log(...args);
-        }
-      }
-    
-      init() {
-        this.initFromStorage();
-        this.initMarked();
-        this.initEventListeners();
-        this.initSmartCache();
-        this.setupCleanup();
-      }
-    
-      setupCleanup() {
-        window.addEventListener('beforeunload', () => {
-          if (this.cacheStatus.backgroundRefreshTimer) {
-            clearInterval(this.cacheStatus.backgroundRefreshTimer);
-          }
-        });
-      }
-    
-      initSmartCache() {
-        this.setupBackgroundRefresh();
-        this.setupUserActivityTracking();
-        this.updateCacheStatus();
-      }
-    
-      setupBackgroundRefresh() {
-        if (this.cacheStatus.backgroundRefreshTimer) {
-          clearInterval(this.cacheStatus.backgroundRefreshTimer);
-        }
-        this.cacheStatus.backgroundRefreshTimer = setInterval(() => {
-          this.checkAndRefreshCache();
-        }, this.BACKGROUND_REFRESH_INTERVAL);
-        this.debugLog(
-          '🔄 后台刷新已启动，间隔:',
-          this.BACKGROUND_REFRESH_INTERVAL / 1000 / 60 + '分钟'
-        );
-      }
-    
-      setupUserActivityTracking() {
-        const activityEvents = [
-          'mousedown',
-          'mousemove',
-          'keypress',
-          'scroll',
-          'touchstart',
-        ];
-        activityEvents.forEach((event) => {
-          document.addEventListener(
-            event,
-            () => {
-              this.updateUserActivity();
-            },
-            { passive: true }
-          );
-        });
-        this.debugLog('👤 用户活跃度跟踪已启动');
-      }
-    
-      updateUserActivity() {
-        this.cacheStatus.userActivityTimer = Date.now();
-        if (this.cacheStatus.isStale) {
-          this.debugLog('👤 检测到用户活跃，缓存已过期，触发刷新');
-          this.refreshCacheInBackground().catch((error) => {
-            this.debugLog('❌ 用户活跃触发刷新失败:', error.message);
-          });
-        }
-      }
-    
-      async checkAndRefreshCache() {
-        const now = Date.now();
-        const lastUpdate = this.cacheStatus.lastUpdate || 0;
-        const timeSinceUpdate = now - lastUpdate;
-        if (timeSinceUpdate > this.STALE_DURATION) {
-          this.cacheStatus.isStale = true;
-          const timeSinceActivity = now - (this.cacheStatus.userActivityTimer || 0);
-          if (timeSinceActivity < this.USER_ACTIVE_THRESHOLD) {
-            this.debugLog('🔄 用户活跃且缓存过期，立即刷新');
-            await this.refreshCacheInBackground();
-          }
-        }
-      }
-    
-      async refreshCacheInBackground() {
-        try {
-          this.debugLog('🔄 开始后台刷新缓存...');
-          const response = await fetch(this.GITEJSON_URL, {
-            cache: 'no-store',
-            headers: {
-              'User-Agent': 'LuminolCraft-News/1.0',
-              Accept: 'application/json',
-            },
-          });
-          if (response.ok) {
-            const data = await response.json();
-            if (this.validateNewsData(data)) {
-              await this.preloadMarkdownContent(data);
-              this.cacheStatus.isStale = false;
-              this.cacheStatus.lastUpdate = Date.now();
-              localStorage.setItem('news-cache', JSON.stringify(data));
-              localStorage.setItem(
-                'news-cache-timestamp',
-                this.cacheStatus.lastUpdate.toString()
-              );
-              this.debugLog('✅ 后台缓存刷新成功');
-            } else {
-              this.debugLog('❌ 数据验证失败，跳过缓存更新');
-            }
-          }
-        } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : String(error);
-          this.debugLog('❌ 后台缓存刷新失败:', errorMessage);
-        }
-      }
-    
-      validateNewsData(data: any): data is NewsItem[] {
-        if (!Array.isArray(data)) {
-          this.debugLog('❌ 数据格式错误：不是数组');
-          return false;
-        }
-        if (data.length > 1000) {
-          this.debugLog('❌ 数据量过大，可能存在攻击');
-          return false;
-        }
-        for (const item of data) {
-          if (!item || typeof item !== 'object') {
-            this.debugLog('❌ 新闻项格式错误');
-            return false;
-          }
-          if (!item.id || !item.title || !item.content) {
-            this.debugLog('❌ 新闻项缺少必要字段');
-            return false;
-          }
-          if (item.title.length > 200 || item.content.length > 10000) {
-            this.debugLog('❌ 新闻项字段过长');
-            return false;
-          }
-          if (this.containsXSS(item.title) || this.containsXSS(item.content)) {
-            this.debugLog('❌ 检测到潜在XSS攻击');
-            return false;
-          }
-        }
-        return true;
-      }
-    
-      containsXSS(text: string): boolean {
-        if (typeof text !== 'string') return false;
-        const decodedText = text
-          .replace(/&lt;/g, '<')
-          .replace(/&gt;/g, '>')
-          .replace(/&quot;/g, '"')
-          .replace(/&#x27;/g, "'")
-          .replace(/&#x2F;/g, '/')
-          .replace(/&amp;/g, '&');
-        const xssPatterns = [
-          /<script[^>]*>.*?<\/script>/gi,
-          /javascript\s*:/gi,
-          /vbscript\s*:/gi,
-          /data\s*:\s*text\/html/gi,
-          /on\w+\s*=/gi,
-          /<iframe[^>]*>/gi,
-          /<object[^>]*>/gi,
-          /<embed[^>]*>/gi,
-          /<link[^>]*>/gi,
-          /<meta[^>]*>/gi,
-          /<style[^>]*>.*?<\/style>/gi,
-          /expression\s*\(/gi,
-          /url\s*\(/gi,
-          /@import/gi,
-          /eval\s*\(/gi,
-          /setTimeout\s*\(/gi,
-          /setInterval\s*\(/gi,
-          /document\.write/gi,
-          /innerHTML\s*=/gi,
-          /outerHTML\s*=/gi,
-        ];
-        return xssPatterns.some((pattern) =>
-          pattern.test(text) || pattern.test(decodedText)
-        );
-      }
-    
-      async forceRefresh() {
-        this.debugLog('🔄 用户触发强制刷新');
-        this.cacheStatus.isStale = true;
-        await this.refreshCacheInBackground();
-      }
-    
-      async retryDataLoad() {
-        if (this.isRetrying) {
-          this.debugLog('⚠️ 重试操作正在进行中，跳过重复调用');
-          return;
-        }
-        this.isRetrying = true;
-        this.debugLog('🔄 用户触发数据重试加载');
-        try {
-          localStorage.removeItem('news-cache');
-          localStorage.removeItem('news-cache-timestamp');
-          localStorage.removeItem('news-full-cache');
-          localStorage.removeItem('news-full-cache-timestamp');
-          sessionStorage.removeItem(this.NEWS_STORAGE_KEY);
-          this.allNewsWithContent = [];
-          this.filteredNews = null;
-          this.currentPage = 0;
-          this.debugLog('🧹 缓存已清除，状态已重置');
-          await this.initializeApp();
-          this.debugLog('📊 初始化完成，数据量:', this.allNewsWithContent.length);
-          this.isRetrying = false;
-        } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : String(error);
-          this.debugLog('❌ 数据重试加载失败:', errorMessage);
-          this.isRetrying = false;
-        }
-      }
-    
-      updateCacheStatus() {
-        const timestamp = localStorage.getItem('news-cache-timestamp');
-        if (timestamp) {
-          this.cacheStatus.lastUpdate = parseInt(timestamp);
-          const now = Date.now();
-          const timeSinceUpdate = now - this.cacheStatus.lastUpdate;
-          this.cacheStatus.isStale = timeSinceUpdate > this.STALE_DURATION;
-        }
-      }
-    
-      initFromStorage() {
-        const stored = sessionStorage.getItem(this.NEWS_STORAGE_KEY);
-        if (stored) {
-          try {
-            const parsed: NewsItem[] = JSON.parse(stored);
-            if (this.validateNewsData(parsed)) {
-              this.allNewsWithContent = parsed;
-              this.debugLog('从sessionStorage恢复新闻数据');
-            } else {
-              sessionStorage.removeItem(this.NEWS_STORAGE_KEY);
-            }
-          } catch (e) {
-            console.error('解析sessionStorage数据失败', e);
-            sessionStorage.removeItem(this.NEWS_STORAGE_KEY);
-          }
-        }
-      }
-    
-      simpleMarkdownRender(text: string): string {
-        if (!text) return '';
-        const escapeHtml = (unsafe: string) => {
-          return unsafe
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#039;');
-        };
-        const html = escapeHtml(text)
-          .replace(/^### (.*$)/gim, '<h3>$1</h3>')
-          .replace(/^## (.*$)/gim, '<h2>$1</h2>')
-          .replace(/^# (.*$)/gim, '<h1>$1</h1>')
-          .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-          .replace(/\*(.*?)\*/g, '<em>$1</em>')
-          .replace(/`(.*?)`/g, '<code>$1</code>')
-          .replace(/\n\n/g, '</p><p>')
-          .replace(/\n/g, '<br>')
-          .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (match, text, href) => {
-            if (!this.isValidUrl(href)) {
-              return escapeHtml(text);
-            }
-            const isExternal =
-              !href.startsWith('/') &&
-              !href.includes(this.SITE_DOMAIN) &&
-              !href.startsWith('#');
-            const svgIcon = isExternal
-              ? '<svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1.5" style="width: 18px; height: 18px; margin-left: 8px; vertical-align: sub;" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"></path></svg>'
-              : '';
-            return `<a href="${escapeHtml(href)}" class="${
-              isExternal ? 'external-link' : ''
-            }" ${isExternal ? 'rel="noopener noreferrer"' : ''}>${escapeHtml(
-              text
-            )}${svgIcon}</a>`;
-          });
-        return '<p>' + html + '</p>';
-      }
-    
-      isValidUrl(url: string): boolean {
-        if (!url || typeof url !== 'string') return false;
-        try {
-          const urlObj = new URL(url);
-          if (urlObj.protocol !== 'https:') return false;
-          const allowedDomains = [
-            'luminolcraft-news.pages.dev',
-            'raw.githubusercontent.com',
-            'github.com',
-            'cdn.jsdelivr.net',
-            'cdnjs.cloudflare.com',
-            'cdn-font.hyperos.mi.com',
-          ];
-          if (!allowedDomains.includes(urlObj.hostname)) return false;
-          const dangerousPaths = ['../', './', '//', '\\'];
-          if (dangerousPaths.some((path) => urlObj.pathname.includes(path)))
-            return false;
-          return true;
-        } catch (e) {
-          return false;
-        }
-      }
-    
-      initMarked() {
-        if (typeof marked === 'undefined') {
-          console.warn('marked 库未加载，使用简化渲染器作为备用方案');
-          return false;
-        }
-        this.debugLog('marked 库加载成功，版本:', (marked as any).version || '未知');
-        const renderer = new (marked.Renderer as any)();
-        renderer.link = ({ href, title, tokens }: any) => {
-          const text = this.parseTokens(tokens);
-          const isValidHref = typeof href === 'string' && href.trim() !== '';
-          const isExternal =
-            isValidHref &&
-            !href.startsWith('/') &&
-            !href.includes(this.SITE_DOMAIN) &&
-            !href.startsWith('#');
-          const svgIcon = isExternal
-            ? `<svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1.5" style="width: 18px; height: 18px; margin-left: 8px; vertical-align: sub;" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"></path></svg>`
-            : '';
-          if (!isValidHref) return text;
-          const titleAttr = title && title !== 'undefined' ? `title="${title}"` : '';
-          return `<a href="${href}" ${titleAttr} class="${
-            isExternal ? 'external-link' : ''
-          }">${text}${svgIcon}</a>`;
-        };
-        marked.setOptions({ renderer });
-        return true;
-      }
+  }
 
-      parseTokens(tokens: any[]): string {
-        if (!tokens || !Array.isArray(tokens)) return '';
-        return tokens.map((token: any) => {
-          if (token.type === 'text' || token.type === 'codespan') {
-            return token.text || '';
-          } else if (token.type === 'strong' || token.type === 'em') {
-            return this.parseTokens(token.tokens);
-          } else if (token.type === 'link') {
-            return this.parseTokens(token.tokens);
-          } else if (token.type === 'image') {
-            return token.text || '';
-          }
-          return '';
-        }).join('');
-      }
-    
-      initEventListeners() {
-        window.addEventListener(
-          'resize',
-          debounce(() => {
-            this.itemsPerPage = window.innerWidth <= 768 ? appConfig.newsPagination.mobileItemsPerPage : appConfig.newsPagination.desktopItemsPerPage;
-          }, 200)
-        );
-      }
-    
-      convertGitHubUrlToCloudflare(contentUrl: string): string | null {
-        if (!contentUrl.startsWith('http')) {
-          return `${this.GITHUB_RAW_BASE}${contentUrl}`;
-        }
-        if (contentUrl.includes('raw.githubusercontent.com/LuminolCraft/news.json')) {
-          const path = contentUrl.split(
-            'raw.githubusercontent.com/LuminolCraft/news.json'
-          )[1];
-          if (!path) {
-            return contentUrl;
-          }
-          const cleanPath = path.replace('/refs/heads/main', '');
-          return `${this.GITHUB_RAW_BASE}${cleanPath}`;
-        }
-        if (contentUrl.includes('raw.githubusercontent.com/LuminolMC/Luminol')) {
-          this.debugLog('检测到LuminolMC仓库URL，跳过加载:', contentUrl);
-          return null;
-        }
-        return contentUrl;
-      }
-    
-      async preloadMarkdownContent(newsData: NewsItem[]) {
-        this.debugLog('📚 预加载 Markdown 内容...', {
-          itemCount: newsData.length,
-          baseUrl: this.GITHUB_RAW_BASE,
-        });
-        const now = Date.now();
-        const cached = localStorage.getItem('news-full-cache');
-        const timestamp = localStorage.getItem('news-full-cache-timestamp');
-        if (cached && timestamp && now - parseInt(timestamp) < this.CACHE_DURATION) {
-          this.allNewsWithContent = JSON.parse(cached);
-          this.debugLog('🗄️ 使用缓存的完整新闻数据');
-          sessionStorage.setItem(
-            this.NEWS_STORAGE_KEY,
-            JSON.stringify(this.allNewsWithContent)
-          );
-          return;
-        }
-        for (const item of newsData) {
-          const fullContentUrl = this.convertGitHubUrlToCloudflare(item.content);
-          if (fullContentUrl === null) {
-            this.debugLog(`跳过新闻 ${item.id}: 不支持的URL格式`);
-            item.markdownContent = '内容不可用';
-            continue;
-          }
-          try {
-            const response = await fetch(fullContentUrl, { cache: 'no-store' });
-            if (!response.ok)
-              throw new Error(
-                `无法加载: ${fullContentUrl} (状态: ${response.status})`
-              );
-            const markdownContent = await response.text();
-            item.markdownContent = markdownContent || '暂无内容';
-            item.additionalImages =
-              item.additionalImages?.filter((url) => url && url.trim() !== '') ||
-              [];
-          } catch (error) {
-            console.error(`❌ 预加载新闻 ${item.id} 失败:`, error);
-            item.markdownContent = '内容加载失败';
-          }
-        }
-        this.allNewsWithContent = newsData;
-        localStorage.setItem(
-          'news-full-cache',
-          JSON.stringify(this.allNewsWithContent)
-        );
-        localStorage.setItem('news-full-cache-timestamp', now.toString());
-        sessionStorage.setItem(
-          this.NEWS_STORAGE_KEY,
-          JSON.stringify(this.allNewsWithContent)
-        );
-        this.debugLog('新闻数据加载完成并缓存到sessionStorage');
-      }
-    
-      getUniqueTags(newsData: NewsItem[]): string[] {
-        const tagsSet = new Set<string>();
-        newsData.forEach((item) => {
-          if (item.tags && Array.isArray(item.tags)) {
-            item.tags.forEach((tag) => tagsSet.add(tag));
-          }
-        });
-        return Array.from(tagsSet);
-      }
-    
-      filterNews(tag: string, query: string): NewsItem[] {
-        this.debugLog('筛选条件:', { tag, query });
-        const filtered = this.allNewsWithContent.filter((item) => {
-          const matchesTag = !tag || (item.tags && item.tags.includes(tag));
-          const dateStr = item.date
-            ? new Date(item.date).toLocaleDateString('zh-CN')
-            : '';
-          const matchesQuery =
-            !query ||
-            (item.title && item.title.toLowerCase().includes(query)) ||
-            (item.markdownContent &&
-              item.markdownContent.toLowerCase().includes(query)) ||
-            dateStr.toLowerCase().includes(query);
-          return matchesTag && matchesQuery;
-        });
-        this.debugLog('筛选结果:', { filteredNewsCount: filtered.length });
-        this.filteredNews = filtered;
-        this.currentPage = 0;
-        return filtered;
-      }
-    
-      async safeFetch(url: string, options: RequestInit = {}): Promise<Response> {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000);
-        try {
-          const response = await fetch(url, {
-            ...options,
-            signal: controller.signal,
-            headers: {
-              Accept: 'application/json, text/plain, */*',
-              ...options.headers,
-            },
-          });
-          clearTimeout(timeoutId);
-          return response;
-        } catch (error) {
-          clearTimeout(timeoutId);
-          if ((error as Error).name === 'AbortError') {
-            throw new Error('请求超时');
-          }
-          throw error;
-        }
-      }
-    
-      async initializeApp() {
-        this.loadError = false;
-        try {
-          this.debugLog('📡 正在加载新闻数据...', {
-            url: this.GITEJSON_URL,
-          });
-          const response = await this.safeFetch(this.GITEJSON_URL, {
-            cache: 'no-store',
-          });
-          this.debugLog('📡 API响应状态:', {
-            status: response.status,
-            ok: response.ok,
-          });
-          if (!response.ok) {
-            throw new Error(
-              `无法加载 news.json: ${response.status} - ${response.statusText}`
-            );
-          }
-          const data: NewsItem[] = await response.json();
-          if (!this.validateNewsData(data)) {
-            throw new Error('数据验证失败，可能存在安全风险');
-          }
-          this.debugLog('✅ news.json 加载成功:', {
-            itemCount: data.length,
-          });
-          localStorage.setItem('news-cache', JSON.stringify(data));
-          localStorage.setItem(
-            'news-cache-timestamp',
-            new Date().getTime().toString()
-          );
-          this.cacheStatus.lastUpdate = Date.now();
-          this.cacheStatus.isStale = false;
-          await this.preloadMarkdownContent(data);
-        } catch (error) {
-          console.error('初始化加载 news.json 失败:', (error as Error).message);
-          this.loadError = true;
-        }
-      }
-    
-      getPaginatedNews(): NewsItem[] {
-        let newsData =
-          this.filteredNews !== null ? this.filteredNews : this.allNewsWithContent;
-        newsData = newsData.sort((a, b) => {
-          if (a.pinned && !b.pinned) return -1;
-          if (!a.pinned && b.pinned) return 1;
-          return new Date(b.date).getTime() - new Date(a.date).getTime();
-        });
-        const start = this.currentPage * this.itemsPerPage;
-        const end = start + this.itemsPerPage;
-        return newsData.slice(start, end);
-      }
-    
-      getPageCount(): number {
-        const totalItems =
-          this.filteredNews !== null
-            ? this.filteredNews.length
-            : this.allNewsWithContent.length;
-        return Math.ceil(totalItems / this.itemsPerPage);
+  interface SyncResult {
+  changed: boolean;
+  added: number;
+  updated: number;
+  deleted: number;
+  unchanged: number;
+  }
+
+
+  class NewsManager {
+  currentPage = 0;
+  itemsPerPage = window.innerWidth <= 768
+    ? appConfig.newsPagination.mobileItemsPerPage
+    : appConfig.newsPagination.desktopItemsPerPage;
+
+  filteredNews: NewsItem[] | null = null;
+  allNewsWithContent: NewsItem[] = [];
+
+  private readonly db = new NewsCacheDB();
+  private readonly NEWS_STORAGE_KEY = 'session_news_data'; // 兼容旧版本的清理入口，不再作为主缓存
+
+  // 正常同步最短间隔。focus / online / visibilitychange 不会无限打请求。
+  private readonly MIN_SYNC_INTERVAL = 10 * 60 * 1000;
+
+  // 页面持续打开时的后台检查周期。
+  private readonly BACKGROUND_REFRESH_INTERVAL = 10 * 60 * 1000;
+
+  // 首屏冷缓存时最多同时下载多少篇正文。
+  private readonly CONTENT_CONCURRENCY = 6;
+
+  // 内容请求超时。
+  private readonly REQUEST_TIMEOUT = 15_000;
+
+  // 防止多次同步并发。
+  private syncPromise: Promise<SyncResult> | null = null;
+
+  // 仅用于 UI 触发刷新后的防抖。
+  cacheStatus: CacheStatus = {
+    isStale: true,
+    lastUpdate: null,
+    backgroundRefreshTimer: null,
+    userActivityTimer: null,
+  };
+
+  isRetrying = false;
+  loadError = false;
+  hasUsableCache = false;
+  isSyncing = false;
+
+  private readonly GITHUB_RAW_BASE = 'https://luminolcraft-news.pages.dev/';
+  private readonly GITEJSON_URL = 'https://luminolcraft-news.pages.dev/news.json';
+  private readonly SITE_DOMAIN = window.location.hostname || '';
+
+  // 为了 onUnmounted 能精确移除监听器。
+  private boundVisibilityHandler: (() => void) | null = null;
+  private boundOnlineHandler: (() => void) | null = null;
+  private boundFocusHandler: (() => void) | null = null;
+  private boundResizeHandler: (() => void) | null = null;
+  private resizeDebounced: ReturnType<typeof debounce> | null = null;
+  private initialized = false;
+
+  constructor() {
+    this.initMarked();
+  }
+
+  debugLog(...args: unknown[]) {
+    if ((window as Window & { debugMode?: boolean }).debugMode) {
+      console.log('[News]', ...args);
+    }
+  }
+
+  async init(): Promise<void> {
+    if (this.initialized) return;
+    this.initialized = true;
+
+    // 先恢复本地缓存，让首屏不依赖网络。
+    await this.restoreCache();
+    this.updateCacheStatusFromMeta();
+    this.initEventListeners();
+    this.setupSmartRefresh();
+  }
+
+  private async migrateLegacyCache(): Promise<void> {
+    const candidates: unknown[] = [];
+    const legacyKeys = ['news-full-cache', this.NEWS_STORAGE_KEY, 'news-cache'];
+
+    for (const key of legacyKeys) {
+      try {
+        const raw = key === this.NEWS_STORAGE_KEY
+          ? sessionStorage.getItem(key)
+          : localStorage.getItem(key);
+
+        if (!raw) continue;
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) candidates.push(...parsed);
+      } catch {
+        // 忽略损坏的旧缓存，不能影响正常启动。
       }
     }
-    
-      // Vue 组件
-    export default defineComponent({
-      name: 'News',
-      components: { LastViewedPopup, CookieConsentBanner },
-      setup() {
-        const router = useRouter();
-        const { t } = useI18n();
-        const { setLastViewedNews } = useLastViewedCookie();
-        const newsManager = new NewsManager();
-        const searchQuery = ref('');
-        const selectedTag = ref('');
-        const currentPage = ref(newsManager.currentPage);
-        const loadError = ref(newsManager.loadError);
-        const refreshTrigger = ref(0); // 用于触发响应式更新
-        const isLoading = ref(true);
-        const newsSectionRef = ref<HTMLElement | null>(null);
-        const itemsPerPage = computed(() => newsManager.itemsPerPage);
-        let ctx: gsap.Context | undefined;
-        let mm: gsap.MatchMedia | undefined;
 
-        // 同步 newsManager.currentPage 到 currentPage ref
-        watch(() => newsManager.currentPage, (newPage) => {
-          currentPage.value = newPage;
-        });
+    if (candidates.length === 0) return;
 
-        // 同步 newsManager.loadError 到 loadError ref
-        watch(() => newsManager.loadError, (newError) => {
-          loadError.value = newError;
-        });
-    
-        const uniqueTags = computed(() =>
-          newsManager.getUniqueTags(newsManager.allNewsWithContent)
-        );
-    
-        const paginatedNews = computed(() => {
-          // 使用 refreshTrigger 来触发重新计算
-          refreshTrigger.value;
-          return newsManager.getPaginatedNews();
-        });
-    
-        const pageCount = computed(() => {
-          refreshTrigger.value;
-          return newsManager.getPageCount();
-        });
+    const valid = candidates.filter((item): item is NewsItem => this.validateNewsData([item]));
+    if (valid.length === 0) return;
 
-        const displayedPages = computed(() => {
-          refreshTrigger.value;
-          const total = pageCount.value;
-          const current = currentPage.value + 1;
-          const maxPages = appConfig.newsPagination.maxDisplayedPages;
-          const pages: (number | string)[] = [];
+    const deduped = new Map<number, NewsItem>();
+    for (const item of valid) {
+      deduped.set(item.id, item);
+    }
 
-          if (total <= maxPages) {
-           for (let i = 1; i <= total; i++) {
-              pages.push(i);
-            }
-            return pages;
-          }
-
-          pages.push(1);
-
-          const half = Math.floor(maxPages / 2);
-          if (current <= half + 1) {
-            for (let i = 2; i <= Math.min(maxPages - 1, total); i++) {
-              pages.push(i);
-            }
-            if (total > maxPages - 1) {
-              pages.push('...');
-              pages.push(total);
-            }
-          } else if (current >= total - half) {
-            pages.push('...');
-            for (let i = Math.max(total - maxPages + 2, 2); i <= total; i++) {
-              pages.push(i);
-            }
-          } else {
-            pages.push('...');
-            for (let i = current - 1; i <= current + 1; i++) {
-              pages.push(i);
-            }
-            pages.push('...');
-            pages.push(total);
-          }
-
-          return pages;
-        });
-    
-        const filterNews = () => {
-          newsManager.filterNews(selectedTag.value, searchQuery.value.toLowerCase().trim());
-          refreshTrigger.value++; // 触发响应式更新
-        };
-    
-        const prevPage = () => {
-          if (currentPage.value > 0) {
-            currentPage.value--;
-            newsManager.currentPage = currentPage.value;
-            refreshTrigger.value++; // 触发响应式更新
-          }
-        };
-    
-        const nextPage = () => {
-          if (currentPage.value < pageCount.value - 1) {
-            currentPage.value++;
-            newsManager.currentPage = currentPage.value;
-            refreshTrigger.value++; // 触发响应式更新
-          }
-        };
-    
-        const goToPage = (page: number) => {
-          currentPage.value = page;
-          newsManager.currentPage = page;
-          refreshTrigger.value++; // 触发响应式更新
-        };
-    
-        const goToDetail = (item: NewsItem) => {
-          setLastViewedNews(item.id, item.title);
-          router.push({ name: 'newsdetail', query: { id: item.id.toString() } });
-        };
-    
-        const hasImage = (item: NewsItem) => {
-          return (
-            item.image &&
-            item.image.trim() !== '' &&
-            item.image !== '""' &&
-            cleanImageUrl(item.image).match(/^https?:\/\/.+\.(jpg|jpeg|png|gif|webp|avif)$/i)
-          );
-        };
-    
-        const cleanImageUrl = (url: string | undefined) => {
-          return url ? url.replace(/['"]/g, '') : '';
-        };
-    
-        const renderShortContent = (item: NewsItem) => {
-          const shortContent = item.markdownContent
-            ? item.markdownContent.substring(0, 100) + '...'
-            : '暂无内容';
-          if (typeof marked !== 'undefined') {
-            return marked.parse(shortContent);
-          } else {
-            return newsManager.simpleMarkdownRender(shortContent);
-          }
-        };
-    
-        onMounted(async () => {
-          // 骨架卡片已渲染（isLoading 初始为 true），先设置 shimmer 动画
-          await nextTick();
-          if (newsSectionRef.value) {
-            ctx = gsap.context(() => {
-              mm = gsap.matchMedia();
-              mm.add({
-                isDesktop: '(min-width: 769px)',
-                isMobile: '(max-width: 768px)',
-                reduceMotion: '(prefers-reduced-motion: reduce)',
-              }, (context) => {
-                const reduceMotion = context.conditions?.reduceMotion;
-                if (reduceMotion) return; // 跳过动画
-                gsap.to('.skeleton-shimmer', {
-                  xPercent: 100,
-                  repeat: -1,
-                  yoyo: true,
-                  ease: EASINGS.smooth,
-                  duration: 1.5,
-                });
-              });
-            }, newsSectionRef.value);
-          }
-
-          // 启动数据加载（期间骨架 + shimmer 可见）
-          try {
-            await newsManager.initializeApp();
-          } finally {
-            isLoading.value = false;
-          }
-          refreshTrigger.value++;
-          filterNews();
-          newsManager.initMarked();
-        });
-
-        // 骨架到真实卡片过渡时间线
-        watch(isLoading, async (newVal, oldVal) => {
-          if (oldVal && !newVal && !loadError.value) {
-            await nextTick();
-            if (!newsSectionRef.value) return;
-            const tl = gsap.timeline({
-              defaults: { ease: EASINGS.entrance },
-              onComplete: () => {
-                mm?.revert();
-              }
-            });
-            const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-            if (reduceMotion) {
-              gsap.set('.skeleton-card', { autoAlpha: 0 });
-              gsap.set('.news-item', { autoAlpha: 1 });
-              return;
-            }
-            tl.to('.skeleton-card', { autoAlpha: 0, duration: DURATIONS.exit })
-              .fromTo('.news-item',
-                { autoAlpha: 0, y: 20 },
-                { autoAlpha: 1, y: 0, stagger: STAGGERS.cards, duration: DURATIONS.entrance },
-                '+=0.05'
-              );
-          }
-        });
-
-        onUnmounted(() => {
-          ctx?.revert();
-          mm?.revert();
-          // 清理定时器等
-          if (newsManager.cacheStatus.backgroundRefreshTimer) {
-            clearInterval(newsManager.cacheStatus.backgroundRefreshTimer);
-          }
-        });
-    
-        return {
-          searchQuery,
-          selectedTag,
-          currentPage,
-          uniqueTags,
-          paginatedNews,
-          pageCount,
-          displayedPages,
-          loadError,
-          isLoading,
-          newsSectionRef,
-          itemsPerPage,
-          filterNews,
-          prevPage,
-          nextPage,
-          goToPage,
-          goToDetail,
-          hasImage,
-          cleanImageUrl,
-          renderShortContent,
-          t
-        };
-      },
+    const now = Date.now();
+    const migrated: CachedNewsItem[] = Array.from(deduped.values()).map((item) => {
+      const fingerprint = this.getSourceFingerprint(item);
+      const contentVersion = this.getContentVersionKey(item);
+      return {
+        ...item,
+        cacheVersion: 1,
+        cachedAt: now,
+        sourceFingerprint: fingerprint,
+        contentFetchedVersion: item.markdownContent ? contentVersion : undefined,
+      };
     });
+
+    await this.db.putArticles(migrated);
+    await this.db.setMeta('migratedLegacyCacheAt', now);
+
+    for (const key of ['news-full-cache', 'news-full-cache-timestamp', 'news-cache', 'news-cache-timestamp']) {
+      try {
+        localStorage.removeItem(key);
+      } catch {
+        // ignore
+      }
+    }
+
+    try {
+      sessionStorage.removeItem(this.NEWS_STORAGE_KEY);
+    } catch {
+      // ignore
+    }
+
+    this.debugLog(`♻️ 已迁移 ${migrated.length} 篇旧新闻缓存到 IndexedDB`);
+  }
+
+  private async updateCacheStatusFromMeta(): Promise<void> {
+    try {
+      const lastSuccessfulSync = await this.db.getMeta<number>('lastSuccessfulSync');
+      this.cacheStatus.lastUpdate = typeof lastSuccessfulSync === 'number'
+        ? lastSuccessfulSync
+        : null;
+
+      const lastUpdate = this.cacheStatus.lastUpdate;
+      this.cacheStatus.isStale = !lastUpdate || Date.now() - lastUpdate >= this.MIN_SYNC_INTERVAL;
+    } catch (error) {
+      this.debugLog('读取缓存状态失败:', error);
+      this.cacheStatus.isStale = true;
+    }
+  }
+
+  private async restoreCache(): Promise<void> {
+    try {
+      let cached = await this.db.getAllArticles();
+
+      // 第一次升级到新缓存架构时，尽量把旧 localStorage/sessionStorage 缓存迁移进 IndexedDB，
+      // 避免用户因为升级而再次下载所有旧新闻。
+      if (cached.length === 0) {
+        await this.migrateLegacyCache();
+        cached = await this.db.getAllArticles();
+      }
+
+      const valid = cached
+        .filter((item) => this.validateCachedNewsItem(item))
+        .map((item) => this.stripInternalCacheFields(item));
+
+      valid.sort(this.sortNews);
+      this.allNewsWithContent = valid;
+      this.hasUsableCache = valid.length > 0;
+
+      if (valid.length > 0) {
+        this.debugLog(`📦 从 IndexedDB 恢复 ${valid.length} 篇新闻`);
+      } else {
+        this.debugLog('📦 IndexedDB 暂无新闻缓存');
+      }
+
+      // 清掉旧版本 sessionStorage，避免旧架构再次污染状态。
+      try {
+        sessionStorage.removeItem(this.NEWS_STORAGE_KEY);
+      } catch {
+        // ignore storage errors
+      }
+    } catch (error) {
+      // IndexedDB 故障不能阻止网络加载。
+      this.debugLog('IndexedDB 恢复失败，将直接使用网络:', error);
+      this.allNewsWithContent = [];
+      this.hasUsableCache = false;
+    }
+  }
+
+  private validateCachedNewsItem(item: unknown): item is CachedNewsItem {
+    if (!item || typeof item !== 'object') return false;
+
+    const value = item as Partial<CachedNewsItem>;
+
+    return (
+      typeof value.id === 'number' &&
+      typeof value.title === 'string' &&
+      typeof value.content === 'string' &&
+      typeof value.date === 'string' &&
+      Array.isArray(value.tags) &&
+      typeof value.cachedAt === 'number' &&
+      typeof value.sourceFingerprint === 'string' &&
+      (value.contentFetchedVersion === undefined || typeof value.contentFetchedVersion === 'string')
+    );
+  }
+
+  private stripInternalCacheFields(item: CachedNewsItem): NewsItem {
+    const {
+      cacheVersion: _cacheVersion,
+      cachedAt: _cachedAt,
+      sourceFingerprint: _sourceFingerprint,
+      ...news
+    } = item;
+    return news;
+  }
+
+  private setupSmartRefresh(): void {
+    if (this.cacheStatus.backgroundRefreshTimer) {
+      window.clearInterval(this.cacheStatus.backgroundRefreshTimer);
+    }
+
+    this.cacheStatus.backgroundRefreshTimer = window.setInterval(() => {
+      void this.syncIfNeeded('timer');
+    }, this.BACKGROUND_REFRESH_INTERVAL);
+  }
+
+  private initEventListeners(): void {
+    this.boundVisibilityHandler = () => {
+      if (!document.hidden) {
+        void this.syncIfNeeded('visibility');
+      }
+    };
+
+    this.boundOnlineHandler = () => {
+      void this.syncIfNeeded('online', true);
+    };
+
+    this.boundFocusHandler = () => {
+      void this.syncIfNeeded('focus');
+    };
+
+    document.addEventListener('visibilitychange', this.boundVisibilityHandler);
+    window.addEventListener('online', this.boundOnlineHandler);
+    window.addEventListener('focus', this.boundFocusHandler);
+
+    this.resizeDebounced = debounce(() => {
+      this.itemsPerPage = window.innerWidth <= 768
+        ? appConfig.newsPagination.mobileItemsPerPage
+        : appConfig.newsPagination.desktopItemsPerPage;
+
+      const maxPage = Math.max(0, this.getPageCount() - 1);
+      if (this.currentPage > maxPage) {
+        this.currentPage = maxPage;
+      }
+    }, 200);
+
+    this.boundResizeHandler = () => {
+      this.resizeDebounced?.();
+    };
+
+    window.addEventListener('resize', this.boundResizeHandler, { passive: true });
+  }
+
+  dispose(): void {
+    if (this.cacheStatus.backgroundRefreshTimer) {
+      window.clearInterval(this.cacheStatus.backgroundRefreshTimer);
+      this.cacheStatus.backgroundRefreshTimer = null;
+    }
+
+    if (this.boundVisibilityHandler) {
+      document.removeEventListener('visibilitychange', this.boundVisibilityHandler);
+      this.boundVisibilityHandler = null;
+    }
+
+    if (this.boundOnlineHandler) {
+      window.removeEventListener('online', this.boundOnlineHandler);
+      this.boundOnlineHandler = null;
+    }
+
+    if (this.boundFocusHandler) {
+      window.removeEventListener('focus', this.boundFocusHandler);
+      this.boundFocusHandler = null;
+    }
+
+    if (this.boundResizeHandler) {
+      window.removeEventListener('resize', this.boundResizeHandler);
+      this.boundResizeHandler = null;
+    }
+
+    this.resizeDebounced?.cancel?.();
+    this.resizeDebounced = null;
+  }
+
+  /**
+   * 核心：只在达到同步间隔时发起同步。
+   * force=true 只跳过本地间隔检查，仍然不会并发同步。
+   */
+  async syncIfNeeded(reason: string, force = false): Promise<SyncResult | null> {
+    const lastUpdate = this.cacheStatus.lastUpdate ?? 0;
+    const elapsed = Date.now() - lastUpdate;
+
+    if (!force && elapsed < this.MIN_SYNC_INTERVAL) {
+      this.debugLog(`⏭️ ${reason}: ${Math.round((this.MIN_SYNC_INTERVAL - elapsed) / 1000)} 秒后才需要同步`);
+      return null;
+    }
+
+    return this.syncNews(force, reason);
+  }
+
+  /**
+   * 真正执行增量同步。
+   * 服务器新闻项必须尽量提供 contentVersion 或 updatedAt。
+   * 如果两者均不存在，则退化为元数据 fingerprint 比较。
+   */
+  async syncNews(force = false, reason = 'manual'): Promise<SyncResult> {
+    if (this.syncPromise) {
+      this.debugLog('♻️ 已经有同步任务在运行，复用当前 Promise');
+      return this.syncPromise;
+    }
+
+    this.syncPromise = this.performSync(force, reason)
+      .finally(() => {
+        this.syncPromise = null;
+      });
+
+    return this.syncPromise;
+  }
+
+  private async performSync(force: boolean, reason: string): Promise<SyncResult> {
+    this.isSyncing = true;
+    this.loadError = false;
+
+    const result: SyncResult = {
+      changed: false,
+      added: 0,
+      updated: 0,
+      deleted: 0,
+      unchanged: 0,
+    };
+
+    try {
+      this.debugLog(`🔄 开始增量同步 reason=${reason}, force=${force}`);
+
+      // cache:no-cache 允许浏览器复用 HTTP cache，同时向服务器验证资源是否更新。
+      // 不使用 no-store，因为那会主动绕过浏览器 HTTP 缓存。
+      const response = await this.safeFetch(this.GITEJSON_URL, {
+        cache: force ? 'reload' : 'no-cache',
+        headers: {
+          Accept: 'application/json',
+        },
+      });
+
+      if (response.status === 304) {
+        // 理论上 fetch 通常会由浏览器把 304 合并成 200；保留此分支以防代理层直接返回 304。
+        this.cacheStatus.lastUpdate = Date.now();
+        this.cacheStatus.isStale = false;
+        await this.db.setMeta('lastSuccessfulSync', this.cacheStatus.lastUpdate);
+        this.debugLog('✅ Manifest 304 Not Modified');
+        return result;
+      }
+
+      if (!response.ok) {
+        throw new Error(`news.json 请求失败: ${response.status} ${response.statusText}`);
+      }
+
+      const remoteData: unknown = await response.json();
+      if (!this.validateNewsData(remoteData)) {
+        throw new Error('news.json 数据验证失败');
+      }
+
+      const cachedItems = await this.db.getAllArticles();
+      const cachedMap = new Map<number, CachedNewsItem>(cachedItems.map((item) => [item.id, item]));
+      const remoteMap = new Map<number, NewsItem>(remoteData.map((item) => [item.id, item]));
+
+      // 1) 删除服务器已经不存在的新闻
+      const deletedIds: number[] = [];
+      for (const cached of cachedItems) {
+        if (!remoteMap.has(cached.id)) {
+          deletedIds.push(cached.id);
+        }
+      }
+
+      if (deletedIds.length > 0) {
+        await this.db.deleteArticles(deletedIds);
+        result.deleted = deletedIds.length;
+        result.changed = true;
+      }
+
+      // 2) 区分“索引/元数据变化”和“正文变化”。
+      // 只有正文版本变化时才请求 Markdown；标题、标签、置顶等变化只写入本地数据库。
+      const candidates: Array<{
+        remote: NewsItem;
+        cached?: CachedNewsItem;
+        contentNeedsUpdate: boolean;
+      }> = [];
+
+      for (const remote of remoteData) {
+        const cached = cachedMap.get(remote.id);
+
+        if (!cached) {
+          candidates.push({
+            remote,
+            contentNeedsUpdate: true,
+          });
+          continue;
+        }
+
+        const manifestFingerprint = this.getSourceFingerprint(remote);
+        const manifestChanged = manifestFingerprint !== cached.sourceFingerprint;
+        const contentVersion = this.getContentVersionKey(remote);
+        const contentNeedsUpdate =
+          !cached.markdownContent ||
+          cached.contentFetchedVersion !== contentVersion;
+
+        if (!manifestChanged && !contentNeedsUpdate) {
+          result.unchanged++;
+          continue;
+        }
+
+        candidates.push({
+          remote,
+          cached,
+          contentNeedsUpdate,
+        });
+      }
+
+      if (candidates.length > 0) {
+        const concurrency = Math.max(1, Math.min(this.CONTENT_CONCURRENCY, candidates.length));
+        let cursor = 0;
+
+        const worker = async () => {
+          while (true) {
+            const index = cursor++;
+            if (index >= candidates.length) return;
+          
+            const candidate = candidates[index];
+            if (!candidate) return;
+          
+            const { remote, cached, contentNeedsUpdate } = candidate;
+            const resultItem = await this.updateOneArticle(remote, cached, contentNeedsUpdate);
+          
+            if (resultItem.updated) {
+              result.updated++;
+              if (!cached) result.added++;
+              result.changed = true;
+            }
+          
+            if (resultItem.article) {
+              await this.db.putArticle(resultItem.article);
+            }
+          }
+        };
+
+        await Promise.all(Array.from({ length: concurrency }, () => worker()));
+      }
+
+      // 3) 同步成功后再从数据库生成内存快照。
+      const freshCache = await this.db.getAllArticles();
+      freshCache.sort(this.sortNews);
+      this.allNewsWithContent = freshCache.map((item) => this.stripInternalCacheFields(item));
+      this.hasUsableCache = this.allNewsWithContent.length > 0;
+
+      // 4) 最后一步才更新“成功时间”，防止中途失败却被认为成功。
+      this.cacheStatus.lastUpdate = Date.now();
+      this.cacheStatus.isStale = false;
+      await this.db.setMeta('lastSuccessfulSync', this.cacheStatus.lastUpdate);
+
+      // 保存 manifest 的 HTTP 元数据，方便排障/诊断；请求本身仍交给浏览器 HTTP cache 管理。
+      await this.db.setMeta('manifestETag', response.headers.get('ETag'));
+      await this.db.setMeta('manifestLastModified', response.headers.get('Last-Modified'));
+      await this.db.setMeta('manifestSyncedAt', this.cacheStatus.lastUpdate);
+
+      this.filteredNews = null;
+      this.ensureCurrentPageValid();
+
+      this.debugLog('✅ 增量同步完成:', result);
+      return result;
+    } catch (error) {
+      this.cacheStatus.isStale = true;
+      this.loadError = !this.hasUsableCache;
+
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      this.debugLog(`❌ 同步失败 (${reason}):`, errorMessage);
+
+      // 网络失败时绝不清掉旧缓存。
+      if (!this.hasUsableCache) {
+        throw error;
+      }
+
+      return result;
+    } finally {
+      this.isSyncing = false;
+    }
+  }
+
+  private async updateOneArticle(
+    remote: NewsItem,
+    cached: CachedNewsItem | undefined,
+    contentNeedsUpdate: boolean,
+  ): Promise<{ updated: boolean; article: CachedNewsItem | null }> {
+    let markdownContent = cached?.markdownContent;
+    let contentFetchedVersion = cached?.contentFetchedVersion;
+    const sourceFingerprint = this.getSourceFingerprint(remote);
+    const contentVersion = this.getContentVersionKey(remote);
+
+    // 只有确定正文版本发生变化时才访问 Markdown。
+    if (contentNeedsUpdate) {
+      const markdownUrl = this.convertGitHubUrlToCloudflare(remote.content);
+
+      if (!markdownUrl) {
+        this.debugLog(`⚠️ 新闻 ${remote.id} content URL 无法转换`);
+      } else {
+        try {
+          const response = await this.safeFetch(markdownUrl, {
+            cache: 'no-cache',
+            headers: {
+              Accept: 'text/markdown,text/plain;q=0.9,*/*;q=0.8',
+            },
+          });
+
+          if (!response.ok) {
+            throw new Error(`Markdown ${response.status} ${response.statusText}`);
+          }
+
+          markdownContent = await response.text();
+          contentFetchedVersion = contentVersion;
+        } catch (error) {
+          this.debugLog(`⚠️ 新闻 ${remote.id} 正文拉取失败，保留旧正文，下一次继续重试:`, error);
+        }
+      }
+    }
+
+    const article: CachedNewsItem = {
+      ...remote,
+      markdownContent,
+      cacheVersion: 1,
+      cachedAt: Date.now(),
+      sourceFingerprint,
+      contentFetchedVersion,
+    };
+
+    return {
+      updated: true,
+      article,
+    };
+  }
+
+  private getContentVersionKey(item: NewsItem): string {
+    if (item.contentVersion) return `contentVersion:${item.contentVersion}`;
+    if (item.updatedAt) return `updatedAt:${item.updatedAt}`;
+    return `contentUrl:${item.content}`;
+  }
+
+  /**
+   * 注意：没有 contentVersion/updatedAt 时，这个 fingerprint 无法检测“同一个 content URL 的 Markdown 被原地修改”。
+   * 因此生产环境强烈建议服务器至少提供 updatedAt，最好提供 contentVersion/hash。
+   */
+  private getSourceFingerprint(item: NewsItem): string {
+    const normalized = {
+      id: item.id,
+      title: item.title,
+      content: item.content,
+      date: item.date,
+      tags: [...(item.tags || [])],
+      image: item.image ?? '',
+      additionalImages: [...(item.additionalImages || [])],
+      pinned: Boolean(item.pinned),
+      updatedAt: item.updatedAt ?? '',
+      contentVersion: item.contentVersion ?? '',
+      summary: item.summary ?? '',
+    };
+
+    return JSON.stringify(normalized);
+  }
+
+  /** 强制刷新：不清缓存，只立即验证 manifest。 */
+  async forceRefresh(): Promise<SyncResult> {
+    this.debugLog('🔄 用户触发强制刷新');
+    return this.syncNews(true, 'manual-force');
+  }
+
+  /** 重试：不删除任何缓存。 */
+  async retryDataLoad(): Promise<void> {
+    if (this.isRetrying) return;
+
+    this.isRetrying = true;
+    this.loadError = false;
+
+    try {
+      await this.syncNews(true, 'retry');
+    } catch (error) {
+      this.loadError = !this.hasUsableCache;
+      this.debugLog('❌ 数据重试失败:', error);
+    } finally {
+      this.isRetrying = false;
+    }
+  }
+
+  /** 用户手动清空本地新闻缓存时才调用。正常重试绝对不要调用。 */
+  async clearNewsCache(): Promise<void> {
+    await this.db.clear();
+    this.allNewsWithContent = [];
+    this.filteredNews = null;
+    this.currentPage = 0;
+    this.cacheStatus.lastUpdate = null;
+    this.cacheStatus.isStale = true;
+    this.hasUsableCache = false;
+  }
+
+  validateNewsData(data: unknown): data is NewsItem[] {
+    if (!Array.isArray(data)) return false;
+    if (data.length > 1000) return false;
+
+    for (const rawItem of data) {
+      if (!rawItem || typeof rawItem !== 'object') return false;
+
+      const item = rawItem as Partial<NewsItem>;
+
+      if (
+        typeof item.id !== 'number' ||
+        !Number.isSafeInteger(item.id) ||
+        item.id <= 0 ||
+        typeof item.title !== 'string' ||
+        item.title.length === 0 ||
+        item.title.length > 200 ||
+        typeof item.content !== 'string' ||
+        item.content.length === 0 ||
+        item.content.length > 2000 ||
+        typeof item.date !== 'string' ||
+        !Array.isArray(item.tags) ||
+        item.tags.some((tag) => typeof tag !== 'string')
+      ) {
+        return false;
+      }
+
+      if (typeof item.markdownContent === 'string' && item.markdownContent.length > 100_000) {
+        return false;
+      }
+
+      if (item.updatedAt !== undefined && typeof item.updatedAt !== 'string') return false;
+      if (item.contentVersion !== undefined && typeof item.contentVersion !== 'string') return false;
+      if (item.summary !== undefined && typeof item.summary !== 'string') return false;
+
+      if (this.containsXSS(item.title) || this.containsXSS(item.summary ?? '')) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  containsXSS(text: string): boolean {
+    if (typeof text !== 'string') return false;
+
+    const decodedText = text
+      .replace(/&lt;/gi, '<')
+      .replace(/&gt;/gi, '>')
+      .replace(/&quot;/gi, '"')
+      .replace(/&#x27;/gi, "'")
+      .replace(/&#x2f;/gi, '/')
+      .replace(/&amp;/gi, '&');
+
+    const xssPatterns = [
+      /<script[^>]*>[\s\S]*?<\/script>/gi,
+      /javascript\s*:/gi,
+      /vbscript\s*:/gi,
+      /data\s*:\s*text\/html/gi,
+      /on\w+\s*=/gi,
+      /<iframe[^>]*>/gi,
+      /<object[^>]*>/gi,
+      /<embed[^>]*>/gi,
+      /<link[^>]*>/gi,
+      /<meta[^>]*>/gi,
+      /<style[^>]*>[\s\S]*?<\/style>/gi,
+      /expression\s*\(/gi,
+      /url\s*\(/gi,
+      /@import/gi,
+      /eval\s*\(/gi,
+      /setTimeout\s*\(/gi,
+      /setInterval\s*\(/gi,
+      /document\.write/gi,
+      /innerHTML\s*=/gi,
+      /outerHTML\s*=/gi,
+    ];
+
+    return xssPatterns.some((pattern) => pattern.test(text) || pattern.test(decodedText));
+  }
+
+  initMarked() {
+    if (typeof marked === 'undefined') {
+      console.warn('marked 库未加载');
+      return false;
+    }
+
+    const renderer = new marked.Renderer();
+
+    renderer.link = ({ href, title, tokens }: any) => {
+      const text = this.parseTokens(tokens);
+      const isValidHref = typeof href === 'string' && href.trim() !== '';
+
+      if (!isValidHref || !this.isValidUrl(href)) {
+        return text;
+      }
+
+      const isExternal =
+        !href.startsWith('/') &&
+        !href.includes(this.SITE_DOMAIN) &&
+        !href.startsWith('#');
+
+      const safeTitle = title && title !== 'undefined'
+        ? ` title="${this.escapeAttribute(title)}"`
+        : '';
+
+      const svgIcon = isExternal
+        ? '<svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1.5" style="width: 18px; height: 18px; margin-left: 8px; vertical-align: sub;" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"></path></svg>'
+        : '';
+
+      return `<a href="${this.escapeAttribute(href)}"${safeTitle} class="${isExternal ? 'external-link' : ''}" ${isExternal ? 'rel="noopener noreferrer"' : ''}>${text}${svgIcon}</a>`;
+    };
+
+    marked.setOptions({ renderer });
+    return true;
+  }
+
+  parseTokens(tokens: any[]): string {
+    if (!Array.isArray(tokens)) return '';
+
+    return tokens.map((token) => {
+      if (token?.type === 'text' || token?.type === 'codespan') {
+        return token.text || '';
+      }
+      if (token?.tokens) {
+        return this.parseTokens(token.tokens);
+      }
+      return token?.text || '';
+    }).join('');
+  }
+
+  private escapeAttribute(value: string): string {
+    return String(value)
+      .replace(/&/g, '&amp;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }
+
+  simpleMarkdownRender(text: string): string {
+    if (!text) return '';
+
+    const escapeHtml = (unsafe: string) => unsafe
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+
+    const html = escapeHtml(text)
+      .replace(/^### (.*)$/gim, '<h3>$1</h3>')
+      .replace(/^## (.*)$/gim, '<h2>$1</h2>')
+      .replace(/^# (.*)$/gim, '<h1>$1</h1>')
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.*?)\*/g, '<em>$1</em>')
+      .replace(/`(.*?)`/g, '<code>$1</code>')
+      .replace(/\n\n/g, '</p><p>')
+      .replace(/\n/g, '<br>');
+
+    return `<p>${html}</p>`;
+  }
+
+  isValidUrl(url: string): boolean {
+    if (!url || typeof url !== 'string') return false;
+
+    try {
+      if (url.startsWith('#') || url.startsWith('/')) return true;
+
+      const urlObj = new URL(url);
+      if (urlObj.protocol !== 'https:') return false;
+
+      const allowedDomains = new Set([
+        'luminolcraft-news.pages.dev',
+        'raw.githubusercontent.com',
+        'github.com',
+        'cdn.jsdelivr.net',
+        'cdnjs.cloudflare.com',
+        'cdn-font.hyperos.mi.com',
+      ]);
+
+      if (!allowedDomains.has(urlObj.hostname)) return false;
+
+      const dangerousPaths = ['../', './', '//', '\\'];
+      if (dangerousPaths.some((path) => urlObj.pathname.includes(path))) return false;
+
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  convertGitHubUrlToCloudflare(contentUrl: string): string | null {
+    if (!contentUrl || typeof contentUrl !== 'string') return null;
+
+    if (!contentUrl.startsWith('http')) {
+      return `${this.GITHUB_RAW_BASE}${contentUrl.replace(/^\/+/, '')}`;
+    }
+
+    if (contentUrl.includes('raw.githubusercontent.com/LuminolCraft/news.json')) {
+      const marker = 'raw.githubusercontent.com/LuminolCraft/news.json';
+      const path = contentUrl.split(marker)[1];
+
+      if (!path) return contentUrl;
+
+      const cleanPath = path.replace('/refs/heads/main', '').replace(/^\/+/, '');
+      return `${this.GITHUB_RAW_BASE}${cleanPath}`;
+    }
+
+    if (contentUrl.includes('raw.githubusercontent.com/LuminolMC/Luminol')) {
+      this.debugLog('检测到 LuminolMC 仓库 URL，跳过加载:', contentUrl);
+      return null;
+    }
+
+    return contentUrl;
+  }
+
+  async safeFetch(url: string, options: RequestInit = {}): Promise<Response> {
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), this.REQUEST_TIMEOUT);
+
+    try {
+      const response = await fetch(url, {
+        ...options,
+        signal: controller.signal,
+        headers: {
+          Accept: '*/*',
+          ...options.headers,
+        },
+      });
+
+      return response;
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new Error(`请求超时: ${url}`);
+      }
+      throw error;
+    } finally {
+      window.clearTimeout(timeoutId);
+    }
+  }
+
+  filterNews(tag: string, query: string): NewsItem[] {
+    const normalizedQuery = query.toLowerCase().trim();
+
+    const filtered = this.allNewsWithContent.filter((item) => {
+      const matchesTag = !tag || item.tags?.includes(tag);
+      const dateStr = item.date ? new Date(item.date).toLocaleDateString('zh-CN') : '';
+
+      const searchableText = [
+        item.title,
+        item.summary ?? '',
+        item.markdownContent ?? '',
+        item.tags?.join(' ') ?? '',
+        dateStr,
+      ].join(' ').toLowerCase();
+
+      return matchesTag && (!normalizedQuery || searchableText.includes(normalizedQuery));
+    });
+
+    this.filteredNews = filtered;
+    this.currentPage = 0;
+    return filtered;
+  }
+
+  getUniqueTags(newsData: NewsItem[] = this.allNewsWithContent): string[] {
+    const set = new Set<string>();
+    for (const item of newsData) {
+      for (const tag of item.tags || []) {
+        set.add(tag);
+      }
+    }
+    return Array.from(set);
+  }
+
+  getPaginatedNews(): NewsItem[] {
+    const source = this.filteredNews !== null ? this.filteredNews : this.allNewsWithContent;
+    const sorted = [...source].sort(this.sortNews);
+    const start = this.currentPage * this.itemsPerPage;
+    return sorted.slice(start, start + this.itemsPerPage);
+  }
+
+  getPageCount(): number {
+    const totalItems = this.filteredNews !== null
+      ? this.filteredNews.length
+      : this.allNewsWithContent.length;
+
+    return Math.ceil(totalItems / this.itemsPerPage);
+  }
+
+  private ensureCurrentPageValid(): void {
+    const pageCount = this.getPageCount();
+    if (pageCount <= 0) {
+      this.currentPage = 0;
+      return;
+    }
+    this.currentPage = Math.min(this.currentPage, pageCount - 1);
+  }
+
+  private readonly sortNews = (a: NewsItem, b: NewsItem): number => {
+    if (a.pinned && !b.pinned) return -1;
+    if (!a.pinned && b.pinned) return 1;
+    return new Date(b.date).getTime() - new Date(a.date).getTime();
+  };
+
+  /** 为兼容旧组件代码保留的别名。 */
+  async initializeApp(): Promise<void> {
+    await this.init();
+
+    // 有缓存：立即允许页面显示，再后台同步。
+    if (this.hasUsableCache) {
+      void this.syncIfNeeded('initial');
+      return;
+    }
+
+    // 无缓存：首次启动必须等待网络同步。
+    try {
+      await this.syncNews(true, 'initial-cold-start');
+    } catch {
+      this.loadError = true;
+      throw new Error('没有本地缓存且新闻服务暂时不可用');
+    }
+  }
+  }
+
+  export default defineComponent({
+  name: 'News',
+  components: { LastViewedPopup, CookieConsentBanner },
+
+  setup() {
+    const router = useRouter();
+    const { t } = useI18n();
+    const { setLastViewedNews } = useLastViewedCookie();
+    const newsManager = new NewsManager();
+
+    const searchQuery = ref('');
+    const selectedTag = ref('');
+    const currentPage = ref(0);
+    const loadError = ref(false);
+    const refreshTrigger = ref(0);
+    const isLoading = ref(true);
+    const newsSectionRef = ref<HTMLElement | null>(null);
+
+    const itemsPerPage = computed(() => newsManager.itemsPerPage);
+    const isSyncing = computed(() => newsManager.isSyncing);
+
+    watch(() => newsManager.currentPage, (newPage) => {
+      currentPage.value = newPage;
+    });
+
+    watch(() => newsManager.loadError, (newError) => {
+      loadError.value = newError;
+    });
+
+    const uniqueTags = computed(() =>
+      newsManager.getUniqueTags(newsManager.allNewsWithContent),
+    );
+
+    const paginatedNews = computed(() => {
+      refreshTrigger.value;
+      return newsManager.getPaginatedNews();
+    });
+
+    const pageCount = computed(() => {
+      refreshTrigger.value;
+      return newsManager.getPageCount();
+    });
+
+    const displayedPages = computed(() => {
+      refreshTrigger.value;
+
+      const total = pageCount.value;
+      const current = currentPage.value + 1;
+      const maxPages = appConfig.newsPagination.maxDisplayedPages;
+      const pages: (number | string)[] = [];
+
+      if (total <= maxPages) {
+        for (let i = 1; i <= total; i++) pages.push(i);
+        return pages;
+      }
+
+      pages.push(1);
+      const half = Math.floor(maxPages / 2);
+
+      if (current <= half + 1) {
+        for (let i = 2; i <= Math.min(maxPages - 1, total); i++) pages.push(i);
+        if (total > maxPages - 1) {
+          pages.push('...');
+          pages.push(total);
+        }
+      } else if (current >= total - half) {
+        pages.push('...');
+        for (let i = Math.max(total - maxPages + 2, 2); i <= total; i++) pages.push(i);
+      } else {
+        pages.push('...');
+        for (let i = current - 1; i <= current + 1; i++) pages.push(i);
+        pages.push('...');
+        pages.push(total);
+      }
+
+      return pages;
+    });
+
+    const filterNews = () => {
+      newsManager.filterNews(selectedTag.value, searchQuery.value);
+      refreshTrigger.value++;
+    };
+
+    const prevPage = () => {
+      if (currentPage.value > 0) {
+        currentPage.value--;
+        newsManager.currentPage = currentPage.value;
+        refreshTrigger.value++;
+      }
+    };
+
+    const nextPage = () => {
+      if (currentPage.value < pageCount.value - 1) {
+        currentPage.value++;
+        newsManager.currentPage = currentPage.value;
+        refreshTrigger.value++;
+      }
+    };
+
+    const goToPage = (page: number) => {
+      currentPage.value = page;
+      newsManager.currentPage = page;
+      refreshTrigger.value++;
+    };
+
+    const goToDetail = (item: NewsItem) => {
+      setLastViewedNews(item.id, item.title);
+      router.push({ name: 'newsdetail', query: { id: item.id.toString() } });
+    };
+
+    const cleanImageUrl = (url: string | undefined) => {
+      return url ? url.replace(/["']/g, '') : '';
+    };
+
+    const hasImage = (item: NewsItem) => {
+      const url = cleanImageUrl(item.image);
+      return Boolean(
+        url &&
+        /^https?:\/\/.+\.(jpg|jpeg|png|gif|webp|avif)(\?.*)?$/i.test(url),
+      );
+    };
+
+    const renderShortContent = (item: NewsItem) => {
+      // 后端提供 summary 时优先使用 summary；旧数据继续使用 markdownContent。
+      const shortContent = item.summary || item.markdownContent || '暂无内容';
+      const trimmed = shortContent.length > 100
+        ? `${shortContent.substring(0, 100)}...`
+        : shortContent;
+
+      if (typeof marked !== 'undefined') {
+        return marked.parse(trimmed);
+      }
+
+      return newsManager.simpleMarkdownRender(trimmed);
+    };
+
+    const forceRefresh = async () => {
+      await newsManager.forceRefresh();
+      refreshTrigger.value++;
+      filterNews();
+    };
+
+    const retryDataLoad = async () => {
+      await newsManager.retryDataLoad();
+      refreshTrigger.value++;
+      filterNews();
+      loadError.value = newsManager.loadError;
+    };
+
+    let ctx: gsap.Context | undefined;
+    let mm: gsap.MatchMedia | undefined;
+
+    onMounted(async () => {
+      await nextTick();
+
+      if (newsSectionRef.value) {
+        ctx = gsap.context(() => {
+          mm = gsap.matchMedia();
+
+          mm.add({
+            isDesktop: '(min-width: 769px)',
+            isMobile: '(max-width: 768px)',
+            reduceMotion: '(prefers-reduced-motion: reduce)',
+          }, (context) => {
+            const reduceMotion = context.conditions?.reduceMotion;
+            if (reduceMotion) return;
+
+            gsap.to('.skeleton-shimmer', {
+              xPercent: 100,
+              repeat: -1,
+              yoyo: true,
+              ease: EASINGS.smooth,
+              duration: 1.5,
+            });
+          });
+        }, newsSectionRef.value);
+      }
+
+      try {
+        // 初始化会先恢复 IndexedDB。
+        // 有缓存时会立即结束，不等待后台网络同步。
+        await newsManager.initializeApp();
+      } catch (error) {
+        console.error('初始化新闻失败:', error);
+        loadError.value = newsManager.loadError;
+      } finally {
+        isLoading.value = false;
+      }
+
+      refreshTrigger.value++;
+      filterNews();
+      newsManager.initMarked();
+    });
+
+    watch(isLoading, async (newVal, oldVal) => {
+      if (oldVal && !newVal && !loadError.value) {
+        await nextTick();
+        if (!newsSectionRef.value) return;
+
+        const tl = gsap.timeline({
+          defaults: { ease: EASINGS.entrance },
+          onComplete: () => {
+            mm?.revert();
+          },
+        });
+
+        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        if (reduceMotion) {
+          gsap.set('.skeleton-card', { autoAlpha: 0 });
+          gsap.set('.news-item', { autoAlpha: 1 });
+          return;
+        }
+
+        tl.to('.skeleton-card', { autoAlpha: 0, duration: DURATIONS.exit })
+          .fromTo('.news-item',
+            { autoAlpha: 0, y: 20 },
+            { autoAlpha: 1, y: 0, stagger: STAGGERS.cards, duration: DURATIONS.entrance },
+            '+=0.05',
+          );
+      }
+    });
+
+    onUnmounted(() => {
+      newsManager.dispose();
+      ctx?.revert();
+      mm?.revert();
+    });
+
+    return {
+      searchQuery,
+      selectedTag,
+      currentPage,
+      uniqueTags,
+      paginatedNews,
+      pageCount,
+      displayedPages,
+      loadError,
+      isLoading,
+      isSyncing,
+      newsSectionRef,
+      itemsPerPage,
+      filterNews,
+      prevPage,
+      nextPage,
+      goToPage,
+      goToDetail,
+      hasImage,
+      cleanImageUrl,
+      renderShortContent,
+      forceRefresh,
+      retryDataLoad,
+      newsManager,
+      t,
+    };
+  },
+  });
 </script>

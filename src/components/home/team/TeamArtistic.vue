@@ -1,7 +1,7 @@
 <template>
     <!--
         TeamArtistic — Z 形对角流 + 有机旋转卡片 + Pin-Scrub 滚动叙事
-        从 LayoutASections.vue 提取，contributors 数据来自 @/config/team-members
+        contributors 数据来自 @/config/team-members
         微调点索引见 <script setup> 顶部注释
     -->
     <section ref="sectionRef" class="team-section">

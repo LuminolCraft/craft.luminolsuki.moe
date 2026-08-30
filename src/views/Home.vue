@@ -39,10 +39,8 @@
             <div class="scroll-indicator">SCROLL ↓</div>
         </header>
 
-        <!-- 首页布局区域（按配置渲染 LayoutA / LayoutB / LayoutC） -->
-        <component
-            :is="layoutComponent"
-            :key="_resolvedLayout"
+        <!-- 首页布局区域 -->
+        <LayoutCSections
             :server-online="serverOnline"
             :online-players="onlinePlayers"
         />
@@ -394,7 +392,6 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, nextTick } from 'vue'
-import type { Component } from 'vue'
 import { useI18n } from 'vue-i18n'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
@@ -403,24 +400,11 @@ import LastViewedPopup from '../components/LastViewedPopup.vue'
 import CookieConsentBanner from '../components/CookieConsentBanner.vue'
 import { useGsap } from '@/composables/useGsap'
 import { EASINGS, STAGGERS, DURATIONS } from '@/gsap'
-import { CURRENT_LAYOUT, resolveLayout } from '../config/home-layout'
-import type { ResolvedHomeLayout } from '../config/home-layout'
-import LayoutASections from '../components/home/sections/LayoutASections.vue'
-import LayoutBSections from '../components/home/sections/LayoutBSections.vue'
 import LayoutCSections from '../components/home/sections/LayoutCSections.vue'
 
 const { t } = useI18n()
 
 const rootRef = ref<HTMLElement | null>(null)
-
-const HOME_LAYOUT_COMPONENT_MAP: Record<ResolvedHomeLayout, Component> = {
-    artistic: LayoutASections,
-    cinema: LayoutBSections,
-    bento: LayoutCSections,
-} as const
-
-const _resolvedLayout = resolveLayout(CURRENT_LAYOUT)
-const layoutComponent = HOME_LAYOUT_COMPONENT_MAP[_resolvedLayout]
 
 const backgroundImages = [
   '/images/Image_1764466849.avif',
