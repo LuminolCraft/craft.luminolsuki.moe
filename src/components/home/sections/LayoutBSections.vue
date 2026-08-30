@@ -66,7 +66,7 @@
         </section>
 
         <!-- ===================== TEAM SECTION（动态组件，由 CURRENT_TEAM_STYLE 控制）===================== -->
-        <component :is="teamComponent" :server-online="serverOnline" />
+        <component :is="teamComponent" :key="_resolvedTeam" :server-online="serverOnline" />
     </div>
 </template>
 
@@ -499,7 +499,7 @@
  *   - stagger 间隔：STAGGERS.cards.each（来自 @/gsap/config/staggers）
  *   - matchMedia 断点：(min-width: 1024px) and (pointer: fine)
  */
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { onMounted, onUnmounted, ref } from 'vue'
 import type { Component } from 'vue'
 import { useI18n } from 'vue-i18n'
 import gsap from 'gsap'
@@ -524,10 +524,8 @@ const TEAM_STYLE_COMPONENT_MAP: Record<ResolvedTeamStyle, Component> = {
   bento: TeamBento,
 } as const
 
-const teamComponent = computed(() => {
-  const style = resolveTeamStyle(CURRENT_TEAM_STYLE)
-  return TEAM_STYLE_COMPONENT_MAP[style]
-})
+const _resolvedTeam = resolveTeamStyle(CURRENT_TEAM_STYLE)
+const teamComponent = TEAM_STYLE_COMPONENT_MAP[_resolvedTeam]
 
 const rootRef = ref<HTMLElement | null>(null)
 let ctx: gsap.Context | undefined
@@ -734,5 +732,6 @@ onMounted(() => {
 
 onUnmounted(() => {
     ctx?.revert()
+    ScrollTrigger.refresh()
 })
 </script>
