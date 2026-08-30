@@ -42,6 +42,7 @@
         <!-- 首页布局区域（按配置渲染 LayoutA / LayoutB / LayoutC） -->
         <component
             :is="layoutComponent"
+            :key="_resolvedLayout"
             :server-online="serverOnline"
             :online-players="onlinePlayers"
         />
@@ -392,7 +393,7 @@
 </style>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, nextTick, computed } from 'vue'
+import { ref, onMounted, onUnmounted, nextTick } from 'vue'
 import type { Component } from 'vue'
 import { useI18n } from 'vue-i18n'
 import gsap from 'gsap'
@@ -418,10 +419,8 @@ const HOME_LAYOUT_COMPONENT_MAP: Record<ResolvedHomeLayout, Component> = {
     bento: LayoutCSections,
 } as const
 
-const layoutComponent = computed(() => {
-    const layout = resolveLayout(CURRENT_LAYOUT)
-    return HOME_LAYOUT_COMPONENT_MAP[layout]
-})
+const _resolvedLayout = resolveLayout(CURRENT_LAYOUT)
+const layoutComponent = HOME_LAYOUT_COMPONENT_MAP[_resolvedLayout]
 
 const backgroundImages = [
   '/images/Image_1764466849.avif',

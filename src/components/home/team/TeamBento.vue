@@ -727,5 +727,6 @@ function generateAllPositions(
 
 onUnmounted(() => {
     ctx?.revert()
+    ScrollTrigger.refresh()
 })
 </script>

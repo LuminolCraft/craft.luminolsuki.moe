@@ -751,5 +751,6 @@ onMounted(async () => {
 
 onUnmounted(() => {
     ctx?.revert()
+    ScrollTrigger.refresh()
 })
 </script>
