@@ -22,7 +22,17 @@
         </h2>
         <div class="news-date">{{ formatDate(newsItem.date) }}</div>
         <div class="news-tags">
-          <span v-for="tag in newsItem.tags" :key="tag" class="tag">{{ tag }}</span>
+          <span
+            v-for="tag in newsItem.tags"
+            :key="tag"
+            class="tag"
+            role="button"
+            tabindex="0"
+            @click="goToTag(tag)"
+            @keydown.enter="goToTag(tag)"
+            >
+            {{ tag }}
+          </span>
         </div>
         <div
           v-if="hasImage(newsItem)"
@@ -617,228 +627,37 @@
 </style>
 
 <script lang="ts">
-import { defineComponent, ref, onMounted, onUnmounted, computed, watch, nextTick } from 'vue';
+import {
+  defineComponent,
+  ref,
+  onMounted,
+  onUnmounted,
+  computed,
+  watch,
+  nextTick,
+} from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { marked } from 'marked';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { SplitText } from 'gsap/SplitText';
 import { Flip } from 'gsap/Flip';
-import Navbar from '../components/Navbar.vue';
-import Footer from '../components/Footer.vue';
 import { useGsap } from '@/composables/useGsap';
 import { EASINGS, DURATIONS, STAGGERS } from '@/gsap';
-
-// 类型定义
-interface NewsItem {
-  id: number;
-  title: string;
-  content: string;
-  markdownContent?: string;
-  date: string;
-  tags: string[];
-  image?: string;
-  additionalImages?: string[];
-  pinned?: boolean;
-}
-
-// 复用 NewsManager 的核心逻辑
-class NewsDetailManager {
-  allNewsWithContent: NewsItem[] = [];
-  NEWS_STORAGE_KEY = 'session_news_data';
-  CACHE_DURATION = 2 * 60 * 60 * 1000; // 2小时
-  GITHUB_RAW_BASE = 'https://luminolcraft-news.pages.dev/';
-  GITEJSON_URL = 'https://luminolcraft-news.pages.dev/news.json';
-  SITE_DOMAIN = window.location.hostname || '';
-
-  debugLog(...args: any[]) {
-    if ((window as any).debugMode) {
-      console.log(...args);
-    }
-  }
-
-  initFromStorage() {
-    const stored = sessionStorage.getItem(this.NEWS_STORAGE_KEY);
-    if (stored) {
-      try {
-        const parsed: NewsItem[] = JSON.parse(stored);
-        if (this.validateNewsData(parsed)) {
-          this.allNewsWithContent = parsed;
-          this.debugLog('从sessionStorage恢复新闻数据');
-        } else {
-          sessionStorage.removeItem(this.NEWS_STORAGE_KEY);
-        }
-      } catch (e) {
-        console.error('解析sessionStorage数据失败', e);
-        sessionStorage.removeItem(this.NEWS_STORAGE_KEY);
-      }
-    }
-  }
-
-  validateNewsData(data: any): data is NewsItem[] {
-    if (!Array.isArray(data)) return false;
-    if (data.length > 1000) return false;
-    for (const item of data) {
-      if (!item || typeof item !== 'object') return false;
-      if (!item.id || !item.title || !item.content) return false;
-    }
-    return true;
-  }
-
-  convertGitHubUrlToCloudflare(contentUrl: string): string | null {
-    if (!contentUrl.startsWith('http')) {
-      return `${this.GITHUB_RAW_BASE}${contentUrl}`;
-    }
-    if (contentUrl.includes('raw.githubusercontent.com/LuminolCraft/news.json')) {
-      const path = contentUrl.split('raw.githubusercontent.com/LuminolCraft/news.json')[1];
-      if (!path) {
-        return contentUrl;
-      }
-      const cleanPath = path.replace('/refs/heads/main', '');
-      return `${this.GITHUB_RAW_BASE}${cleanPath}`;
-    }
-    if (contentUrl.includes('raw.githubusercontent.com/LuminolMC/Luminol')) {
-      this.debugLog('检测到LuminolMC仓库URL，跳过加载:', contentUrl);
-      return null;
-    }
-    return contentUrl;
-  }
-
-  async preloadMarkdownContent(newsData: NewsItem[]) {
-    const now = Date.now();
-    const cached = localStorage.getItem('news-full-cache');
-    const timestamp = localStorage.getItem('news-full-cache-timestamp');
-    if (cached && timestamp && now - parseInt(timestamp) < this.CACHE_DURATION) {
-      this.allNewsWithContent = JSON.parse(cached);
-      this.debugLog('🗄️ 使用缓存的完整新闻数据');
-      sessionStorage.setItem(this.NEWS_STORAGE_KEY, JSON.stringify(this.allNewsWithContent));
-      return;
-    }
-    for (const item of newsData) {
-      const fullContentUrl = this.convertGitHubUrlToCloudflare(item.content);
-      if (fullContentUrl === null) {
-        item.markdownContent = '内容不可用';
-        continue;
-      }
-      try {
-        const response = await fetch(fullContentUrl, { cache: 'no-store' });
-        if (!response.ok) throw new Error(`无法加载: ${fullContentUrl} (状态: ${response.status})`);
-        const markdownContent = await response.text();
-        item.markdownContent = markdownContent || '暂无内容';
-        item.additionalImages = item.additionalImages?.filter((url) => url && url.trim() !== '') || [];
-      } catch (error) {
-        console.error(`❌ 预加载新闻 ${item.id} 失败:`, error);
-        item.markdownContent = '内容加载失败';
-      }
-    }
-    this.allNewsWithContent = newsData;
-    localStorage.setItem('news-full-cache', JSON.stringify(this.allNewsWithContent));
-    localStorage.setItem('news-full-cache-timestamp', now.toString());
-    sessionStorage.setItem(this.NEWS_STORAGE_KEY, JSON.stringify(this.allNewsWithContent));
-  }
-
-  async safeFetch(url: string, options: RequestInit = {}): Promise<Response> {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000);
-    try {
-      const response = await fetch(url, {
-        ...options,
-        signal: controller.signal,
-        headers: {
-          Accept: 'application/json, text/plain, */*',
-          ...options.headers,
-        },
-      });
-      clearTimeout(timeoutId);
-      return response;
-    } catch (error) {
-      clearTimeout(timeoutId);
-      if ((error as Error).name === 'AbortError') {
-        throw new Error('请求超时');
-      }
-      throw error;
-    }
-  }
-
-  async initializeApp() {
-    try {
-      this.debugLog('📡 正在加载新闻数据...');
-      const response = await this.safeFetch(this.GITEJSON_URL, { cache: 'no-store' });
-      if (!response.ok) {
-        throw new Error(`无法加载 news.json: ${response.status} - ${response.statusText}`);
-      }
-      const data: NewsItem[] = await response.json();
-      if (!this.validateNewsData(data)) {
-        throw new Error('数据验证失败，可能存在安全风险');
-      }
-      this.debugLog('✅ news.json 加载成功');
-      await this.preloadMarkdownContent(data);
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      console.error('初始化加载 news.json 失败:', errorMessage);
-      throw error;
-    }
-  }
-
-  getNewsById(id: number): NewsItem | undefined {
-    return this.allNewsWithContent.find((item) => item.id === id);
-  }
-
-  initMarked() {
-    if (typeof marked === 'undefined') {
-      console.warn('marked 库未加载');
-      return false;
-    }
-    const renderer = new (marked.Renderer as any)();
-    renderer.link = ({ href, title, tokens }: any) => {
-      const text = this.parseTokens(tokens);
-      const isValidHref = typeof href === 'string' && href.trim() !== '';
-      const isExternal =
-        isValidHref &&
-        !href.startsWith('/') &&
-        !href.includes(this.SITE_DOMAIN) &&
-        !href.startsWith('#');
-      const svgIcon = isExternal
-        ? `<svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1.5" style="width: 18px; height: 18px; margin-left: 8px; vertical-align: sub;" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"></path></svg>`
-        : '';
-      if (!isValidHref) return text;
-      const titleAttr = title && title !== 'undefined' ? `title="${title}"` : '';
-      return `<a href="${href}" ${titleAttr} class="${
-        isExternal ? 'external-link' : ''
-      }">${text}${svgIcon}</a>`;
-    };
-    marked.setOptions({ renderer });
-    return true;
-  }
-
-  parseTokens(tokens: any[]): string {
-    if (!tokens || !Array.isArray(tokens)) return '';
-    return tokens.map((token: any) => {
-      if (token.type === 'text' || token.type === 'codespan') {
-        return token.text || '';
-      } else if (token.type === 'strong' || token.type === 'em') {
-        return this.parseTokens(token.tokens);
-      } else if (token.type === 'link') {
-        return this.parseTokens(token.tokens);
-      } else if (token.type === 'image') {
-        return token.text || '';
-      }
-      return '';
-    }).join('');
-  }
-}
+import { NewsManager } from '@/utils/news/news-manager';
+import type { NewsItem } from '@/types/news';
 
 export default defineComponent({
   name: 'NewsDetail',
-  components: {
-    Navbar,
-    Footer,
-  },
+
   setup() {
     const route = useRoute();
     const router = useRouter();
     const { t, locale } = useI18n();
-    const newsManager = new NewsDetailManager();
+
+    // 详情页单独实例：只读缓存 + 按需补正文，不挂列表页的 focus/定时器
+    const newsManager = new NewsManager();
+
     const loading = ref(true);
     const error = ref<string | null>(null);
     const newsItem = ref<NewsItem | null>(null);
@@ -846,7 +665,6 @@ export default defineComponent({
     const currentLightboxImage = ref('');
     const currentLightboxIndex = ref(0);
 
-    // GSAP / Flip 相关 refs
     const articleRef = ref<HTMLElement | null>(null);
     const progressBarRef = ref<HTMLElement | null>(null);
     const lightboxImageRef = ref<HTMLImageElement | null>(null);
@@ -859,8 +677,8 @@ export default defineComponent({
       if (!id) return null;
       const idStr = Array.isArray(id) ? id[0] : id;
       if (!idStr) return null;
-      const parsed = parseInt(idStr);
-      return isNaN(parsed) ? null : parsed;
+      const parsed = parseInt(String(idStr), 10);
+      return Number.isNaN(parsed) ? null : parsed;
     });
 
     const renderedContent = computed(() => {
@@ -878,59 +696,72 @@ export default defineComponent({
 
     const hasNextImage = computed(() => {
       if (!newsItem.value?.additionalImages) return false;
-      return currentLightboxIndex.value < newsItem.value.additionalImages!.length - 1;
+      return (
+        currentLightboxIndex.value <
+        newsItem.value.additionalImages!.length - 1
+      );
     });
 
     const formatDate = (dateString: string) => {
       return new Date(dateString).toLocaleDateString(locale.value);
     };
 
-    const hasImage = (item: NewsItem) => {
-      return (
-        item.image &&
-        item.image.trim() !== '' &&
-        item.image !== '""' &&
-        cleanImageUrl(item.image).match(/^https?:\/\/.+\.(jpg|jpeg|png|gif|webp)$/i)
-      );
-    };
-
     const cleanImageUrl = (url: string | undefined) => {
       return url ? url.replace(/['"]/g, '') : '';
     };
 
+    const hasImage = (item: NewsItem) => {
+      return Boolean(
+        item.image &&
+          item.image.trim() !== '' &&
+          item.image !== '""' &&
+          cleanImageUrl(item.image).match(
+            /^https?:\/\/.+\.(jpg|jpeg|png|gif|webp|avif)(\?.*)?$/i,
+          ),
+      );
+    };
+
     const handleImageError = (event: Event) => {
       const img = event.target as HTMLImageElement;
-      img.src = 'https://via.placeholder.com/200x150/9e94d8/ffffff?text=附加图片不可用';
+      img.src =
+        'https://via.placeholder.com/200x150/9e94d8/ffffff?text=附加图片不可用';
     };
 
     const handleLightboxImageError = (event: Event) => {
       const img = event.target as HTMLImageElement;
-      img.src = 'https://via.placeholder.com/300x200/9e94d8/ffffff?text=图片不可用';
+      img.src =
+        'https://via.placeholder.com/300x200/9e94d8/ffffff?text=图片不可用';
     };
 
-    // 点击图片：使用 Flip 插件优雅地展开为全屏 lightbox
-    const openLightbox = async (imgUrl: string, index: number, event: MouseEvent) => {
+    const openLightbox = async (
+      imgUrl: string,
+      index: number,
+      event: MouseEvent,
+    ) => {
       currentLightboxImage.value = imgUrl;
       currentLightboxIndex.value = index;
+
       if (reduceMotion()) {
         lightboxVisible.value = true;
         document.body.style.overflow = 'hidden';
         return;
       }
-      // 捕获被点击缩略图的初始状态（用于 Flip 展开）
+
       const target = event.currentTarget as HTMLElement | null;
-      const thumbImg = (target?.querySelector('img') as HTMLImageElement | null) ?? null;
+      const thumbImg =
+        (target?.querySelector('img') as HTMLImageElement | null) ?? null;
       if (thumbImg) {
         thumbImg.setAttribute('data-flip-id', FLIP_ID);
         flipState.value = Flip.getState(thumbImg);
         thumbImg.removeAttribute('data-flip-id');
       }
+
       lightboxVisible.value = true;
       document.body.style.overflow = 'hidden';
+
       if (flipState.value) {
         await nextTick();
         if (lightboxImageRef.value) {
-          // lightbox 图片在模板中带有相同的 data-flip-id，Flip.from 会将其从缩略图位置展开到全屏位置
           Flip.from(flipState.value, {
             duration: DURATIONS.slow,
             ease: EASINGS.smooth,
@@ -940,7 +771,6 @@ export default defineComponent({
       }
     };
 
-    // 关闭 lightbox：使用 Flip 从全屏位置收缩回缩略图位置
     const closeLightbox = () => {
       if (reduceMotion() || !lightboxImageRef.value || !flipState.value) {
         lightboxVisible.value = false;
@@ -948,12 +778,16 @@ export default defineComponent({
         flipState.value = null;
         return;
       }
-      // 捕获当前 lightbox 图片状态，然后移除 lightbox（DOM 变化），再让缩略图作为目标收缩回去
+
       const closingState = Flip.getState(lightboxImageRef.value);
       lightboxVisible.value = false;
       document.body.style.overflow = '';
-      const thumbs = document.querySelectorAll<HTMLImageElement>('#news-detail .gallery-item img');
+
+      const thumbs = document.querySelectorAll<HTMLImageElement>(
+        '#news-detail .gallery-item img',
+      );
       const thumbImg = thumbs[currentLightboxIndex.value] ?? null;
+
       if (thumbImg) {
         thumbImg.setAttribute('data-flip-id', FLIP_ID);
         nextTick(() => {
@@ -976,9 +810,9 @@ export default defineComponent({
     const prevImage = () => {
       if (!newsItem.value?.additionalImages || !hasPreviousImage.value) return;
       currentLightboxIndex.value--;
-      const images = newsItem.value.additionalImages;
-      const imageUrl = images?.[currentLightboxIndex.value];
-      if (imageUrl && typeof imageUrl === 'string') {
+      const imageUrl =
+        newsItem.value.additionalImages[currentLightboxIndex.value];
+      if (typeof imageUrl === 'string') {
         currentLightboxImage.value = imageUrl;
       }
     };
@@ -986,45 +820,81 @@ export default defineComponent({
     const nextImage = () => {
       if (!newsItem.value?.additionalImages || !hasNextImage.value) return;
       currentLightboxIndex.value++;
-      const images = newsItem.value.additionalImages;
-      const imageUrl = images?.[currentLightboxIndex.value];
-      if (imageUrl && typeof imageUrl === 'string') {
+      const imageUrl =
+        newsItem.value.additionalImages[currentLightboxIndex.value];
+      if (typeof imageUrl === 'string') {
         currentLightboxImage.value = imageUrl;
       }
     };
 
-    const retryLoad = async () => {
-      error.value = null;
-      loading.value = true;
-      await loadNews();
+    const initCodeHighlight = () => {
+      if (typeof (window as any).hljs !== 'undefined') {
+        setTimeout(() => {
+          (window as any).hljs.highlightAll();
+        }, 100);
+        return;
+      }
+
+      const script = document.createElement('script');
+      script.src =
+        'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js';
+      script.onload = () => {
+        const languages = [
+          'gradle',
+          'bash',
+          'shell',
+          'yaml',
+          'json',
+          'xml',
+          'javascript',
+          'java',
+          'python',
+          'css',
+          'sql',
+        ];
+        languages.forEach((lang) => {
+          const langScript = document.createElement('script');
+          langScript.src = `https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/${lang}.min.js`;
+          document.head.appendChild(langScript);
+        });
+        setTimeout(() => {
+          (window as any).hljs.highlightAll();
+        }, 500);
+      };
+      document.head.appendChild(script);
+
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href =
+        'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css';
+      document.head.appendChild(link);
     };
 
+    /** 详情页加载：IndexedDB → 必要时同步 → 补正文 */
     const loadNews = async () => {
       try {
         loading.value = true;
         error.value = null;
-        newsManager.initFromStorage();
-        if (newsManager.allNewsWithContent.length === 0) {
-          await newsManager.initializeApp();
-        }
+
+        await newsManager.restoreCachePublic();
+
         const id = newsId.value;
         if (!id) {
           error.value = t('news.detail.error.invalidId');
           loading.value = false;
           return;
         }
-        const item = newsManager.getNewsById(id);
+
+        const item = await newsManager.ensureArticleContent(id);
         if (!item) {
           error.value = t('news.detail.error.notFound');
           loading.value = false;
           return;
         }
+
         newsItem.value = item;
-        // 设置页面标题
         document.title = `${item.title} - LuminolCraft`;
-        // 初始化 marked
         newsManager.initMarked();
-        // 初始化代码高亮
         await nextTick();
         initCodeHighlight();
         loading.value = false;
@@ -1035,46 +905,28 @@ export default defineComponent({
       }
     };
 
-    const initCodeHighlight = () => {
-      // 等待 highlight.js 加载
-      if (typeof (window as any).hljs !== 'undefined') {
-        setTimeout(() => {
-          (window as any).hljs.highlightAll();
-        }, 100);
-      } else {
-        // 如果 highlight.js 未加载，尝试加载
-        const script = document.createElement('script');
-        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js';
-        script.onload = () => {
-          // 加载语言支持
-          const languages = ['gradle', 'bash', 'shell', 'yaml', 'json', 'xml', 'javascript', 'java', 'python', 'css', 'sql'];
-          languages.forEach((lang) => {
-            const langScript = document.createElement('script');
-            langScript.src = `https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/${lang}.min.js`;
-            document.head.appendChild(langScript);
-          });
-          setTimeout(() => {
-            (window as any).hljs.highlightAll();
-          }, 500);
-        };
-        document.head.appendChild(script);
-        // 加载样式
-        const link = document.createElement('link');
-        link.rel = 'stylesheet';
-        link.href = 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css';
-        document.head.appendChild(link);
-      }
+    const retryLoad = async () => {
+      error.value = null;
+      loading.value = true;
+      await loadNews();
     };
 
-    // 监听路由变化
+    /** 点击标签 → 列表页多标签筛选 URL */
+    const goToTag = (tag: string) => {
+      router.push({
+        // 按你路由表改：可能是 'News' / 'news'
+        name: 'News',
+        query: { tags: tag },
+      });
+    };
+
     watch(
       () => route.query.id,
       async () => {
         await loadNews();
-      }
+      },
     );
 
-    // 键盘事件处理
     const handleKeydown = (event: KeyboardEvent) => {
       if (!lightboxVisible.value) return;
       if (event.key === 'Escape') {
@@ -1095,30 +947,35 @@ export default defineComponent({
         if (!articleRef.value) return;
         const mm = gsap.matchMedia();
 
-        // 减少动画偏好：将所有元素设为可见终态
         mm.add('(prefers-reduced-motion: reduce)', () => {
           gsap.set(
             '#news-detail h2, .news-date, .news-tags, .news-img, #news-detail .news-content > *, .gallery-item',
-            { autoAlpha: 1, y: 0, yPercent: 0, rotateZ: 0, scale: 1 }
+            { autoAlpha: 1, y: 0, yPercent: 0, rotateZ: 0, scale: 1 },
           );
           gsap.set(progressBarRef.value, { scaleX: 0 });
         });
 
-        // 正常动画
         mm.add('(prefers-reduced-motion: no-preference)', () => {
-          // ============ 顶部阅读进度条 ============
-          gsap.set(progressBarRef.value, { transformOrigin: 'left center', scaleX: 0 });
+          gsap.set(progressBarRef.value, {
+            transformOrigin: 'left center',
+            scaleX: 0,
+          });
           ScrollTrigger.create({
             trigger: '#news-detail',
             start: 'top top',
             end: 'bottom bottom',
             scrub: true,
             onUpdate: (self) =>
-              gsap.to(progressBarRef.value, { scaleX: self.progress, duration: 0.1, overwrite: true }),
+              gsap.to(progressBarRef.value, {
+                scaleX: self.progress,
+                duration: 0.1,
+                overwrite: true,
+              }),
           });
 
-          // ============ 标题 SplitText 逐字入场 ============
-          const titleSplit = new SplitText('#news-detail h2', { type: 'chars,words' });
+          const titleSplit = new SplitText('#news-detail h2', {
+            type: 'chars,words',
+          });
           gsap.from(titleSplit.chars, {
             yPercent: 120,
             autoAlpha: 0,
@@ -1126,30 +983,39 @@ export default defineComponent({
             stagger: STAGGERS.parallaxChars,
             duration: DURATIONS.slow,
             ease: EASINGS.heroReveal,
-            scrollTrigger: { trigger: '#news-detail h2', start: 'top 85%', once: true },
+            scrollTrigger: {
+              trigger: '#news-detail h2',
+              start: 'top 85%',
+              once: true,
+            },
           });
 
-          // ============ 日期 / 标签 / 封面图 淡入上移 ============
           gsap.from('.news-date, .news-tags, .news-img', {
             autoAlpha: 0,
             y: 20,
             stagger: 0.1,
             duration: DURATIONS.entrance,
             ease: EASINGS.entrance,
-            scrollTrigger: { trigger: '#news-detail', start: 'top 75%', once: true },
+            scrollTrigger: {
+              trigger: '#news-detail',
+              start: 'top 75%',
+              once: true,
+            },
           });
 
-          // ============ 正文子元素（段落/列表/引用/表格/图片）顺序淡入 ============
           gsap.from('#news-detail .news-content > *', {
             autoAlpha: 0,
             y: 30,
             stagger: STAGGERS.list,
             duration: DURATIONS.entrance,
             ease: EASINGS.entrance,
-            scrollTrigger: { trigger: '.news-content', start: 'top 80%', once: true },
+            scrollTrigger: {
+              trigger: '.news-content',
+              start: 'top 80%',
+              once: true,
+            },
           });
 
-          // ============ 画廊缩略图批量入场 ============
           ScrollTrigger.batch('.gallery-item', {
             start: 'top 85%',
             batchMax: 6,
@@ -1163,13 +1029,15 @@ export default defineComponent({
                 ease: EASINGS.entrance,
                 overwrite: true,
               }),
-            onLeaveBack: (batch) => gsap.set(batch, { autoAlpha: 1, y: 0, scale: 1 }),
+            onLeaveBack: (batch) =>
+              gsap.set(batch, { autoAlpha: 1, y: 0, scale: 1 }),
           });
         });
       });
     });
 
     onUnmounted(() => {
+      // 详情页没有调用 init()，不要 dispose()（否则误清别人的监听也无妨，但这里本就没注册）
       document.removeEventListener('keydown', handleKeydown);
       document.body.style.overflow = '';
     });
@@ -1194,6 +1062,7 @@ export default defineComponent({
       prevImage,
       nextImage,
       retryLoad,
+      goToTag,
       articleRef,
       progressBarRef,
       lightboxImageRef,
