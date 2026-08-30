@@ -1,7 +1,7 @@
 <template>
     <!--
         TeamBento — 球状头像散布 + 光标排斥互动 + 安全区保护
-        从 LayoutCSections.vue 提取，contributors 数据来自 @/config/team-members
+        contributors 数据来自 @/config/team-members
         微调点索引见 <script setup> 顶部注释
     -->
     <section ref="sectionRef" class="team-section">

@@ -1,7 +1,7 @@
 <template>
     <!--
         TeamCinema — 影院式非对称四角构图 + bg-layer 视差 + Pin-Scrub
-        从 LayoutBSections.vue 提取，contributors 数据来自 @/config/team-members
+        contributors 数据来自 @/config/team-members
         微调点索引见 <script setup> 顶部注释
     -->
     <section ref="sectionRef" class="team-section">
