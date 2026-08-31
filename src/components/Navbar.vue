@@ -86,7 +86,6 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import TocToggles from './TocToggles.vue'
 import { appConfig } from '../config/app-config'
 import { useGsap } from '@/composables/useGsap'
-import { EASINGS, DURATIONS } from '@/gsap'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -108,14 +107,14 @@ function setMenuInstant(open: boolean) {
   if (open) {
     gsap.set(overlay.value, { autoAlpha: 1 })
     gsap.set(sideNav.value, { xPercent: 0, autoAlpha: 1 })
-    gsap.set(burgerLines[0]!, { rotate: 45, y: 8 })
-    gsap.set(burgerLines[1]!, { autoAlpha: 0 })
-    gsap.set(burgerLines[2]!, { rotate: -45, y: -8 })
+    gsap.set(burgerLines[0]!, { rotate: 45, y: 7 })
+    gsap.set(burgerLines[1]!, { autoAlpha: 0, scale: 0 })
+    gsap.set(burgerLines[2]!, { rotate: -45, y: -7 })
   } else {
     gsap.set(overlay.value, { autoAlpha: 0 })
     gsap.set(sideNav.value, { xPercent: -100, autoAlpha: 0 })
     gsap.set(burgerLines[0]!, { rotate: 0, y: 0 })
-    gsap.set(burgerLines[1]!, { autoAlpha: 1 })
+    gsap.set(burgerLines[1]!, { autoAlpha: 1, scale: 1 })
     gsap.set(burgerLines[2]!, { rotate: 0, y: 0 })
   }
 }
@@ -127,8 +126,11 @@ function onBurgerChange() {
     setMenuInstant(open)
     return
   }
-  if (open) sidebarTimeline?.play()
-  else sidebarTimeline?.reverse()
+  if (open) {
+    sidebarTimeline?.play()
+  } else {
+    sidebarTimeline?.reverse()
+  }
 }
 
 function closeSidebar() {
@@ -171,7 +173,7 @@ onMounted(() => {
   create((g) => {
     const mm = g.matchMedia()
 
-    // --- 桌面端：滚动感知背景 ---
+    // --- 桌面端：滚动感知背景（保持不变） ---
     mm.add('(min-width: 1024px)', () => {
       ScrollTrigger.create({
         start: 'top -50px',
@@ -186,7 +188,7 @@ onMounted(() => {
       })
     })
 
-    // --- 移动端：侧边栏 + 汉堡按钮变形成 X ---
+    // --- 移动端：优化后的侧边栏动画 ---
     mm.add('(max-width: 896px)', () => {
       if (!sideNav.value || !overlay.value) return
 
@@ -197,39 +199,56 @@ onMounted(() => {
       g.set(overlay.value, { autoAlpha: 0 })
       g.set(sideNav.value, { xPercent: -100, autoAlpha: 0 })
 
-      sidebarTimeline = g.timeline({ paused: true })
+      // 🚀 优化动画：更快、更协调
+      sidebarTimeline = g.timeline({
+        paused: true,
+        defaults: {
+          ease: 'power3.out', // 更干脆的缓动
+        },
+      })
+        // 1. overlay 淡入（稍慢，营造氛围）
         .to(overlay.value, {
           autoAlpha: 1,
-          duration: DURATIONS.standard,
-          ease: EASINGS.smooth,
+          duration: 0.25,
+          ease: 'power2.out',
         }, 0)
+        // 2. 侧边栏滑入（主动画，稍快）
         .fromTo(sideNav.value,
           { xPercent: -100, autoAlpha: 0 },
           {
             xPercent: 0,
             autoAlpha: 1,
-            duration: DURATIONS.slow,
-            ease: EASINGS.heroReveal,
+            duration: 0.35,
+            ease: 'power3.out',
           },
-          0,
+          0.05, // 比 overlay 晚 0.05s，有层次感
         )
+        // 3. 三条 span 的错落动画（每条间隔 0.04s）
+        // 第1条：旋转 + 上移
         .to(burgerLines[0]!, {
           rotate: 45,
-          y: 8,
-          duration: DURATIONS.hover,
-          ease: EASINGS.hover,
+          y: 7,
+          duration: 0.2,
+          ease: 'power2.out',
         }, 0)
+        // 第2条：淡出 + 缩小（0.1s 延迟，让中间那条消失得优雅）
         .to(burgerLines[1]!, {
           autoAlpha: 0,
-          duration: DURATIONS.hover,
-          ease: EASINGS.hover,
-        }, '-=0.1')
+          scale: 0.4,
+          duration: 0.15,
+          ease: 'power2.out',
+        }, 0.06)
+        // 第3条：旋转 + 下移（比第1条晚 0.06s，形成波浪）
         .to(burgerLines[2]!, {
           rotate: -45,
-          y: -8,
-          duration: DURATIONS.hover,
-          ease: EASINGS.hover,
-        }, '-=0.1')
+          y: -7,
+          duration: 0.2,
+          ease: 'power2.out',
+        }, 0.08)
+
+      // 关闭动画：只需要反向播放，GSAP 会自动反转所有 tweens
+      // 但如果希望关闭比打开更快，可以设置 reverse 的速度
+      sidebarTimeline.timeScale(1.2) // 整体加速 1.2 倍
     })
   })
 
