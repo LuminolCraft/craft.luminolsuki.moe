@@ -26,7 +26,7 @@ export const appConfig: AppConfig = {
   showFooterCopyright: true,
   newsPagination: {
     desktopItemsPerPage: 6,
-    mobileItemsPerPage: 2,
+    mobileItemsPerPage: 6,
     maxDisplayedPages: 5
   }
 };
