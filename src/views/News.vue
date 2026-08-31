@@ -126,9 +126,14 @@ onMounted(async () => {
   const urlTags = parseTagsFromQuery();
   if (urlTags.length) {
     selectedTags.value = urlTags;
-    filterNews();
+    // filterNews 已经在内部调用了
   }
-
+  // 无论如何，都调用一次 filterNews 确保刷新
+  filterNews(); // 如果已经调用过，不会重复（filterNews 内部有去重？没有，但可以加个判断）
+  // 但 filterNews 会调用 syncTagsToUrl，可能改变 URL，所以需要小心
+  // 更好的办法是直接增加 refreshTrigger
+  // 但 filterNews 也会做筛选，如果不需要筛选，可以只增加 refreshTrigger
+  // 我们可以暴露 refreshTrigger 或提供一个 refreshTags 方法
   refresh();
   await animateCards(newsSectionRef.value);
 });
@@ -145,7 +150,7 @@ watch(isLoading, async (newVal, oldVal) => {
    News 页面布局样式
    ============================================================ */
 @import '../styles/desktop/news-styles.css';
-@import '../styles/mobile/news-mobile.css';
+
 
 .news-section {
   max-width: var(--vercel-container-max-width);

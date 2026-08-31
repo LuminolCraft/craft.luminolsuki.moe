@@ -57,6 +57,28 @@
 .home-root {
     position: relative;
 }
+/* 新增：排除 hero 背景不参与 View Transitions */ 
+
+.header-background {
+    view-transition-name: none !important;
+}
+
+.hero-overlay {
+    view-transition-name: none !important;
+}
+
+.hero-section {
+    view-transition-name: none !important;
+}
+.hero-section::after {
+  view-transition-name: none !important;
+}
+.hero-section,
+.hero-overlay,
+.header-background,
+.hero-section::after {
+  view-transition-name: none !important;
+}
 
 .noise-overlay {
     position: fixed;
@@ -121,7 +143,8 @@
     right: 0;
     bottom: 0;
     height: var(--reveal-size, 0px);
-    background: linear-gradient(to bottom, transparent, var(--background-color));
+    background: linear-gradient(to bottom, transparent, rgba(11, 14, 23, 0.6));
+    /* 固定深色半透明，不随主题变化，避免 View Transitions 覆盖 */
     pointer-events: none;
     z-index: 1;
 }
