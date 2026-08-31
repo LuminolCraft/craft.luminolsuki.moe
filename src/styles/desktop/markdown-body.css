@@ -1,0 +1,475 @@
+/**
+ * Markdown 正文样式
+ *
+ * 适用于 unified (remark + rehype) 渲染的 Markdown 内容。
+ * 容器需要添加 .markdown-body 类名。
+ */
+
+.markdown-body {
+  font-size: 1.0625rem;
+  line-height: 1.75;
+  color: var(--text-color, #171717);
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+html[data-theme='dark'] .markdown-body {
+  color: var(--text-color, #f2eefc);
+}
+
+/* ========== 标题 ========== */
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3,
+.markdown-body h4,
+.markdown-body h5,
+.markdown-body h6 {
+  position: relative;
+  font-weight: var(--font-weight-semibold, 600);
+  line-height: 1.3;
+  color: var(--text-color, #171717);
+  margin-top: 2em;
+  margin-bottom: 0.75em;
+  scroll-margin-top: 100px;
+}
+
+html[data-theme='dark'] .markdown-body h1,
+html[data-theme='dark'] .markdown-body h2,
+html[data-theme='dark'] .markdown-body h3,
+html[data-theme='dark'] .markdown-body h4,
+html[data-theme='dark'] .markdown-body h5,
+html[data-theme='dark'] .markdown-body h6 {
+  color: var(--text-color, #f2eefc);
+}
+
+.markdown-body h1 {
+  font-size: 2rem;
+  padding-bottom: 0.5em;
+  border-bottom: 1px solid var(--glass-border, rgba(158, 148, 216, 0.3));
+}
+
+.markdown-body h2 {
+  font-size: 1.625rem;
+  padding-bottom: 0.4em;
+  border-bottom: 1px solid var(--glass-border, rgba(158, 148, 216, 0.2));
+}
+
+.markdown-body h3 {
+  font-size: 1.375rem;
+}
+
+.markdown-body h4 {
+  font-size: 1.125rem;
+}
+
+.markdown-body h5 {
+  font-size: 1rem;
+}
+
+.markdown-body h6 {
+  font-size: 0.875rem;
+  color: var(--text-secondary, rgba(60, 60, 60, 0.66));
+}
+
+.markdown-body > h1:first-child,
+.markdown-body > h2:first-child,
+.markdown-body > h3:first-child {
+  margin-top: 0;
+}
+
+/* 标题锚点链接 */
+.markdown-body .heading-anchor {
+  position: absolute;
+  left: -1.2em;
+  top: 50%;
+  transform: translateY(-50%);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  text-decoration: none;
+  color: var(--text-secondary, rgba(60, 60, 60, 0.4));
+  font-weight: normal;
+  padding: 0 0.2em;
+}
+
+.markdown-body h1:hover .heading-anchor,
+.markdown-body h2:hover .heading-anchor,
+.markdown-body h3:hover .heading-anchor,
+.markdown-body h4:hover .heading-anchor,
+.markdown-body h5:hover .heading-anchor,
+.markdown-body h6:hover .heading-anchor {
+  opacity: 1;
+}
+
+.markdown-body .heading-anchor:hover {
+  color: var(--primary-color, #a78bfa);
+}
+
+.markdown-body .heading-anchor-icon {
+  font-size: 0.8em;
+}
+
+/* ========== 段落 ========== */
+.markdown-body p {
+  margin-top: 0;
+  margin-bottom: 1.25em;
+  color: var(--text-color, #171717);
+}
+
+html[data-theme='dark'] .markdown-body p {
+  color: var(--text-color, #f2eefc);
+}
+
+/* ========== 链接 ========== */
+.markdown-body a {
+  color: var(--primary-color, #a78bfa);
+  text-decoration: none;
+  font-weight: var(--font-weight-medium, 500);
+  transition: color 0.2s ease;
+  border-bottom: 1px dashed var(--glass-border, rgba(158, 148, 216, 0.5));
+}
+
+.markdown-body a:hover {
+  color: var(--button-hover, #c4b5fd);
+  border-bottom-color: var(--primary-color, #a78bfa);
+}
+
+/* 外部链接标识 */
+.markdown-body a.external-link::after {
+  content: '';
+  display: inline-block;
+  width: 0.75em;
+  height: 0.75em;
+  margin-left: 0.25em;
+  vertical-align: middle;
+  background: currentColor;
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3Cpolyline points='15 3 21 3 21 9'/%3E%3Cline x1='10' y1='14' x2='21' y2='3'/%3E%3C/svg%3E");
+  mask-size: contain;
+  mask-repeat: no-repeat;
+  mask-position: center;
+  opacity: 0.6;
+}
+
+/* ========== 列表 ========== */
+.markdown-body ul,
+.markdown-body ol {
+  margin-top: 0;
+  margin-bottom: 1.25em;
+  padding-left: 1.75em;
+}
+
+.markdown-body li {
+  margin-bottom: 0.4em;
+  line-height: 1.7;
+}
+
+.markdown-body li > ul,
+.markdown-body li > ol {
+  margin-top: 0.4em;
+  margin-bottom: 0;
+}
+
+.markdown-body ul li::marker {
+  color: var(--primary-color, #a78bfa);
+}
+
+.markdown-body ol li::marker {
+  color: var(--primary-color, #a78bfa);
+  font-weight: var(--font-weight-semibold, 600);
+}
+
+/* 任务列表 */
+.markdown-body li:has(input[type='checkbox']) {
+  list-style: none;
+  margin-left: -1.5em;
+}
+
+.markdown-body input[type='checkbox'] {
+  margin-right: 0.5em;
+  accent-color: var(--primary-color, #a78bfa);
+}
+
+/* ========== 引用块 ========== */
+.markdown-body blockquote {
+  margin: 1.5em 0;
+  padding: 0.75em 1.25em;
+  border-left: 4px solid var(--primary-color, #a78bfa);
+  background: var(--glass-bg, rgba(158, 148, 216, 0.08));
+  border-radius: 0 var(--radius-comfortable, 8px) var(--radius-comfortable, 8px) 0;
+  color: var(--text-secondary, rgba(60, 60, 60, 0.8));
+}
+
+html[data-theme='dark'] .markdown-body blockquote {
+  color: var(--text-secondary, rgba(200, 200, 200, 0.8));
+}
+
+.markdown-body blockquote > :first-child {
+  margin-top: 0;
+}
+
+.markdown-body blockquote > :last-child {
+  margin-bottom: 0;
+}
+
+.markdown-body blockquote p {
+  color: inherit;
+}
+
+/* ========== 代码 ========== */
+.markdown-body code {
+  font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace);
+  font-size: 0.875em;
+  background: var(--glass-bg, rgba(158, 148, 216, 0.1));
+  color: var(--primary-color, #a78bfa);
+  padding: 0.15em 0.4em;
+  border-radius: var(--radius-subtle, 4px);
+  border: 1px solid var(--glass-border, rgba(158, 148, 216, 0.2));
+}
+
+.markdown-body pre {
+  margin: 1.5em 0;
+  padding: 1.25em;
+  background: var(--card-bg, #1e1e2e);
+  border-radius: var(--radius-comfortable, 8px);
+  overflow-x: auto;
+  overflow-y: hidden;
+  box-shadow: var(--shadow-card, 0 4px 12px rgba(0, 0, 0, 0.1));
+  border: 1px solid var(--glass-border, rgba(158, 148, 216, 0.2));
+}
+
+.markdown-body pre code {
+  display: block;
+  background: transparent;
+  border: none;
+  padding: 0;
+  color: var(--text-color, #e4e4e7);
+  font-size: 0.875rem;
+  line-height: 1.6;
+  white-space: pre;
+  word-break: normal;
+}
+
+/* highlight.js 主题适配 */
+.markdown-body pre code.hljs {
+  background: transparent;
+  padding: 0;
+}
+
+/* 代码块滚动条 */
+.markdown-body pre::-webkit-scrollbar {
+  height: 6px;
+}
+
+.markdown-body pre::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.markdown-body pre::-webkit-scrollbar-thumb {
+  background: var(--glass-border, rgba(158, 148, 216, 0.3));
+  border-radius: 3px;
+}
+
+.markdown-body pre::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-color, #a78bfa);
+}
+
+/* ========== 表格 ========== */
+.markdown-body table {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  margin: 1.5em 0;
+  border-collapse: collapse;
+  border-spacing: 0;
+  border-radius: var(--radius-comfortable, 8px);
+  overflow: hidden;
+  box-shadow: var(--shadow-border, rgba(0, 0, 0, 0.08) 0px 0px 0px 1px);
+  font-size: 0.9375rem;
+}
+
+.markdown-body thead {
+  background: var(--glass-bg, rgba(158, 148, 216, 0.1));
+}
+
+.markdown-body th,
+.markdown-body td {
+  padding: 0.75em 1em;
+  text-align: left;
+  border-bottom: 1px solid var(--glass-border, rgba(158, 148, 216, 0.2));
+  color: var(--text-color, #171717);
+}
+
+html[data-theme='dark'] .markdown-body th,
+html[data-theme='dark'] .markdown-body td {
+  color: var(--text-color, #f2eefc);
+}
+
+.markdown-body th {
+  font-weight: var(--font-weight-semibold, 600);
+  font-size: 0.8125rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary, rgba(60, 60, 60, 0.7));
+}
+
+.markdown-body tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.markdown-body tbody tr:hover {
+  background: var(--glass-bg, rgba(158, 148, 216, 0.06));
+}
+
+/* 表格对齐 */
+.markdown-body th[align='center'],
+.markdown-body td[align='center'] {
+  text-align: center;
+}
+
+.markdown-body th[align='right'],
+.markdown-body td[align='right'] {
+  text-align: right;
+}
+
+/* ========== 图片 ========== */
+.markdown-body img {
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--radius-image, 12px);
+  box-shadow: var(--shadow-card, 0 4px 12px rgba(0, 0, 0, 0.1));
+  display: block;
+  margin: 1.5em auto;
+}
+
+/* figure + figcaption */
+.markdown-body figure.md-figure {
+  margin: 1.5em 0;
+  text-align: center;
+}
+
+.markdown-body figure.md-figure img {
+  margin: 0 auto;
+}
+
+.markdown-body figcaption.md-figcaption {
+  margin-top: 0.75em;
+  font-size: 0.8125rem;
+  color: var(--text-secondary, rgba(60, 60, 60, 0.66));
+  font-style: italic;
+  text-align: center;
+}
+
+/* ========== 分隔线 ========== */
+.markdown-body hr {
+  margin: 2.5em 0;
+  border: none;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--primary-color, #a78bfa), transparent);
+  border-radius: 1px;
+}
+
+/* ========== 强调文本 ========== */
+.markdown-body strong {
+  font-weight: var(--font-weight-semibold, 600);
+  color: var(--text-color, #171717);
+}
+
+html[data-theme='dark'] .markdown-body strong {
+  color: var(--text-color, #f2eefc);
+}
+
+.markdown-body em {
+  font-style: italic;
+}
+
+.markdown-body del {
+  text-decoration: line-through;
+  color: var(--text-secondary, rgba(60, 60, 60, 0.5));
+}
+
+.markdown-body mark {
+  background: rgba(167, 139, 250, 0.2);
+  color: inherit;
+  padding: 0.1em 0.3em;
+  border-radius: var(--radius-subtle, 4px);
+}
+
+/* ========== 数学公式 (KaTeX) ========== */
+.markdown-body .katex {
+  font-size: 1.05em;
+}
+
+.markdown-body .katex-display {
+  margin: 1.5em 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0.5em 0;
+}
+
+.markdown-body .katex-display::-webkit-scrollbar {
+  height: 4px;
+}
+
+.markdown-body .katex-display::-webkit-scrollbar-thumb {
+  background: var(--glass-border, rgba(158, 148, 216, 0.3));
+  border-radius: 2px;
+}
+
+/* ========== 行内元素 ========== */
+.markdown-body sub,
+.markdown-body sup {
+  font-size: 0.75em;
+  line-height: 0;
+  position: relative;
+  vertical-align: baseline;
+}
+
+.markdown-body sup {
+  top: -0.5em;
+}
+
+.markdown-body sub {
+  bottom: -0.25em;
+}
+
+/* ========== 响应式 ========== */
+@media (max-width: 768px) {
+  .markdown-body {
+    font-size: 1rem;
+    line-height: 1.7;
+  }
+
+  .markdown-body h1 {
+    font-size: 1.625rem;
+  }
+
+  .markdown-body h2 {
+    font-size: 1.375rem;
+  }
+
+  .markdown-body h3 {
+    font-size: 1.25rem;
+  }
+
+  .markdown-body pre {
+    padding: 1em;
+  }
+
+  .markdown-body pre code {
+    font-size: 0.8125rem;
+  }
+
+  .markdown-body table {
+    font-size: 0.8125rem;
+  }
+
+  .markdown-body th,
+  .markdown-body td {
+    padding: 0.6em 0.75em;
+  }
+
+  /* 移动端隐藏标题锚点 */
+  .markdown-body .heading-anchor {
+    display: none;
+  }
+}
