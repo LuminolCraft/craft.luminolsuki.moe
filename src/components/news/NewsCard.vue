@@ -290,6 +290,71 @@
     min-width: 0;
     padding: 1.25rem 1.5rem;
   }
+
+  :deep(.list-mode) .news-item {
+  /* 列表模式：水平排列，封面在右侧 */
+  flex-direction: row !important;
+  min-height: 180px;
+}
+
+:deep(.list-mode) .news-item .news-item-body {
+  width: calc(100% - 30% - 1.5rem) !important;
+  max-width: calc(100% - 30% - 1.5rem) !important;
+  padding: 1.5rem 1.75rem !important;
+}
+
+:deep(.list-mode) .news-item .news-item-cover {
+  position: absolute !important;
+  top: 1rem;
+  right: 1rem;
+  bottom: 1rem;
+  width: 30% !important;
+  height: auto !important;
+  aspect-ratio: auto !important;
+  border-radius: 12px !important;
+  flex-shrink: 0;
+}
+
+:deep(.grid-mode) .news-item {
+  flex-direction: column-reverse !important;
+  height: 100% !important;
+  min-height: 360px;
+}
+
+:deep(.grid-mode) .news-item .news-item-body {
+  width: 100% !important;
+  max-width: 100% !important;
+  padding: 1.25rem 1.25rem !important;
+  flex: 1 1 auto;
+}
+
+:deep(.grid-mode) .news-item .news-item-cover {
+  position: relative !important;
+  width: 100% !important;
+  aspect-ratio: 2 / 1 !important;
+  border-radius: 12px 12px 0 0 !important;
+  flex-shrink: 0;
+}
+
+/* 移动端列表模式特殊调整（若需要） */
+@media (max-width: 768px) {
+  :deep(.list-mode) .news-item {
+    flex-direction: row !important;
+    min-height: auto;
+  }
+  :deep(.list-mode) .news-item .news-item-body {
+    width: calc(100% - 9rem - 0.75rem) !important;
+    padding: 0.75rem !important;
+  }
+  :deep(.list-mode) .news-item .news-item-cover {
+    width: 9rem !important;
+    top: 0.5rem !important;
+    right: 0.5rem !important;
+    bottom: 0.5rem !important;
+    border-radius: 0.75rem !important;
+  }
+}
+
   
   /* ===== 桌面端 (>=768px) ===== */
   @media (min-width: 768px) {

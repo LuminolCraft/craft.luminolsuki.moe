@@ -30,3 +30,13 @@ export const appConfig: AppConfig = {
     maxDisplayedPages: 5
   }
 };
+
+export const newsLayoutConfig = {
+  defaultMode: 'list',          // 桌面默认
+  mobileDefaultMode: 'grid',    // 移动端默认
+  coverPosition: 'right',       // 列表模式封面位置
+  grid: {
+    columnWidth: 320,
+    coverFullWidth: false,      // 网格模式封面是否贴边
+  },
+};

@@ -103,7 +103,6 @@
     align-items: flex-start;
     justify-content: center;
     max-width: 900px;
-    margin: 0 auto 32px;
   }
   
   .news-search {
