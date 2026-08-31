@@ -5,7 +5,7 @@
       <p>{{ t('news.list.subtitle') }}</p>
     </div>
 
-    <!-- 工具栏：搜索 + 布局切换 -->
+    <!-- 工具栏：使用 NewsSearch 的插槽放置布局切换 -->
     <div class="toolbar-row">
       <NewsSearch
         :selected-tags="selectedTags"
@@ -13,8 +13,12 @@
         :search-query="searchQuery"
         @search="onSearch"
         @tag-toggle="handleTagToggle"
-      />
-      <LayoutToggle v-model="layoutMode" />
+      >
+        <!-- 通过插槽将布局切换按钮放入 NewsSearch 内部 -->
+        <template #extra-controls>
+          <LayoutToggle v-model="layoutMode" />
+        </template>
+      </NewsSearch>
     </div>
 
     <div

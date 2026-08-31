@@ -1,5 +1,6 @@
 <template>
     <div class="news-toolbar">
+      <!-- 第一行：搜索框 + 搜索按钮 -->
       <div class="news-search">
         <input
           type="search"
@@ -17,40 +18,46 @@
         </button>
       </div>
   
-      <div class="tag-filter" ref="tagFilterRef">
-        <button
-          type="button"
-          class="tag-filter-trigger"
-          @click.stop="dropdownOpen = !dropdownOpen"
-        >
-          <span class="tag-filter-label">{{ t('news.list.tagFilter') }}</span>
-          <span class="tag-filter-value">
-            <template v-if="selectedTags.length === 0">{{ t('news.list.allTags') }}</template>
-            <template v-else>已选 {{ selectedTags.length }} 个</template>
-          </span>
-          <span class="tag-filter-caret" aria-hidden="true">{{ dropdownOpen ? '▴' : '▾' }}</span>
-        </button>
+      <!-- 第二行：标签筛选 + 额外控制（同行） -->
+      <div class="controls-row">
+        <div class="tag-filter" ref="tagFilterRef">
+          <button
+            type="button"
+            class="tag-filter-trigger"
+            @click.stop="dropdownOpen = !dropdownOpen"
+          >
+            <span class="tag-filter-label">{{ t('news.list.tagFilter') }}</span>
+            <span class="tag-filter-value">
+              <template v-if="selectedTags.length === 0">{{ t('news.list.allTags') }}</template>
+              <template v-else>已选 {{ selectedTags.length }} 个</template>
+            </span>
+            <span class="tag-filter-caret" aria-hidden="true">{{ dropdownOpen ? '▴' : '▾' }}</span>
+          </button>
   
-        <div v-show="dropdownOpen" class="tag-dropdown" @click.stop>
-          <input
-            v-model="tagSearch"
-            type="search"
-            class="tag-dropdown-search"
-            placeholder="搜索标签…"
-            autocomplete="off"
-          />
-          <div class="tag-dropdown-list">
-            <label v-for="tag in filteredTags" :key="tag" class="tag-option">
-              <input
-                type="checkbox"
-                :checked="selectedTags.includes(tag)"
-                @change="$emit('tag-toggle', tag)"
-              />
-              <span>#{{ tag }}</span>
-            </label>
-            <p v-if="filteredTags.length === 0" class="tag-empty">无匹配标签</p>
+          <div v-show="dropdownOpen" class="tag-dropdown" @click.stop>
+            <input
+              v-model="tagSearch"
+              type="search"
+              class="tag-dropdown-search"
+              placeholder="搜索标签…"
+              autocomplete="off"
+            />
+            <div class="tag-dropdown-list">
+              <label v-for="tag in filteredTags" :key="tag" class="tag-option">
+                <input
+                  type="checkbox"
+                  :checked="selectedTags.includes(tag)"
+                  @change="$emit('tag-toggle', tag)"
+                />
+                <span>#{{ tag }}</span>
+              </label>
+              <p v-if="filteredTags.length === 0" class="tag-empty">无匹配标签</p>
+            </div>
           </div>
         </div>
+  
+        <!-- 插槽：放置额外控制按钮（如布局切换） -->
+        <slot name="extra-controls"></slot>
       </div>
     </div>
   </template>
@@ -157,6 +164,14 @@
   .news-search button i {
     font-family: 'Font Awesome 7 Free' !important;
     font-weight: 900 !important;
+  }
+  
+  /* ----- 控制行（标签筛选 + 插槽） ----- */
+  .controls-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: nowrap; /* 默认不换行，桌面也保持同行，但桌面可能不需要，通过媒体查询覆盖 */
   }
   
   /* 标签筛选器 */
@@ -282,17 +297,41 @@
       justify-content: center;
     }
   
-    .tag-filter {
-      flex: 1 1 auto;
+    /* 控制行：同行不换行 */
+    .controls-row {
+      flex-wrap: nowrap;
+      gap: 8px;
       width: 100%;
-      max-width: none;
-      flex-direction: column;
-      align-items: stretch;
-      gap: 10px;
     }
   
-    .tag-filter select {
+    .tag-filter {
+      flex: 1;
+      min-width: 0;
+      width: auto; /* 覆盖之前的 100% */
+    }
+  
+    .tag-filter-trigger {
       width: 100%;
+      min-height: 44px;
+    }
+  
+    /* 插槽内的按钮（如布局切换）与标签触发器同高同行 */
+    .controls-row :deep(.layout-toggle-btn) {
+      flex-shrink: 0;
+      min-height: 44px;
+      padding: 8px 12px;
+      justify-content: center;
+    }
+  }
+  
+  /* ===== 桌面端 (>=769px) 可让插槽独立于控制行外，但默认就在控制行内，可调整间距 ===== */
+  @media (min-width: 769px) {
+    .controls-row {
+      max-width: none;
+      gap: 12px;
+    }
+    .tag-filter {
+      flex: 0 1 240px;
     }
   }
   </style>
