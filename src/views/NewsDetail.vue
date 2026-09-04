@@ -125,6 +125,7 @@ import { useLightbox } from '@/composables/useLightbox';
 import { useReadingProgress } from '@/composables/useReadingProgress';
 import { useArticleAnimations } from '@/composables/useArticleAnimations';
 import { formatDate, hasImage, cleanImageUrl, handleImageError } from '@/utils/news-helpers';
+import '@/styles/desktop/markdown-body.css';
 
 const route = useRoute();
 const router = useRouter();
