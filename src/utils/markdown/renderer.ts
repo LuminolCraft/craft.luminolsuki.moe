@@ -74,8 +74,13 @@ const sanitizeSchema = {
       ...(defaultSchema.attributes?.span || []),
       'className',
     ],
-    // 标题锚点
-    a: [...(defaultSchema.attributes?.a || []), 'className', 'ariaLabel', 'title'],
+    // 标题锚点（过滤 defaultSchema 中限定值的 className 条目，否则自定义 class 会被过滤为空）
+    a: [
+      ...(defaultSchema.attributes?.a || []).filter(
+        (entry) => !(Array.isArray(entry) && entry[0] === 'className'),
+      ),
+      'className', 'ariaLabel', 'title', 'target', 'rel',
+    ],
     // 图片 - 修复：显式包含 src 和 alt，同时保留 loading、decoding 和 title
     img: [
       ...(defaultSchema.attributes?.img || []),
@@ -122,6 +127,14 @@ const sanitizeSchema = {
     sup: [...(defaultSchema.attributes?.sup || []), 'className'],
     sub: [...(defaultSchema.attributes?.sub || []), 'className'],
     br: [...(defaultSchema.attributes?.br || []), 'className'],
+    // 外链图标 SVG（静态注入，无用户输入）
+    svg: [
+      'className', 'viewBox', 'fill', 'stroke', 'strokeWidth',
+      'strokeLinecap', 'strokeLinejoin', 'xmlns', 'ariaHidden', 'width', 'height',
+    ],
+    path: ['d'],
+    polyline: ['points'],
+    line: ['x1', 'y1', 'x2', 'y2'],
   },
   // 允许的标签
   tagNames: [
@@ -134,6 +147,8 @@ const sanitizeSchema = {
     // 语义化
     'figure', 'figcaption', 'article', 'aside', 'details', 'summary',
     'mark', 'time', 'abbr',
+    // 外链图标 SVG
+    'svg', 'path', 'polyline', 'line',
   ],
 }
 
@@ -180,7 +195,46 @@ function rehypeExtractToc(tocItems: TocItem[]) {
 }
 
 // ---------- 外部链接处理插件 ----------
-// 为外部链接添加 target="_blank" 和 rel="noopener noreferrer"
+// 为外部链接添加 target="_blank"、rel="noopener noreferrer"，并在链接末尾注入外链 SVG 图标
+
+// 外链图标（静态节点，随 rehypeExternalLinks 复用）
+function createExternalLinkIcon(): Element {
+  return {
+    type: 'element',
+    tagName: 'svg',
+    properties: {
+      className: ['external-link-icon'],
+      viewBox: '0 0 24 24',
+      fill: 'none',
+      stroke: 'currentColor',
+      strokeWidth: '2',
+      strokeLinecap: 'round',
+      strokeLinejoin: 'round',
+      ariaHidden: 'true',
+    },
+    children: [
+      {
+        type: 'element',
+        tagName: 'path',
+        properties: { d: 'M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6' },
+        children: [],
+      },
+      {
+        type: 'element',
+        tagName: 'polyline',
+        properties: { points: '15 3 21 3 21 9' },
+        children: [],
+      },
+      {
+        type: 'element',
+        tagName: 'line',
+        properties: { x1: '10', y1: '14', x2: '21', y2: '3' },
+        children: [],
+      },
+    ],
+  }
+}
+
 function rehypeExternalLinks(siteUrl?: string) {
   return (tree: Root) => {
     visit(tree, 'element', (node: Element) => {
@@ -209,19 +263,37 @@ function rehypeExternalLinks(siteUrl?: string) {
         classList.push('external-link')
         node.properties.className = classList
       }
+      // 在链接文本后追加外链 SVG 图标（避免重复注入）
+      const hasIcon = node.children.some(
+        (child) => child.type === 'element' && child.tagName === 'svg',
+      )
+      if (!hasIcon) {
+        node.children.push(createExternalLinkIcon())
+      }
     })
   }
 }
 
 // ---------- 图片 figure 包装插件 ----------
-// 带 alt 文本的图片自动包裹为 figure + figcaption
+// 带有效 alt 文本的图片自动包裹为 figure + figcaption
+// alt 为空或本身是 URL（图床默认的 ![url](url) 格式）时不生成图注，避免链接露出
+function isUrlLike(value: string): boolean {
+  return (
+    /^https?:\/\//i.test(value) ||
+    /^www\./i.test(value) ||
+    /^[-\w.]+\.[a-z]{2,}(\/|$|\?|#|:)/i.test(value)
+  )
+}
+
 function rehypeFigure() {
   return (tree: Root) => {
     visit(tree, 'element', (node: Element, index: number | undefined, parent: Element | Root | undefined) => {
       if (node.tagName !== 'img') return
       if (!parent || index === undefined) return
-      const alt = (node.properties?.alt as string) || ''
-      if (!alt.trim()) return
+      const alt = ((node.properties?.alt as string) || '').trim()
+      const src = (node.properties?.src as string) || ''
+      // 无有效描述文字：不生成图注，也无需 figure 包裹
+      if (!alt || alt === src || isUrlLike(alt)) return
       // 跳过已经在 figure 中的图片
       if (parent.type === 'element' && parent.tagName === 'figure') return
       const figure: Element = {
