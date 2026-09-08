@@ -78,6 +78,7 @@ export default {
       "emailNotVerified": "该账号邮箱尚未验证，暂时无法重置密码。请先完成邮箱验证后再登录。",
       "resendVerification": "重新发送验证邮件",
       "resending": "发送中…",
+      "resendCooldown": "{time} 秒后可重发",
       "resent": "验证邮件已重新发送（若未收到请稍后再试），完成验证后即可正常登录。",
       "rateLimited": "操作过于频繁，请稍后重试",
       "rateLimitedUntil": "操作过于频繁，请于 {time} 后再试",

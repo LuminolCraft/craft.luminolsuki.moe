@@ -46,10 +46,16 @@
           v-if="emailUnverified && !resent"
           type="button"
           class="login-resend"
-          :disabled="resendPending"
+          :disabled="resendPending || resendCooldown > 0"
           @click="onResend"
         >
-          {{ resendPending ? t('auth.forgot.resending') : t('auth.forgot.resendVerification') }}
+          {{
+            resendPending
+              ? t('auth.forgot.resending')
+              : resendCooldown > 0
+                ? t('auth.forgot.resendCooldown', { time: resendCooldown })
+                : t('auth.forgot.resendVerification')
+          }}
         </button>
         <p v-if="resent" class="login-resend-done" role="status">{{ t('auth.forgot.resent') }}</p>
       </div>
@@ -99,7 +105,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onMounted, onUnmounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import AuthSplitLayout from '@/components/auth/AuthSplitLayout.vue'
@@ -125,10 +131,26 @@ const remember = ref(false)
 const pending = ref(false)
 const formInvalid = ref(false)
 const errorMsg = ref('')
-// 未验证门禁状态：后端 403 EMAIL_NOT_VERIFIED 时展示重发验证邮件入口
+// 未验证门禁状态：后端 403 EMAIL_NOT_VERIFIED 时展示重发验证邮件入口。
+// 后端 sendOnSignIn 已随本次登录自动补发一封验证邮件，因此按钮带 60s 冷却，
+// 避免用户立刻再点导致重复发信（邮件传输层有按收件人配额，超发会被静默跳过）
 const emailUnverified = ref(false)
 const resendPending = ref(false)
 const resent = ref(false)
+const resendCooldown = ref(0)
+let cooldownTimer: number | null = null
+
+function startResendCooldown(seconds = 60) {
+  resendCooldown.value = seconds
+  if (cooldownTimer !== null) window.clearInterval(cooldownTimer)
+  cooldownTimer = window.setInterval(() => {
+    resendCooldown.value -= 1
+    if (resendCooldown.value <= 0 && cooldownTimer !== null) {
+      window.clearInterval(cooldownTimer)
+      cooldownTimer = null
+    }
+  }, 1000)
+}
 // GitHub 登录暂置灰（用户决策，2026-09-08）：与 QQ 同款占位，恢复时还原
 // onGithubLogin（signInWithGitHub 走整页跳转授权）并解禁按钮即可
 
@@ -144,6 +166,7 @@ function handleAuthError(e: unknown) {
       break
     case 'EMAIL_VERIFICATION_REQUIRED':
       emailUnverified.value = true
+      startResendCooldown() // 登录时后端已自动补发一封，冷却防止立刻重复发送
       errorMsg.value = t('auth.login.emailNotVerified')
       break
     case 'RATE_LIMITED': {
@@ -215,6 +238,14 @@ onMounted(() => {
       clearProps: 'all',
     })
   })
+})
+
+// 离开页面清理冷却倒计时，避免悬挂定时器
+onUnmounted(() => {
+  if (cooldownTimer !== null) {
+    window.clearInterval(cooldownTimer)
+    cooldownTimer = null
+  }
 })
 </script>
 
