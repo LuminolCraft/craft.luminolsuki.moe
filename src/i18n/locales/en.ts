@@ -78,6 +78,7 @@ export default {
       "emailNotVerified": "This account's email is not verified, so the password cannot be reset yet. Please verify your email first, then sign in.",
       "resendVerification": "Resend verification email",
       "resending": "Sending…",
+      "resendCooldown": "Resend available in {time}s",
       "resent": "Verification email resent (if it hasn't arrived, try again later). Verify to sign in normally.",
       "rateLimited": "Too many attempts, please retry later",
       "rateLimitedUntil": "Too many attempts. Please retry after {time}",

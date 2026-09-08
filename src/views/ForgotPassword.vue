@@ -31,10 +31,16 @@
           v-if="emailUnverified && !resent"
           class="forgot-resend"
           type="button"
-          :disabled="resendPending"
+          :disabled="resendPending || resendCooldown > 0"
           @click="onResend"
         >
-          {{ resendPending ? t('auth.forgot.resending') : t('auth.forgot.resendVerification') }}
+          {{
+            resendPending
+              ? t('auth.forgot.resending')
+              : resendCooldown > 0
+                ? t('auth.forgot.resendCooldown', { time: resendCooldown })
+                : t('auth.forgot.resendVerification')
+          }}
         </button>
         <p v-if="resent" class="forgot-resend-done" role="status">{{ t('auth.forgot.resent') }}</p>
       </div>
@@ -48,7 +54,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onMounted, onUnmounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import AuthSplitLayout from '@/components/auth/AuthSplitLayout.vue'
 import AuthButton from '@/components/auth/AuthButton.vue'
@@ -70,9 +76,31 @@ const sent = ref(false)
 const formInvalid = ref(false)
 const errorMsg = ref('')
 // 未验证门禁状态：后端 403 EMAIL_NOT_VERIFIED 时展示重发验证邮件入口
+// （重发按钮带 60s 冷却，防连点重复发信——传输层按收件人配额会静默跳过超发）
 const emailUnverified = ref(false)
 const resendPending = ref(false)
 const resent = ref(false)
+const resendCooldown = ref(0)
+let cooldownTimer: number | null = null
+
+function startResendCooldown(seconds = 60) {
+  resendCooldown.value = seconds
+  if (cooldownTimer !== null) window.clearInterval(cooldownTimer)
+  cooldownTimer = window.setInterval(() => {
+    resendCooldown.value -= 1
+    if (resendCooldown.value <= 0 && cooldownTimer !== null) {
+      window.clearInterval(cooldownTimer)
+      cooldownTimer = null
+    }
+  }, 1000)
+}
+
+function stopResendCooldown() {
+  if (cooldownTimer !== null) {
+    window.clearInterval(cooldownTimer)
+    cooldownTimer = null
+  }
+}
 
 function handleAuthError(e: unknown) {
   if (!isAppError(e)) {
@@ -89,6 +117,7 @@ function handleAuthError(e: unknown) {
     }
     case 'EMAIL_VERIFICATION_REQUIRED':
       emailUnverified.value = true
+      startResendCooldown() // 防连点重复发信
       errorMsg.value = t('auth.forgot.emailNotVerified')
       break
     case 'NETWORK_ERROR':
@@ -152,6 +181,9 @@ onMounted(() => {
     })
   })
 })
+
+// 离开页面清理冷却倒计时，避免悬挂定时器
+onUnmounted(stopResendCooldown)
 </script>
 
 <style scoped>
