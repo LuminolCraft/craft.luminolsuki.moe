@@ -50,6 +50,8 @@ export default {
       "submit": "注册",
       "successTitle": "注册成功",
       "successDesc": "验证邮件已发送至你的邮箱，请查收并完成验证后登录。",
+      "waitingDetect": "正在自动检测验证状态…完成验证后本页将自动进入账号",
+      "verifiedEntering": "邮箱验证成功，正在进入账号…",
       "toLogin": "返回登录",
       "hasAccount": "已有账号？",
       "login": "去登录",

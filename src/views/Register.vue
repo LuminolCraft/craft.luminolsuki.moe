@@ -6,11 +6,17 @@
       <h1 class="register-title">{{ t('auth.register.title') }}</h1>
       <p class="register-subtitle">{{ t('auth.register.subtitle') }}</p>
 
-      <!-- 注册成功但需邮箱验证：页内成功态 -->
+      <!-- 注册成功但需邮箱验证：页内成功态（跨浏览器验证状态自动感知，见 startVerifyWaitPolling） -->
       <div v-if="registered" class="register-success" role="status">
         <h2 class="register-success-title">{{ t('auth.register.successTitle') }}</h2>
         <p class="register-success-text">{{ t('auth.register.successDesc') }}</p>
-        <RouterLink to="/login" class="register-success-link">{{ t('auth.register.toLogin') }}</RouterLink>
+        <p class="register-waiting" :class="{ 'is-done': verifyDone }">
+          <span class="register-waiting-dot" aria-hidden="true"></span>
+          {{ verifyDone ? t('auth.register.verifiedEntering') : t('auth.register.waitingDetect') }}
+        </p>
+        <RouterLink v-if="!verifyDone" to="/login" class="register-success-link">
+          {{ t('auth.register.toLogin') }}
+        </RouterLink>
       </div>
 
       <form v-else class="register-form" novalidate @submit.prevent="onSubmit">
@@ -60,14 +66,14 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onMounted, onUnmounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import AuthSplitLayout from '@/components/auth/AuthSplitLayout.vue'
 import AuthButton from '@/components/auth/AuthButton.vue'
 import AuthField from '@/components/auth/AuthField.vue'
 import { useAuthStore } from '@/stores/auth'
-import { isAppError } from '@/lib/api'
+import { api, isAppError } from '@/lib/api'
 import { resolveInternalPath } from '@/utils/internalPath'
 import { useGsap } from '@/composables/useGsap'
 
@@ -86,8 +92,72 @@ const password = ref('')
 const confirmPassword = ref('')
 const pending = ref(false)
 const registered = ref(false)
+const verifyDone = ref(false)
 const formInvalid = ref(false)
 const errorMsg = ref('')
+
+// ---------- 跨浏览器验证状态感知（参照 MC 绑定验证：状态以服务端为真相源） ----------
+// 注册后持后端签发的短期等待令牌轮询验证状态：用户在【任何浏览器】点击邮件
+// 链接完成验证后，本页面都能感知并自动补登（用注册表单中用户自己输入的
+// 凭据走标准 BA 登录）。密码仅存于组件内存，不落任何存储；令牌过期/限流
+// 优雅降级为"手动刷新/登录"主路径。
+const VERIFY_WAIT_POLL_MS = 4000
+const VERIFY_WAIT_MAX_MS = 15 * 60 * 1000
+let pollTimer: number | null = null
+let pollStopped = false
+
+function stopVerifyWaitPolling() {
+  pollStopped = true
+  if (pollTimer !== null) {
+    window.clearTimeout(pollTimer)
+    pollTimer = null
+  }
+}
+
+async function startVerifyWaitPolling() {
+  pollStopped = false
+  let token = ''
+  try {
+    const res = await api.post<{ token: string; expiresIn: number }>('/auth/verify-wait', {
+      email: email.value.trim(),
+    })
+    token = res.token
+  } catch {
+    // 令牌创建失败（限流/网络）→ 仅失去跨浏览器自动感知，主流程不受影响
+    return
+  }
+  const startedAt = Date.now()
+  const poll = async () => {
+    if (pollStopped) return
+    try {
+      const r = await api.get<{ status: 'pending' | 'verified' }>(`/auth/verify-wait/${token}`)
+      if (r.status === 'verified') {
+        await finishVerified()
+        return
+      }
+    } catch (e) {
+      if (isAppError(e) && e.code === 'NOT_FOUND') return // 令牌过期：停止轮询
+      // 429 / 网络错误：跳过本轮，下个周期继续
+    }
+    if (pollStopped) return
+    if (Date.now() - startedAt > VERIFY_WAIT_MAX_MS) return // 超时：引导手动登录
+    pollTimer = window.setTimeout(poll, VERIFY_WAIT_POLL_MS)
+  }
+  pollTimer = window.setTimeout(poll, VERIFY_WAIT_POLL_MS)
+}
+
+async function finishVerified() {
+  stopVerifyWaitPolling()
+  verifyDone.value = true
+  try {
+    // 自动补登（rememberMe 持久会话）；signIn 成功内部已广播其他标签页
+    await auth.signIn(email.value.trim(), password.value, true)
+    router.replace(resolveInternalPath(route.query.redirect, '/settings'))
+  } catch {
+    // 自动登录失败（罕见：密码校验不过等）→ 引导去登录页手动登录
+    await router.replace('/login')
+  }
+}
 
 function handleAuthError(e: unknown) {
   if (!isAppError(e)) {
@@ -148,8 +218,9 @@ async function onSubmit() {
       // 注册即登录（后端未强制邮箱验证）：回跳安全站内路径，无 redirect 时进入用户中心
       router.replace(resolveInternalPath(route.query.redirect, '/settings'))
     } else {
-      // 后端要求邮箱验证：页内提示查收邮件
+      // 后端要求邮箱验证：页内提示查收邮件，并启动跨浏览器验证状态轮询
       registered.value = true
+      startVerifyWaitPolling()
     }
   } catch (e) {
     handleAuthError(e)
@@ -172,6 +243,9 @@ onMounted(() => {
     })
   })
 })
+
+// 离开页面（含自动登录跳转）时停止轮询，避免悬挂定时器
+onUnmounted(stopVerifyWaitPolling)
 </script>
 
 <style scoped>
@@ -250,6 +324,43 @@ onMounted(() => {
   font-size: 0.9rem;
   line-height: 1.7;
   color: var(--text-secondary);
+}
+.register-waiting {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.85rem 0 0;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+}
+.register-waiting.is-done {
+  color: var(--primary-color);
+  font-weight: 500;
+}
+.register-waiting-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  flex: none;
+  animation: register-waiting-pulse 1.2s ease-in-out infinite;
+}
+.register-waiting.is-done .register-waiting-dot {
+  animation: none;
+}
+@keyframes register-waiting-pulse {
+  0%,
+  100% {
+    opacity: 0.25;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .register-waiting-dot {
+    animation: none;
+  }
 }
 .register-success-link {
   display: inline-block;

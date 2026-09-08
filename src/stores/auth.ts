@@ -78,13 +78,22 @@ export const useAuthStore = defineStore('auth', () => {
   /**
    * GET /api/v1/me —— 业务登录态判断依据。
    * 401 系 code → 清态视为未登录；网络等其它错误 → 上抛且不清态（避免离线误显示"未登录"）。
+   *
+   * 登录态「转移」检测与跨标签页广播：
+   * - 未登录 → 已登录（邮箱验证自动登录 / OAuth 回调后首建会话等）→ 广播；
+   * - 已登录 → 失效（会话过期 / 被踢下线）→ 清态并广播，其他标签页同步跳登录页。
+   * 广播消息仅作为"重新拉取"信号（App.vue 收到后 resyncSession 回服务端校验），
+   * 伪造广播无法提权；重复广播幂等无害。
    */
   async function fetchCurrentUser() {
+    const wasAuthenticated = me.value !== null
     try {
       me.value = await api.get<User>('/me')
+      if (!wasAuthenticated) broadcastAuthChange()
     } catch (e) {
       if (UNAUTH_CODES.has((e as AppError).code)) {
         clearAuthState()
+        if (wasAuthenticated) broadcastAuthChange()
       } else {
         throw e
       }
@@ -381,13 +390,17 @@ export const useAuthStore = defineStore('auth', () => {
     await api.delete<SessionRevokeResult>(`/me/sessions/${id}`)
     const target = sessions.value.find((s) => s.id === id)
     sessions.value = sessions.value.filter((s) => s.id !== id)
-    if (target?.current) clearAuthState()
+    if (target?.current) {
+      clearAuthState()
+      broadcastAuthChange()
+    }
   }
 
   /** DELETE /api/v1/me/sessions —— 退出所有设备（含当前），本地登录态随之失效 */
   async function revokeAllSessions() {
     await api.delete<SessionRevokeResult>('/me/sessions')
     clearAuthState()
+    broadcastAuthChange()
   }
 
   return {

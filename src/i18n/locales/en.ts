@@ -50,6 +50,8 @@ export default {
       "submit": "Sign up",
       "successTitle": "Almost there",
       "successDesc": "A verification email has been sent to your inbox. Please verify and then sign in.",
+      "waitingDetect": "Automatically checking verification status… This page will continue once verified.",
+      "verifiedEntering": "Email verified — entering your account…",
       "toLogin": "Back to sign in",
       "hasAccount": "Already have an account?",
       "login": "Sign in",
