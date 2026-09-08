@@ -1,4 +1,32 @@
 @media (max-width: 896px) {
+  /* 移动端导航三列 grid（1fr auto 1fr 两侧等宽）：burger 左 / logo 严格居中于视口 / 操作区右 */
+  nav {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    padding: 0 1.2rem;
+  }
+  /* nav a{
+    margin: 0;
+  } */
+
+  .burger {
+    justify-self: start;
+  }
+
+  .logo-and-title {
+    justify-self: center;
+  }
+
+  .nav-actions {
+    justify-self: end;
+  }
+
+  /* 空容器（内含已隐藏的 .nav-links）不再参与布局分配 */
+  .AAA {
+    display: none;
+  }
+
   .burger-input {
     display: none;
   }
@@ -126,19 +154,44 @@
     display: none;
   }
 
+  /* 右侧操作区：小屏收紧间距；主题按钮走 side-nav（避免重复），保留登录入口 */
+  .nav-actions {
+    gap: 8px;
+  }
+  .nav-actions .toc-toggles {
+    display: none;
+  }
+  /* 已登录小屏：「账号与安全」与用户名同指 /settings/security，隐藏避免拥挤 */
+  .nav-actions a + a {
+    display: none;
+  }
+  .nav-actions .nav-login-btn {
+    font-size: 0.9em;
+    height: 10px;
+    gap: 5px;
+  }
+  .nav-actions .nav-login-btn svg {
+    width: 14px;
+    height: 14px;
+  }
+
   .text-wrap {
     width: 136px;
   }
 
+  .logo-and-text {
+    margin-left: -70px;
+  }
+
   .logo-and-title .logo-container {
+
     order: 1;
-    margin-left: 0;
+    
   }
 
   .logo-and-title {
     display: flex;
     align-items: center;
-    /* margin-left: auto; */
   }
 
   .logo-and-title .logo-container img {

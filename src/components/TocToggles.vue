@@ -256,8 +256,8 @@ onMounted(() => {
       g.set(enIconRef.value, { autoAlpha: 1, rotate: 0 })
     }
 
-    // 主题切换按钮 hover
-    const themeBtn = document.getElementById('theme-btn')
+    // 主题切换按钮 hover（组件实例可能同时渲染多处，作用域查询绑定自己的按钮）
+    const themeBtn = containerRef.value?.querySelector('#theme-btn')
     if (themeBtn) {
       themeBtn.addEventListener('mouseenter', () => {
         g.to('.theme-icon.active', { scale: 1.1, duration: DURATIONS.hover, ease: EASINGS.hover })

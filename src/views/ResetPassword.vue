@@ -1,0 +1,255 @@
+<template>
+  <AuthSplitLayout>
+    <section ref="rootRef" class="reset">
+      <p class="reset-overline">{{ t('auth.reset.overline') }}</p>
+      <h1 class="reset-title">{{ t('auth.reset.title') }}</h1>
+      <p class="reset-subtitle">{{ t('auth.reset.subtitle') }}</p>
+
+      <!-- 链接无效/已过期 -->
+      <div v-if="linkInvalid" class="reset-notice" role="alert">
+        <h2 class="reset-notice-title">{{ t('auth.reset.invalidTitle') }}</h2>
+        <p class="reset-notice-text">{{ t('auth.reset.invalidDesc') }}</p>
+        <RouterLink to="/forgot-password" class="reset-notice-link">
+          {{ t('auth.reset.requestAgain') }}
+        </RouterLink>
+      </div>
+
+      <!-- 重置成功 -->
+      <div v-else-if="done" class="reset-notice" role="status">
+        <h2 class="reset-notice-title">{{ t('auth.reset.successTitle') }}</h2>
+        <p class="reset-notice-text">{{ t('auth.reset.successDesc') }}</p>
+        <RouterLink to="/login" class="reset-notice-link">{{ t('auth.reset.toLogin') }}</RouterLink>
+      </div>
+
+      <form v-else class="reset-form" novalidate @submit.prevent="onSubmit">
+        <AuthField
+          v-model="password"
+          type="password"
+          :label="t('auth.reset.passwordLabel')"
+          autocomplete="new-password"
+          :invalid="formInvalid"
+        />
+        <AuthField
+          v-model="confirmPassword"
+          type="password"
+          :label="t('auth.reset.confirmLabel')"
+          autocomplete="new-password"
+          :invalid="formInvalid"
+        />
+        <AuthButton :loading="pending">{{ t('auth.reset.submit') }}</AuthButton>
+      </form>
+
+      <div v-if="errorMsg" class="reset-error" role="alert">
+        <p class="reset-error-text">{{ errorMsg }}</p>
+      </div>
+    </section>
+  </AuthSplitLayout>
+</template>
+
+<script setup lang="ts">
+import { computed, onMounted, ref } from 'vue'
+import { useRoute } from 'vue-router'
+import { useI18n } from 'vue-i18n'
+import AuthSplitLayout from '@/components/auth/AuthSplitLayout.vue'
+import AuthButton from '@/components/auth/AuthButton.vue'
+import AuthField from '@/components/auth/AuthField.vue'
+import { useAuthStore } from '@/stores/auth'
+import { isAppError } from '@/lib/api'
+import { useGsap } from '@/composables/useGsap'
+
+const { t } = useI18n()
+const route = useRoute()
+const auth = useAuthStore()
+const { create, reduceMotion } = useGsap()
+
+const rootRef = ref<HTMLElement | null>(null)
+const password = ref('')
+const confirmPassword = ref('')
+const pending = ref(false)
+const done = ref(false)
+const formInvalid = ref(false)
+const errorMsg = ref('')
+
+/** 邮件链接落地：?token=...；Better Auth 校验失败重定向会带 ?error=INVALID_TOKEN */
+const token = computed(() => {
+  const value = route.query.token
+  return typeof value === 'string' && value.length > 0 ? value : ''
+})
+const linkInvalid = computed(() => !token.value || route.query.error === 'INVALID_TOKEN')
+
+function handleAuthError(e: unknown) {
+  if (!isAppError(e)) {
+    errorMsg.value = t('auth.reset.networkError')
+    return
+  }
+  switch (e.code) {
+    case 'PASSWORD_RESET_INVALID':
+    case 'INVALID_TOKEN':
+    case 'USER_NOT_FOUND':
+      errorMsg.value = t('auth.reset.invalidDesc')
+      break
+    case 'INVALID_PASSWORD':
+      errorMsg.value = t('auth.reset.weakPassword')
+      formInvalid.value = true
+      break
+    case 'RATE_LIMITED':
+      errorMsg.value = t('auth.reset.rateLimited')
+      break
+    case 'NETWORK_ERROR':
+      errorMsg.value = t('auth.reset.networkError')
+      break
+    default:
+      errorMsg.value = t('auth.reset.genericError')
+  }
+}
+
+async function onSubmit() {
+  if (pending.value) return
+  errorMsg.value = ''
+  formInvalid.value = false
+
+  if (password.value.length < 8) {
+    formInvalid.value = true
+    errorMsg.value = t('auth.reset.weakPassword')
+    return
+  }
+  if (password.value !== confirmPassword.value) {
+    formInvalid.value = true
+    errorMsg.value = t('auth.reset.passwordMismatch')
+    return
+  }
+
+  pending.value = true
+  try {
+    await auth.resetPassword(password.value, token.value)
+    done.value = true
+  } catch (e) {
+    handleAuthError(e)
+  } finally {
+    pending.value = false
+  }
+}
+
+onMounted(() => {
+  create((g) => {
+    if (reduceMotion()) return
+    g.from('.reset > *', {
+      autoAlpha: 0,
+      y: 22,
+      duration: 0.65,
+      ease: 'power3.out',
+      stagger: 0.08,
+      delay: 0.15,
+      clearProps: 'all',
+    })
+  })
+})
+</script>
+
+<style scoped>
+.reset {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.reset-overline {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--primary-color);
+  margin: 0 0 1.1rem;
+}
+
+.reset-title {
+  font-size: clamp(2.2rem, 4.6vw, 3.1rem);
+  font-weight: 700;
+  letter-spacing: -2px;
+  line-height: 1.05;
+  color: var(--text-color);
+  margin: 0 0 1rem;
+}
+
+.reset-subtitle {
+  font-size: 1rem;
+  line-height: 1.7;
+  color: var(--text-secondary);
+  margin: 0 0 2.2rem;
+  max-width: 26rem;
+}
+
+.reset-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.15rem;
+  width: 100%;
+  max-width: 26rem;
+}
+.reset-form .auth-btn {
+  max-width: 26rem;
+  margin-top: 0.35rem;
+}
+
+/* ---------- 结果通知（无效链接 / 重置成功） ---------- */
+.reset-notice {
+  max-width: 26rem;
+  padding: 1.1rem 1.25rem;
+  border-left: 2px solid var(--primary-color);
+  background: color-mix(in srgb, var(--primary-color) 6%, transparent);
+}
+.reset-notice-title {
+  margin: 0 0 0.5rem;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text-color);
+}
+.reset-notice-text {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.7;
+  color: var(--text-secondary);
+}
+.reset-notice-link {
+  display: inline-block;
+  margin-top: 0.9rem;
+  color: var(--primary-color);
+  font-weight: 500;
+  font-size: 0.9rem;
+  text-decoration: none;
+}
+.reset-notice-link:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.reset-error {
+  margin-top: 1.2rem;
+  padding: 0.85rem 1rem;
+  border-left: 2px solid var(--error-color, #e5484d);
+  background: color-mix(in srgb, var(--error-color, #e5484d) 6%, transparent);
+  max-width: 26rem;
+}
+.reset-error-text {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--error-color, #e5484d);
+}
+
+@media (max-width: 896px) {
+  .reset-overline {
+    margin-bottom: 0.8rem;
+  }
+  .reset-title {
+    font-size: clamp(1.9rem, 8.5vw, 2.4rem);
+    margin-bottom: 0.7rem;
+  }
+  .reset-subtitle {
+    font-size: 0.92rem;
+    margin-bottom: 1.5rem;
+  }
+  .reset-form {
+    gap: 0.95rem;
+  }
+}
+</style>

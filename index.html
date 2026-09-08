@@ -15,6 +15,9 @@
     <link rel="icon" href="https://imagehosting-ez2.pages.dev/images/favicon.ico">
     <link rel="icon" href="https://imagehosting-ez2.pages.dev/images/favicon.png" type="image/png">
     
+    <!-- 首屏 Hero 背景图预加载：与 JS 并行下载，避免 Home 挂载后才开始请求 -->
+    <link rel="preload" as="image" href="/images/Image_1764466849.avif" fetchpriority="high">
+
     <!-- Font Awesome CDN (延迟加载，不阻塞首屏) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" media="print" onload="this.media='all'">
     <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css"></noscript>

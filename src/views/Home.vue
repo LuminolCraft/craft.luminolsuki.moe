@@ -1,7 +1,7 @@
 <template>
     <div ref="rootRef" class="home-root">
         <!-- 噪点叠加层 -->
-        <div class="noise-overlay" aria-hidden="true"></div>
+        <!-- <div class="noise-overlay" aria-hidden="true"></div> -->
 
         <!-- 顶部区域 -->
         <header class="hero-section">
@@ -483,7 +483,9 @@ const serverStatus = ref('服务器在线')
 
 const fetchServerStatus = async () => {
   try {
-    const response = await fetch('https://api.mcsrvstat.us/3/craft.luminolsuki.moe')
+    const response = await fetch('https://api.mcsrvstat.us/3/craft.luminolsuki.moe', {
+      signal: AbortSignal.timeout(8000),
+    })
     if (response.ok) {
       const data = await response.json()
       serverOnline.value = data.online || false
@@ -504,7 +506,8 @@ const { create } = useGsap({ scope: rootRef })
 onMounted(async () => {
   intervalId = setInterval(nextRandomImage, 3600)
 
-  await fetchServerStatus()
+  // 服务器状态是异步补充信息：不阻塞首屏渲染与动效初始化（外部 API 慢时不再拖住页面）
+  fetchServerStatus()
   setInterval(fetchServerStatus, 30000)
 
   await nextTick()

@@ -67,28 +67,155 @@
           <!-- <router-link to="/Monitoring" class="nav-link">
             {{ t('common.monitoring') }}
           </router-link> -->
-          <TocToggles v-if="appConfig.showTocToggles" />
         </div>
 
+      </div>
+
+      <!-- 右侧操作区：主题切换 + 登录/账号入口 -->
+      <div class="nav-actions">
+        <TocToggles v-if="appConfig.showTocToggles" />
+        <template v-if="auth.isAuthenticated">
+          <router-link v-if="authz.hasPermission('admin:access')" to="/admin/users" class="nav-link">
+            {{ t('auth.nav.admin') }}
+          </router-link>
+          <router-link to="/settings/profile" class="nav-link nav-user" :title="auth.me?.username">
+            <UserAvatar :user-id="auth.me?.id" :name="auth.me?.username" :size="24" />
+            <span>{{ auth.me?.username }}</span>
+          </router-link>
+          <router-link to="/settings/profile" class="nav-link">
+            {{ t('auth.nav.account') }}
+          </router-link>
+          <button type="button" class="nav-auth-btn" :disabled="loggingOut" @click="onLogout">
+            {{ loggingOut ? t('auth.security.revoking') : t('auth.nav.logout') }}
+          </button>
+        </template>
+        <router-link v-else :to="loginTarget" class="nav-login-btn">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3"/>
+          </svg>
+          {{ t('auth.nav.login') }}
+        </router-link>
       </div>
     </nav>
   </template>
   <style scoped>
     @import '../styles/desktop/navigation.css';
     @import '../styles/mobile/navigation-mobile.css';
+
+  /* 认证入口：退出登录按钮（在右侧操作区内，间距由 .nav-actions gap 控制） */
+  .nav-auth-btn {
+    display: inline-block;
+    background: none;
+    border: none;
+    padding: 0;
+    color: white;
+    font-size: 1.1em;
+    font-family: inherit;
+    cursor: pointer;
+    transition: color 0.3s;
+  }
+  .nav-auth-btn:hover {
+    color: var(--button-hover);
+  }
+  .nav-auth-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .nav-auth-btn:focus-visible {
+    outline: 2px solid var(--focus-ring-color, var(--vercel-focus-blue));
+    outline-offset: 2px;
+  }
+
+  /* 登录入口：品牌色主按钮（右侧操作区内，间距由 .nav-actions gap 控制） */
+  .nav-login-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 8px 18px;
+    background: var(--primary-color);
+    color: var(--vercel-white);
+    border-radius: 10px;
+    font-size: 1em;
+    font-weight: 600;
+    line-height: 1;
+    text-decoration: none;
+    cursor: pointer;
+    box-shadow: 0 2px 12px color-mix(in srgb, var(--primary-color) 40%, transparent);
+    transition:
+      filter 0.2s ease,
+      transform 0.15s ease,
+      box-shadow 0.2s ease;
+  }
+  .nav-login-btn:hover {
+    color: var(--vercel-white);
+    filter: brightness(1.12);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 18px color-mix(in srgb, var(--primary-color) 55%, transparent);
+  }
+  .nav-login-btn:active {
+    transform: translateY(0) scale(0.98);
+  }
+  .nav-login-btn:focus-visible {
+    outline: 2px solid var(--focus-ring-color, var(--vercel-focus-blue));
+    outline-offset: 2px;
+  }
+  .nav-login-btn svg {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+  }
+
+  /* 用户入口：头像 + 用户名 */
+  .nav-user {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+  }
+  .nav-user span {
+    max-width: 10em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
   </style>
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
-import { ref, onMounted, onUnmounted, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import TocToggles from './TocToggles.vue'
+import UserAvatar from './UserAvatar.vue'
 import { appConfig } from '../config/app-config'
 import { useGsap } from '@/composables/useGsap'
+import { useAuthStore } from '@/stores/auth'
+import { useAuthorizationStore } from '@/stores/authorization'
 
 const { t } = useI18n()
 const router = useRouter()
+const route = useRoute()
+const auth = useAuthStore()
+const authz = useAuthorizationStore()
+
+const loggingOut = ref(false)
+
+/** 登录入口：携带当前页路径，登录成功后回跳（站内路径由 store 校验） */
+const loginTarget = computed(() => {
+  if (route.path === '/login') return { path: '/login' }
+  return { path: '/login', query: { redirect: route.fullPath } }
+})
+
+async function onLogout() {
+  if (loggingOut.value) return
+  loggingOut.value = true
+  try {
+    await auth.signOut()
+  } finally {
+    loggingOut.value = false
+    router.replace('/login')
+  }
+}
 
 const burgerInput = ref<HTMLInputElement | null>(null)
 const sideNav = ref<HTMLElement | null>(null)

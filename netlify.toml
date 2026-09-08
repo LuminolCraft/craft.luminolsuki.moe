@@ -4,6 +4,9 @@
 
 [build.environment]
   NODE_VERSION = "22"
+  # 前端 API 基地址（Vite 构建时静态注入）。随仓库提交，Netlify 无需后台手动配置；
+  # 代码侧另有按构建模式的回退默认值（src/lib/api-base.ts），此变量用于显式覆盖
+  VITE_API_BASE_URL = "https://api.craft.luminolsuki.moe"
 
 [[headers]]
   for = "/*.css"
