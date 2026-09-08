@@ -4,9 +4,9 @@
 
 [build.environment]
   NODE_VERSION = "22"
-  # 前端 API 基地址（Vite 构建时静态注入）。随仓库提交，Netlify 无需后台手动配置；
-  # 代码侧另有按构建模式的回退默认值（src/lib/api-base.ts），此变量用于显式覆盖
-  VITE_API_BASE_URL = "https://luminol-nexus.narcssu.top"
+  # API 基地址留空 = 同源：浏览器只与 craft.luminolsuki.moe 通信，
+  # /api/* 由下方 redirects 同源反代到 Worker（Cookie 第一方，规避跨站分区）
+  VITE_API_BASE_URL = ""
 
 [[headers]]
   for = "/*.css"
@@ -24,6 +24,16 @@
     Cache-Control = "no-cache, no-store, must-revalidate"
     Pragma = "no-cache"
     Expires = "0"
+
+# API 同源反代（必须位于 /* SPA 兜底之前：redirects 按顺序首个匹配生效）：
+# /api/*（业务 API + Better Auth）转发到 Cloudflare Worker。force = true 确保优先
+# 于静态文件；status = 200 为代理模式（透传请求/响应与 Set-Cookie，浏览器视角
+# 全程同源，会话与 OAuth state Cookie 均为第一方）
+[[redirects]]
+  from = "/api/*"
+  to = "https://luminol-nexus.narcssu.top/api/:splat"
+  status = 200
+  force = true
 
 [[redirects]]
   from = "/*"
