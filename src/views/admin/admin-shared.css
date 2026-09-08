@@ -1,0 +1,443 @@
+/* 管理后台共享样式：由四个 admin 页面的 <style scoped> @import 使用。
+ * 设计令牌沿用全局 theme-colors.css（Vercel Geist 体系）。 */
+
+.page-head {
+  margin-bottom: 1.8rem;
+}
+
+.page-title {
+  font-size: clamp(1.4rem, 3vw, 1.8rem);
+  font-weight: 700;
+  letter-spacing: -0.8px;
+  color: var(--text-color);
+  margin: 0 0 0.4rem;
+}
+
+.page-subtitle {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.page-loading,
+.page-empty {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  padding: 1.2rem 0;
+}
+
+.page-error {
+  margin-top: 1.2rem;
+  padding: 0.75rem 0.9rem;
+  border-left: 2px solid var(--error-color, #e5484d);
+  background: color-mix(in srgb, var(--error-color, #e5484d) 6%, transparent);
+  font-size: 0.85rem;
+  color: var(--error-color, #e5484d);
+}
+
+/* ---------- 表格 ---------- */
+.table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+
+.data-table th {
+  text-align: left;
+  padding: 0.7rem 1rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border-color);
+  white-space: nowrap;
+}
+
+.data-table td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--border-color) 55%, transparent);
+  vertical-align: middle;
+}
+
+.data-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.td-strong {
+  font-weight: 600;
+  color: var(--text-color);
+  white-space: nowrap;
+}
+
+.td-dim {
+  color: var(--text-secondary);
+}
+
+.td-reason {
+  max-width: 22rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-color);
+}
+
+.th-actions {
+  width: 1%;
+}
+
+.td-actions {
+  white-space: nowrap;
+  text-align: right;
+}
+
+.row-revoked .td-strong,
+.row-revoked .td-reason {
+  opacity: 0.55;
+}
+
+.row-link {
+  color: var(--link-color);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.row-link:hover {
+  text-decoration: underline;
+}
+
+.row-btn {
+  padding: 0.35rem 0.7rem;
+  margin-left: 0.35rem;
+  background: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  color: var(--text-color);
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.row-btn:hover:not(:disabled) {
+  border-color: var(--primary-color);
+}
+
+.row-btn.warn {
+  color: var(--error-color, #e5484d);
+  border-color: color-mix(in srgb, var(--error-color, #e5484d) 35%, transparent);
+}
+
+.row-btn.warn:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--error-color, #e5484d) 8%, transparent);
+}
+
+.row-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ---------- 徽标 ---------- */
+.role-badge {
+  display: inline-block;
+  padding: 0.12rem 0.5rem;
+  margin-right: 0.3rem;
+  border-radius: 99px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--primary-color);
+  background: color-mix(in srgb, var(--primary-color) 10%, transparent);
+}
+
+.type-badge {
+  display: inline-block;
+  padding: 0.15rem 0.55rem;
+  border-radius: 5px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+}
+
+.type-badge[data-type='website'] {
+  color: var(--error-color, #e5484d);
+  border-color: color-mix(in srgb, var(--error-color, #e5484d) 35%, transparent);
+}
+
+.type-badge[data-type='minecraft'] {
+  color: var(--primary-color);
+  border-color: color-mix(in srgb, var(--primary-color) 35%, transparent);
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 0.15rem 0.55rem;
+  border-radius: 99px;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.status-badge[data-status='active'] {
+  color: var(--primary-color);
+  background: color-mix(in srgb, var(--primary-color) 10%, transparent);
+}
+
+.status-badge[data-status='expired'] {
+  color: var(--text-secondary);
+  background: color-mix(in srgb, var(--text-color) 6%, transparent);
+}
+
+.status-badge[data-status='revoked'] {
+  color: var(--text-secondary);
+  text-decoration: line-through;
+}
+
+/* ---------- 分页 ---------- */
+.pager {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1.2rem;
+}
+
+.pager-btn {
+  padding: 0.45rem 1rem;
+  background: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  color: var(--text-color);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+
+.pager-btn:hover:not(:disabled) {
+  border-color: var(--primary-color);
+}
+
+.pager-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.pager-label {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- 表单 / 按钮 ---------- */
+.btn {
+  padding: 0.55rem 1.2rem;
+  background: var(--primary-color);
+  border: none;
+  border-radius: 6px;
+  color: #fff;
+  font-size: 0.86rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: translate 0.15s ease, opacity 0.15s ease;
+}
+
+.btn:hover:not(:disabled) {
+  translate: 0 -1px;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn.ghost {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-color);
+}
+
+.link-btn {
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin-top: 0.3rem;
+  color: var(--link-color);
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.link-btn:hover {
+  text-decoration: underline;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-bottom: 0.4rem;
+}
+
+.label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-color);
+}
+
+.hint {
+  font-size: 0.76rem;
+  color: var(--text-secondary);
+}
+
+.input {
+  padding: 0.55rem 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-color);
+  font-size: 0.88rem;
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+}
+
+.input:focus-visible {
+  outline: 2px solid var(--focus-ring-color, var(--vercel-focus-blue));
+  outline-offset: 2px;
+}
+
+.textarea {
+  resize: vertical;
+  font-family: inherit;
+}
+
+.dim {
+  font-size: 0.86rem;
+  color: var(--text-secondary);
+}
+
+.form-error {
+  margin: 0;
+  padding: 0.7rem 0.9rem;
+  border-left: 2px solid var(--error-color, #e5484d);
+  background: color-mix(in srgb, var(--error-color, #e5484d) 6%, transparent);
+  font-size: 0.85rem;
+  color: var(--error-color, #e5484d);
+}
+
+.form-success {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--primary-color);
+}
+
+/* ---------- 弹层 ---------- */
+.modal-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.2rem;
+  background: rgb(0 0 0 / 0.5);
+}
+
+.modal {
+  width: min(30rem, 100%);
+  max-height: 86dvh;
+  overflow-y: auto;
+  padding: 1.4rem 1.5rem;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background: var(--background-color);
+  box-shadow: 0 20px 60px rgb(0 0 0 / 0.3);
+}
+
+.modal-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-color);
+  margin: 0 0 1.1rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.7rem;
+  margin-top: 1.2rem;
+}
+
+/* ---------- 证据 ---------- */
+.evidence-list {
+  list-style: none;
+  margin: 0 0 1rem;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.evidence-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 0.5rem 0.7rem;
+}
+
+.evidence-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.85rem;
+  color: var(--text-color);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.evidence-size {
+  flex-shrink: 0;
+  font-size: 0.74rem;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.evidence-preview {
+  display: block;
+  max-width: 100%;
+  max-height: 16rem;
+  margin: 0 0 1rem;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  object-fit: contain;
+}
+
+.upload-row {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.upload-input {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  max-width: 16rem;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}

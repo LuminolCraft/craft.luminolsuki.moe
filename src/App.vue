@@ -1,19 +1,24 @@
 <template>
-  <Navbar />
+  <!-- 认证页（meta.hideChrome）隐藏全局导航/页脚，保证分屏布局全屏沉浸 -->
+  <Navbar v-if="!route.meta.hideChrome" />
   <router-view />
-  <Footer />
+  <Footer v-if="!route.meta.hideChrome" />
 </template>
 
 
 <script setup lang="ts">
-import { computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { computed, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useHead } from '@unhead/vue'
 import { useI18n } from 'vue-i18n'
 import Navbar from './components/Navbar.vue'
 import Footer from './components/Footer.vue'
+import MergeGuideBanner from './components/account/MergeGuideBanner.vue'
+import { useAuthStore, AUTH_SYNC_KEY } from './stores/auth'
 
 const route = useRoute()
+const router = useRouter()
+const auth = useAuthStore()
 const { t } = useI18n()
 
 const title = computed(() => route.meta.title as string || 'LuminolCraft')
@@ -28,6 +33,23 @@ useHead({
   ]
 })
 
+// ---------- 跨标签页登录态同步 ----------
+// 其他标签页登录/登出时写入 AUTH_SYNC_KEY（storage 事件只在非写入方触发），
+// 本页收到后强制重新校验服务端会话，并按当前路由类型校正：
+// guest 页（登录/注册等）已登录 → 回首页；受保护页已登出 → 去登录页。
+onMounted(() => {
+  window.addEventListener('storage', (e: StorageEvent) => {
+    if (e.key !== AUTH_SYNC_KEY || !e.newValue) return
+    void auth.resyncSession().then(() => {
+      const cur = router.currentRoute.value
+      if (cur.meta.guestOnly && auth.isAuthenticated) {
+        void router.replace('/')
+      } else if (cur.meta.requiresAuth && !auth.isAuthenticated) {
+        void router.replace({ path: '/login', query: { redirect: cur.fullPath } })
+      }
+    })
+  })
+})
 </script>
 <style>
   @import './styles/fonts.css';

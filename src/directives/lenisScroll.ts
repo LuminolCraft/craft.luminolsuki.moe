@@ -5,7 +5,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { lenisInstances } from '@/utils/lenisInstances'
 
 // 使用 Map 存储元素与实例的映射（因为需要遍历销毁所有实例）
-let instanceMap = new Map<HTMLElement, Lenis>()
+const instanceMap = new Map<HTMLElement, Lenis>()
 
 /**
  * 销毁指定元素上的 Lenis 实例（如果存在）

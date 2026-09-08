@@ -669,7 +669,7 @@ function generateBallPosition(
     const minY = safeZone.bottom + SECTION_MARGIN
     const maxY = Math.max(minY, sectionHeight - ballDiameter - SECTION_MARGIN)
 
-    let lastValid = { x: gsap.utils.random(minX, maxX), y: gsap.utils.random(minY, maxY) }
+    const lastValid = { x: gsap.utils.random(minX, maxX), y: gsap.utils.random(minY, maxY) }
 
     for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
         const x = gsap.utils.random(minX, maxX)
