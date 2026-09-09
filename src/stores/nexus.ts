@@ -10,7 +10,6 @@ import type {
   MinecraftAccount,
   MinecraftBindPending,
   MinecraftBindResult,
-  MinecraftNameResolve,
 } from '@/types/nexus'
 
 /**
@@ -44,21 +43,21 @@ export const useNexusStore = defineStore('nexus', () => {
   }
 
   /**
-   * 绑定 MC 账号（POST /me/minecraft）。BREAKING 两步流程：
-   * 201 返回 pending（验证码引导态，无 id 字段）或已落库的 MinecraftAccount。
+   * 绑定 MC 账号（POST /me/minecraft）。两步流程：201 一律返回 pending
+   * （验证码引导态，无 id 字段；只输名字，uuid 由插件核验时上报）。
    * 本方法不做缓存写入/刷新，由视图层依据结果处理。
+   * 409 MINECRAFT_BIND_PENDING = 已有进行中的绑定（单 pending 强制）。
    */
   async function bindMinecraft(input: BindMinecraftInput): Promise<MinecraftBindResult> {
     return api.post<MinecraftBindResult>('/me/minecraft', input)
   }
 
   /**
-   * 玩家名解析代查（GET /mc/resolve，后端 Worker 出网查 Mojang）。
-   * 浏览器直连 api.mojang.com 被 CORS 拦截（必失败），一律走本端点。
-   * 404 PLAYER_NOT_FOUND = 玩家不存在；502 = 上游故障；429 = 触发限流（带 resetAt）。
+   * 手动取消进行中的绑定（DELETE /me/minecraft/pending，幂等）。
+   * 取消后可立即重新发起；过期的 pending 由后端自愈清理，无需先查。
    */
-  async function resolveMinecraftName(name: string): Promise<MinecraftNameResolve> {
-    return api.get<MinecraftNameResolve>(`/mc/resolve?name=${encodeURIComponent(name)}`)
+  async function cancelMinecraftPending(): Promise<void> {
+    await api.delete('/me/minecraft/pending')
   }
 
   async function unbindMinecraft(id: string) {
@@ -141,7 +140,7 @@ export const useNexusStore = defineStore('nexus', () => {
     fetchMyMinecraft,
     fetchMinecraftPending,
     bindMinecraft,
-    resolveMinecraftName,
+    cancelMinecraftPending,
     unbindMinecraft,
     fetchLinksForAccount,
     createAccountLink,

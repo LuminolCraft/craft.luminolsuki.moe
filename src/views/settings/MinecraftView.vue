@@ -61,10 +61,10 @@
     <section class="mc-section">
       <h2 class="mc-section-title">{{ t('minecraft.bindTitle') }}</h2>
 
-      <!-- 两步流程验证引导态：提交成功后前置显示；表单保留以便幂等重提同一 uuid -->
+      <!-- 两步流程验证引导态：提交成功后前置显示；单 pending 强制（取消后才能重新发起） -->
       <div v-if="pendingCode" class="mc-pending" role="status">
         <span class="mc-pending-code">{{ pendingCode }}</span>
-        <p class="mc-pending-desc">{{ t('minecraft.pendingDesc') }}</p>
+        <p class="mc-pending-desc">{{ t('minecraft.pendingDesc', { name: pendingName }) }}</p>
         <span class="mc-pending-command">{{ t('minecraft.pendingCommand', { code: pendingCode }) }}</span>
         <p v-if="!pollExpired" class="mc-pending-expires">
           {{ t('minecraft.pendingExpires', { n: remainSeconds }) }}
@@ -75,58 +75,38 @@
             {{ t('minecraft.pendingResubmit') }}
           </button>
         </template>
+        <button
+          v-if="!pollExpired"
+          type="button"
+          class="mc-resolve"
+          :disabled="cancelling"
+          @click="onCancelPending"
+        >
+          {{ cancelling ? t('minecraft.cancelling') : t('minecraft.cancelBind') }}
+        </button>
       </div>
 
       <form class="mc-form" novalidate @submit.prevent="onBind">
         <div class="mc-field">
           <label class="mc-label" for="mc-name">{{ t('minecraft.nameLabel') }}</label>
-          <div class="mc-resolve-row">
-            <input
-              id="mc-name"
-              v-model.trim="playerName"
-              class="mc-input"
-              type="text"
-              maxlength="16"
-              spellcheck="false"
-              :placeholder="t('minecraft.namePlaceholder')"
-            />
-            <button
-              type="button"
-              class="mc-resolve"
-              :disabled="resolving || playerName.length < 3"
-              @click="onResolve"
-            >
-              {{ resolving ? t('minecraft.resolving') : t('minecraft.resolve') }}
-            </button>
-          </div>
-        </div>
-
-        <div class="mc-field">
-          <label class="mc-label" for="mc-uuid">{{ t('minecraft.uuidLabel') }}</label>
           <input
-            id="mc-uuid"
-            v-model.trim="uuid"
-            class="mc-input mono"
+            id="mc-name"
+            v-model="playerName"
+            class="mc-input"
             type="text"
+            maxlength="16"
             spellcheck="false"
-            :placeholder="t('minecraft.uuidPlaceholder')"
+            :placeholder="t('minecraft.namePlaceholder')"
           />
-          <p v-if="resolveHint" class="mc-hint" :class="{ warn: resolveIsWarn }" role="status">{{ resolveHint }}</p>
+          <p class="mc-hint">{{ t('minecraft.nameHint') }}</p>
         </div>
 
-        <button type="submit" class="mc-submit" :disabled="binding || !uuid || playerName.length < 3">
+        <button type="submit" class="mc-submit" :disabled="binding || playerName.length < 3">
           {{ binding ? t('minecraft.binding') : t('minecraft.submitBind') }}
         </button>
-        <div v-if="bindConflict" class="mc-error mc-conflict" role="alert">
-          <p class="mc-conflict-title">{{ t('minecraft.errAlreadyLinked') }}</p>
-          <p>{{ t('minecraft.conflictGuideSelf') }}</p>
-          <p>{{ t('minecraft.conflictGuideAdmin') }}</p>
-          <a
-            class="mc-conflict-link"
-            href="https://qm.qq.com/q/39rZKHurJe"
-            target="_blank"
-            rel="noopener noreferrer"
-          >{{ t('minecraft.contactQQGroup') }}</a>
+        <div v-if="bindPendingConflict" class="mc-error mc-conflict" role="alert">
+          <p class="mc-conflict-title">{{ t('minecraft.errBindPending') }}</p>
+          <p>{{ t('minecraft.pendingConflictGuide') }}</p>
         </div>
         <p v-else-if="bindError" class="mc-error" role="alert">{{ bindError }}</p>
         <p v-if="bindSuccess" class="mc-success" role="status">{{ t('minecraft.bindSuccess') }}</p>
@@ -267,23 +247,23 @@ const loading = ref(true)
 const listError = ref('')
 const accounts = computed(() => nexus.minecraftAccounts)
 
-// ---------- 绑定（仅 Java） ----------
+// ---------- 绑定（仅 Java；只输名字，uuid 由插件核验时上报） ----------
+/** Minecraft 正版玩家名规则：3-16 位字母/数字/下划线（区分大小写原样提交） */
+const MC_NAME_RE = /^[A-Za-z0-9_]{3,16}$/
 const playerName = ref('')
-const uuid = ref('')
-const resolving = ref(false)
 const binding = ref(false)
-const resolveHint = ref('')
-const resolveIsWarn = ref(false)
 const bindError = ref('')
 const bindSuccess = ref(false)
-const bindConflict = ref(false)
+// 单 pending 强制：pending 存活时再次提交 → 409 MINECRAFT_BIND_PENDING
+const bindPendingConflict = ref(false)
 
 // ---------- 两步绑定引导态（pending：进服 /v <code> 核验后才落库） ----------
 const pendingCode = ref('')
-const pendingUuid = ref('')
+const pendingName = ref('')
 const expiresTotal = ref(0)
 const remainSeconds = ref(0)
 const pollExpired = ref(false)
+const cancelling = ref(false)
 let pollTimer: ReturnType<typeof setInterval> | null = null
 let tickTimer: ReturnType<typeof setInterval> | null = null
 let polling = false
@@ -294,7 +274,7 @@ const PENDING_BIND_KEY = 'mc-pending-bind'
 
 interface StoredPendingBind {
   code: string
-  uuid: string
+  name: string
   expiresIn: number
   startedAt: number
 }
@@ -302,7 +282,7 @@ interface StoredPendingBind {
 function savePendingBind(pending: MinecraftBindPending) {
   const record: StoredPendingBind = {
     code: pending.code,
-    uuid: pending.uuid,
+    name: pending.name,
     expiresIn: Math.min(Math.max(0, Math.floor(pending.expiresIn)), 600),
     startedAt: Date.now(),
   }
@@ -326,76 +306,32 @@ function loadPendingBind(): StoredPendingBind | null {
     const raw = localStorage.getItem(PENDING_BIND_KEY)
     if (!raw) return null
     const parsed = JSON.parse(raw) as StoredPendingBind
-    if (typeof parsed?.code !== 'string' || typeof parsed?.uuid !== 'string') return null
+    if (typeof parsed?.code !== 'string' || typeof parsed?.name !== 'string') return null
     return parsed
   } catch {
     return null
   }
 }
 
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-
-/** 玩家名解析（后端代查 /mc/resolve）：名字 → uuid（官方大小写 + 连字符小写）。404=玩家不存在 */
-async function onResolve() {
-  resolveHint.value = ''
-  bindError.value = ''
-  resolving.value = true
-  try {
-    const resolved = await nexus.resolveMinecraftName(playerName.value)
-    uuid.value = resolved.uuid.toLowerCase()
-    playerName.value = resolved.name
-    resolveIsWarn.value = false
-  } catch (e) {
-    resolveHint.value =
-      isAppError(e) && e.code === 'PLAYER_NOT_FOUND'
-        ? t('minecraft.resolveNotFound')
-        : t('minecraft.resolveFailed')
-    resolveIsWarn.value = true
-  } finally {
-    resolving.value = false
-  }
-}
-
 async function onBind() {
   bindError.value = ''
   bindSuccess.value = false
-  bindConflict.value = false
-  if (!playerName.value || !UUID_RE.test(uuid.value)) {
-    bindError.value = t('minecraft.errInvalidForm')
+  bindPendingConflict.value = false
+  // 名字区分大小写原样提交（核验时与插件上报的游戏内玩家名精确比对）；
+  // 不做存在性预校验（用户拍板）——输错名字在核验时必然 player_mismatch
+  if (!MC_NAME_RE.test(playerName.value)) {
+    bindError.value = t('minecraft.errInvalidName')
     return
   }
   binding.value = true
   try {
-    // 玩家名大小写不影响绑定（uuid 才是唯一标识）：提交前以后端代查的
-    // Mojang 官方大小写为准，并校验玩家名与 UUID 确实对应（防手滑错绑）。
-    let name = playerName.value
-    try {
-      const resolved = await nexus.resolveMinecraftName(name)
-      const requested = resolved.uuid.replace(/-/g, '').toLowerCase()
-      if (requested !== uuid.value.replace(/-/g, '').toLowerCase()) {
-        bindError.value = t('minecraft.errInvalidForm')
-        return
-      }
-      name = resolved.name
-    } catch {
-      /* 解析失败（404 不存在 / 上游故障 / 限流）：用输入原样提交（uuid 是唯一标识，后端按 uuid 核验） */
-    }
-    const result = await nexus.bindMinecraft({ platform: 'java', uuid: uuid.value.toLowerCase(), name })
-    if ('status' in result && result.status === 'pending') {
-      // 两步流程：进入验证引导态（幂等重提会以新 pending 覆盖引导态）
-      enterPending(result)
-    } else {
-      // 直接落库（后端对已绑本人账号的幂等刷新等场景）
-      bindSuccess.value = true
-      playerName.value = ''
-      uuid.value = ''
-      resolveHint.value = ''
-      await nexus.fetchMyMinecraft(true)
-    }
+    // 单 pending 强制：后端在 pending 存活时返回 409 MINECRAFT_BIND_PENDING
+    const result = await nexus.bindMinecraft({ platform: 'java', name: playerName.value })
+    enterPending(result)
   } catch (e) {
-    if (isAppError(e) && e.code === 'MINECRAFT_ACCOUNT_ALREADY_LINKED') {
-      // 409：结构化处置指引（见模板 conflict 面板）
-      bindConflict.value = true
+    if (isAppError(e) && e.code === 'MINECRAFT_BIND_PENDING') {
+      // 409：已有进行中的绑定验证 → 展示取消指引面板
+      bindPendingConflict.value = true
     } else if (isAppError(e) && e.code === 'RATE_LIMITED') {
       // 429：预绑定限流，后端携带 details.resetAt（epoch 毫秒）→ 展示可重试时间点（手册 §5/§10.7）
       const resetAt = errorToResetAt(e)
@@ -403,12 +339,27 @@ async function onBind() {
         ? t('minecraft.errRateLimitedUntil', { time: new Date(resetAt).toLocaleString() })
         : t('minecraft.errRateLimited')
     } else {
-      // VALIDATION_ERROR（uuid 畸形兜底，前端已预校验）与其他错误
+      // VALIDATION_ERROR（名字格式兜底，前端已预校验）与其他错误
       bindError.value = t('minecraft.errInvalidForm')
     }
   } finally {
     binding.value = false
   }
+}
+
+/** 手动取消进行中的绑定：清后端 pending + 本地引导态，回到表单态 */
+async function onCancelPending() {
+  if (cancelling.value) return
+  cancelling.value = true
+  try {
+    await nexus.cancelMinecraftPending()
+  } catch {
+    /* 取消失败（网络等）：本地仍退出引导态，过期 pending 由后端自愈清理 */
+  } finally {
+    cancelling.value = false
+  }
+  stopPendingWatch()
+  exitPending()
 }
 
 // ---------- 两步流程：引导态轮询与倒计时 ----------
@@ -426,7 +377,7 @@ function startPendingWatch() {
 
 function enterPending(pending: MinecraftBindPending) {
   pendingCode.value = pending.code
-  pendingUuid.value = pending.uuid
+  pendingName.value = pending.name
   expiresTotal.value = Math.min(Math.max(0, Math.floor(pending.expiresIn)), 600)
   remainSeconds.value = expiresTotal.value
   // 持久化供其他标签页 / 刷新后恢复引导态
@@ -440,16 +391,13 @@ function restorePendingFromStorage() {
   if (!saved) return
   const elapsed = Math.floor((Date.now() - saved.startedAt) / 1000)
   const remain = saved.expiresIn - elapsed
-  // 已过期或该 uuid 已绑定成功 → 清理存储，不恢复
-  if (
-    remain <= 0 ||
-    accounts.value.some((a) => a.uuid.toLowerCase() === saved.uuid.toLowerCase())
-  ) {
+  // 已过期或该名字已绑定成功 → 清理存储，不恢复
+  if (remain <= 0 || accounts.value.some((a) => a.name === saved.name)) {
     clearPendingBind()
     return
   }
   pendingCode.value = saved.code
-  pendingUuid.value = saved.uuid
+  pendingName.value = saved.name
   expiresTotal.value = saved.expiresIn
   remainSeconds.value = remain
   startPendingWatch()
@@ -462,8 +410,8 @@ async function pollPendingBound() {
   polling = true
   try {
     const list = await nexus.fetchMyMinecraft(true)
-    const target = pendingUuid.value.toLowerCase()
-    if (list.some((a) => a.uuid.toLowerCase() === target)) onPendingResolved()
+    // 核验成功后绑定列表出现 pending 名字对应的账号（uuid 由插件上报，前端未知）
+    if (list.some((a) => a.name === pendingName.value)) onPendingResolved()
   } catch {
     /* 单轮轮询失败忽略，等待下一轮 */
   } finally {
@@ -476,8 +424,6 @@ function onPendingResolved() {
   exitPending()
   bindSuccess.value = true
   playerName.value = ''
-  uuid.value = ''
-  resolveHint.value = ''
 }
 
 function onPendingExpired() {
@@ -486,7 +432,7 @@ function onPendingExpired() {
   pollExpired.value = true
 }
 
-/** 「重新提交」：回到普通表单态（保留 uuid/playerName 便于重提） */
+/** 「重新提交」：回到普通表单态（pending 已过期，重新发起不受单 pending 限制） */
 function onPendingResubmit() {
   stopPendingWatch()
   exitPending()
@@ -495,7 +441,7 @@ function onPendingResubmit() {
 function exitPending() {
   clearPendingBind()
   pendingCode.value = ''
-  pendingUuid.value = ''
+  pendingName.value = ''
   expiresTotal.value = 0
   remainSeconds.value = 0
   pollExpired.value = false
@@ -670,9 +616,8 @@ onMounted(async () => {
   try {
     const pending = await nexus.fetchMinecraftPending()
     if (pending) {
-      const bound = accounts.value.some((a) => a.uuid.toLowerCase() === pending.uuid.toLowerCase())
-      if (bound) clearPendingBind()
-      else enterPending(pending)
+      // 服务端 pending 仍存活 → 恢复引导态（核验成功后端点归空，无需比对 uuid）
+      enterPending(pending)
     } else {
       // 服务端无 pending：本地记录必然已作废/已完成，清理不恢复
       clearPendingBind()
