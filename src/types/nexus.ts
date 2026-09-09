@@ -33,15 +33,14 @@ export interface MinecraftAccount {
   createdAt?: number
 }
 
-/** 绑定入参（POST /me/minecraft） */
+/** 绑定入参（POST /me/minecraft）——只输名字，uuid 由插件进服核验时上报 */
 export interface BindMinecraftInput {
   platform: MinecraftPlatform
-  uuid: string
   name: string
 }
 
 /**
- * 绑定两步流程 pending 返回体（POST /me/minecraft 201，未冲突时）：
+ * 绑定两步流程 pending 返回体（POST /me/minecraft 201）：
  * 6 位验证码，玩家进服 `/v <code>` 由 MC 插件核验后才落库；
  * pending 态没有 id 字段（判别联合以 status 区分）。
  */
@@ -50,13 +49,12 @@ export interface MinecraftBindPending {
   code: string
   name: string
   platform: string
-  uuid: string
   /** 验证码有效期（秒），约 600 */
   expiresIn: number
 }
 
-/** POST /me/minecraft 201 返回体：pending（验证码引导）或已落库的绑定记录 */
-export type MinecraftBindResult = MinecraftAccount | MinecraftBindPending
+/** POST /me/minecraft 201 返回体：一律为 pending（验证码引导态；rework-mc-bind-name-only） */
+export type MinecraftBindResult = MinecraftBindPending
 
 /** 玩家名解析代查结果（GET /mc/resolve）：name 为 Mojang 官方大小写，uuid 为小写连字符标准格式 */
 export interface MinecraftNameResolve {
