@@ -69,6 +69,7 @@
 import { onMounted, onUnmounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
+import { checkEmailDomain } from '@/lib/email-domain'
 import AuthSplitLayout from '@/components/auth/AuthSplitLayout.vue'
 import AuthButton from '@/components/auth/AuthButton.vue'
 import AuthField from '@/components/auth/AuthField.vue'
@@ -169,6 +170,10 @@ function handleAuthError(e: unknown) {
       errorMsg.value = t('auth.register.emailTaken')
       formInvalid.value = true
       break
+    case 'EMAIL_DOMAIN_NOT_ALLOWED':
+      errorMsg.value = t('auth.register.emailDomainNotAllowed')
+      formInvalid.value = true
+      break
     case 'INVALID_PASSWORD':
       errorMsg.value = t('auth.register.weakPassword')
       formInvalid.value = true
@@ -195,9 +200,17 @@ async function onSubmit() {
     errorMsg.value = t('auth.register.invalidUsername')
     return
   }
-  if (!EMAIL_RE.test(email.value.trim())) {
+  const normalizedEmail = email.value.trim().toLowerCase()
+
+  if (!EMAIL_RE.test(normalizedEmail)) {
     formInvalid.value = true
     errorMsg.value = t('auth.register.invalidEmail')
+    return
+  }
+
+  if (!checkEmailDomain(normalizedEmail)) {
+    formInvalid.value = true
+    errorMsg.value = t('auth.register.emailDomainNotAllowed')
     return
   }
   if (password.value.length < 8) {
@@ -213,7 +226,7 @@ async function onSubmit() {
 
   pending.value = true
   try {
-    const autoSignedIn = await auth.signUp(name, email.value.trim(), password.value)
+    const autoSignedIn = await auth.signUp(name, normalizedEmail, password.value)
     if (autoSignedIn) {
       // 注册即登录（后端未强制邮箱验证）：回跳安全站内路径，无 redirect 时进入用户中心
       router.replace(resolveInternalPath(route.query.redirect, '/settings'))

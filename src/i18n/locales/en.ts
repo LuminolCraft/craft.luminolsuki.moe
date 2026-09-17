@@ -57,6 +57,7 @@ export default {
       "login": "Sign in",
       "invalidUsername": "Username must be 2-32 characters",
       "invalidEmail": "Please enter a valid email address",
+      "emailDomainNotAllowed": "This email domain isn’t supported for now, please use a different email to sign up.",
       "weakPassword": "Password must be at least 8 characters",
       "passwordMismatch": "Passwords do not match",
       "emailTaken": "This email is already registered",
