@@ -57,6 +57,7 @@ export default {
       "login": "去登录",
       "invalidUsername": "用户名需为 2-32 个字符",
       "invalidEmail": "请输入有效的邮箱地址",
+      "emailDomainNotAllowed": "暂不支持该邮箱域名，请使用其他邮箱注册。",
       "weakPassword": "密码至少需要 8 位",
       "passwordMismatch": "两次输入的密码不一致",
       "emailTaken": "该邮箱已被注册",
