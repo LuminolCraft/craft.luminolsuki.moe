@@ -31,7 +31,7 @@
 # 全程同源，会话与 OAuth state Cookie 均为第一方）
 [[redirects]]
   from = "/api/*"
-  to = "https://luminol-nexus.narcssu.top/api/:splat"
+  to = "https://luminolcraft-nexus.narcssu.top/api/:splat"
   status = 200
   force = true
 

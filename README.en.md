@@ -15,7 +15,7 @@
 
 ---
 
-LuminolCraft is the official website of the LuminolMC-affiliated Minecraft server, a modern Single Page Application (SPA) built with Vue 3. The website provides server status monitoring, news, server rules, support information, and more, integrating the GSAP professional animation system, Lenis inertia scrolling, multiple homepage layout switching, multi-language and multi-theme support, with deep responsive adaptation for desktop and mobile devices.
+LuminolCraft is the official website of the LuminolMC-affiliated Minecraft server, a modern Single Page Application (SPA) built with Vue 3. The website provides server status monitoring, news, server rules, and support information, and adds a full account system (email + OAuth registration/login, a user center, and an admin console) on top of the GSAP professional animation system, Lenis inertia scrolling, multi-language and dual-theme support, with deep responsive adaptation for desktop and mobile devices.
 
 ---
 
@@ -32,20 +32,23 @@ LuminolCraft is the official website of the LuminolMC-affiliated Minecraft serve
   - [7.2 GSAP Animation System](#72-gsap-animation-system)
   - [7.3 Internationalization (i18n)](#73-internationalization-i18n)
   - [7.4 Theme System](#74-theme-system)
-  - [7.5 Routing Structure](#75-routing-structure)
+  - [7.5 Routing & Navigation Guards](#75-routing--navigation-guards)
   - [7.6 Server Status Monitoring](#76-server-status-monitoring)
   - [7.7 News System](#77-news-system)
-  - [7.8 SEO Optimization](#78-seo-optimization)
-- [8. Configuration Reference](#8-configuration-reference)
-- [9. Development Guidelines](#9-development-guidelines)
-- [10. Testing Strategy](#10-testing-strategy)
-- [11. Build & Deployment](#11-build--deployment)
-- [12. FAQ](#12-faq)
-- [13. Maintenance Notes](#13-maintenance-notes)
-- [14. Contributing Guide](#14-contributing-guide)
-- [15. License](#15-license)
-- [16. Acknowledgments](#16-acknowledgments)
-- [17. Contact](#17-contact)
+  - [7.8 Markdown Rendering Pipeline](#78-markdown-rendering-pipeline)
+  - [7.9 SEO Optimization](#79-seo-optimization)
+- [8. API Conventions (Frontend-Visible Behavior)](#8-api-conventions-frontend-visible-behavior)
+- [9. Local Storage & Cookies](#9-local-storage--cookies)
+- [10. Configuration Reference](#10-configuration-reference)
+- [11. Development Guidelines](#11-development-guidelines)
+- [12. Testing Strategy](#12-testing-strategy)
+- [13. Build & Deployment](#13-build--deployment)
+- [14. FAQ](#14-faq)
+- [15. Maintenance Notes](#15-maintenance-notes)
+- [16. Contributing Guide](#16-contributing-guide)
+- [17. License](#17-license)
+- [18. Acknowledgments](#18-acknowledgments)
+- [19. Contact](#19-contact)
 
 ---
 
@@ -53,38 +56,43 @@ LuminolCraft is the official website of the LuminolMC-affiliated Minecraft serve
 
 ### 1.1 Introduction
 
-LuminolCraft is the official website of the LuminolMC-affiliated Minecraft server. Built with Vue 3 + TypeScript + Vite, it is a fully-featured modern Single Page Application (SPA) that provides real-time status monitoring, news, rule explanations, and support channels for the server community.
+LuminolCraft is the official website of the LuminolMC-affiliated Minecraft server. Built with Vue 3 + TypeScript + Vite, it is a fully-featured modern Single Page Application (SPA) that provides real-time server status monitoring, a self-healing news system, rule explanations, support channels, and — since the introduction of the Nexus account system — email/OAuth authentication, a user center (`/settings`), and an admin console (`/admin`).
 
 ### 1.2 Background
 
-The LuminolCraft Minecraft server needed a modern, high-performance web platform to serve its player community. This project was created to provide real-time server information, news updates, and support resources while emphasizing visual appeal and interactive experience.
+The LuminolCraft Minecraft server needed a modern, high-performance web platform for its player community: real-time server information, news updates, account and Minecraft-identity management, and support resources — with an emphasis on visual appeal and interactive experience.
 
 ### 1.3 Project Positioning
 
 This project is a modern SPA that provides the following capabilities:
 
-- Real-time server status monitoring (online players, version, running status)
-- Dynamic news and announcement system (Markdown rendering + KaTeX math formulas + syntax highlighting)
+- Real-time server status monitoring (online players, running status)
+- Dynamic news system (unified/remark/rehype rendering + KaTeX + syntax highlighting + IndexedDB offline cache)
+- Account system: email/OAuth sign-in, email verification, password reset, session management, account linking
+- User center: profile editing, Minecraft binding with in-game verification, personal ban records
+- Admin console: user/role management, ban management with evidence, audit logs
 - Server rules and support information display
-- Multi-language (Chinese/English) and multi-theme (light/dark + multiple color schemes) support
+- Multi-language (Chinese/English) and dual-theme (light/dark) support
 - Deep responsive adaptation for desktop and mobile
-- GSAP professional-grade animations (Pin-Scrub scroll storytelling, entrance animations, theme toggle spherical diffusion, etc.)
+- GSAP animations (Pin-Scrub storytelling, entrance animations, View Transitions theme toggle)
 - SEO optimization (Open Graph tags, Sitemap generation, Canonical URLs)
 
 ### 1.4 Business Goals
 
 - **Community Engagement**: Foster an active player community through real-time information and news
-- **Server Transparency**: Provide visualization of server status, player counts, and performance
+- **Server Transparency**: Provide visualization of server status and player counts
+- **Identity & Moderation**: Let players bind their Minecraft identities and let staff manage bans with evidence
 - **Donation Support**: Maintain server operations through a dedicated support page
 
 ### 1.5 Technical Goals
 
-- **High Performance**: Code splitting, lazy loading, terser minification, CSS code splitting
+- **High Performance**: Code splitting, terser minification, CSS code splitting, IndexedDB-backed news cache (first paint never waits on the network when a cache exists)
 - **Type Safety**: Complete TypeScript coverage with `vue-tsc` type checking
-- **Responsive Design**: Separate CSS for desktop and mobile, perfect adaptation
+- **Responsive Design**: Separate CSS for desktop and mobile
 - **Internationalization**: Built-in Chinese and English, `localStorage` persistence
-- **SEO Optimization**: Per-route Open Graph tags, automatic Sitemap generation, Canonical URLs
-- **Animation Experience**: GSAP Pin-Scrub scroll storytelling + Lenis inertia scrolling, with touch/reduceMotion degradation
+- **Security Model**: No token ever stored in JavaScript; the session lives in an HttpOnly cookie; the login-state source of truth is always the server
+- **SEO**: Per-route Open Graph tags, automatic Sitemap generation, Canonical URLs
+- **Animation Experience**: GSAP Pin-Scrub storytelling + Lenis inertia scrolling, with touch/reduceMotion degradation
 
 ### 1.6 Target Audience
 
@@ -99,44 +107,38 @@ This project is a modern SPA that provides the following capabilities:
 
 ### 2.1 Server Status Monitoring
 
-Real-time server online status, player count, version number, and running status via the mcsrvstat.us API. Displayed as a status card in the homepage Hero section with a real-time status indicator (green online / gray offline).
+Real-time server online status and player count via the mcsrvstat.us API, displayed as a status card in the homepage Hero section with a real-time status indicator (online/offline). Details in [§7.6](#76-server-status-monitoring).
 
 ### 2.2 News System
 
-Dynamic news list and detail pages with Markdown rendering, KaTeX math formulas, and highlight.js syntax highlighting. News list supports pagination (6 items/page on desktop, 2 items/page on mobile).
+Dynamic news list and detail pages with a full unified/remark/rehype rendering pipeline, KaTeX math formulas, syntax highlighting, an IndexedDB offline-first cache, tag filtering, full-text search, and a GSAP Flip image lightbox. Details in [§7.7](#77-news-system) and [§7.8](#78-markdown-rendering-pipeline).
 
-### 2.3 Homepage Layout System
+### 2.3 Homepage Layout
 
-The project's core feature — a **configuration-driven multi-layout switching system**. The homepage (`Home.vue`) renders via `<component :is="layoutComponent">` dynamic component, switchable between three layouts:
+The homepage is fixed to the **Bento layout** (`LayoutCSections.vue`): features Bento grid + servers auto-fit grid (CSS-counter numbering) + a team section whose style is configurable. The former `LayoutA`/`LayoutB` components have been removed.
 
-| Layout   | Identifier   | Style Description                                                                                             |
-| -------- | ------------ | ------------------------------------------------------------------------------------------------------------- |
-| Artistic | `'artistic'` | Z-shaped diagonal flow + organic rotating cards + Pin-Scrub scroll storytelling                               |
-| Cinema   | `'cinema'`   | Cinema-style asymmetric impact composition (full-screen color blocks + giant numbers + four-corner asymmetry) |
-| Bento    | `'bento'`    | Classic Bento Grid (features 2×3 + servers auto-fit + team spherical avatars)                                 |
+The team section style is driven by `CURRENT_TEAM_STYLE` in `src/config/home-layout.ts`:
 
-Switching: Modify the `CURRENT_LAYOUT` constant in `src/config/home-layout.ts` and refresh (Vite HMR auto-reloads).
+| Value       | Behavior                                                                       |
+| ----------- | ------------------------------------------------------------------------------ |
+| `'artistic'`| Z-shaped offset + organic rotated cards                                        |
+| `'cinema'`  | Cinema-style asymmetric composition                                            |
+| `'bento'`   | Classic Bento grid arrangement                                                 |
+| `'random'`  | **Current default**: picks one of the three at random on each page load/refresh |
 
-Additionally, the team section style can be independently configured via `CURRENT_TEAM_STYLE`, freely combinable with the overall layout (e.g., `bento` layout + `cinema` team style).
+`resolveTeamStyle()` caches the random result at module level, so every consumer within one page session sees the same style; each reload re-rolls. Switching styles: edit `CURRENT_TEAM_STYLE` and refresh (Vite HMR auto-reloads).
 
 ### 2.4 Multi-language Support
 
-Built-in Chinese (`zh`) and English (`en`) internationalization based on `vue-i18n` Composition API (`legacy: false`). Language choice persists to `localStorage` (key: `locale`), defaults to Chinese, falls back to English.
+Built-in Chinese (`zh`) and English (`en`) internationalization based on `vue-i18n` Composition API (`legacy: false`). Language choice persists to `localStorage` (key: `locale`), defaults to Chinese, falls back to English. The language toggle button in `TocToggles.vue` is currently hidden (`display: none`); the i18n logic is fully retained. Details in [§7.3](#73-internationalization-i18n).
 
 ### 2.5 Theme Switching
 
-Light/dark dual themes + multiple color schemes. Theme toggle animation uses a **spherical diffusion effect** (no full-screen overlay), implemented with GSAP. Dark mode provides fallback styles via the `:root[data-vt]` attribute selector.
+Light/dark dual themes. The dark-mode carrier is the `html[data-theme="dark"]` attribute; the theme toggle animation uses the **View Transitions API** with a pixelated circular mask driven by GSAP (with an overlay fade fallback). The choice persists in a `theme` cookie for 1 year. Details in [§7.4](#74-theme-system).
 
 ### 2.6 GSAP Animation System
 
-The project integrates GSAP (GreenSock Animation Platform), including:
-
-- **Pin-Scrub scroll storytelling**: Sections pin during scroll with continuous internal element transformation (translate/rotate/fade), avoiding a "stuck" feeling
-- **Entrance animations**: Elements stagger in sequentially
-- **MotionPath floating icons**: Movement along SVG paths
-- **SplitText text animations**: Per-character/word splitting
-- **Lenis inertia scrolling**: Smooth scrolling experience, synced with ScrollTrigger
-- **matchMedia degradation**: Three branches — desktop/touch/reduceMotion; touch and reduceMotion skip non-essential animations
+The project integrates GSAP with 8 registered plugins, `gsap.matchMedia()` responsive degradation (dual breakpoints + reduce-motion branches), and Lenis inertia scrolling driven by a single shared ticker. Details in [§7.2](#72-gsap-animation-system).
 
 ### 2.7 SEO Optimization
 
@@ -148,11 +150,53 @@ The project integrates GSAP (GreenSock Animation Platform), including:
 
 ### 2.8 Responsive Design
 
-Separate CSS files for desktop and mobile (`src/styles/desktop/` and `src/styles/mobile/`), loaded via media queries. Mobile simplifies animations and layout for smooth touch experience.
+Separate CSS files for desktop and mobile (`src/styles/desktop/` and `src/styles/mobile/`). Mobile simplifies animations and layout for a smooth touch experience. Animation degradation thresholds are `769px` (interactions & Lenis) and `1024px` (pin-type scroll animations) — see [§7.2.3](#723-matchmedia-degradation-strategy).
 
 ### 2.9 Analytics
 
 Integrated Umami privacy-first analytics platform, injected via `@unhead/vue` in `main.ts`.
+
+### 2.10 Authentication & Account Security
+
+The site ships a complete account system (Nexus), built on Better Auth:
+
+- **Email/password registration and login**, with structured error branching
+- **Email verification gate**: unverified accounts cannot sign in; the login page offers a resend button with a **60-second cooldown**; registration shows an in-page success state that polls verification status and auto-signs-in once the email link is clicked (any browser, 15-minute window)
+- **GitHub OAuth sign-in** (full-page redirect flow)
+- **QQ OAuth sign-in is currently disabled** (greyed-out placeholder); only QQ *account linking* is retained
+- **Remember me** (extended session lifetime)
+- **Forgot/reset password** via email links (tokens never persisted client-side)
+- **Session & device management**: list sessions, revoke individual sessions remotely, sign out everywhere; revoking the current session invalidates local state immediately
+- **Account linking/unlinking** for QQ and GitHub (last login method cannot be unlinked)
+- **OAuth "shell" account completion**: QQ-created accounts without a verified email can set/change their email and set a password
+- **Account deletion** (self-service, irreversible) with multi-step confirmation; requires the account password or an explicit confirm depending on login method
+- **Cross-tab login-state sync**: sign-in/out in one tab broadcasts a `localStorage` signal; other tabs revalidate the server session and correct their route
+- **No tokens in JavaScript**: the session is an HttpOnly cookie managed by the server; the Pinia auth store is a UI cache only
+
+### 2.11 User Center (`/settings`)
+
+A sidebar-layout shell with three sub-routes (requires sign-in):
+
+- **Profile**: edit username and email; the avatar is derived from the user's Minecraft skin (via mc-heads.net)
+- **Minecraft binding** (Java Edition only):
+  - Input only the in-game player name (3–16 chars, letters/digits/underscore, **case-sensitive** as submitted)
+  - Two-step verification: submitting issues a **6-digit code**; the player runs `/v <code>` in the server lobby to confirm; valid for about **10 minutes**
+  - Single-pending enforcement: a second submit while one is active shows a conflict guide; canceling is idempotent and allows immediate re-submit
+  - The pending state is mirrored to `localStorage`, so other tabs/reloads restore the guide
+  - **Main↔alt account linking** between two bound accounts is rate-limited to **once per 7 days**
+- **Security**: the session/device list, linked login methods, and account deletion (see §2.10)
+
+### 2.12 Admin Console (`/admin`)
+
+An immersive console (independent layout shell, no site navigation) gated by `requiresAuth` + `requiresPermission('admin:access')`:
+
+- **User management**: paginated user list (20/page) and user detail; grant/revoke roles — the **owner** role grant is only visible to owners
+- **Minecraft administration**: force-unbind a user's Minecraft account
+- **Ban management**: create, modify, and revoke bans (permanent or expiring), with **evidence upload (≤ 5 MiB per file, pre-checked client-side)** and in-session evidence preview/download
+- **Audit log**: filterable record of sensitive operations; **owner-only archive trigger**
+- **`/admin/forbidden`**: a dedicated 403 view for users without the admin permission
+
+> The frontend permission check exists purely as a UI experience (entry visibility, route guard). **Real authorization is always enforced by the backend API.**
 
 ---
 
@@ -160,56 +204,81 @@ Integrated Umami privacy-first analytics platform, injected via `@unhead/vue` in
 
 ### 3.1 Runtime Dependencies
 
-| Library      | Version  | Purpose                          | Docs                                                              |
-| ------------ | -------- | -------------------------------- | ----------------------------------------------------------------- |
-| vue          | ^3.5.25  | Progressive JavaScript framework | [vuejs.org](https://vuejs.org/)                                   |
-| vue-router   | ^4.6.3   | Official router for Vue.js       | [router.vuejs.org](https://router.vuejs.org/)                     |
-| pinia        | ^3.0.4   | State management                 | [pinia.vuejs.org](https://pinia.vuejs.org/)                       |
-| vue-i18n     | ^9.14.4  | Internationalization             | [vue-i18n.intlify.dev](https://vue-i18n.intlify.dev/)             |
-| @unhead/vue  | ^1.9.5   | Head tag management (SEO)        | [unhead.unjs.io](https://unhead.unjs.io/)                         |
-| @unhead/ssr  | ^2.0.19  | SSR head management utilities    | [unhead.unjs.io](https://unhead.unjs.io/)                         |
-| gsap         | ^3.15.0  | Professional animation library   | [gsap.com](https://gsap.com/)                                     |
-| lenis        | ^1.3.25  | Inertia scrolling library        | [lenis.darkroom.engineering](https://lenis.darkroom.engineering/) |
-| chart.js     | ^4.5.1   | Data visualization charts        | [chartjs.org](https://www.chartjs.org/)                           |
-| marked       | ^17.0.1  | Markdown parser                  | [marked.js.org](https://marked.js.org/)                           |
-| highlight.js | ^11.11.1 | Syntax highlighting              | [highlightjs.org](https://highlightjs.org/)                       |
-| katex        | ^0.16.27 | Math formula rendering           | [katex.org](https://katex.org/)                                   |
-| lodash       | ^4.17.21 | Utility functions                | [lodash.com](https://lodash.com/)                                 |
+| Library                                                      | Version  | Purpose                                                    |
+| ------------------------------------------------------------ | -------- | ---------------------------------------------------------- |
+| vue                                                          | ^3.5.25  | Progressive JavaScript framework                           |
+| vue-router                                                   | ^4.6.3   | Official router for Vue.js                                 |
+| pinia                                                        | ^3.0.4   | State management                                           |
+| vue-i18n                                                     | ^9.14.4  | Internationalization                                       |
+| @unhead/vue                                                  | ^1.9.5   | Head tag management (SEO/Umami)                            |
+| @vueuse/core                                                 | ^14.4.0  | Vue composition utilities (e.g. `useMediaQuery`)           |
+| better-auth                                                  | ^1.7.2   | Authentication client (email + OAuth)                      |
+| axios                                                        | ^1.20.0  | Nexus business API client                                  |
+| gsap                                                         | ^3.15.0  | Professional animation library                             |
+| lenis                                                        | ^1.3.25  | Inertia scrolling library                                  |
+| unified                                                      | ^11.0.5  | Markdown rendering pipeline core                           |
+| remark-parse / -gfm / -math / -directive                     | ^11–^4   | Markdown parsing (GFM, math, directives)                   |
+| remark-rehype                                                | ^11.1.2  | mdast → hast conversion                                    |
+| rehype-slug / -autolink-headings                             | ^6–^7    | Heading ids + anchor links                                 |
+| rehype-katex                                                 | ^7.0.1   | Math formula rendering (KaTeX ^0.16.27)                    |
+| rehype-highlight                                             | ^7.0.2   | Syntax highlighting (via lowlight → highlight.js ^11.11.1) |
+| rehype-sanitize                                              | ^6.0.0   | XSS whitelist sanitization                                 |
+| rehype-stringify                                             | ^10.0.1  | hast → HTML string                                         |
+| unist-util-visit                                             | ^5.1.0   | Tree traversal for custom rehype plugins                   |
+| lodash                                                       | ^4.17.21 | Utility functions (e.g. debounce in the news manager)      |
+
+Legacy / unused runtime dependencies (kept in `package.json` but not part of the active path):
+
+| Library     | Version  | Status                                                                 |
+| ----------- | -------- | ---------------------------------------------------------------------- |
+| marked      | ^17.0.1  | Legacy: only referenced by the news manager's legacy renderer path     |
+| chart.js    | ^4.5.1   | Legacy: only referenced by `MarkdownRenderer.vue`, which is not mounted|
+| @unhead/ssr | ^2.0.19  | Unused (SSR utilities in a pure-SPA project)                           |
+| hast        | ^1.0.0   | Unused (hast types come from `@types/hast`)                            |
 
 ### 3.2 Dev Dependencies
 
-| Library                  | Version | Purpose                |
-| ------------------------ | ------- | ---------------------- |
-| vite                     | ^7.2.4  | Build tool             |
-| @vitejs/plugin-vue       | ^6.0.2  | Vue SFC support        |
-| vite-plugin-vue-devtools | ^8.0.5  | Developer tools        |
-| typescript               | ~5.9.0  | Type checking          |
-| vue-tsc                  | ^3.2.1  | Vue type checking      |
-| vitest                   | ^4.0.14 | Unit testing framework |
-| @vue/test-utils          | ^2.4.6  | Vue testing utilities  |
-| jsdom                    | ^27.2.0 | Test DOM environment   |
-| eslint                   | ^9.39.1 | Code linting           |
-| eslint-plugin-vue        | ~10.5.1 | Vue ESLint rules       |
-| prettier                 | 3.6.2   | Code formatting        |
-| terser                   | ^5.44.1 | JS minification        |
-| tsx                      | ^4.21.0 | TypeScript execution   |
-| sitemap                  | ^9.0.0  | Sitemap generation     |
-| npm-run-all2             | ^8.0.4  | Parallel script runner |
+| Library                        | Version | Purpose                          |
+| ------------------------------ | ------- | -------------------------------- |
+| vite                           | ^7.2.4  | Build tool                       |
+| @vitejs/plugin-vue             | ^6.0.2  | Vue SFC support                  |
+| vite-plugin-vue-devtools       | ^8.0.5  | Developer tools                  |
+| typescript                     | ~5.9.0  | Type checking                    |
+| vue-tsc                        | ^3.2.1  | Vue type checking                |
+| vitest                         | ^4.0.14 | Unit testing framework           |
+| @vue/test-utils                | ^2.4.6  | Vue testing utilities            |
+| jsdom                          | ^27.2.0 | Test DOM environment             |
+| eslint                         | ^9.39.1 | Code linting                     |
+| eslint-plugin-vue              | ~10.5.1 | Vue ESLint rules                 |
+| @vitest/eslint-plugin          | ^1.5.0  | Vitest ESLint rules              |
+| @vue/eslint-config-typescript  | ^14.6.0 | TS ESLint config                 |
+| @vue/eslint-config-prettier    | ^10.2.0 | Prettier/ESLint integration      |
+| prettier                       | 3.6.2   | Code formatting                  |
+| terser                         | ^5.44.1 | JS minification                  |
+| tsx                            | ^4.21.0 | TypeScript execution (sitemap)   |
+| sitemap                        | ^9.0.0  | Sitemap generation               |
+| npm-run-all2                   | ^8.0.4  | Parallel script runner           |
+| unhead                         | 2.1.1   | Unhead peer/tooling              |
+| jiti                           | ^2.6.1  | TS config loader                 |
+| @tsconfig/node24 / @vue/tsconfig | —     | Shared TS configs                |
+| @types/node / @types/hast / @types/jsdom | — | Type definitions      |
 
 ### 3.3 GSAP Plugins
 
 The following plugins are registered in `src/gsap/plugin-setup.ts`:
 
-| Plugin           | Purpose                            |
-| ---------------- | ---------------------------------- |
-| ScrollTrigger    | Scroll-triggered animations (core) |
-| ScrollToPlugin   | Smooth scroll animations           |
-| SplitText        | Text splitting animations          |
-| Flip             | Layout transition animations       |
-| CustomEase       | Custom easing curves               |
-| DrawSVGPlugin    | SVG drawing animations             |
-| MotionPathPlugin | Path-based motion animations       |
-| MorphSVGPlugin   | SVG morphing animations            |
+| Plugin            | Purpose                              | Currently used by views?          |
+| ----------------- | ------------------------------------ | --------------------------------- |
+| ScrollTrigger     | Scroll-triggered animations (core)   | Yes                               |
+| ScrollToPlugin    | Smooth scroll animations             | No (registered, reserved)         |
+| SplitText         | Text splitting animations            | Yes                               |
+| Flip              | Layout transition animations         | No (registered, reserved)         |
+| CustomEase        | Custom easing curves                 | Yes                               |
+| DrawSVGPlugin     | SVG drawing animations               | No (registered, reserved)         |
+| MotionPathPlugin  | Path-based motion animations         | Yes                               |
+| MorphSVGPlugin    | SVG morphing animations              | No (registered, reserved)         |
+
+> `SplitText`, `CustomEase`, `DrawSVGPlugin`, and `MorphSVGPlugin` were formerly paid Club plugins; since GSAP 3.13 they ship free with the official npm package.
 
 ---
 
@@ -221,8 +290,7 @@ The following plugins are registered in `src/gsap/plugin-setup.ts`:
 | --------------- | -------------------------------------------------- | ---------------------------------- |
 | Node.js         | `^20.19.0` or `>=22.12.0`                          | See `package.json` `engines` field |
 | Package Manager | pnpm (recommended) or npm                          | pnpm is faster and uses less disk  |
-| Git             | Any version                                        | Version control                    |
-| Browser         | Modern browser (latest Chrome/Firefox/Edge/Safari) | Development and testing            |
+| Git / Browser   | Any / modern evergreen browser                     | Version control; dev and testing   |
 
 ### 4.2 Development Environment Setup
 
@@ -235,33 +303,11 @@ cd craft.luminolsuki.moe
 pnpm install
 ```
 
-**Expected output (pnpm install):**
-
-```
-Packages: +420
-+
-Progress: resolved 420, reused 380, downloaded 40, added 420, done
-
-dependencies:
-+ vue 3.5.25
-+ vue-router 4.6.3
-+ gsap 3.15.0
-+ lenis 1.3.25
-...
-
-Done in 12s
-```
-
 ### 4.3 Verify Environment
 
 ```bash
-# Check Node version
-node -v
-# Expected: v20.19.0 or higher
-
-# Check pnpm version (if installed)
-pnpm -v
-# Expected: 9.x or higher
+node -v    # Expected: v20.19.0 or higher
+pnpm -v    # Expected: 9.x or higher (if installed)
 ```
 
 ---
@@ -310,10 +356,10 @@ pnpm build
 
 ```
 ✓ built in 8.42s
-✓ sitemap generated: dist/sitemap.xml
+Sitemap generated successfully!
 ```
 
-Build flow: `type-check` and `build-only` run in parallel (`run-p`), then `tsx src/utils/generate-sitemap.ts` generates the Sitemap.
+Build flow: `type-check` and `build-only` run in parallel (`run-p`), then the Sitemap is generated.
 
 ### 5.4 Run Tests
 
@@ -327,6 +373,8 @@ pnpm test:unit -- --watch
 # Coverage report
 pnpm test:unit -- --coverage
 ```
+
+> The repository currently contains **no test files** — see [§12](#12-testing-strategy).
 
 ### 5.5 Lint and Format
 
@@ -346,91 +394,87 @@ pnpm format
 
 ```
 craft.luminolsuki.moe/
-├── .netlify/
-│   └── functions/                    # Netlify Serverless functions
-│       ├── news.js                   # News data proxy
-│       └── version.js                # Version info
-├── .trae/
-│   └── specs/                        # Project specifications
-├── public/
-│   ├── images/                       # Static images (WebP/AVIF)
-│   └── favicon.ico                   # Site favicon
+├── .netlify/functions/          # news.js (legacy, no consumer) · version.js (used by Footer)
+├── public/                      # images/ (WebP/AVIF) · favicon.ico
 ├── src/
-│   ├── components/                   # Reusable components
+│   ├── components/
+│   │   ├── auth/                # AuthSplitLayout · AuthField · AuthButton · LinkedAccounts · SessionListItem
+│   │   ├── account/             # DangerZone (delete flow) · MergeGuideBanner
+│   │   ├── settings/            # SettingsLayout.vue (user center shell)
+│   │   ├── admin/               # AdminLayout.vue (admin console shell)
 │   │   ├── home/
-│   │   │   └── sections/             # Homepage layout components
-│   │   │       ├── LayoutASections.vue  # artistic layout
-│   │   │       ├── LayoutBSections.vue  # cinema layout
-│   │   │       └── LayoutCSections.vue  # bento layout
-│   │   ├── Navbar.vue                # Navigation bar
-│   │   ├── Footer.vue                # Footer
-│   │   ├── MarkdownRenderer.vue       # Markdown renderer (KaTeX + highlight.js)
-│   │   ├── ColorSchemeSwitcher.vue    # Color scheme switcher
-│   │   ├── CookieConsentBanner.vue    # Cookie consent banner
-│   │   ├── LastViewedPopup.vue        # Recently viewed popup
-│   │   └── TocToggles.vue             # Theme and language toggle
-│   ├── composables/                  # Composables
-│   │   ├── useCookieConsent.ts        # Cookie consent state
-│   │   ├── useEntranceAnimation.ts    # Entrance animations
-│   │   ├── useGsap.ts                 # GSAP utilities
-│   │   ├── useHoverAnimation.ts       # Hover animations
-│   │   ├── useI18n.ts                 # i18n helpers
-│   │   ├── useLastViewedCookie.ts     # Recently viewed cookie
-│   │   ├── usePageTransition.ts       # Page transitions
-│   │   ├── useScrollTrigger.ts        # Scroll-triggered animations
-│   │   └── useSplitText.ts            # Text splitting
-│   ├── config/                       # Configuration files
-│   │   ├── app-config.ts              # Application config
-│   │   ├── home-layout.ts             # Homepage layout switching config
-│   │   └── team-members.ts            # Team members shared data
-│   ├── gsap/                         # GSAP animation module
-│   │   ├── config/
-│   │   │   ├── durations.ts           # Animation durations
-│   │   │   ├── easings.ts             # Easing curves
-│   │   │   └── staggers.ts            # Stagger configs
-│   │   ├── defaults.ts               # Default animation config
-│   │   ├── index.ts                   # Module entry
-│   │   ├── match-media.ts             # Responsive animation matching
-│   │   └── plugin-setup.ts            # Plugin registration
-│   ├── i18n/                         # Internationalization
-│   │   ├── locales/
-│   │   │   ├── zh.ts                  # Chinese translations
-│   │   │   └── en.ts                  # English translations
-│   │   └── index.ts                   # i18n configuration
+│   │   │   ├── sections/
+│   │   │   │   └── LayoutCSections.vue   # Fixed homepage layout (bento)
+│   │   │   └── team/            # TeamArtistic · TeamCinema · TeamBento
+│   │   ├── news/                # NewsCard · NewsSearch · NewsPagination · NewsSkeleton · LayoutToggle
+│   │   ├── Navbar.vue           # Navigation bar
+│   │   ├── Footer.vue           # Footer (consumes version.js / __APP_VERSION__)
+│   │   ├── SidebarToc.vue       # News detail table of contents
+│   │   ├── TocToggles.vue       # Theme toggle (language button hidden)
+│   │   ├── UserAvatar.vue       # Avatar rendering
+│   │   ├── LastViewedPopup.vue  # Recently-viewed popup (consent-gated)
+│   │   ├── CookieConsentBanner.vue
+│   │   ├── ColorSchemeSwitcher.vue   # (legacy, unreferenced)
+│   │   └── MarkdownRenderer.vue      # (legacy, unmounted — superseded by unified pipeline)
+│   ├── composables/             # 16 composables (see 6.3)
+│   ├── config/                  # app-config.ts · home-layout.ts (TeamStyle) · team-members.ts
+│   ├── directives/
+│   │   └── lenisScroll.ts       # v-lenis-scroll directive (per-container Lenis)
+│   ├── gsap/
+│   │   ├── config/              # durations.ts · easings.ts · staggers.ts
+│   │   ├── defaults.ts          # Default animation config
+│   │   ├── index.ts             # Module entry
+│   │   ├── match-media.ts       # Global matchMedia registry
+│   │   └── plugin-setup.ts      # Plugin registration (8 plugins)
+│   ├── i18n/
+│   │   ├── locales/             # zh.ts · en.ts (21 top-level modules)
+│   │   └── index.ts             # i18n configuration
+│   ├── lib/
+│   │   ├── api-base.ts          # API base URL resolution (dev/prod fallback)
+│   │   ├── api.ts               # Nexus axios client (envelope unwrap, AppError)
+│   │   ├── auth-client.ts       # Better Auth client + error normalization
+│   │   ├── email-domain.ts      # Registration email domain check
+│   │   ├── minecraft.ts         # mc-heads.net skin avatar resolution
+│   │   └── paged.ts             # Pagination response normalization
 │   ├── router/
-│   │   └── index.ts                   # Vue Router configuration
-│   ├── stores/                       # Pinia state management
-│   ├── styles/                       # CSS styles
-│   │   ├── desktop/                   # Desktop styles
-│   │   ├── mobile/                    # Mobile styles
-│   │   ├── fonts.css                  # Font definitions
-│   │   ├── gsap-splittext.css         # GSAP SplitText styles
-│   │   ├── responsive.css             # Responsive styles
-│   │   ├── theme-colors.css           # Theme color variables
-│   │   ├── typography.css             # Typography
-│   │   └── vercel-design-system.css   # Vercel design system
-│   ├── utils/                        # Utility functions
-│   │   ├── generate-sitemap.ts        # Sitemap generation
-│   │   └── utils.ts                   # Common utilities (debounce/throttle)
-│   ├── views/                        # Page components
-│   │   ├── Home.vue                  # Homepage
-│   │   ├── News.vue                  # News list
-│   │   ├── NewsDetail.vue            # News detail
-│   │   ├── SimpleRules.vue           # Server rules
-│   │   ├── Support.vue               # Support page
-│   │   ├── Archive.vue               # Server monitoring
-│   │   └── NotFound.vue              # 404 page
-│   ├── App.vue                       # Root component
-│   └── main.ts                       # Application entry (with Lenis init)
-├── .editorconfig                     # Editor configuration
-├── .prettierrc.json                  # Prettier configuration
-├── eslint.config.ts                  # ESLint configuration
-├── index.html                        # HTML template
-├── netlify.toml                      # Netlify deployment config
-├── package.json                      # Project dependencies
-├── tsconfig.json                     # TypeScript config
-├── vite.config.ts                    # Vite configuration
-└── vitest.config.ts                  # Vitest configuration
+│   │   └── index.ts             # Vue Router config + auth/permission guards
+│   ├── stores/
+│   │   ├── auth.ts              # Session UI cache + cross-tab sync
+│   │   ├── authorization.ts     # RBAC store (roles/permissions)
+│   │   ├── nexus.ts             # User-domain data (MC accounts, bans, links)
+│   │   └── counter.ts           # (legacy scaffold)
+│   ├── styles/
+│   │   ├── desktop/             # home / news / news-detail / navigation / monitoring / support / markdown-body
+│   │   ├── mobile/              # home / news-detail / navigation / monitoring / notfound / support
+│   │   ├── fonts.css · gsap-splittext.css · responsive.css
+│   │   ├── theme-colors.css     # Theme color variables (3-layer system)
+│   │   └── typography.css · vercel-design-system.css
+│   ├── types/                   # auth.ts · news.ts · nexus.ts
+│   ├── utils/
+│   │   ├── generate-sitemap.ts · internalPath.ts · lenisInstances.ts
+│   │   ├── news-helpers.ts · utils.ts
+│   │   ├── markdown/            # renderer.ts (unified pipeline) · toc.ts (max 3 levels)
+│   │   └── news/                # news-manager.ts · news-cache.ts (IndexedDB) · news-markdown.ts
+│   ├── views/
+│   │   ├── Home.vue             # Homepage (Hero + LayoutCSections)
+│   │   ├── News.vue · NewsDetail.vue
+│   │   ├── SimpleRules.vue      # Server rules (imports locale files directly)
+│   │   ├── Support.vue · Archive.vue (placeholder shell) · NotFound.vue
+│   │   ├── Login.vue · Register.vue · ForgotPassword.vue · ResetPassword.vue
+│   │   ├── VerifyEmail.vue      # Email verification landing
+│   │   ├── AccountSecurity.vue  # Sessions / linked accounts / danger zone
+│   │   ├── auth/
+│   │   │   └── LinkAccountError.vue   # OAuth link-failure landing (/auth/link-error)
+│   │   ├── settings/
+│   │   │   ├── ProfileView.vue · MinecraftView.vue
+│   │   └── admin/
+│   │       ├── UsersView.vue · UserDetail.vue · BansView.vue
+│   │       ├── AuditView.vue · ForbiddenView.vue (403)
+│   │       └── admin-shared.css
+│   ├── App.vue                  # Root component (hideChrome, cross-tab sync listener)
+│   └── main.ts                  # Application entry (Lenis, GSAP, SEO, Umami)
+├── .editorconfig · .prettierrc.json · eslint.config.ts · index.html
+├── netlify.toml · package.json · tsconfig.json · vite.config.ts · vitest.config.ts
 ```
 
 ### 6.2 Architecture Diagram
@@ -439,57 +483,85 @@ craft.luminolsuki.moe/
 graph TB
     subgraph View["View Layer (views/)"]
         Home["Home.vue"]
-        News["News.vue"]
-        NewsDetail["NewsDetail.vue"]
-        SimpleRules["SimpleRules.vue"]
-        Support["Support.vue"]
-        Archive["Archive.vue"]
-        NotFound["NotFound.vue"]
+        News["News.vue / NewsDetail.vue"]
+        Auth["Login / Register / ForgotPassword /<br/>ResetPassword / VerifyEmail / AccountSecurity"]
+        Settings["settings/ (Profile · Minecraft)"]
+        Admin["admin/ (Users · UserDetail · Bans · Audit)"]
+        Static["SimpleRules / Support / Archive / NotFound"]
     end
 
     subgraph Component["Component Layer (components/)"]
-        Navbar["Navbar.vue"]
-        Footer["Footer.vue"]
-        Layouts["home/sections/<br/>LayoutA/B/CSections.vue"]
-        Shared["MarkdownRenderer<br/>TocToggles etc."]
+        Chrome["Navbar · Footer"]
+        LayoutC["home/sections/LayoutCSections.vue"]
+        Team["home/team/ (Artistic · Cinema · Bento)"]
+        NewsUI["news/* · SidebarToc"]
+        AuthUI["auth/* · account/* UI kit"]
     end
 
-    subgraph Config["Config Layer (config/)"]
-        HomeLayout["home-layout.ts<br/>CURRENT_LAYOUT"]
-        TeamMembers["team-members.ts<br/>contributors"]
-        AppConfig["app-config.ts"]
+    subgraph State["State Layer (stores/)"]
+        AuthStore["auth.ts<br/>(session UI cache)"]
+        AuthzStore["authorization.ts<br/>(roles / permissions)"]
+        NexusStore["nexus.ts<br/>(MC accounts / bans / links)"]
+    end
+
+    subgraph Lib["Client Layer (lib/)"]
+        AuthClient["auth-client.ts<br/>(Better Auth client)"]
+        ApiClient["api.ts<br/>(Nexus axios client)"]
+        ApiBase["api-base.ts<br/>(same-origin /api/* base)"]
+    end
+
+    subgraph Data["Data Sources"]
+        IDB[("IndexedDB<br/>luminolcraft-news v1")]
+        NewsCDN["News manifest +<br/>article markdown (pages.dev)"]
+        McSrv["mcsrvstat.us API"]
+        ApiSvc["API service<br/>(via same-origin proxy)"]
     end
 
     subgraph Tool["Tool Layer"]
-        GSAP["gsap/<br/>plugin-setup.ts"]
-        Composables["composables/<br/>useGsap etc."]
-        I18n["i18n/<br/>zh.ts / en.ts"]
-        Styles["styles/<br/>theme-colors.css"]
+        GSAP["gsap/"]
+        Composables["composables/"]
+        I18n["i18n/"]
+        Styles["styles/theme-colors.css"]
+        Renderer["utils/markdown/renderer.ts"]
     end
 
-    Home --> Layouts
-    Layouts --> HomeLayout
-    Layouts --> TeamMembers
-    Home --> Navbar
-    Home --> Footer
-    News --> Shared
-    NewsDetail --> Shared
-    Layouts --> GSAP
-    Layouts --> Composables
-    Layouts --> Styles
-    Navbar --> I18n
+    Home --> LayoutC --> Team
+    Home --> McSrv
+    News --> NewsUI --> Composables
+    Composables --> NexusStore
+    Composables --> IDB
+    Composables --> NewsCDN
+    NewsDetail --> Renderer
+    Settings --> NexusStore
+    Admin --> NexusStore
+    Auth --> AuthUI --> AuthStore
+    AuthStore --> AuthClient
+    AuthzStore --> ApiClient
+    NexusStore --> ApiClient
+    AuthClient --> ApiBase
+    ApiClient --> ApiBase
+    ApiBase --> ApiSvc
+    Router["router guards"] --> AuthStore
+    Router --> AuthzStore
+    LayoutC --> GSAP
+    LayoutC --> Styles
+    Chrome --> I18n
 ```
 
 ### 6.3 Key Directory Notes
 
-| Directory                         | Description                                                    |
-| --------------------------------- | -------------------------------------------------------------- |
-| `src/components/home/sections/`   | Three homepage layout components, switched by `CURRENT_LAYOUT` |
-| `src/config/`                     | Centralized config: layout switching, team data, app config    |
-| `src/gsap/`                       | GSAP module: plugin registration, defaults, matchMedia         |
-| `src/composables/`                | Vue composables, reusable logic                                |
-| `src/styles/desktop/` & `mobile/` | Desktop/mobile separated styles                                |
-| `src/i18n/locales/`               | Chinese/English translation files                              |
+| Directory                | Description                                                                      |
+| ------------------------ | -------------------------------------------------------------------------------- |
+| `src/lib/`               | Two API clients (Better Auth + Nexus axios), base URL resolution, helpers        |
+| `src/stores/`            | `auth` (session UI cache), `authorization` (RBAC), `nexus` (user-domain data)    |
+| `src/types/`             | Shared domain types (`auth`, `news`, `nexus`)                                    |
+| `src/composables/`       | 16 composables: GSAP (`useGsap`, `useEntranceAnimation`, `useHoverAnimation`, `usePageTransition`, `useScrollTrigger`, `useSplitText`), news (`useNewsData`, `useNewsFilter`, `useNewsPagination`, `useNewsDetail`), UX (`useCookieConsent`, `useLastViewedCookie`, `useLightbox`, `useReadingProgress`, `useArticleAnimations`), i18n (`useI18n`) |
+| `src/config/`            | Centralized config: team style, team data, app config                            |
+| `src/gsap/`              | GSAP module: plugin registration, defaults, matchMedia                           |
+| `src/utils/markdown/`    | The unified rendering pipeline and TOC builder                                   |
+| `src/utils/news/`        | News manager (sync/filter/paginate) + IndexedDB cache layer                      |
+| `src/styles/desktop/` & `mobile/` | Desktop/mobile separated styles                                         |
+| `src/i18n/locales/`      | Chinese/English translation files (21 top-level modules)                         |
 
 ---
 
@@ -497,132 +569,64 @@ graph TB
 
 ### 7.1 Homepage Layout System
 
-The homepage layout system is the project's core architectural feature, using a **configuration-driven + dynamic component** pattern for flexible layout switching and combination.
+The homepage is fixed to the Bento layout; only the **team section style** is configurable.
 
 #### 7.1.1 How It Works
 
-`Home.vue` uses Vue's `<component :is>` dynamic component to render the corresponding layout based on `CURRENT_LAYOUT`:
+`Home.vue` statically imports `LayoutCSections` so it renders in the same frame as the Navbar/Footer (eliminating the second-request blank flash that lazy loading caused):
 
 ```vue
 <!-- src/views/Home.vue -->
-<component :is="layoutComponent" :server-online="serverOnline" :online-players="onlinePlayers" />
+<LayoutCSections :server-online="serverOnline" :online-players="onlinePlayers" />
 ```
 
-Layout components are lazy-loaded via `shallowRef` + dynamic `import()`:
+`LayoutCSections` resolves the team style at module level:
 
 ```typescript
-// Home.vue internal logic (simplified)
-const layoutComponent = shallowRef()
-watchEffect(async () => {
-  const modules = {
-    artistic: () => import('@/components/home/sections/LayoutASections.vue'),
-    cinema: () => import('@/components/home/sections/LayoutBSections.vue'),
-    bento: () => import('@/components/home/sections/LayoutCSections.vue'),
-  }
-  const mod = await modules[CURRENT_LAYOUT]()
-  layoutComponent.value = mod.default
-})
+// src/components/home/sections/LayoutCSections.vue (simplified)
+import { CURRENT_TEAM_STYLE, resolveTeamStyle } from '@/config/home-layout'
+
+const TEAM_STYLE_COMPONENT_MAP = {
+  artistic: TeamArtistic,
+  cinema: TeamCinema,
+  bento: TeamBento,
+}
+const _resolvedTeam = resolveTeamStyle(CURRENT_TEAM_STYLE)
+const teamComponent = TEAM_STYLE_COMPONENT_MAP[_resolvedTeam]
 ```
 
-#### 7.1.2 Three Layouts
-
-| Layout       | Component             | Visual Characteristics                                                                                                                                            |
-| ------------ | --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Artistic** | `LayoutASections.vue` | Z-shaped diagonal flow (features/team offset -3% left, servers right) + organic rotating cards (-2°/3°/-1°) + GSAP Pin-Scrub scroll storytelling (pin + scrub: 1) |
-| **Cinema**   | `LayoutBSections.vue` | Cinema-style asymmetric impact: full-screen color blocks + giant numbers + four-corner asymmetry + servers horizontal strip + cinematic pin parallax              |
-| **Bento**    | `LayoutCSections.vue` | Classic Bento Grid: features 2×3 grid + servers auto-fit grid + team spherical avatars (random positions + cursor repulsion + safe zone)                          |
-
-#### 7.1.3 Configuration File
-
-Layout switching is done by modifying `src/config/home-layout.ts`:
+#### 7.1.2 Configuration File
 
 ```typescript
 // src/config/home-layout.ts
-export type HomeLayout = 'artistic' | 'cinema' | 'bento'
-export const CURRENT_LAYOUT: HomeLayout = 'bento'
+export type TeamStyle = 'artistic' | 'cinema' | 'bento' | 'random'
+export type ResolvedTeamStyle = Exclude<TeamStyle, 'random'>
+export const TEAM_STYLE_OPTIONS: readonly ResolvedTeamStyle[] = ['artistic', 'cinema', 'bento']
+export const CURRENT_TEAM_STYLE: TeamStyle = 'random'
 
-export type TeamStyle = 'artistic' | 'cinema' | 'bento'
-export const CURRENT_TEAM_STYLE: TeamStyle = 'artistic'
+// Module-level cache: every consumer within one page session sees the same
+// result; each reload re-rolls for 'random'.
+export function resolveTeamStyle(input: TeamStyle = CURRENT_TEAM_STYLE): ResolvedTeamStyle
 ```
 
-- `CURRENT_LAYOUT`: Controls the overall homepage layout
-- `CURRENT_TEAM_STYLE`: Controls the team section style (decoupled from layout, freely combinable)
+- `CURRENT_TEAM_STYLE`: controls the team section style; `'random'` re-rolls on each page load/refresh
+- `resolveTeamStyle()`: module-level cache guarantees all consumers in one session see the same result
+- There is **no** `CURRENT_LAYOUT` / `HomeLayout` export anymore — the overall layout is fixed to Bento
 
-#### 7.1.4 Component Relationship Diagram
+#### 7.1.3 Team Members Shared Data
 
-```mermaid
-graph LR
-    Home["Home.vue"] -->|"&lt;component :is&gt;"| Layout
-    subgraph Layout["Layout Components"]
-        A["LayoutASections.vue<br/>(artistic)"]
-        B["LayoutBSections.vue<br/>(cinema)"]
-        C["LayoutCSections.vue<br/>(bento)"]
-    end
-    Layout --> Config["home-layout.ts<br/>CURRENT_LAYOUT"]
-    Layout --> Team["team-members.ts<br/>contributors data"]
-    Layout --> GSAP["GSAP Animations<br/>(pin-scrub / entrance)"]
-    Layout --> Styles["theme-colors.css<br/>theme variables"]
-
-    style Home fill:#42b883,color:#fff
-    style Config fill:#3178c6,color:#fff
-    style Team fill:#f69220,color:#fff
-```
-
-#### 7.1.5 Layout Switching Example
-
-```bash
-# Edit src/config/home-layout.ts
-# Change CURRENT_LAYOUT to 'cinema'
-```
+Team member data is centralized in `src/config/team-members.ts` (fields: `name`, `avatar`, `roleKey` → `home.team.roles.<key>`, `githubHref`, `githubLabel`, `isOwner`, optional `extraLinks` of `qq`/`email`) for unified import by all team components:
 
 ```typescript
-export const CURRENT_LAYOUT: HomeLayout = 'cinema' // from 'bento' to 'cinema'
-```
-
-Vite HMR auto-reloads on save; the homepage switches to cinema layout without restarting the server.
-
-#### 7.1.6 Team Members Shared Data
-
-Team member data is centralized in `src/config/team-members.ts` for unified import by layout components:
-
-```typescript
-// src/config/team-members.ts
-export interface Contributor {
-    name: string
-    avatar: string
-    roleKey: string          // corresponds to i18n home.team.roles.<key>
-    githubHref: string
-    githubLabel: string
-    isOwner: boolean
-    extraLinks?: Array<{
-        type: 'qq' | 'email'
-        href: string
-    }>
-}
-
 export const contributors: Contributor[] = [
-    { name: 'MrHua269', avatar: '...', roleKey: 'owner', ... isOwner: true },
+    { name: 'MrHua269', roleKey: 'owner', isOwner: true },
     // ... 6 members total
 ]
 ```
 
-#### 7.1.7 Server Numbering with CSS Counter
+#### 7.1.4 Server Numbering with CSS Counter
 
-All three layouts' servers-section use CSS counter for auto-generated numbering. **Copy a `server-panel` node to add a server; numbering auto-increments**:
-
-```css
-/* Layout component CSS */
-.servers-grid {
-  counter-reset: server-counter;
-}
-.server-panel {
-  counter-increment: server-counter;
-}
-.server-index::before {
-  content: counter(server-counter, decimal-leading-zero);
-  /* number styles (gradient text effect must be on ::before, as background-clip:text is not inheritable) */
-}
-```
+The servers section uses a CSS counter for auto-generated numbering. **Copy a `server-panel` node to add a server; numbering auto-increments** — the counter is configured on `.servers-grid` / `.server-panel` / `.server-index::before` (`counter-reset` / `counter-increment` / `content: counter(server-counter, decimal-leading-zero)`; the gradient text effect must be on `::before`, as `background-clip: text` is not inheritable):
 
 ```html
 <!-- To add a server: copy the node below; number auto-increments to 03 -->
@@ -645,35 +649,30 @@ All GSAP plugins are registered centrally in `src/gsap/plugin-setup.ts`:
 
 ```typescript
 // src/gsap/plugin-setup.ts
-import gsap from 'gsap'
-import { ScrollTrigger } from 'gsap/ScrollTrigger'
-// ... other plugin imports
-
 export function registerGsapPlugins(): void {
   gsap.registerPlugin(
-    ScrollTrigger,
-    ScrollToPlugin,
-    SplitText,
-    Flip,
-    CustomEase,
-    DrawSVGPlugin,
-    MotionPathPlugin,
-    MorphSVGPlugin,
+    ScrollTrigger, ScrollToPlugin, SplitText, Flip,
+    CustomEase, DrawSVGPlugin, MotionPathPlugin, MorphSVGPlugin,
   )
 }
 ```
 
-Called via `setupGsap()` in `main.ts`.
+Called via `setupGsap()` in `main.ts`. Global defaults (`src/gsap/defaults.ts`):
+
+```typescript
+gsap.defaults({
+  duration: 0.6,
+  ease: 'power2.out',
+  overwrite: 'auto',
+})
+```
 
 #### 7.2.2 Lenis Inertia Scrolling
 
-`main.ts` initializes Lenis inertia scrolling with `gsap.matchMedia()` responsive degradation:
+`main.ts` initializes the global (window) Lenis with `gsap.matchMedia()` degradation:
 
 ```typescript
-// src/main.ts
-const lenisMm = gsap.matchMedia()
-let lenisInstance: Lenis | null = null
-
+// src/main.ts (simplified)
 lenisMm.add(
   {
     isDesktop: '(min-width: 769px) and (pointer: fine)',
@@ -683,97 +682,71 @@ lenisMm.add(
     const { isDesktop, reduceMotion } = context.conditions!
     if (!isDesktop || reduceMotion) return // skip on touch or reduceMotion
 
-    lenisInstance = new Lenis({
+    globalLenis = new Lenis({
       duration: 1.2,
       easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
       smoothWheel: true,
       wheelMultiplier: 1.2,
       touchMultiplier: 1.5,
+      // Key: the global Lenis never handles wheel events inside scrollable
+      // containers — they keep native scroll (or their own Lenis instance)
+      prevent: (node) => { /* walks up the DOM for overflow:auto|scroll containers */ },
     })
 
-    // Sync Lenis scroll events to ScrollTrigger
-    lenisInstance.on('scroll', ScrollTrigger.update)
+    globalLenis.on('scroll', ScrollTrigger.update)
+    lenisInstances.push(globalLenis)
 
-    // Drive lenis.raf() with gsap.ticker
+    // One shared gsap.ticker callback drives ALL Lenis instances
+    // (global + per-container instances created by v-lenis-scroll)
     gsap.ticker.add((time) => {
-      lenisInstance?.raf(time * 1000)
+      lenisInstances.forEach((instance) => instance.raf(time * 1000))
     })
 
-    return () => {
-      lenisInstance?.destroy()
-      lenisInstance = null
-    }
+    return () => { /* remove ticker, destroy global + directive instances */ }
   },
 )
 ```
 
 **Configuration:**
 
-| Parameter         | Value                                            | Description                                    |
-| ----------------- | ------------------------------------------------ | ---------------------------------------------- |
-| `duration`        | `1.2`                                            | Scroll animation duration (seconds)            |
-| `easing`          | `t => Math.min(1, 1.001 - Math.pow(2, -10 * t))` | Exponential easing, smoother reverse scrolling |
-| `smoothWheel`     | `true`                                           | Enable smooth mouse wheel                      |
-| `wheelMultiplier` | `1.2`                                            | Wheel speed multiplier                         |
-| `touchMultiplier` | `1.5`                                            | Touch speed multiplier                         |
+| Parameter         | Value                                            | Description                                      |
+| ----------------- | ------------------------------------------------ | ------------------------------------------------ |
+| `duration`        | `1.2`                                            | Scroll animation duration (seconds)              |
+| `easing`          | `t => Math.min(1, 1.001 - Math.pow(2, -10 * t))` | Exponential easing, smoother reverse scrolling   |
+| `smoothWheel`     | `true`                                           | Enable smooth mouse wheel                        |
+| `wheelMultiplier` | `1.2`                                            | Wheel speed multiplier                           |
+| `touchMultiplier` | `1.5`                                            | Touch speed multiplier                           |
+| `prevent`         | callback                                         | Inner scrollable containers escape global Lenis  |
+
+The `v-lenis-scroll` directive creates per-container Lenis instances (e.g. the news grid) and registers them in the shared `lenisInstances` registry so a single `gsap.ticker` drives everything.
 
 #### 7.2.3 matchMedia Degradation Strategy
 
-All animations use `gsap.matchMedia()` for three-branch degradation:
+Two breakpoints coexist — interactions/Lenis at **769px**, pin-type scroll animations at **1024px** — and every branch has a reduce-motion fallback:
 
 ```mermaid
 flowchart TD
     A["gsap.matchMedia()"] --> B{Condition check}
-    B -->|"min-width: 1024px<br/>and pointer: fine"| C["Desktop<br/>Pin-Scrub scroll storytelling"]
-    B -->|"pointer: coarse<br/>or max-width: 1023px"| D["Touch/Mobile<br/>entrance animations only (once)"]
-    B -->|"prefers-reduced-motion: reduce"| E["reduceMotion<br/>skip all non-essential animations"]
-    C --> C1["pin: true<br/>scrub: 1<br/>continuous element transformation"]
-    D --> D1["no pin<br/>triggers once on viewport enter"]
-    E --> E1["only essential interactions<br/>animation duration 0"]
+    B -->|"min-width: 769px<br/>and pointer: fine"| C["Desktop interactions<br/>+ Lenis inertia scrolling"]
+    B -->|"min-width: 1024px<br/>and pointer: fine"| D["Desktop pin animations<br/>(TeamArtistic / TeamCinema)"]
+    B -->|"below breakpoint<br/>or pointer: coarse"| E["Touch/Mobile<br/>entrance animations only (once)"]
+    B -->|"prefers-reduced-motion: reduce"| F["reduceMotion<br/>skip all non-essential animations"]
+    C --> C1["Lenis smooth scroll<br/>hover / entrance / stagger"]
+    D --> D1["pin: true + scrub<br/>continuous element transformation"]
+    E --> E1["no pin, no Lenis<br/>triggers once on viewport enter"]
+    F --> F1["final states applied directly<br/>animation duration 0"]
 ```
 
-**Example (Artistic layout Pin-Scrub):**
-
-```typescript
-gsap.matchMedia().add('(min-width: 1024px) and (pointer: fine)', () => {
-  // Desktop: Pin-Scrub scroll storytelling
-  gsap
-    .timeline({
-      scrollTrigger: {
-        trigger: '.features-section',
-        start: 'top top',
-        end: '+=300%',
-        pin: true,
-        scrub: 1,
-      },
-    })
-    .to('.feature-card-1', { rotation: -2, y: -50 })
-    .to('.feature-card-2', { rotation: 3, y: 30 }, '-=0.5')
-})
-```
+> Pin-Scrub exists only in `TeamArtistic` and `TeamCinema`; the features area has no pin.
 
 #### 7.2.4 Pin-Scrub Design Principles
 
-- **Continuous visual feedback**: Elements transform continuously during pin (translate/rotate/fade), avoiding a "stuck" feeling
-- **GSAP rotation end values match CSS design values**: e.g., card CSS design -2°, GSAP `rotation` end value also -2°, preserving artistic layout after pin release
-- **Section offset uses margin** (not transform, to avoid conflict with ScrollTrigger pin)
-- **Card offset/rotation uses transform**
+- **Continuous visual feedback**: elements transform continuously during pin (translate/rotate/fade), avoiding a "stuck" feeling
+- GSAP rotation end values match CSS design values, preserving the layout after pin release; section offset uses `margin` (never `transform`, which would conflict with the pin), card offsets use `transform`
 
 #### 7.2.5 Tuning Point Comment Convention
 
-Code contains `微调点：` (tuning point) comments marking adjustable values:
-
-```css
-/* 微调点：0 - card rotation angle (artistic layout) */
-.feature-card:nth-child(1) {
-  transform: rotate(-2deg);
-}
-
-/* 微调点：1 - Pin-Scrub scroll distance */
-/* 微调点：2 - stagger interval */
-```
-
-Search for `微调点：` to quickly locate all adjustable parameters.
+Code contains `微调点：` (tuning point) comments marking adjustable values — card rotation angles, Pin-Scrub scroll distances (`end: '+=N%'`), stagger intervals, etc. Search for `微调点：` to quickly locate all adjustable parameters.
 
 ---
 
@@ -783,17 +756,13 @@ Search for `微调点：` to quickly locate all adjustable parameters.
 
 ```typescript
 // src/i18n/index.ts
-import { createI18n } from 'vue-i18n'
-import zh from './locales/zh'
-import en from './locales/en'
-
 const savedLocale = localStorage.getItem('locale')
 const defaultLocale = savedLocale || 'zh'
 
 const i18n = createI18n({
-  legacy: false, // use Composition API
-  locale: defaultLocale, // default Chinese
-  fallbackLocale: 'en', // fallback English
+  legacy: false,          // use Composition API
+  locale: defaultLocale,  // default Chinese
+  fallbackLocale: 'en',   // fallback English
   messages: { zh, en },
 })
 ```
@@ -806,39 +775,38 @@ src/i18n/locales/
 └── en.ts    # English translations
 ```
 
-Translation files are organized by module (e.g., `home`, `news`, `common`), called in components via `t('home.hero.title')`.
+Both locale files expose **21 top-level module keys**:
+
+`404` · `auth` · `common` · `hero` · `status` · `features` · `servers` · `team` · `footer` · `colorScheme` · `notFound` · `language` · `rules` · `support` · `news` · `monitoring` · `cookieConsent` · `home` · `settings` · `minecraft` · `admin`
+
+Components consume them via `t('module.key')`.
+
+> **Exception**: `SimpleRules.vue` imports the locale objects **directly** (`import zh from '../i18n/locales/zh'`) instead of going through `t()`. New rules content must be added to *both* locale files or one language will silently miss it.
 
 #### 7.3.3 Persistence and Switching
 
 - Language choice stored in `localStorage` (key: `locale`)
-- Switching via `TocToggles.vue` component
-- Persists across refreshes
+- Switching logic lives in `TocToggles.vue` but its button is currently hidden via `display: none`; the i18n machinery remains fully wired
 
 #### 7.3.4 Adding New i18n Keys Example
 
 ```typescript
 // src/i18n/locales/zh.ts
-export default {
-  home: {
-    team: {
-      roles: {
-        owner: '服主', // new
-        survivalAdmin: '生存管理',
-      },
+home: {
+  team: {
+    roles: {
+      owner: '服主',            // new
+      survivalAdmin: '生存管理',
     },
   },
 }
-```
 
-```typescript
 // src/i18n/locales/en.ts
-export default {
-  home: {
-    team: {
-      roles: {
-        owner: 'Owner', // corresponding English
-        survivalAdmin: 'Survival Admin',
-      },
+home: {
+  team: {
+    roles: {
+      owner: 'Owner',           // corresponding English
+      survivalAdmin: 'Survival Admin',
     },
   },
 }
@@ -850,114 +818,135 @@ export default {
 
 #### 7.4.1 Theme Color Variables
 
-Theme-related CSS variables are centralized in `src/styles/theme-colors.css`:
+Theme-related CSS variables are centralized in `src/styles/theme-colors.css` as a **three-layer system**:
+
+| Layer                        | Content                                                                     |
+| ---------------------------- | --------------------------------------------------------------------------- |
+| `--vercel-*`                 | Vercel/Geist neutral scale + accent colors (also duplicated in `vercel-design-system.css`) |
+| `--bases-*` / `--bases-dark-*` | Project light palette (purple primary `#a78bfa`) and its dark counterparts |
+| Semantic mapping             | `:root` maps light values onto semantic names (`--text-color`, `--background-color`, …); `html[data-theme="dark"]` remaps them to the `--bases-dark-*` values |
 
 ```css
 :root {
-  --color-bg: #ffffff;
-  --color-text: #1a1a1a;
-  /* ... other variables */
+  --text-color: var(--bases-text-color);      /* semantic light mapping */
+  --background-color: var(--bases-bg);
 }
 
-:root[data-vt] {
-  /* dark mode fallback (triggered by data-vt attribute) */
-  --color-bg: #0a0a0a;
-  --color-text: #f5f5f5;
+html[data-theme='dark'] {
+  --text-color: var(--bases-dark-text-color); /* remapped to dark palette */
+  --background-color: var(--bases-dark-bg);
 }
 ```
+
+> The `data-vt` attribute is **not** a dark-mode carrier — it is set only for the duration of a View Transition to freeze CSS `transition`s while the theme swap is snapshotted. The dark-mode carrier is `data-theme`.
 
 #### 7.4.2 Theme Toggle Animation
 
-Theme toggle uses a **spherical diffusion effect** (no full-screen overlay), implemented with GSAP:
+The toggle (in `TocToggles.vue`) uses the **View Transitions API** with a pixelated circular reveal:
 
-- CSS variable `--reveal-size` controls diffusion radius
-- GSAP animates `--reveal-size` from 0 to 100%
-- Touch and reduceMotion skip animation, switching directly
+1. A **32×32 pixelated SVG circle** is generated as the `mask-image` of `::view-transition-new(root)`
+2. GSAP animates `--reveal-size` from `0` to `maxDist × 2` (farthest viewport corner distance) over **0.8 s**, expanding the mask from the click point
+3. Clicking again mid-animation reverses the tween instead of double-flipping; `prefers-reduced-motion` switches instantly
+4. **Fallback**: when the View Transitions API is unavailable, an overlay tinted with the old background fades out instead
 
-#### 7.4.3 Color Schemes
+The choice persists in a **`theme` cookie for 1 year** (`theme=light|dark; path=/; max-age=31536000`).
 
-`ColorSchemeSwitcher.vue` provides multiple color scheme switching; theme variables managed in `theme-colors.css`.
+#### 7.4.3 What Does NOT Exist
+
+- **No color-scheme switching feature**: `ColorSchemeSwitcher.vue` is unreferenced legacy and no `data-color-scheme` CSS rules exist
+- The language toggle button is hidden (`display: none`) — see §7.3.3
 
 ---
 
-### 7.5 Routing Structure
+### 7.5 Routing & Navigation Guards
 
 #### 7.5.1 Route Table
 
-| Route              | Name        | Component       | Description                                                                    |
-| ------------------ | ----------- | --------------- | ------------------------------------------------------------------------------ |
-| `/`                | Home        | Home.vue        | Homepage (Hero + layout component)                                             |
-| `/SimpleRules`     | SimpleRules | SimpleRules.vue | Server rules                                                                   |
-| `/Support`         | support     | Support.vue     | Support page                                                                   |
-| `/News`            | news        | News.vue        | News list                                                                      |
-| `/NewsDetail`      | newsdetail  | NewsDetail.vue  | News detail (aliases: `/news-detail`, `/news-detail.html`, `/NewsDetail.html`) |
-| `/Archive`         | Archive     | Archive.vue     | Server monitoring                                                              |
-| `/:pathMatch(.*)*` | NotFound    | NotFound.vue    | 404 fallback                                                                   |
+| Route                    | Name             | Component                          | Meta                                            | Description                                                                       |
+| ------------------------ | ---------------- | ---------------------------------- | ----------------------------------------------- | --------------------------------------------------------------------------------- |
+| `/`                      | Home             | `Home.vue` (**static import**)     | `og`                                            | Homepage (Hero + LayoutCSections); static import keeps it in the same frame as Navbar/Footer, eliminating the lazy-load blank flash |
+| `/SimpleRules`           | SimpleRules      | `SimpleRules.vue`                  | `og`                                            | Server rules                                                                      |
+| `/Support`               | support          | `Support.vue`                      | `og`                                            | Support page                                                                      |
+| `/News`                  | news             | `News.vue`                         | `og`                                            | News list                                                                         |
+| `/NewsDetail`            | newsdetail       | `NewsDetail.vue`                   | `og`                                            | `props` receives `id` from `route.query.id`; aliases: `/news-detail`, `/news-detail.html`, `/NewsDetail.html` |
+| `/Archive`               | Archive          | `Archive.vue`                      | `og`                                            | Placeholder shell (reserved for monitoring)                                       |
+| `/login`                 | Login            | `Login.vue`                        | `hideChrome`, `guestOnly`                       | Email + GitHub sign-in                                                            |
+| `/register`              | Register         | `Register.vue`                     | `hideChrome`, `guestOnly`                       | Email registration                                                                |
+| `/forgot-password`       | ForgotPassword   | `ForgotPassword.vue`               | `hideChrome`, `guestOnly`                       | Password reset request                                                            |
+| `/reset-password`        | ResetPassword    | `ResetPassword.vue`                | `hideChrome`, `guestOnly`                       | Password reset landing                                                            |
+| `/verify-email`          | VerifyEmail      | `VerifyEmail.vue`                  | `hideChrome`                                    | Email verification landing                                                        |
+| `/auth/link-error`       | AuthLinkError    | `auth/LinkAccountError.vue`        | `hideChrome`                                    | OAuth link-failure landing (QQ/GitHub)                                            |
+| `/settings`              | —                | `settings/SettingsLayout.vue`      | `requiresAuth`                                  | User center shell; redirects to `profile`                                        |
+| `/settings/profile`      | SettingsProfile  | `settings/ProfileView.vue`         | `requiresAuth`                                  | Profile editing                                                                   |
+| `/settings/minecraft`    | SettingsMinecraft| `settings/MinecraftView.vue`       | `requiresAuth`                                  | Minecraft binding                                                                 |
+| `/settings/security`     | AccountSecurity  | `AccountSecurity.vue`              | `requiresAuth`                                  | Sessions / linked accounts / danger zone                                          |
+| `/admin`                 | —                | `admin/AdminLayout.vue`            | `requiresAuth`, `requiresPermission('admin:access')`, `hideChrome` | Admin console shell; redirects to `users`                                   |
+| `/admin/users`           | AdminUsers       | `admin/UsersView.vue`              | as parent                                       | User list                                                                         |
+| `/admin/users/:id`       | AdminUserDetail  | `admin/UserDetail.vue`             | as parent                                       | User detail                                                                       |
+| `/admin/bans`            | AdminBans        | `admin/BansView.vue`               | as parent                                       | Ban management                                                                    |
+| `/admin/audit`           | AdminAudit       | `admin/AuditView.vue`              | as parent                                       | Audit logs                                                                        |
+| `/admin/forbidden`       | AdminForbidden   | `admin/ForbiddenView.vue`          | `requiresAuth`, `hideChrome`                    | 403 view — deliberately **without** `requiresPermission` to avoid a guard loop    |
+| `/:pathMatch(.*)*`       | NotFound         | `NotFound.vue`                     | `title`                                         | 404 fallback                                                                      |
 
-#### 7.5.2 Route Diagram
+All pages except `/` are lazy-loaded via dynamic `import()` for code splitting.
+
+#### 7.5.2 Guard Flow
+
+The login-state **source of truth is the server-side Better Auth session** (an HttpOnly cookie); the Pinia store is only a UI cache.
 
 ```mermaid
-graph LR
-    Home["/ Home"]
-    Rules["/SimpleRules Rules"]
-    Support["/Support Support"]
-    News["/News News List"]
-    NewsDetail["/NewsDetail News Detail"]
-    Archive["/Archive Monitor"]
-    NotFound["/* 404"]
-
-    Home --> News
-    News --> NewsDetail
-    Home --> Rules
-    Home --> Support
-    Home --> Archive
-    NotFound -.->|"fallback"| Home
-
-    style Home fill:#42b883,color:#fff
-    style NotFound fill:#e74c3c,color:#fff
+flowchart TD
+    A["router.beforeEach"] --> B{"auth.initialized?"}
+    B -->|"no + requiresAuth/guestOnly"| C["await auth.initialize()<br/>(blocking — protected & guest pages)"]
+    B -->|"no + public route"| D["auth.initialize() in background<br/>(never blocks navigation)"]
+    B -->|"yes"| E
+    C --> E{"requiresAuth<br/>and not authenticated?"}
+    D --> E
+    E -->|"yes"| F["→ /login?redirect=fullPath"]
+    E -->|"no"| G{"guestOnly<br/>and authenticated?"}
+    G -->|"yes"| H["→ /"]
+    G -->|"no"| I{"requiresPermission?"}
+    I -->|"yes"| J["ensure authorization loaded<br/>(retry once on network failure)"]
+    J --> K{"hasPermission?"}
+    K -->|"no"| L["→ /admin/forbidden?from=fullPath"]
+    K -->|"yes"| M["navigate"]
+    I -->|"no"| M
 ```
 
-#### 7.5.3 Lazy Loading
+- Public routes never wait for auth initialization (a slow network cannot blank the page); the Navbar updates automatically once the store is ready
+- `guestOnly` pages await initialization so a signed-in user refreshing `/login` never sees the form flash
+- **Open-redirect protection**: every `redirect` query param is validated by `resolveInternalPath()` — only a single leading `/`, no protocol, no `//`, no backslash, no whitespace, length ≤ 256; anything else falls back to `/`
 
-All route components use dynamic `import()` for lazy loading and code splitting:
+#### 7.5.3 Scroll Behavior
 
-```typescript
-component: () => import('../views/News.vue')
-```
+`scrollBehavior` restores `savedPosition` when present, smooth-scrolls to `to.hash` anchors, and otherwise jumps to the top with `behavior: 'instant'` (resolved inside a `setTimeout(0)`).
 
-#### 7.5.4 Scroll Behavior
+#### 7.5.4 Cross-Tab Sync
 
-```typescript
-scrollBehavior(to, from, savedPosition) {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      if (savedPosition) resolve(savedPosition)
-      else if (to.hash) resolve({ el: to.hash, behavior: 'smooth' })
-      else resolve({ left: 0, top: 0, behavior: 'instant' })
-    }, 0)
-  })
-}
-```
+`App.vue` listens for `storage` events on the `nexus-auth-event` key. When another tab signs in/out, this tab revalidates the server session and corrects its route (guest page + authenticated → `/`; protected page + unauthenticated → `/login?redirect=…`).
 
 ---
 
 ### 7.6 Server Status Monitoring
 
-The homepage Hero section displays a server status card, fetching data via the mcsrvstat.us API:
+The homepage Hero section displays a server status card, fetching data via the mcsrvstat.us `/3` API for `craft.luminolsuki.moe`:
 
-- **Online status**: Status indicator (green online / gray offline)
-- **Player count**: Real-time player number
-- **Version**: `1.21.11`
-- **Server type**: Displayed via i18n
-- **Running status**: Online/offline
+- **Online status**: green/red status dot + label
+- **Player count**: `online/max`
+- **Version**: hardcoded `"26.2"` in `Home.vue` (update manually when the server version changes)
+- **Running status**: online/offline
 
-Status data is passed to layout components via props:
+- 8-second `AbortSignal.timeout`; on failure the card shows offline/`N/A`
+- Polled every **30 seconds** via `setInterval`
+- The first fetch is **non-blocking**: rendering and animation initialization never wait for the external API
+
+Status data is passed to the layout component via props:
 
 ```vue
-<component :is="layoutComponent" :server-online="serverOnline" :online-players="onlinePlayers" />
+<LayoutCSections :server-online="serverOnline" :online-players="onlinePlayers" />
 ```
 
-The `/Archive` page uses Chart.js for server status history and visualization.
+> The `/Archive` route is currently an **empty placeholder shell** (no charts). Chart.js is only referenced by the unmounted legacy `MarkdownRenderer.vue`.
 
 ---
 
@@ -965,32 +954,86 @@ The `/Archive` page uses Chart.js for server status history and visualization.
 
 #### 7.7.1 News List (`/News`)
 
-- Paginated: 6 items/page on desktop, 2 items/page on mobile (configured in `app-config.ts`)
-- Max displayed page numbers: 5
+- **Pagination**: 6 items/page on desktop and mobile (configured in `app-config.ts`), max 5 displayed page buttons
+- **List/grid layout toggle**, persisted in `localStorage` (`news_layout_mode`); desktop defaults to list, mobile to grid
+- **Tag filtering**: multi-tag OR semantics; active tags sync to/from the URL query (`?tags=`), so filtered views are shareable
+- **Full-text search**: case-insensitive substring match over title, summary, markdown content, tags, and localized date
+- **Sorting**: pinned items first, then by date descending
+- **Skeleton loading** while the cache/network resolves; page transitions scroll back to top smoothly
 
-#### 7.7.2 News Detail (`/NewsDetail`)
+#### 7.7.2 Offline-First Caching (IndexedDB)
 
-Renders Markdown content via `MarkdownRenderer.vue`, supporting:
+The news manager (`src/utils/news/news-manager.ts`) + cache layer (`news-cache.ts`) implement a stale-while-revalidate strategy:
 
-- **KaTeX math formulas**: Inline `$...$` and block `$$...$$`
-- **highlight.js syntax highlighting**: Multi-language code blocks
-- **marked parsing**: Markdown to HTML
+| Aspect            | Behavior                                                                                                     |
+| ----------------- | ------------------------------------------------------------------------------------------------------------ |
+| Storage           | IndexedDB database **`luminolcraft-news` v1** — `articles` (one record per article) + `meta` stores           |
+| First paint       | Restores the cached snapshot immediately — never waits on the network when a cache exists                     |
+| Revalidation      | Syncs when stale; triggers: initial load, `visibilitychange`, `online`, `focus`, 10-minute background timer   |
+| Rate limiting     | Minimum **10-minute** interval between normal syncs (`force` skips the check, never runs concurrently)        |
+| Incremental sync  | Manifest diff detects added/updated/deleted articles; only changed articles re-fetched (concurrency 6)        |
+| Content versioning| Re-fetch decision uses a 3-tier fallback: `contentVersion` → `updatedAt` → the content URL itself             |
+| Failure handling  | **Network failures never clear the cache**; the error banner only appears when no usable cache exists         |
+| Legacy migration  | Old `localStorage`/`sessionStorage` caches are auto-migrated into IndexedDB on first run                      |
 
-#### 7.7.3 Netlify Functions
+#### 7.7.3 News Detail (`/NewsDetail`)
 
-News data is proxied via Netlify Serverless functions:
+- Takes `id` from the query string (supports three legacy aliases)
+- Renders Markdown through the unified pipeline (§7.8); the `v-html` target receives **only the sanitized output**
+- Sidebar TOC (max 3 levels, `SidebarToc.vue`) with smooth anchor scrolling (120px offset)
+- Reading progress bar, entrance animations
+- Additional-image gallery with a **GSAP Flip lightbox** (prev/next/close)
+- Tag chips navigate back to the filtered list
+- Recently-viewed record written to the `last_viewed_news` cookie (30 days) — **only after cookie consent is accepted**
 
-```
-.netlify/functions/
-├── news.js     # news data proxy
-└── version.js  # version info
-```
+#### 7.7.4 Data Source
+
+- Manifest: `https://luminolcraft-news.pages.dev/news.json` (public JSON index of articles); bodies: Markdown on the same domain (GitHub raw URLs in the manifest are rewritten to it); all requests carry a 15-second timeout via `AbortController`
+
+#### 7.7.5 Netlify Functions (legacy)
+
+`.netlify/functions/news.js` is a legacy news proxy with **no consumer** (news is fetched client-side). `.netlify/functions/version.js` is consumed by `Footer.vue` and falls back to the GitHub API (`commits/main`) when deploy env vars are missing.
 
 ---
 
-### 7.8 SEO Optimization
+### 7.8 Markdown Rendering Pipeline
 
-#### 7.8.1 Open Graph Tags
+News bodies are rendered by a **unified + remark + rehype** pipeline (`src/utils/markdown/renderer.ts`), replacing the legacy `marked` + regex approach:
+
+```mermaid
+flowchart LR
+    A["Markdown source"] --> B["remark-parse"]
+    B --> C["remark-gfm<br/>(tables / strikethrough / tasks)"]
+    C --> D["remark-math<br/>(formula nodes)"]
+    D --> E["remark-directive"]
+    E --> F["remark-rehype<br/>allowDangerousHtml: false<br/>(raw HTML dropped)"]
+    F --> G["rehype-slug<br/>(heading ids)"]
+    G --> H["rehype-autolink-headings<br/>(# anchors)"]
+    H --> I["rehype-katex"]
+    I --> J["rehype-highlight<br/>(lowlight)"]
+    J --> K["rehype-external-links<br/>(custom)"]
+    K --> L["rehype-figure<br/>(custom)"]
+    L --> M["rehype-sanitize<br/>(Git schema + KaTeX MathML)"]
+    M --> N["rehype-stringify"]
+    N --> O["HTML string"]
+    M -.-> P["TOC extraction<br/>(h1–h6, pipeline end)"]
+```
+
+Key behaviors:
+
+- **`allowDangerousHtml: false`** — raw HTML in Markdown is dropped at the remark-rehype boundary
+- **Sanitization**: `rehype-sanitize` with the GitHub schema extended for KaTeX MathML elements/attributes, highlight.js classes, heading anchor classes, external-link SVG icons, and image attributes (`src`, `alt`, `title`, `loading`, `decoding`)
+- **External links** (`http(s)` only, off-site) get `target="_blank"`, `rel="noopener noreferrer"`, an `external-link` class, and an injected SVG icon
+- **Images with meaningful alt text** are wrapped in `<figure>` + `<figcaption>`; URL-like alt text produces no caption
+- **TOC extraction** runs at the end of the pipeline (after slugs/anchors exist); `toc.ts` flattens it to at most **3 levels** relative to the shallowest heading
+- The detail page injects the **sanitized** HTML via `v-html`
+- The processor instance is cached and reused across renders
+
+---
+
+### 7.9 SEO Optimization
+
+#### 7.9.1 Open Graph Tags
 
 Each route configures independent Open Graph tags via `meta.og`, injected in `main.ts` `router.beforeEach`:
 
@@ -1010,69 +1053,125 @@ router.beforeEach((to) => {
       { property: 'og:image:height', content: og.image.height || 630 },
       { property: 'og:type', content: to.name === 'newsdetail' ? 'article' : 'website' },
       { name: 'twitter:card', content: 'summary_large_image' },
-      // ...
+      // ... og:description, og:image:width/height, og:site_name, og:url, twitter:*
     ],
     link: [{ rel: 'canonical', href: currentUrl.split('?')[0] }],
   })
 })
 ```
 
-#### 7.8.2 Sitemap Generation
+`App.vue` additionally pushes a fallback `title`/`description` (route `meta.title` or i18n hero copy) via `useHead`.
 
-Automatically runs `src/utils/generate-sitemap.ts` after build, generating `dist/sitemap.xml`.
+#### 7.9.2 Sitemap Generation
 
-#### 7.8.3 Canonical URL
+Automatically runs `src/utils/generate-sitemap.ts` after build, generating `dist/sitemap.xml` for the public routes (`/`, `/SimpleRules`, `/Support`, `/News`, `/Monitoring`). Note: `/Monitoring` is a legacy entry kept in the sitemap script (`generate-sitemap.ts`) and no longer matches the router's `/Archive` page — see the maintenance notes.
+
+#### 7.9.3 Canonical URL
 
 Each page sets a canonical URL (query strings removed) to avoid duplicate content.
 
 ---
 
-## 8. Configuration Reference
+## 8. API Conventions (Frontend-Visible Behavior)
 
-### 8.1 home-layout.ts (Homepage Layout Config)
+The frontend talks to the backend through **two independent client layers**, both resolving their base URL via `src/lib/api-base.ts`. In production the base is the site's own origin — the browser only ever talks to `craft.luminolsuki.moe`, and `/api/*` is reverse-proxied to the API service (see [§13](#13-build--deployment)). No endpoint paths are listed here by design.
+
+### 8.1 Two Client Layers
+
+| Aspect         | Better Auth client (`src/lib/auth-client.ts`)             | Nexus axios client (`src/lib/api.ts`)                          |
+| -------------- | --------------------------------------------------------- | --------------------------------------------------------------- |
+| Scope          | Registration, sign-in/out, email verification, password reset, OAuth, account linking | Business data: profile, Minecraft accounts, bans, admin |
+| Response format| Better Auth native format                                 | Unified envelope `{ success, data | error, requestId }`          |
+| Credentials    | `credentials: 'include'`                                  | `withCredentials: true`                                          |
+| Timeout        | —                                                         | 15 s                                                             |
+| Error shape    | Normalized to `AppError` via `toAppError()`               | Interceptor unwraps the envelope / throws structured `AppError`  |
+
+### 8.2 Error Model
+
+Both layers surface the same `AppError` shape, so pages branch uniformly on `error.code`:
 
 ```typescript
-// src/config/home-layout.ts
-export type HomeLayout = 'artistic' | 'cinema' | 'bento'
-export const CURRENT_LAYOUT: HomeLayout = 'bento'
-
-export type TeamStyle = 'artistic' | 'cinema' | 'bento'
-export const CURRENT_TEAM_STYLE: TeamStyle = 'artistic'
+interface AppError {
+  code: string
+  message?: string
+  details?: unknown
+  requestId?: string
+}
 ```
 
-| Config               | Type         | Options                               | Default      | Description                                |
-| -------------------- | ------------ | ------------------------------------- | ------------ | ------------------------------------------ |
-| `CURRENT_LAYOUT`     | `HomeLayout` | `'artistic'` / `'cinema'` / `'bento'` | `'bento'`    | Overall homepage layout                    |
-| `CURRENT_TEAM_STYLE` | `TeamStyle`  | `'artistic'` / `'cinema'` / `'bento'` | `'artistic'` | Team section style (decoupled from layout) |
+- **Better Auth error normalization** (`toAppError`): native codes map to documented business codes — invalid credentials → `AUTH_INVALID_CREDENTIALS`, unverified email → `EMAIL_VERIFICATION_REQUIRED`, `USER_ALREADY_EXISTS` passes through (a native 422 "already exists" body maps there too)
+- **Rate limiting**: a 429 from either layer becomes `RATE_LIMITED`; the Better Auth native `resetAt` (epoch ms) is carried in `details.resetAt`, readable via `errorToResetAt()` so pages can render a retry-at timestamp
+- **Unauthenticated detection**: the 401-family codes (`AUTH_REQUIRED`, `UNAUTHORIZED`, `AUTH_SESSION_EXPIRED`, `AUTH_SESSION_REVOKED`) always clear local user state; other errors (e.g. network) never wipe the session cache
+- No JSON response / network failure falls back to `{ code: 'NETWORK_ERROR' }`
 
-### 8.2 app-config.ts (Application Config)
+### 8.3 Pagination Protocol
+
+- Request: `page` + `limit` query params (admin list default `limit=20`)
+- Response: `{ items, total, page, limit }`; `normalizePaged()` also tolerates **bare arrays** and common aliases (`list`, `rows`)
+- `hasMore` falls back to "full page implies more" when `total` is absent
+
+### 8.4 Session & Permission Boundary
+
+- The session is an **HttpOnly cookie**; the frontend never reads, stores, or transmits tokens
+- The auth store's `me`/permissions are **in-memory caches only** — never persisted to `localStorage`/`sessionStorage`
+- `hasPermission()` (e.g. `admin:access`) gates UI and routes only; **the backend re-checks every privileged request**
+
+---
+
+## 9. Local Storage & Cookies
+
+All client-side persistence used by the site:
+
+| Key                              | Storage                                | Lifetime            | Purpose                                                                          |
+| -------------------------------- | -------------------------------------- | ------------------- | -------------------------------------------------------------------------------- |
+| `locale`                         | localStorage                           | persistent          | UI language (`zh` default, `en` fallback)                                        |
+| `theme`                          | cookie                                 | 1 year              | Light/dark theme (`light` / `dark`)                                              |
+| `cookie_consent`                 | localStorage (`accepted`) + sessionStorage (`declined`) | persistent / session | Cookie banner decision; "decline" intentionally survives only the session     |
+| `nexus-auth-event`               | localStorage                           | timestamp           | Cross-tab login-state sync signal (written on sign-in/out; other tabs revalidate) |
+| `oauth-provider-label`           | sessionStorage                         | session             | Label of the last OAuth provider (QQ/GitHub) for callback UX                     |
+| `qq-merge-hint-dismissed:<uid>`  | localStorage                           | persistent          | Dismissal state of the QQ merge guide banner, per user id                        |
+| `mc-pending-bind`                | localStorage                           | until expiry/cancel | Pending Minecraft bind guide (code + name), restores across tabs/reloads         |
+| `last_viewed_news`               | cookie                                 | 30 days             | Recently-viewed news popup data; written only after cookie consent               |
+| `news_layout_mode`               | localStorage                           | persistent          | News list/grid layout preference                                                 |
+
+> The auth session, roles, and permissions are **never** persisted — they live only in Pinia memory and the HttpOnly session cookie.
+
+---
+
+## 10. Configuration Reference
+
+### 10.1 home-layout.ts (Team Style Config)
+
+See [§7.1.2](#712-configuration-file) for the full source. Reference:
+
+| Config               | Type        | Options                                            | Default     | Description                                              |
+| -------------------- | ----------- | -------------------------------------------------- | ----------- | -------------------------------------------------------- |
+| `CURRENT_TEAM_STYLE` | `TeamStyle` | `'artistic'` / `'cinema'` / `'bento'` / `'random'` | `'random'`  | Team section style; `random` re-rolls on each full reload |
+
+### 10.2 app-config.ts (Application Config)
 
 ```typescript
 // src/config/app-config.ts
-export interface AppConfig {
-  showTocToggles: boolean // theme/language toggle visibility
-  navbarFixed: boolean // navbar fixed
-  showFooterCopyright: boolean // footer copyright visibility
-  newsPagination: {
-    desktopItemsPerPage: number // desktop items per page
-    mobileItemsPerPage: number // mobile items per page
-    maxDisplayedPages: number // max displayed page numbers
-  }
-}
-
 export const appConfig: AppConfig = {
   showTocToggles: true,
   navbarFixed: true,
   showFooterCopyright: true,
   newsPagination: {
     desktopItemsPerPage: 6,
-    mobileItemsPerPage: 2,
+    mobileItemsPerPage: 6,
     maxDisplayedPages: 5,
   },
-}
+};
+
+export const newsLayoutConfig = {
+  defaultMode: 'list',        // desktop default
+  mobileDefaultMode: 'grid',  // mobile default
+  coverPosition: 'right',
+  grid: { columnWidth: 320, coverFullWidth: false },
+};
 ```
 
-### 8.3 team-members.ts (Team Members Data)
+### 10.3 team-members.ts (Team Members Data)
 
 ```typescript
 // src/config/team-members.ts
@@ -1090,13 +1189,13 @@ export const contributors: Contributor[] = [
 ]
 ```
 
-### 8.4 vite.config.ts Key Config
+### 10.4 vite.config.ts Key Config
 
 ```typescript
 // vite.config.ts (key items)
 export default defineConfig({
   define: {
-    __APP_VERSION__: JSON.stringify(appVersion), // Git commit hash
+    __APP_VERSION__: JSON.stringify(appVersion), // Git short hash
     __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
   },
   resolve: {
@@ -1108,8 +1207,8 @@ export default defineConfig({
       output: {
         manualChunks: {
           'vue-vendor': ['vue', 'vue-router', 'vue-i18n', 'pinia'],
-          markdown: ['marked'],
-          highlight: ['highlight.js'],
+          'markdown': ['marked'],
+          'highlight': ['highlight.js'],
         },
       },
     },
@@ -1123,26 +1222,24 @@ export default defineConfig({
 })
 ```
 
-### 8.5 Environment Variables
+> The `highlight` chunk is populated by the `lowlight` dependency graph underneath `rehype-highlight` (not by direct `highlight.js` imports). The `markdown` chunk bundles `marked`, which now only serves the legacy renderer path.
 
-Global variables injected at build time (via Vite `define`):
+### 10.5 Environment Variables
 
-| Variable          | Source                                                            | Description     |
-| ----------------- | ----------------------------------------------------------------- | --------------- |
-| `__APP_VERSION__` | `COMMIT_REF` / `CF_PAGES_COMMIT_SHA` / `GIT_COMMIT` / git command | Git commit hash |
-| `__BUILD_TIME__`  | `new Date().toISOString()`                                        | Build timestamp |
+Build-time globals injected via Vite `define`:
 
-Deployment platform environment variables:
+| Variable          | Source                                                            | Description                                             |
+| ----------------- | ----------------------------------------------------------------- | ------------------------------------------------------- |
+| `__APP_VERSION__` | `COMMIT_REF` / `CF_PAGES_COMMIT_SHA` / `GIT_COMMIT` / git command | Git short hash (consumed by `Footer.vue`)               |
+| `__BUILD_TIME__`  | `new Date().toISOString()`                                        | Build timestamp (**defined but currently not consumed**) |
 
-| Platform | Variable       | Value                     |
-| -------- | -------------- | ------------------------- |
-| Netlify  | `NODE_VERSION` | `22` (see `netlify.toml`) |
+**`VITE_API_BASE_URL`** (optional, configure in `.env.*` copied from `.env.example` or the Netlify dashboard): unset → dev falls back to `http://localhost:8787`; production build uses the **same origin** (recommended, and what `netlify.toml` sets). Never place backend secrets in env files. Netlify also sets `NODE_VERSION=22` (see `netlify.toml`).
 
 ---
 
-## 9. Development Guidelines
+## 11. Development Guidelines
 
-### 9.1 Code Style
+### 11.1 Code Style
 
 The project uses ESLint + Prettier for consistent code style:
 
@@ -1158,19 +1255,19 @@ pnpm format
 - **Prettier config**: `.prettierrc.json`
 - **Editor config**: `.editorconfig`
 
-### 9.2 Naming Conventions
+### 11.2 Naming Conventions
 
 | Type             | Convention              | Example                                |
 | ---------------- | ----------------------- | -------------------------------------- |
 | Component files  | PascalCase.vue          | `Home.vue`, `Navbar.vue`               |
-| Composables      | camelCase, use prefix   | `useGsap.ts`, `useScrollTrigger.ts`    |
+| Composables      | camelCase, use prefix   | `useGsap.ts`, `useNewsData.ts`         |
 | Config files     | kebab-case.ts           | `home-layout.ts`, `app-config.ts`      |
 | CSS classes      | kebab-case              | `.hero-section`, `.server-panel`       |
-| TypeScript types | PascalCase              | `HomeLayout`, `Contributor`            |
-| Constants        | UPPER_SNAKE_CASE        | `CURRENT_LAYOUT`, `CURRENT_TEAM_STYLE` |
-| Route names      | PascalCase or camelCase | `Home`, `news`                         |
+| TypeScript types | PascalCase              | `TeamStyle`, `Contributor`, `AppError` |
+| Constants        | UPPER_SNAKE_CASE        | `CURRENT_TEAM_STYLE`, `ADMIN_ACCESS_PERMISSION` |
+| Route names      | PascalCase or camelCase | `Home`, `newsdetail`                   |
 
-### 9.3 Commit Convention
+### 11.3 Commit Convention
 
 Recommended [Conventional Commits](https://www.conventionalcommits.org/) format:
 
@@ -1194,51 +1291,38 @@ Recommended [Conventional Commits](https://www.conventionalcommits.org/) format:
 **Examples:**
 
 ```
-feat(home): add cinema layout Pin-Scrub scroll storytelling
-fix(gsap): fix Lenis not properly destroyed on touch devices
-docs(readme): rewrite README to enterprise-grade standard
+feat(auth): add GitHub OAuth sign-in
+fix(news): keep cached articles when manifest sync fails
+docs(readme): rewrite README to match the auth-era architecture
 ```
 
-### 9.4 GSAP Usage Guidelines
+### 11.4 GSAP Usage Guidelines
 
 1. **Centralized plugin registration**: All plugins registered in `plugin-setup.ts`; do not register in components
-2. **Use gsap.context() for isolation**: Wrap component animations in `gsap.context()`, call `revert()` on `onUnmounted`
-3. **matchMedia degradation**: All scroll animations use `gsap.matchMedia()` for three-branch degradation
-4. **Pin-Scrub principles**:
-   - Must have continuous visual transformation during pin (avoid "stuck" feeling)
-   - GSAP rotation end values match CSS design values
-   - Section offset uses `margin` (not `transform`)
-   - Card offset/rotation uses `transform`
-5. **Lenis config is fixed**: `duration: 1.2` + exponential easing + `wheelMultiplier: 1.2`
+2. **Use gsap.context() for isolation**: Wrap component animations via `useGsap`, call `revert()` on `onUnmounted`
+3. **matchMedia degradation**: scroll animations use `gsap.matchMedia()`; pin-type animations at `(min-width: 1024px) and (pointer: fine)`, interactions/Lenis at `(min-width: 769px) and (pointer: fine)`; always add a reduce-motion branch
+4. **Pin-Scrub principles**: continuous visual transformation during pin; GSAP rotation end values match CSS design values; section offset uses `margin`, card offset/rotation uses `transform`
+5. **Lenis config is fixed**: `duration: 1.2` + exponential easing + `wheelMultiplier: 1.2`; register per-container instances through `v-lenis-scroll` so the shared ticker drives them
 
-### 9.5 Tuning Point Comment Convention
+### 11.5 Tuning Point Comment Convention
 
-Adjustable values are marked with `微调点：` (tuning point) comments for quick location:
+Adjustable values are marked with `微调点：` (tuning point) comments — see [§7.2.5](#725-tuning-point-comment-convention) for examples. Search `微调点：` to iterate all adjustable parameters.
 
-```css
-/* 微调点：0 - card rotation angle */
-/* 微调点：1 - Pin-Scrub scroll distance (end: '+=N%') */
-/* 微调点：2 - stagger interval */
-```
+### 11.6 Directory Organization Principles
 
-Search `微调点：` to iterate all adjustable parameters.
-
-### 9.6 Directory Organization Principles
-
-- **Centralized config**: All configurable items in `src/config/`
-- **Composables**: Reusable logic extracted to `src/composables/`
-- **Style separation**: Desktop/mobile styles in separate directories (`desktop/` / `mobile/`)
-- **Centralized theme variables**: Theme color variables in `theme-colors.css`
-- **Modular animations**: GSAP config/plugins/defaults centralized in `src/gsap/`
+- **Centralized config** in `src/config/`; **client layer separation** in `src/lib/` (never mix the two response formats); **reusable logic** in `src/composables/`
+- **Style separation**: desktop/mobile styles in `src/styles/desktop/` / `mobile/`; theme variables centralized in `theme-colors.css`; GSAP config/plugins/defaults centralized in `src/gsap/`
 
 ---
 
-## 10. Testing Strategy
+## 12. Testing Strategy
 
-### 10.1 Unit Testing
+> **Current state**: the repository contains **no `*.spec` / `*.test` files yet**. The Vitest toolchain is fully scaffolded, so `pnpm test:unit` completes as an empty run. The guidance below describes how to add the first tests.
+
+### 12.1 Unit Testing (Scaffold)
 
 - **Framework**: Vitest 4.0.14 + jsdom 27 environment
-- **Config**: `vitest.config.ts` (extends vite.config, jsdom environment, excludes e2e)
+- **Config**: `vitest.config.ts` (extends vite config, jsdom environment, excludes e2e)
 - **Utilities**: `@vue/test-utils`
 
 ```bash
@@ -1252,21 +1336,30 @@ pnpm test:unit -- --watch
 pnpm test:unit -- --coverage
 ```
 
-### 10.2 Type Checking
+To start testing, create a spec file — Vitest picks it up automatically:
 
-Uses `vue-tsc` for Vue + TypeScript type checking:
+```typescript
+// src/utils/internalPath.spec.ts
+import { describe, expect, it } from 'vitest'
+import { resolveInternalPath } from './internalPath'
 
-```bash
-pnpm type-check
+describe('resolveInternalPath', () => {
+  it('rejects open redirects', () => {
+    expect(resolveInternalPath('//evil')).toBe('/')
+  })
+})
 ```
 
-Type checking is part of the build flow (`pnpm build` runs `type-check` first).
+Good first targets: pure utilities (`internalPath`, `paged`, `news-helpers`), the error normalization in `lib/auth-client.ts`, and store logic with mocked clients.
 
-### 10.3 Build Verification
+### 12.2 Type Checking
+
+Uses `vue-tsc` for Vue + TypeScript type checking (`pnpm type-check`). It is part of the build flow and currently serves as the primary regression gate.
+
+### 12.3 Build Verification
 
 ```bash
-# Full verification: type check + build + Sitemap
-pnpm build
+pnpm build   # full verification: type check + build + Sitemap
 ```
 
 When build fails, check:
@@ -1277,9 +1370,9 @@ When build fails, check:
 
 ---
 
-## 11. Build & Deployment
+## 13. Build & Deployment
 
-### 11.1 Build Flow
+### 13.1 Build Flow
 
 ```bash
 pnpm build
@@ -1300,30 +1393,24 @@ flowchart LR
     style F fill:#42b883,color:#fff
 ```
 
-### 11.2 Build Output
+### 13.2 Build Output
 
 ```
 dist/
-├── index.html               # HTML entry
-├── sitemap.xml              # Sitemap
+├── index.html                 # HTML entry
+├── sitemap.xml                # Sitemap
 ├── assets/
-│   ├── vue-vendor-[hash].js # Vue family (vue/router/i18n/pinia)
-│   ├── markdown-[hash].js   # marked
-│   ├── highlight-[hash].js  # highlight.js
-│   ├── index-[hash].js      # Application code
-│   └── *.css                # Split CSS
-├── images/                  # Static images
-└── favicon.ico              # Site favicon
+│   ├── vue-vendor-[hash].js   # Vue family (vue/router/i18n/pinia)
+│   ├── markdown-[hash].js     # marked (legacy renderer path)
+│   ├── highlight-[hash].js    # highlight.js family (via lowlight dependency graph)
+│   ├── index-[hash].js        # Application code
+│   └── *.css                  # Split CSS
+├── images/ · favicon.ico      # Static assets
 ```
 
-**Optimizations:**
+**Optimizations:** `terser` minification · `manualChunks` splitting (vue-vendor / markdown / highlight) · `cssCodeSplit: true` · `sourcemap: false` in production.
 
-- `terser` JS minification
-- `manualChunks` code splitting (vue-vendor / markdown / highlight)
-- `cssCodeSplit: true` CSS code splitting
-- `sourcemap: false` no sourcemap in production
-
-### 11.3 Deployment Platforms
+### 13.3 Deployment Platforms
 
 #### Netlify
 
@@ -1336,31 +1423,40 @@ Config file: `netlify.toml`
 
 [build.environment]
   NODE_VERSION = "22"
+  # Empty API base = same origin: the browser only talks to this site;
+  # /api/* is reverse-proxied to the API service below (first-party cookies)
+  VITE_API_BASE_URL = ""
 
-[[headers]]
-  for = "/*.css"
-  [headers.values]
-    Cache-Control = "public, max-age=0, must-revalidate"
+# Cache headers: css/js → "public, max-age=0, must-revalidate";
+# index.html → "no-cache, no-store, must-revalidate" (+ Pragma/Expires)
 
+# API same-origin reverse proxy — must be declared BEFORE the SPA fallback
+# (redirects apply first match in order; force=true wins over static files;
+# status=200 proxies request/response incl. Set-Cookie, so all cookies stay
+# first-party from the browser's perspective)
+[[redirects]]
+  from = "/api/*"
+  to = "<same-origin /api/* proxy to the API service>"
+  status = 200
+  force = true
+
+# SPA fallback
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
 ```
 
-- **Build command**: `pnpm run build`
-- **Publish directory**: `dist`
-- **Node version**: 22
-- **SPA redirect**: All paths rewrite to `/index.html` (status 200)
+Key points:
+
+- **Node version**: 22; **API base** `VITE_API_BASE_URL=""` → the client uses the site's own origin and `/api/*` is a same-origin proxy to the API service (never a cross-origin API domain, keeping session cookies first-party)
+- **Redirect order matters**: `/api/*` must precede the `/*` SPA rewrite; **cache**: hashed `css`/`js` revalidate per request, `index.html` is never cached
 
 #### Other Platforms
 
-The build output is standard static files, deployable to any static hosting platform (Vercel, Cloudflare Pages, GitHub Pages, etc.):
+The build output is standard static files, deployable to any static hosting platform **provided an equivalent same-origin `/api/*` reverse proxy to the API service exists** (session cookies depend on it): run `pnpm build`, upload `dist/`, and configure the `/api/*` proxy before the SPA fallback.
 
-1. Run `pnpm build`
-2. Upload `dist/` contents to the hosting platform
-
-### 11.4 Preview Build Locally
+### 13.4 Preview Build Locally
 
 ```bash
 pnpm preview
@@ -1368,7 +1464,7 @@ pnpm preview
 
 ---
 
-## 12. FAQ
+## 14. FAQ
 
 ### Q1: The dev server port isn't 3000?
 
@@ -1379,8 +1475,8 @@ The dev server port is **51640** (configured in `vite.config.ts` `server.port`).
 The project requires Node `^20.19.0` or `>=22.12.0` (see `package.json` `engines` field). Use `nvm` or `fnm` to switch Node versions:
 
 ```bash
-nvm install 20.19.0
-nvm use 20.19.0
+nvm install 22
+nvm use 22
 ```
 
 ### Q3: Build reports TypeScript type errors?
@@ -1401,23 +1497,19 @@ Common causes:
 
 Checklist:
 
-1. Confirm plugins are registered (`src/gsap/plugin-setup.ts`)
-2. Confirm `setupGsap()` is called in `main.ts`
-3. Confirm `gsap.context()` wraps animation logic
-4. Confirm `matchMedia` conditions match (desktop requires `min-width: 1024px` and `pointer: fine`)
-5. Confirm element selectors are correct (check DOM rendering)
+1. Plugins are registered (`src/gsap/plugin-setup.ts`) and `setupGsap()` runs in `main.ts`
+2. `gsap.context()` wraps the animation logic
+3. The **correct breakpoint**: pin-type animations need `(min-width: 1024px) and (pointer: fine)`; interactions/Lenis need `(min-width: 769px) and (pointer: fine)`
+4. The OS does not have "reduce motion" enabled
+5. Element selectors are correct (check DOM rendering)
 
 ### Q5: Lenis inertia scrolling not working?
 
-Lenis only activates on **desktop** (`min-width: 769px` and `pointer: fine`) and **non-reduceMotion**. Touch devices and systems with "reduce motion" enabled skip Lenis.
+Lenis only activates on **desktop** (`min-width: 769px` and `pointer: fine`) and **non-reduceMotion**. Touch devices and systems with "reduce motion" enabled skip Lenis. Inner scrollable containers intentionally keep native scroll via the `prevent` callback.
 
-### Q6: Homepage layout doesn't change after switching?
+### Q6: The homepage layout doesn't change?
 
-After modifying `CURRENT_LAYOUT` in `src/config/home-layout.ts`, Vite HMR should auto-reload. If not:
-
-1. Confirm the file was saved
-2. Confirm the value is one of `'artistic'` / `'cinema'` / `'bento'`
-3. Manually refresh the browser
+The overall homepage layout is **fixed to Bento** (`LayoutCSections`). Only the **team section style** is configurable: change `CURRENT_TEAM_STYLE` in `src/config/home-layout.ts` and refresh. Note that `'random'` (the default) re-rolls on every full page reload — a different team style each refresh is expected, not a bug.
 
 ### Q7: New server-panel numbering doesn't increment?
 
@@ -1446,7 +1538,7 @@ Known issue: `will-change: transform` and `contain: layout style paint` may caus
 
 ### Q9: Pin-Scrub scrolling feels "stuck"?
 
-Pin-Scrub requires **continuous visual transformation** during pin. If only pinning without transformation, users perceive a "stuck" feeling. Ensure the timeline has element translate/rotate/fade.
+Pin-Scrub requires **continuous visual transformation** during pin. If only pinning without transformation, users perceive a "stuck" feeling. Ensure the timeline has element translate/rotate/fade. (Pin-Scrub currently exists only in `TeamArtistic` / `TeamCinema`.)
 
 ### Q10: Sitemap not generated after build?
 
@@ -1460,17 +1552,29 @@ Sitemap runs separately as `tsx src/utils/generate-sitemap.ts` after build. If n
 
 Mobile already degrades via `matchMedia`, keeping only essential animations. If still laggy:
 
-1. Check if desktop styles are loaded (media query should be `max-width: 1023px`)
+1. Check if desktop styles are loaded (media query should be `max-width: 768px` for mobile CSS)
 2. Reduce the number of simultaneously animated elements
 3. Use `will-change` to hint the browser (use cautiously, may cause flickering)
 
+### Q12: The page briefly shows logged-out UI on a public route?
+
+Auth initialization on public routes is **deliberately non-blocking** (a slow network must never blank the page). The Navbar updates automatically once the session check completes. Protected (`requiresAuth`) and guest (`guestOnly`) routes **do** wait for initialization.
+
+### Q13: A request failed with 429 / RATE_LIMITED — what does the UI do?
+
+Both API layers normalize 429 responses to `RATE_LIMITED` with a `resetAt` timestamp in `details`. Affected pages (login resend, MC binding, admin actions) display a retry-at time derived from `errorToResetAt()` instead of a generic error.
+
+### Q14: Are there tests?
+
+Not yet. The Vitest + jsdom + `@vue/test-utils` toolchain is scaffolded and `pnpm test:unit` runs (empty), but the repo currently relies on `pnpm type-check` + `pnpm build` as its verification gate. See [§12](#12-testing-strategy) for how to add the first spec.
+
 ---
 
-## 13. Maintenance Notes
+## 15. Maintenance Notes
 
-### 13.1 Adding a New Server
+### 15.1 Adding a New Server
 
-The servers-section uses CSS counter for auto-numbering. **Just copy a `server-panel` node**:
+The servers section in `LayoutCSections.vue` uses CSS counter for auto-numbering. **Just copy a `server-panel` node**:
 
 ```html
 <!-- Copy the node below inside .servers-grid -->
@@ -1485,84 +1589,47 @@ The servers-section uses CSS counter for auto-numbering. **Just copy a `server-p
 
 No CSS changes or manual numbering needed. New node's `nth-child` styles auto-apply (pre-reserved).
 
-### 13.2 Adding a New Team Member
+### 15.2 Adding a New Team Member
 
-Edit `src/config/team-members.ts`, add a new object to the `contributors` array:
+Edit `src/config/team-members.ts`, add a new object to the `contributors` array (fields: `name`, `avatar`, `roleKey` → `home.team.roles.<key>`, `githubHref`, `githubLabel`, `isOwner`, optional `extraLinks` of `qq`/`email`). Also add the corresponding `roleKey` translation in both `src/i18n/locales/zh.ts` and `en.ts` (if new role).
 
-```typescript
-export const contributors: Contributor[] = [
-  // ... existing members
-  {
-    name: 'New Member',
-    avatar: 'https://q1.qlogo.cn/g?b=qq&nk=QQ_NUMBER&s=0',
-    roleKey: 'admin', // corresponds to i18n home.team.roles.admin
-    githubHref: 'https://github.com/username',
-    githubLabel: 'username',
-    isOwner: false,
-    extraLinks: [
-      { type: 'qq', href: 'https://qm.qq.com/q/xxx' },
-      { type: 'email', href: 'mailto:email@example.com' },
-    ],
-  },
-]
-```
+### 15.3 Adding a New Team Style
 
-Also add the corresponding `roleKey` translation in `src/i18n/locales/zh.ts` and `en.ts` (if new role).
+The homepage layout is fixed; new visual themes target the **team section**:
 
-### 13.3 Adding a New Homepage Layout
-
-1. Create `src/components/home/sections/LayoutXSections.vue` (reference existing LayoutA/B/C)
-2. Add the new value to `HomeLayout` type in `src/config/home-layout.ts`:
+1. Create `src/components/home/team/TeamX.vue` (reference `TeamArtistic` / `TeamCinema` / `TeamBento`)
+2. Add the new value to the `TeamStyle` literal and `TEAM_STYLE_OPTIONS` in `src/config/home-layout.ts`:
    ```typescript
-   export type HomeLayout = 'artistic' | 'cinema' | 'bento' | 'newLayout'
+   export type TeamStyle = 'artistic' | 'cinema' | 'bento' | 'random' | 'newStyle'
    ```
-3. Add to the lazy-load mapping in `Home.vue`:
-   ```typescript
-   const modules = {
-     // ...
-     newLayout: () => import('@/components/home/sections/LayoutXSections.vue'),
-   }
-   ```
-4. Change `CURRENT_LAYOUT` to the new value to test
+3. Add the component mapping in `LayoutCSections.vue`'s `TEAM_STYLE_COMPONENT_MAP` — TypeScript errors on the missing key until you do
+4. Set `CURRENT_TEAM_STYLE` to the new value (or leave `'random'` — new styles automatically join the random pool)
 
-### 13.4 Adding New i18n Keys
+### 15.4 Adding New i18n Keys
 
 1. Add Chinese in `src/i18n/locales/zh.ts`
 2. Add corresponding English in `src/i18n/locales/en.ts`
 3. Call via `t('module.key')` in components
+4. **Caveat**: `SimpleRules.vue` imports the locale objects directly (not via `t()`); rules content must be updated in *both* files
+5. The locale trees currently have 21 top-level modules (see [§7.3.2](#732-language-file-structure)) — add new top-level modules to both files in sync
 
-### 13.5 GSAP Tuning Point Modifications
+### 15.5 GSAP Tuning Point Modifications
 
-Search `微调点：` to locate all adjustable parameters:
+Adjustable values are marked with `微调点：` comments — see [§7.2.5](#725-tuning-point-comment-convention). Search `微调点：` (editor global search) to locate all of them; each notes its purpose.
 
-```bash
-# Search all tuning points (use editor global search)
-微调点：
-```
-
-Each tuning point notes its purpose; modify the corresponding value to adjust animation effects.
-
-### 13.6 Dependency Updates
+### 15.6 Dependency Updates
 
 ```bash
-# Check outdated dependencies
-pnpm outdated
-
-# Update dependencies (cautiously, watch for breaking changes)
-pnpm update
-
-# Update a single package
-pnpm update vue
+pnpm outdated      # check outdated dependencies
+pnpm update        # update (cautiously, watch for breaking changes)
+pnpm update vue    # update a single package
 ```
 
-**GSAP upgrade notes:**
+**GSAP upgrade notes:** check the [GSAP Changelog](https://gsap.com/docs/v3/AllPlugins/) for breaking changes; confirm plugin registration (`plugin-setup.ts`) and `matchMedia` API compatibility; run `pnpm type-check` and `pnpm build` to verify.
 
-- Check the [GSAP Changelog](https://gsap.com/docs/v3/AllPlugins/) for breaking changes
-- Confirm plugin registration method unchanged (`plugin-setup.ts`)
-- Confirm `matchMedia` API compatibility
-- Run `pnpm type-check` and `pnpm build` to verify
+**unified/remark/rehype upgrade notes:** these packages move together (unified 11 / remark 15 / rehype 13 ecosystems) — upgrade as a set, and re-verify the sanitize schema afterwards (new default tags may be dropped or newly allowed).
 
-### 13.7 Lenis Configuration Adjustment
+### 15.7 Lenis Configuration Adjustment
 
 Lenis config is in `src/main.ts`; adjust parameters:
 
@@ -1574,55 +1641,38 @@ Lenis config is in `src/main.ts`; adjust parameters:
 
 ---
 
-## 14. Contributing Guide
+## 16. Contributing Guide
 
-### 14.1 Development Workflow
+### 16.1 Development Workflow
 
 1. **Fork** the repository to your GitHub account
-2. **Clone** the fork locally:
-   ```bash
-   git clone https://github.com/<your-username>/craft.luminolsuki.moe.git
-   cd craft.luminolsuki.moe
-   ```
-3. **Install dependencies**:
-   ```bash
-   pnpm install
-   ```
-4. **Create a branch**:
-   ```bash
-   git checkout -b feat/your-feature
-   ```
+2. **Clone** the fork locally and `cd craft.luminolsuki.moe`
+3. **Install dependencies**: `pnpm install`
+4. **Create a branch**: `git checkout -b feat/your-feature`
 5. **Develop**: Start dev server `pnpm dev`
-6. **Test**:
-   ```bash
-   pnpm type-check
-   pnpm test:unit
-   pnpm build
-   ```
-7. **Commit** (follow Conventional Commits):
-   ```bash
-   git commit -m "feat(home): add new feature description"
-   ```
+6. **Test**: `pnpm type-check && pnpm build`
+7. **Commit** (follow Conventional Commits): `git commit -m "feat(home): add new feature description"`
 8. **Push** and open a **Pull Request**
 
-### 14.2 PR guidelines
+### 16.2 PR Guidelines
 
 - PR title follows Conventional Commits
 - Describe changes and purpose clearly
 - Ensure `pnpm type-check` and `pnpm build` pass
 - Attach screenshots for UI changes
+- Never introduce backend secrets, API domains, or endpoint paths into the frontend code or docs
 
-### 14.3 Code Review Standards
+### 16.3 Code Review Standards
 
-- Complete TypeScript types
-- Follow ESLint + Prettier rules
+- Complete TypeScript types; follow ESLint + Prettier rules
 - Animations include matchMedia degradation (touch/reduceMotion)
-- Config centralized in `src/config/`
-- Reusable logic extracted to `src/composables/`
+- Config centralized in `src/config/`; reusable logic in `src/composables/`
+- Auth/session state only via the stores; no tokens in `localStorage`/`sessionStorage`
+- Frontend permission checks never replace backend enforcement
 
 ---
 
-## 15. License
+## 17. License
 
 This project is open-sourced under the [AGPL v3](https://www.gnu.org/licenses/agpl-3.0.html) license.
 
@@ -1638,25 +1688,19 @@ by the Free Software Foundation, either version 3 of the License, or
 
 ---
 
-## 16. Acknowledgments
+## 18. Acknowledgments
 
-- [Vue.js](https://vuejs.org/) - Progressive JavaScript framework
-- [Vite](https://vite.dev/) - Next-generation frontend build tool
+- [Vue.js](https://vuejs.org/) · [Vite](https://vite.dev/) · [TypeScript](https://www.typescriptlang.org/) · [Vue Router](https://router.vuejs.org/) · [Pinia](https://pinia.vuejs.org/) · [vue-i18n](https://vue-i18n.intlify.dev/)
 - [GSAP](https://gsap.com/) - Professional web animation platform
 - [Lenis](https://lenis.darkroom.engineering/) - Smooth scrolling library
-- [TypeScript](https://www.typescriptlang.org/) - JavaScript superset
-- [Vue Router](https://router.vuejs.org/) - Official Vue.js router
-- [Pinia](https://pinia.vuejs.org/) - Vue state management
-- [vue-i18n](https://vue-i18n.intlify.dev/) - Vue internationalization
-- [Chart.js](https://www.chartjs.org/) - Data visualization
-- [marked](https://marked.js.org/) - Markdown parsing
-- [highlight.js](https://highlightjs.org/) - Syntax highlighting
-- [KaTeX](https://katex.org/) - Math formula rendering
+- [Better Auth](https://www.better-auth.com/) - Authentication framework
+- [unified / remark / rehype](https://unifiedjs.com/) - Markdown rendering pipeline
+- [KaTeX](https://katex.org/) · [highlight.js](https://highlightjs.org/) · [Umami](https://umami.is/) · [mc-heads.net](https://mc-heads.net/)
 - [LuminolMC](https://github.com/LuminolMC) - Affiliated Minecraft server
 
 ---
 
-## 17. Contact
+## 19. Contact
 
 - **Repository**: [craft.luminolsuki.moe](https://github.com/LuminolCraft/craft.luminolsuki.moe)
 - **Team**: [LuminolCraft GitHub](https://github.com/LuminolCraft)
