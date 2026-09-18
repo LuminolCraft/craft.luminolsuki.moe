@@ -43,3 +43,6 @@ vue-login/
 
 1/
 2/
+
+# 私有后端契约文档（含 API 端点与基础设施细节，严禁入库）
+BACKEND-PRIVATE.md
