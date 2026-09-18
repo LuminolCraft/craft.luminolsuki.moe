@@ -37,7 +37,7 @@ export const ALLOWED_EMAIL_DOMAINS = [
   'gmx.de',
 ] as const
 
-const ALLOWED_EMAIL_DOMAIN_SET = new Set(ALLOWED_EMAIL_DOMAINS)
+const ALLOWED_EMAIL_DOMAIN_SET: Set<string> = new Set(ALLOWED_EMAIL_DOMAINS)
 
 /**
  * 检查邮箱域名是否在允许列表中。
