@@ -56,6 +56,7 @@ export default {
       "hasAccount": "已有账号？",
       "login": "去登录",
       "invalidUsername": "用户名需为 2-32 个字符",
+      "usernameReserved": "该用户名不被允许，请更换",
       "invalidEmail": "请输入有效的邮箱地址",
       "emailDomainNotAllowed": "暂不支持该邮箱域名，请使用其他邮箱注册。",
       "weakPassword": "密码至少需要 8 位",
@@ -557,6 +558,7 @@ export default {
       "errUsernameExists": "用户名已被占用",
       "errEmailUsed": "邮箱已被占用",
       "errUsernameInvalid": "用户名格式不正确",
+      "errUsernameReserved": "该用户名不被允许",
       "errEmailInvalid": "邮箱格式不正确",
       "errValidation": "请检查输入内容",
       "errRateLimited": "操作过于频繁，请稍后重试",
@@ -673,7 +675,19 @@ export default {
     "userDetail": {
       "forceUnbind": "强制解绑",
       "forceUnbindConfirm": "确定要强制解绑该用户与 MC 账号「{name}」的绑定吗？解绑后任何用户可重新绑定，操作将记入审计日志。",
-      "forceUnbindNotFound": "用户或 MC 账号不存在（可能已被解绑）"
+      "forceUnbindNotFound": "用户或 MC 账号不存在（可能已被解绑）",
+      "governanceTitle": "用户名治理",
+      "sendWarning": "发送违规提醒",
+      "warningFirst": "首封提醒（7 天宽限）",
+      "warningFinal": "终局提醒（剩 3 天）",
+      "warningSent": "提醒邮件已发送",
+      "warningConfirmTitle": "确认发送违规提醒",
+      "warningConfirmBody": "提醒邮件将发送至该用户的注册邮箱，请选择提醒类型。",
+      "deleteAccount": "删除账号",
+      "deleteConfirmTitle": "确认删除账号",
+      "deleteConfirmBody": "该操作不可逆：账号「{name}」将被删除，其全部数据将被清除。",
+      "deleteReasonLabel": "处置原因（将写入审计日志）",
+      "deleteSuccess": "账号已删除"
     },
     "users": {
       "title": "用户管理",
