@@ -402,4 +402,28 @@ onUnmounted(() => {
   opacity: 0;
   transform: translateY(-6px);
 }
+
+/* ---------- 移动端：下拉改为贴视口两侧的固定面板 ---------- */
+@media (max-width: 896px) {
+  .bell-btn {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  /* 铃铛是右侧操作区最左项，桌面 absolute + right:-8px 会让 336px 面板左侧越出视口
+     （375px 时约 -96px，且 body{overflow-x:hidden} 无法横向滚到）；改为固定面板整体滚动 */
+  .bell-panel {
+    position: fixed;
+    top: calc(4rem + 0.5rem);
+    left: 0.75rem;
+    right: 0.75rem;
+    width: auto;
+    max-height: min(70dvh, 26rem);
+    overflow-y: auto;
+  }
+
+  .bell-list {
+    max-height: none;
+  }
+}
 </style>
