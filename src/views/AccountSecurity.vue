@@ -141,6 +141,8 @@ onMounted(async () => {
 .security-revoke-all {
   margin-top: 1.2rem;
   padding: 0.55rem 1.2rem;
+  /* 触及全局 ≤768px 触控规则之外的 769-896px 段：显式给足触控高度 */
+  min-height: 44px;
   background: transparent;
   border: 1px solid color-mix(in srgb, var(--error-color, #e5484d) 40%, transparent);
   border-radius: 6px;

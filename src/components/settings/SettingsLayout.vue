@@ -152,7 +152,8 @@ create((g) => {
   .settings-shell {
     grid-template-columns: 1fr;
     gap: 1.5rem;
-    padding-top: 1.5rem;
+    /* 64px 固定导航 + 呼吸：原先 1.5rem 会让标签条与每个 h1 压在导航下面 */
+    padding-top: calc(4rem + 1.25rem);
   }
 
   .settings-sidebar {
@@ -169,11 +170,17 @@ create((g) => {
     border-left: none;
     border-bottom: 1px solid var(--border-color);
     overflow-x: auto;
-    scrollbar-width: none;
+    /* 保留细滚动条作为可横向滚动的可见提示（原先隐藏滚动条，英文文案被裁时看不出能滚） */
+    scrollbar-width: thin;
   }
 
   .settings-nav::-webkit-scrollbar {
-    display: none;
+    height: 4px;
+  }
+
+  .settings-nav::-webkit-scrollbar-thumb {
+    background: var(--primary-color);
+    border-radius: 2px;
   }
 
   .settings-nav-item {
@@ -187,6 +194,14 @@ create((g) => {
 
   .settings-nav-item.active {
     border-bottom-color: var(--primary-color);
+  }
+}
+
+/* 超窄屏：标签内边距再收一档，中文三标签无需横向滚动 */
+@media (max-width: 480px) {
+  .settings-nav-item {
+    padding: 0.6rem 0.7rem;
+    font-size: 0.84rem;
   }
 }
 </style>

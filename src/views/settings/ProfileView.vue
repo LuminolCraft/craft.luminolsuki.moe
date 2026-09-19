@@ -414,4 +414,19 @@ onMounted(async () => {
   font-size: 0.85rem;
   color: var(--error-color, #e5484d);
 }
+
+/* ---------- 移动端：窄屏下邮箱徽标换行、保存按钮与提示不挤一行 ---------- */
+@media (max-width: 896px) {
+  .profile-email-row {
+    flex-wrap: wrap;
+  }
+
+  .profile-input {
+    min-width: 0;
+  }
+
+  .profile-actions {
+    flex-wrap: wrap;
+  }
+}
 </style>
