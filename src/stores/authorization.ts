@@ -47,6 +47,11 @@ export const useAuthorizationStore = defineStore('authorization', () => {
     return roles.value.includes(role)
   }
 
+  /** 任一角色命中即 true（管理后台入口/守卫用：与后端 requireAdmin 的角色语义对齐） */
+  function hasAnyRole(candidates: string[]): boolean {
+    return candidates.some((r) => roles.value.includes(r))
+  }
+
   /** 清空授权态（登出/会话失效时由 auth store 调用） */
   function reset() {
     roles.value = []
@@ -61,6 +66,7 @@ export const useAuthorizationStore = defineStore('authorization', () => {
     fetchAuthorization,
     hasPermission,
     hasRole,
+    hasAnyRole,
     reset,
   }
 })
