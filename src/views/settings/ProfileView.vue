@@ -87,7 +87,7 @@ import { useNexusStore } from '@/stores/nexus'
 import { useGsap } from '@/composables/useGsap'
 import { isAppError } from '@/lib/api'
 import { checkUsernameReserved } from '@/lib/reserved-username'
-import { validateUsername } from '@/lib/username'
+import { cleanUsernameInput, validateUsername } from '@/lib/username'
 
 const { t, te } = useI18n()
 const auth = useAuthStore()
@@ -130,7 +130,8 @@ async function onSave() {
   formError.value = ''
   savedMessage.value = ''
 
-  const nextUsername = username.value
+  // 先做粘贴清洗（零宽/双向控制字符）再校验：复制粘贴残留不该变成恒 400 的死循环
+  const nextUsername = cleanUsernameInput(username.value)
   const nextEmail = email.value
   if (!validateUsername(nextUsername).ok) {
     formError.value = t('settings.profile.errUsernameInvalid')

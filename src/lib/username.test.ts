@@ -4,6 +4,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   canonicalUsername,
+  cleanUsernameInput,
   prepareUsername,
   sliceCodePoints,
   USERNAME_MAX,
@@ -108,5 +109,20 @@ describe('sliceCodePoints：不在代理对中间截断', () => {
     expect(sliceCodePoints('𠀀𠀁𠀂', 2)).toBe('𠀀𠀁')
     expect(Array.from(sliceCodePoints('𠀀𠀁𠀂', 2))).toHaveLength(2)
     expect(sliceCodePoints('张三', 5)).toBe('张三')
+  })
+})
+
+// 说明：cleanUsernameInput 是前端输入卫生（后端直接拒绝不可见字符，不做清洗），
+// 因此后端 tests/unit/username.test.ts 没有对应用例。
+describe('cleanUsernameInput：粘贴清洗（前端输入卫生）', () => {
+  it('移除零宽与双向控制字符', () => {
+    expect(cleanUsernameInput('张\u200D三丰')).toBe('张三丰')
+    expect(cleanUsernameInput('\u202Eabc')).toBe('abc')
+    expect(cleanUsernameInput('张\uFEFF三丰')).toBe('张三丰')
+  })
+
+  it('顺带做宽度折叠与首尾空白移除', () => {
+    expect(cleanUsernameInput(' 张三丰 ')).toBe('张三丰')
+    expect(cleanUsernameInput('ＡＢＣ')).toBe('ABC')
   })
 })
