@@ -30,6 +30,27 @@
         <!-- <router-link to="/Monitoring">
           {{ t('common.monitoring') }}
         </router-link> -->
+        <!-- 登录态账号入口：≤896px 顶栏只留铃铛+头像，其余入口收进抽屉（顶栏宽度放不下） -->
+        <div v-if="auth.isAuthenticated" class="side-nav-auth">
+          <router-link to="/notifications">
+            {{ t('notification.center.title') }}
+          </router-link>
+          <router-link to="/settings/profile">
+            {{ t('settings.nav.profile') }}
+          </router-link>
+          <router-link to="/settings/minecraft">
+            {{ t('settings.nav.minecraft') }}
+          </router-link>
+          <router-link to="/settings/security">
+            {{ t('settings.nav.security') }}
+          </router-link>
+          <router-link v-if="authz.hasAnyRole(['admin', 'owner'])" to="/admin/users">
+            {{ t('auth.nav.admin') }}
+          </router-link>
+          <button type="button" class="side-nav-logout" :disabled="loggingOut" @click="onDrawerLogout">
+            {{ loggingOut ? t('auth.security.revoking') : t('auth.nav.logout') }}
+          </button>
+        </div>
         <TocToggles v-if="appConfig.showTocToggles" />
       </div>
 
@@ -77,17 +98,31 @@
         <template v-if="auth.isAuthenticated">
           <!-- 站内通知铃铛：登录态显示（WS 生命周期由 auth store 接线驱动，本组件零网络逻辑） -->
           <NotificationBell />
-          <router-link v-if="authz.hasAnyRole(['admin', 'owner'])" to="/admin/users" class="nav-link">
+          <router-link
+            v-if="authz.hasAnyRole(['admin', 'owner'])"
+            to="/admin/users"
+            class="nav-link nav-auth-admin"
+          >
             {{ t('auth.nav.admin') }}
           </router-link>
-          <router-link to="/settings/profile" class="nav-link nav-user" :title="auth.me?.username">
+          <router-link
+            to="/settings/profile"
+            class="nav-link nav-user"
+            :title="auth.me?.username"
+            :aria-label="auth.me?.username"
+          >
             <UserAvatar :user-id="auth.me?.id" :name="auth.me?.username" :size="24" />
-            <span>{{ auth.me?.username }}</span>
+            <span class="nav-user-name">{{ auth.me?.username }}</span>
           </router-link>
-          <router-link to="/settings/profile" class="nav-link">
+          <router-link to="/settings/profile" class="nav-link nav-auth-account">
             {{ t('auth.nav.account') }}
           </router-link>
-          <button type="button" class="nav-auth-btn" :disabled="loggingOut" @click="onLogout">
+          <button
+            type="button"
+            class="nav-auth-btn nav-auth-logout"
+            :disabled="loggingOut"
+            @click="onLogout"
+          >
             {{ loggingOut ? t('auth.security.revoking') : t('auth.nav.logout') }}
           </button>
         </template>
@@ -218,6 +253,12 @@ async function onLogout() {
     loggingOut.value = false
     router.replace('/login')
   }
+}
+
+/** 抽屉内退出：先收起抽屉，再走与顶栏一致的退出逻辑（button 不经过抽屉的链接点击处理器） */
+function onDrawerLogout() {
+  closeSidebar()
+  void onLogout()
 }
 
 const burgerInput = ref<HTMLInputElement | null>(null)
