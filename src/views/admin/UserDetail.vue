@@ -332,7 +332,7 @@ import { useRoute, useRouter } from 'vue-router'
 import UserAvatar from '@/components/UserAvatar.vue'
 import { api, isAppError } from '@/lib/api'
 import { checkUsernameReserved } from '@/lib/reserved-username'
-import { validateUsername as checkUsernameFormat } from '@/lib/username'
+import { cleanUsernameInput, validateUsername as checkUsernameFormat } from '@/lib/username'
 import { mcAvatarUrl } from '@/lib/minecraft'
 import { useAuthorizationStore } from '@/stores/authorization'
 import { useNexusStore } from '@/stores/nexus'
@@ -524,8 +524,9 @@ function validateUsername(): boolean {
 }
 
 function onUsernameInput() {
-  // 粘贴残留防御：清除零宽字符等不可见粘贴物后回写（trim 只去标准空白，管不了这些）
-  const cleaned = newUsername.value.replace(/[\u200B-\u200D\uFEFF]/g, '')
+  // 粘贴残留防御：清走零宽/双向控制字符（复制自用户 ID、聊天记录等场景的残留）后回写。
+  // 清洗规则统一来自 @/lib/username，避免这里再养一套私有正则
+  const cleaned = cleanUsernameInput(newUsername.value)
   if (cleaned !== newUsername.value) newUsername.value = cleaned
   // 空输入清提示，非空即时校验（保留词/非法格式即时反馈）
   if (!newUsername.value) {
@@ -537,8 +538,8 @@ function onUsernameInput() {
 
 async function onChangeUsername() {
   if (!user.value) return
-  // 提交前再清一次零宽/首尾空白（复制自用户 ID 等场景的残留）
-  newUsername.value = newUsername.value.replace(/[\u200B-\u200D\uFEFF]/g, '').trim()
+  // 提交前再清洗一次（零宽/双向控制字符 + 首尾空白 + 宽度折叠/NFC）
+  newUsername.value = cleanUsernameInput(newUsername.value)
   if (!validateUsername()) return
   usernameError.value = ''
   changingUsername.value = true

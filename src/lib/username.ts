@@ -97,3 +97,14 @@ export function canonicalUsername(raw: string): string {
 export function withUsernameSuffix(base: string, suffix: string): string {
   return `${sliceCodePoints(base, USERNAME_MAX - suffix.length)}${suffix}`
 }
+
+/**
+ * 粘贴清洗（前端输入卫生，不是校验规则）：移除零宽与双向控制字符，再走 prepareUsername。
+ *
+ * 后端不做这一步——后端直接拒绝含不可见字符的输入（defense in depth）。
+ * 前端做这一步，是为了「从用户 ID、聊天记录、网页复制」带来的粘贴残留
+ * 不会让用户陷入恒 400 的死循环；存储值永远是清洗后的结果。
+ */
+export function cleanUsernameInput(raw: string): string {
+  return prepareUsername(raw.replace(/[\u200B-\u200D\uFEFF\u202A-\u202E\u2066-\u2069]/g, ''))
+}
