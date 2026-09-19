@@ -347,4 +347,23 @@ onMounted(() => {
   border: 1px solid var(--border-color);
   color: var(--text-color);
 }
+
+/* ---------- 移动端：标题改两行截断，时间换行，避免只剩十几个字 ---------- */
+@media (max-width: 600px) {
+  .notif-meta {
+    flex-wrap: wrap;
+  }
+
+  .notif-title {
+    display: -webkit-box;
+    white-space: normal;
+    overflow: hidden;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+
+  .notif-time {
+    margin-left: 0;
+  }
+}
 </style>

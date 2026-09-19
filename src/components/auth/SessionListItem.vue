@@ -134,6 +134,8 @@ const createdLabel = computed(() => formatRelative(props.session.createdAt))
 .session-meta {
   display: flex;
   align-items: center;
+  /* 窄屏元信息换行，避免「上次活动 · …」与「登录时间 · …」被挤成锯齿两行 */
+  flex-wrap: wrap;
   gap: 0.6rem;
   margin-top: 0.35rem;
   font-size: 0.8rem;
@@ -150,6 +152,8 @@ const createdLabel = computed(() => formatRelative(props.session.createdAt))
 .session-revoke {
   flex-shrink: 0;
   padding: 0.4rem 0.9rem;
+  /* 显式触控高度：769-896px 段落在全局 ≤768px 触控规则之外 */
+  min-height: 44px;
   background: transparent;
   border: 1px solid var(--border-color);
   border-radius: 6px;
