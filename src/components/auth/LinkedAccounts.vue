@@ -795,6 +795,8 @@ onMounted(async () => {
 @media (max-width: 896px) {
   .la-overlay {
     padding: 6vh 0.9rem 2rem;
+    /* flex 居中 + overflow-y:auto 会裁掉高于视口的弹层顶部且滚不回去（标题/关闭按钮丢失） */
+    align-items: flex-start;
   }
   .la-dialog-actions {
     flex-direction: column-reverse;

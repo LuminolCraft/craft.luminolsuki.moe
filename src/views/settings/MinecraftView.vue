@@ -1223,6 +1223,14 @@ onMounted(async () => {
 @media (max-width: 896px) {
   .mc-overlay {
     padding: 6vh 0.9rem 2rem;
+    /* flex 居中 + overflow-y:auto 会裁掉高于视口的弹层顶部且滚不回去（标题/关闭按钮丢失） */
+    align-items: flex-start;
+  }
+  /* 绑定码放大后 8 位码在 320-400px 会溢出卡片 */
+  .mc-pending-code {
+    font-size: 1.7rem;
+    letter-spacing: 0.28em;
+    overflow-wrap: anywhere;
   }
   .mc-dialog-actions {
     flex-direction: column-reverse;
