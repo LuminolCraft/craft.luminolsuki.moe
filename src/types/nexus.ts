@@ -160,17 +160,32 @@ export interface Paged<T> {
 
 // ---------- 管理端·审计 ----------
 
-/** 审计日志（GET /admin/audit 元素） */
+/** 审计日志（GET /admin/audit 元素；操作者/目标名由后端读取期解析） */
 export interface AuditLog {
   id: string
   actorUserId?: string | null
+  /** 操作者用户名；null = 该用户已注销（actorUserId 仍保留） */
+  actorName?: string | null
+  /** 操作者邮箱（仅行内详情展示） */
+  actorEmail?: string | null
   action: string
+  /** 事件分类 id（见后端 AUDIT_ACTION_CATALOG） */
+  actionCategory?: string | null
   targetType?: string | null
   targetId?: string | null
+  /** 目标名（user / minecraft_account 类型解析得出，其余为 null） */
+  targetName?: string | null
+  /** 结构化后的 metadata（后端已解析；非法 JSON 为 null） */
   metadata?: Record<string, unknown> | null
   ipHash?: string | null
   userAgent?: string | null
   createdAt?: number
+}
+
+/** 审计事件目录项（GET /admin/audit/actions 元素） */
+export interface AuditActionOption {
+  action: string
+  category: string
 }
 
 /** 审计归档对象（GET /admin/audit/archive 元素，R2 JSONL 对象元信息） */
