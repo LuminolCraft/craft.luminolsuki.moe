@@ -514,7 +514,7 @@ function closeUsernameModal() {
 function validateUsername(): boolean {
   const name = newUsername.value
   if (name.length < USERNAME_MIN || name.length > USERNAME_MAX || !USERNAME_PATTERN.test(name)) {
-    usernameFieldError.value = t('admin.common.errValidation')
+    usernameFieldError.value = t('admin.userDetail.errUsernameFormat')
     return false
   }
   if (checkUsernameReserved(name)) {
@@ -526,6 +526,9 @@ function validateUsername(): boolean {
 }
 
 function onUsernameInput() {
+  // 粘贴残留防御：清除零宽字符等不可见粘贴物后回写（trim 只去标准空白，管不了这些）
+  const cleaned = newUsername.value.replace(/[\u200B-\u200D\uFEFF]/g, '')
+  if (cleaned !== newUsername.value) newUsername.value = cleaned
   // 空输入清提示，非空即时校验（保留词/非法格式即时反馈）
   if (!newUsername.value) {
     usernameFieldError.value = ''
@@ -536,6 +539,8 @@ function onUsernameInput() {
 
 async function onChangeUsername() {
   if (!user.value) return
+  // 提交前再清一次零宽/首尾空白（复制自用户 ID 等场景的残留）
+  newUsername.value = newUsername.value.replace(/[\u200B-\u200D\uFEFF]/g, '').trim()
   if (!validateUsername()) return
   usernameError.value = ''
   changingUsername.value = true
