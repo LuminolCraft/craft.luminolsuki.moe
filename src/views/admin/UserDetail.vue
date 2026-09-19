@@ -130,6 +130,10 @@
           <button type="button" class="btn" :disabled="sendingWarning" @click="openWarningModal">
             {{ t('admin.userDetail.sendWarning') }}
           </button>
+          <!-- 站内提醒：POST /admin/notifications {target: userId, type: 'warning'}，title/body 预填违规提醒模板可改 -->
+          <button type="button" class="btn" :disabled="sendingInAppWarning" @click="openInAppWarningModal">
+            {{ t('admin.userDetail.inAppWarning') }}
+          </button>
           <!-- 契约：删除仅 owner 可用（后端对非 owner 403），镜像上方 owner-only 角色判断 -->
           <button
             v-if="authz.hasRole('owner')"
@@ -142,6 +146,7 @@
           </button>
         </div>
         <p v-if="warningSuccess" class="form-success" role="status">{{ t('admin.userDetail.warningSent') }}</p>
+        <p v-if="inAppWarningSuccess" class="form-success" role="status">{{ t('admin.userDetail.inAppWarningSent') }}</p>
       </section>
     </template>
 
@@ -164,6 +169,48 @@
           </button>
         </div>
         <p v-if="warningError" class="form-error" role="alert">{{ warningError }}</p>
+      </div>
+    </div>
+
+    <!-- 站内提醒弹窗：title/body 预填 i18n 违规提醒模板，可编辑；POST /admin/notifications -->
+    <div v-if="inAppWarningModalOpen" class="modal-scrim" @click.self="closeInAppWarningModal">
+      <div class="modal" role="dialog" aria-modal="true">
+        <h2 class="modal-title">{{ t('admin.userDetail.inAppWarningTitle') }}</h2>
+        <p class="modal-body">{{ t('admin.userDetail.inAppWarningBody', { name: user?.username }) }}</p>
+        <label class="field">
+          <span class="label">{{ t('admin.notificationCompose.titleLabel') }}</span>
+          <input
+            v-model.trim="inAppWarningTitle"
+            class="input"
+            type="text"
+            maxlength="120"
+            :disabled="sendingInAppWarning"
+          />
+        </label>
+        <label class="field">
+          <span class="label">{{ t('admin.notificationCompose.bodyLabel') }}</span>
+          <textarea
+            v-model.trim="inAppWarningBody"
+            class="input textarea"
+            rows="4"
+            maxlength="2000"
+            :disabled="sendingInAppWarning"
+          />
+        </label>
+        <div class="modal-actions">
+          <button type="button" class="btn ghost" :disabled="sendingInAppWarning" @click="closeInAppWarningModal">
+            {{ t('admin.common.cancel') }}
+          </button>
+          <button
+            type="button"
+            class="btn"
+            :disabled="sendingInAppWarning || !inAppWarningTitle || inAppWarningTitle.length > 120"
+            @click="onSendInAppWarning"
+          >
+            {{ sendingInAppWarning ? t('admin.notificationCompose.sending') : t('admin.notificationCompose.send') }}
+          </button>
+        </div>
+        <p v-if="inAppWarningError" class="form-error" role="alert">{{ inAppWarningError }}</p>
       </div>
     </div>
 
@@ -227,6 +274,7 @@ import { api, isAppError } from '@/lib/api'
 import { mcAvatarUrl } from '@/lib/minecraft'
 import { useAuthorizationStore } from '@/stores/authorization'
 import { useNexusStore } from '@/stores/nexus'
+import { useNotificationsStore } from '@/stores/notifications'
 import type { AdminUserDetail, BanType, MinecraftAccount, NexusRoleName } from '@/types/nexus'
 import { useGsap } from '@/composables/useGsap'
 
@@ -235,6 +283,7 @@ const route = useRoute()
 const router = useRouter()
 const authz = useAuthorizationStore()
 const nexus = useNexusStore()
+const notifications = useNotificationsStore()
 const { create, reduceMotion } = useGsap()
 
 const loading = ref(true)
@@ -401,6 +450,51 @@ async function onSendWarning(final: boolean) {
     warningError.value = errorText(e)
   } finally {
     sendingWarning.value = false
+  }
+}
+
+// ---------- 站内提醒（POST /admin/notifications，type: warning） ----------
+// title/body 预填 i18n 违规提醒模板，可编辑；交互 mirror 上方邮件违规提醒弹窗。
+const inAppWarningModalOpen = ref(false)
+const sendingInAppWarning = ref(false)
+const inAppWarningSuccess = ref(false)
+const inAppWarningError = ref('')
+const inAppWarningTitle = ref('')
+const inAppWarningBody = ref('')
+
+function openInAppWarningModal() {
+  inAppWarningSuccess.value = false
+  inAppWarningError.value = ''
+  inAppWarningTitle.value = t('admin.userDetail.inAppWarningTitlePreset')
+  inAppWarningBody.value = t('admin.userDetail.inAppWarningBodyPreset')
+  inAppWarningModalOpen.value = true
+}
+
+function closeInAppWarningModal() {
+  if (sendingInAppWarning.value) return
+  inAppWarningModalOpen.value = false
+  inAppWarningError.value = ''
+}
+
+async function onSendInAppWarning() {
+  if (!user.value) return
+  const titleText = inAppWarningTitle.value
+  if (!titleText || titleText.length > 120) return
+  inAppWarningError.value = ''
+  sendingInAppWarning.value = true
+  try {
+    await notifications.adminSend({
+      target: user.value.id,
+      type: 'warning',
+      title: titleText,
+      ...(inAppWarningBody.value ? { body: inAppWarningBody.value } : {}),
+    })
+    inAppWarningSuccess.value = true
+    inAppWarningModalOpen.value = false
+  } catch (e) {
+    inAppWarningError.value = errorText(e)
+  } finally {
+    sendingInAppWarning.value = false
   }
 }
 

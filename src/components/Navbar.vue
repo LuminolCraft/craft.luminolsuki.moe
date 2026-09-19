@@ -75,6 +75,8 @@
       <div class="nav-actions">
         <TocToggles v-if="appConfig.showTocToggles" />
         <template v-if="auth.isAuthenticated">
+          <!-- 站内通知铃铛：登录态显示（WS 生命周期由 auth store 接线驱动，本组件零网络逻辑） -->
+          <NotificationBell />
           <router-link v-if="authz.hasPermission('admin:access')" to="/admin/users" class="nav-link">
             {{ t('auth.nav.admin') }}
           </router-link>
@@ -187,6 +189,7 @@ import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import TocToggles from './TocToggles.vue'
 import UserAvatar from './UserAvatar.vue'
+import NotificationBell from './NotificationBell.vue'
 import { appConfig } from '../config/app-config'
 import { useGsap } from '@/composables/useGsap'
 import { useAuthStore } from '@/stores/auth'

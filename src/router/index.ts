@@ -150,6 +150,18 @@ const routes = [
     component: () => import('../views/auth/LinkAccountError.vue'),
     meta: { hideChrome: true }
   },
+  {
+    path: '/notifications',
+    name: 'Notifications',
+    component: () => import('../views/NotificationsView.vue'),
+    meta: {
+      requiresAuth: true,
+      og: {
+        title: '通知中心 - LuminolCraft 服务器',
+        description: '查看站内公告与提醒，掌握服务器最新动态。'
+      }
+    }
+  },
   // ---------- 用户中心（侧边栏布局壳） ----------
   {
     path: '/settings',
@@ -205,6 +217,12 @@ const routes = [
         name: 'AdminUserDetail',
         component: () => import('../views/admin/UserDetail.vue'),
         meta: { og: { title: '用户详情 - LuminolCraft', description: '查看用户资料、角色与 Minecraft 账号。' } }
+      },
+      {
+        path: 'notifications',
+        name: 'AdminNotifications',
+        component: () => import('../views/admin/NotificationComposeView.vue'),
+        meta: { og: { title: '发布通知 - LuminolCraft', description: '向全员或指定用户发送站内公告与警示。' } }
       },
       {
         path: 'bans',

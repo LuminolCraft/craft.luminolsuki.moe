@@ -5,6 +5,7 @@ import { authClient, toAppError } from '@/lib/auth-client'
 import { resolveInternalPath } from '@/utils/internalPath'
 import { useAuthorizationStore } from '@/stores/authorization'
 import { useNexusStore } from '@/stores/nexus'
+import { useNotificationsStore } from '@/stores/notifications'
 import type { AppError, SessionInfo, SessionRevokeResult, User } from '@/types/auth'
 
 /** 这些 401 code 一律视为"未登录"并清空本地用户态（v1 文档 §19/§20） */
@@ -73,6 +74,8 @@ export const useAuthStore = defineStore('auth', () => {
     // 授权态与业务数据缓存随登录态一并清空（均为仅内存缓存）
     useAuthorizationStore().reset()
     useNexusStore().reset()
+    // 登出/会话失效：断开站内通知 WS 长连接并停止重连（幂等，未连接时为空操作）
+    useNotificationsStore().disconnect()
   }
 
   /**
@@ -89,7 +92,11 @@ export const useAuthStore = defineStore('auth', () => {
     const wasAuthenticated = me.value !== null
     try {
       me.value = await api.get<User>('/me')
-      if (!wasAuthenticated) broadcastAuthChange()
+      if (!wasAuthenticated) {
+        broadcastAuthChange()
+        // 登录态建立（含刷新页面恢复会话/OAuth 回调/跨标签页同步）：打开站内通知 WS
+        useNotificationsStore().connect()
+      }
     } catch (e) {
       if (UNAUTH_CODES.has((e as AppError).code)) {
         clearAuthState()

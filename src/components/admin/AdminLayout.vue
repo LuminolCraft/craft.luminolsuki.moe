@@ -66,6 +66,7 @@ const sidebarOpen = ref(false)
 
 const navItems = computed(() => [
   { to: '/admin/users', label: t('admin.nav.users') },
+  { to: '/admin/notifications', label: t('admin.nav.notifications') },
   { to: '/admin/bans', label: t('admin.nav.bans') },
   { to: '/admin/audit', label: t('admin.nav.audit') },
 ])
