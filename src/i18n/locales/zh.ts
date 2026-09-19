@@ -647,10 +647,44 @@ export default {
     "linkRemoveConfirm": "确定解除这条主号↔小号关联吗？",
     "linkRemoveFailed": "解除失败，请重试"
   },
+  "notification": {
+    "bell": {
+      "title": "通知",
+      "empty": "暂无通知",
+      "loading": "加载中…",
+      "error": "通知加载失败，点击重试",
+      "viewAll": "查看全部",
+      "markAllRead": "全部已读"
+    },
+    "center": {
+      "title": "通知中心",
+      "subtitle": "查看站内公告与管理提醒。",
+      "type": {
+        "announcement": "公告",
+        "warning": "警示"
+      },
+      "markRead": "未读",
+      "markAllRead": "全部已读",
+      "empty": "暂无通知",
+      "loading": "加载中…",
+      "error": "通知加载失败，请稍后重试",
+      "loadMore": "加载更多",
+      "prev": "上一页",
+      "next": "下一页",
+      "pageOf": "第 {page} 页"
+    },
+    "time": {
+      "justNow": "刚刚",
+      "minutesAgo": "{n} 分钟前",
+      "hoursAgo": "{n} 小时前",
+      "daysAgo": "{n} 天前"
+    }
+  },
   "admin": {
     "shellTitle": "管理后台",
     "nav": {
       "users": "用户",
+      "notifications": "通知发布",
       "bans": "封禁",
       "audit": "审计",
       "backToSite": "返回前台"
@@ -678,6 +712,12 @@ export default {
       "forceUnbindNotFound": "用户或 MC 账号不存在（可能已被解绑）",
       "governanceTitle": "用户名治理",
       "sendWarning": "发送违规提醒",
+      "inAppWarning": "发送站内提醒",
+      "inAppWarningTitle": "发送站内提醒",
+      "inAppWarningBody": "将以站内通知的形式发送给「{name}」，其登录后即可在通知中心看到。发送前可修改下方内容。",
+      "inAppWarningTitlePreset": "用户名违规提醒",
+      "inAppWarningBodyPreset": "你的用户名违反了服务器用户名规范，请尽快修改用户名。如有疑问，请联系服务器管理。",
+      "inAppWarningSent": "站内提醒已发送",
       "warningFirst": "首封提醒（7 天宽限）",
       "warningFinal": "终局提醒（剩 3 天）",
       "warningSent": "提醒邮件已发送",
@@ -688,6 +728,32 @@ export default {
       "deleteConfirmBody": "该操作不可逆：账号「{name}」将被删除，其全部数据将被清除。",
       "deleteReasonLabel": "处置原因（将写入审计日志）",
       "deleteSuccess": "账号已删除"
+    },
+    "notificationCompose": {
+      "title": "发布通知",
+      "subtitle": "向全员或指定用户发送站内公告与警示。",
+      "targetLabel": "发送目标",
+      "target": {
+        "all": "全员",
+        "user": "指定用户",
+        "multi": "多选用户"
+      },
+      "userPickLabel": "选择用户",
+      "userSearch": "搜索用户名",
+      "searchEmpty": "没有匹配的用户",
+      "selectedCount": "已选 {count} 位用户",
+      "typeLabel": "类型",
+      "titleLabel": "标题（1-120 字）",
+      "titlePlaceholder": "填写通知标题",
+      "bodyLabel": "正文（可选，≤2000 字）",
+      "bodyPlaceholder": "填写通知正文",
+      "linkLabel": "跳转链接（可选）",
+      "linkLabelPlaceholder": "/news",
+      "linkHint": "仅支持以 / 开头的站内路径",
+      "send": "发送",
+      "sending": "发送中…",
+      "success": "已发送，送达 {count} 位用户",
+      "fail": "发送失败，请重试"
     },
     "users": {
       "title": "用户管理",

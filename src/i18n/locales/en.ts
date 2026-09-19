@@ -647,10 +647,44 @@ export default {
     "linkRemoveConfirm": "Remove this main ↔ alt relation?",
     "linkRemoveFailed": "Failed to remove, please try again"
   },
+  "notification": {
+    "bell": {
+      "title": "Notifications",
+      "empty": "No notifications yet",
+      "loading": "Loading…",
+      "error": "Failed to load notifications, tap to retry",
+      "viewAll": "View all",
+      "markAllRead": "Mark all read"
+    },
+    "center": {
+      "title": "Notification Center",
+      "subtitle": "Site announcements and staff notices.",
+      "type": {
+        "announcement": "Announcement",
+        "warning": "Notice"
+      },
+      "markRead": "Unread",
+      "markAllRead": "Mark all read",
+      "empty": "No notifications yet",
+      "loading": "Loading…",
+      "error": "Failed to load notifications, please try again later",
+      "loadMore": "Load more",
+      "prev": "Previous",
+      "next": "Next",
+      "pageOf": "Page {page}"
+    },
+    "time": {
+      "justNow": "Just now",
+      "minutesAgo": "{n} min ago",
+      "hoursAgo": "{n} h ago",
+      "daysAgo": "{n} d ago"
+    }
+  },
   "admin": {
     "shellTitle": "Admin Console",
     "nav": {
       "users": "Users",
+      "notifications": "Notifications",
       "bans": "Bans",
       "audit": "Audit",
       "backToSite": "Back to site"
@@ -678,6 +712,12 @@ export default {
       "forceUnbindNotFound": "User or Minecraft account not found (it may already be unlinked)",
       "governanceTitle": "Username Governance",
       "sendWarning": "Send Username Warning",
+      "inAppWarning": "Send In-App Warning",
+      "inAppWarningTitle": "Send in-app warning",
+      "inAppWarningBody": "This will be delivered as an in-app notification to \"{name}\", visible in their notification center after signing in. You can edit the content below before sending.",
+      "inAppWarningTitlePreset": "Username Policy Warning",
+      "inAppWarningBodyPreset": "Your username violates the server username policy. Please change it as soon as possible. If you have any questions, contact the server staff.",
+      "inAppWarningSent": "In-app warning sent",
       "warningFirst": "First warning (7 days)",
       "warningFinal": "Final warning (3 days left)",
       "warningSent": "Warning email sent",
@@ -688,6 +728,32 @@ export default {
       "deleteConfirmBody": "This action is irreversible: the account \"{name}\" will be deleted and all of its data will be erased.",
       "deleteReasonLabel": "Reason (recorded in audit log)",
       "deleteSuccess": "Account deleted"
+    },
+    "notificationCompose": {
+      "title": "Compose Notification",
+      "subtitle": "Send in-app announcements and warnings to everyone or selected users.",
+      "targetLabel": "Target",
+      "target": {
+        "all": "Everyone",
+        "user": "Single user",
+        "multi": "Multiple users"
+      },
+      "userPickLabel": "Select users",
+      "userSearch": "Search by username",
+      "searchEmpty": "No matching users",
+      "selectedCount": "{count} user(s) selected",
+      "typeLabel": "Type",
+      "titleLabel": "Title (1-120 chars)",
+      "titlePlaceholder": "Notification title",
+      "bodyLabel": "Body (optional, ≤2000 chars)",
+      "bodyPlaceholder": "Notification body",
+      "linkLabel": "Link (optional)",
+      "linkLabelPlaceholder": "/news",
+      "linkHint": "Internal paths only, must start with /",
+      "send": "Send",
+      "sending": "Sending…",
+      "success": "Sent — delivered to {count} user(s)",
+      "fail": "Failed to send, please try again"
     },
     "users": {
       "title": "User management",
