@@ -716,6 +716,7 @@ export default {
       "newUsernameLabel": "新用户名",
       "usernameSent": "用户名已更新",
       "errUsernameReserved": "该用户名不被允许",
+      "errUsernameFormat": "用户名仅允许 3-32 位字母、数字、下划线或连字符",
       "errUsernameTaken": "该用户名已被占用",
       "emailTitle": "发送邮件",
       "emailBody": "邮件将发送至该用户的注册邮箱。",

@@ -716,6 +716,7 @@ export default {
       "newUsernameLabel": "New username",
       "usernameSent": "Username updated",
       "errUsernameReserved": "This username is not allowed",
+      "errUsernameFormat": "Username must be 3-32 chars of letters, digits, underscores or hyphens",
       "errUsernameTaken": "This username is already taken",
       "emailTitle": "Send Email",
       "emailBody": "The email will be sent to the user's registered email address.",
