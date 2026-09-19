@@ -313,7 +313,11 @@ router.beforeEach(async (to) => {
     if (!authz.loaded) {
       await authz.fetchAuthorization()
     }
-    if (!authz.hasPermission(requiredPermission)) {
+    if (
+      requiredPermission === ADMIN_ACCESS_PERMISSION
+        ? !authz.hasAnyRole(['admin', 'owner']) // 管理后台 = 角色判定（后端 RBAC 权限键无 admin:access）
+        : !authz.hasPermission(requiredPermission)
+    ) {
       return { path: '/admin/forbidden', query: { from: to.fullPath } }
     }
   }

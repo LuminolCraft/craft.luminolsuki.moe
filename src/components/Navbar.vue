@@ -77,7 +77,7 @@
         <template v-if="auth.isAuthenticated">
           <!-- 站内通知铃铛：登录态显示（WS 生命周期由 auth store 接线驱动，本组件零网络逻辑） -->
           <NotificationBell />
-          <router-link v-if="authz.hasPermission('admin:access')" to="/admin/users" class="nav-link">
+          <router-link v-if="authz.hasAnyRole(['admin', 'owner'])" to="/admin/users" class="nav-link">
             {{ t('auth.nav.admin') }}
           </router-link>
           <router-link to="/settings/profile" class="nav-link nav-user" :title="auth.me?.username">
