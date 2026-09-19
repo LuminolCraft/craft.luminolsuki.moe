@@ -70,6 +70,7 @@ import { onMounted, onUnmounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { checkEmailDomain } from '@/lib/email-domain'
+import { checkUsernameReserved } from '@/lib/reserved-username'
 import AuthSplitLayout from '@/components/auth/AuthSplitLayout.vue'
 import AuthButton from '@/components/auth/AuthButton.vue'
 import AuthField from '@/components/auth/AuthField.vue'
@@ -174,6 +175,10 @@ function handleAuthError(e: unknown) {
       errorMsg.value = t('auth.register.emailDomainNotAllowed')
       formInvalid.value = true
       break
+    case 'USERNAME_RESERVED':
+      errorMsg.value = t('auth.register.usernameReserved')
+      formInvalid.value = true
+      break
     case 'INVALID_PASSWORD':
       errorMsg.value = t('auth.register.weakPassword')
       formInvalid.value = true
@@ -198,6 +203,12 @@ async function onSubmit() {
   if (name.length < 2 || name.length > 32) {
     formInvalid.value = true
     errorMsg.value = t('auth.register.invalidUsername')
+    return
+  }
+  // 保留词预检（拦 admln/adm1n/r00t 等形近变体），最终以后端 USERNAME_RESERVED 为准
+  if (checkUsernameReserved(name)) {
+    formInvalid.value = true
+    errorMsg.value = t('auth.register.usernameReserved')
     return
   }
   const normalizedEmail = email.value.trim().toLowerCase()

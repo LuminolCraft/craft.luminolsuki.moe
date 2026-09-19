@@ -122,16 +122,106 @@
           <p v-if="banError" class="form-error" role="alert">{{ banError }}</p>
         </form>
       </section>
+
+      <!-- 用户名治理：违规提醒 / 删除账号 -->
+      <section class="detail-section">
+        <h2 class="section-title">{{ t('admin.userDetail.governanceTitle') }}</h2>
+        <div class="gov-actions">
+          <button type="button" class="btn" :disabled="sendingWarning" @click="openWarningModal">
+            {{ t('admin.userDetail.sendWarning') }}
+          </button>
+          <!-- 契约：删除仅 owner 可用（后端对非 owner 403），镜像上方 owner-only 角色判断 -->
+          <button
+            v-if="authz.hasRole('owner')"
+            type="button"
+            class="btn danger"
+            :disabled="deleting"
+            @click="openDeleteModal"
+          >
+            {{ t('admin.userDetail.deleteAccount') }}
+          </button>
+        </div>
+        <p v-if="warningSuccess" class="form-success" role="status">{{ t('admin.userDetail.warningSent') }}</p>
+      </section>
     </template>
 
     <p v-else class="page-error" role="alert">{{ loadError }}</p>
+
+    <!-- 违规提醒确认弹窗：选择提醒类型（首封 7 天宽限 / 终局剩 3 天），邮件将发至该用户注册邮箱 -->
+    <div v-if="warningModalOpen" class="modal-scrim" @click.self="closeWarningModal">
+      <div class="modal" role="dialog" aria-modal="true">
+        <h2 class="modal-title">{{ t('admin.userDetail.warningConfirmTitle') }}</h2>
+        <p class="modal-body">{{ t('admin.userDetail.warningConfirmBody') }}</p>
+        <div class="modal-actions">
+          <button type="button" class="btn ghost" :disabled="sendingWarning" @click="closeWarningModal">
+            {{ t('admin.common.cancel') }}
+          </button>
+          <button type="button" class="btn" :disabled="sendingWarning" @click="onSendWarning(false)">
+            {{ t('admin.userDetail.warningFirst') }}
+          </button>
+          <button type="button" class="btn danger" :disabled="sendingWarning" @click="onSendWarning(true)">
+            {{ t('admin.userDetail.warningFinal') }}
+          </button>
+        </div>
+        <p v-if="warningError" class="form-error" role="alert">{{ warningError }}</p>
+      </div>
+    </div>
+
+    <!-- 删除账号两步弹窗：处置原因（必填 1-2000 字）→ 强二次确认；成功后跳回用户列表 -->
+    <div v-if="deleteModalOpen" class="modal-scrim" @click.self="closeDeleteModal">
+      <div class="modal" role="dialog" aria-modal="true">
+        <h2 class="modal-title">{{ t('admin.userDetail.deleteConfirmTitle') }}</h2>
+
+        <!-- Step 1：不可逆说明 + 处置原因 -->
+        <div v-if="deleteStep === 1">
+          <p class="modal-body">{{ t('admin.userDetail.deleteConfirmBody', { name: user?.username }) }}</p>
+          <label class="field">
+            <span class="label">{{ t('admin.userDetail.deleteReasonLabel') }}</span>
+            <textarea
+              v-model.trim="deleteReason"
+              class="input textarea"
+              rows="3"
+              maxlength="2000"
+              :disabled="deleting"
+            />
+          </label>
+          <div class="modal-actions">
+            <button type="button" class="btn ghost" :disabled="deleting" @click="closeDeleteModal">
+              {{ t('admin.common.cancel') }}
+            </button>
+            <button
+              type="button"
+              class="btn danger"
+              :disabled="deleting || !deleteReason"
+              @click="deleteStep = 2"
+            >
+              {{ t('admin.common.confirm') }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Step 2：强二次确认 -->
+        <div v-else>
+          <p class="modal-body">{{ t('admin.userDetail.deleteConfirmBody', { name: user?.username }) }}</p>
+          <p v-if="deleteError" class="form-error" role="alert">{{ deleteError }}</p>
+          <div class="modal-actions">
+            <button type="button" class="btn ghost" :disabled="deleting" @click="deleteStep = 1">
+              {{ t('admin.common.cancel') }}
+            </button>
+            <button type="button" class="btn danger" :disabled="deleting" @click="onDeleteAccount">
+              {{ deleting ? t('admin.common.saving') : t('admin.userDetail.deleteAccount') }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import UserAvatar from '@/components/UserAvatar.vue'
 import { api, isAppError } from '@/lib/api'
 import { mcAvatarUrl } from '@/lib/minecraft'
@@ -142,6 +232,7 @@ import { useGsap } from '@/composables/useGsap'
 
 const { t, te } = useI18n()
 const route = useRoute()
+const router = useRouter()
 const authz = useAuthorizationStore()
 const nexus = useNexusStore()
 const { create, reduceMotion } = useGsap()
@@ -273,6 +364,80 @@ async function onCreateBan() {
     banError.value = errorText(e)
   } finally {
     creatingBan.value = false
+  }
+}
+
+// ---------- 用户名治理：违规提醒 / 删除账号 ----------
+// 可见性：本页已由路由守卫要求 admin:access，提醒动作不再重复角色判断（后端 403 兜底）；
+// 删除按契约仅 owner 可用，见模板中的 owner-only 判断。
+const DELETE_REASON_MAX = 2000
+
+const warningModalOpen = ref(false)
+const sendingWarning = ref(false)
+const warningSuccess = ref(false)
+const warningError = ref('')
+
+function openWarningModal() {
+  warningSuccess.value = false
+  warningError.value = ''
+  warningModalOpen.value = true
+}
+
+function closeWarningModal() {
+  if (sendingWarning.value) return
+  warningModalOpen.value = false
+  warningError.value = ''
+}
+
+async function onSendWarning(final: boolean) {
+  if (!user.value) return
+  warningError.value = ''
+  sendingWarning.value = true
+  try {
+    await api.post<unknown>(`/admin/users/${user.value.id}/username-warning`, { final })
+    warningSuccess.value = true
+    warningModalOpen.value = false
+  } catch (e) {
+    warningError.value = errorText(e)
+  } finally {
+    sendingWarning.value = false
+  }
+}
+
+const deleteModalOpen = ref(false)
+const deleteStep = ref(1)
+const deleteReason = ref('')
+const deleting = ref(false)
+const deleteError = ref('')
+
+function openDeleteModal() {
+  deleteStep.value = 1
+  deleteReason.value = ''
+  deleteError.value = ''
+  deleteModalOpen.value = true
+}
+
+function closeDeleteModal() {
+  if (deleting.value) return
+  deleteModalOpen.value = false
+  deleteError.value = ''
+}
+
+async function onDeleteAccount() {
+  if (!user.value) return
+  const reason = deleteReason.value
+  // 必填 1-2000 字：textarea maxlength 拦超长、按钮 disabled 拦空，此处兜底
+  if (!reason || reason.length > DELETE_REASON_MAX) return
+  deleteError.value = ''
+  deleting.value = true
+  try {
+    await api.delete<unknown>(`/admin/users/${user.value.id}`, { data: { reason } })
+    // 成功后跳回用户列表（mirror 返回链接目标）
+    await router.push('/admin/users')
+  } catch (e) {
+    deleteError.value = errorText(e)
+  } finally {
+    deleting.value = false
   }
 }
 
@@ -456,6 +621,68 @@ onMounted(async () => {
 
 .btn.danger {
   background: var(--error-color, #e5484d);
+}
+
+.btn.ghost {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-color);
+}
+
+/* ---------- 用户名治理 ---------- */
+.gov-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+  margin-bottom: 0.9rem;
+}
+
+/* 弹层（UserDetail 未 @import admin-shared.css，此处按其样式内联 mirror） */
+.modal-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.2rem;
+  background: rgb(0 0 0 / 0.5);
+}
+
+.modal {
+  width: min(30rem, 100%);
+  max-height: 86dvh;
+  overflow-y: auto;
+  padding: 1.4rem 1.5rem;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background: var(--background-color);
+  box-shadow: 0 20px 60px rgb(0 0 0 / 0.3);
+}
+
+.modal-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-color);
+  margin: 0 0 1.1rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.modal-body {
+  font-size: 0.9rem;
+  line-height: 1.65;
+  color: var(--text-secondary);
+  margin: 0 0 1rem;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+  margin-top: 1.2rem;
 }
 
 .dim {

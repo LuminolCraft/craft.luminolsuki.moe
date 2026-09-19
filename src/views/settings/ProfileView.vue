@@ -86,6 +86,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useNexusStore } from '@/stores/nexus'
 import { useGsap } from '@/composables/useGsap'
 import { isAppError } from '@/lib/api'
+import { checkUsernameReserved } from '@/lib/reserved-username'
 
 const { t, te } = useI18n()
 const auth = useAuthStore()
@@ -113,6 +114,7 @@ function errorText(code: string): string {
   const map: Record<string, string> = {
     USER_ALREADY_EXISTS: 'settings.profile.errUsernameExists',
     USERNAME_INVALID: 'settings.profile.errUsernameInvalid',
+    USERNAME_RESERVED: 'settings.profile.errUsernameReserved',
     EMAIL_ALREADY_USED: 'settings.profile.errEmailUsed',
     EMAIL_INVALID: 'settings.profile.errEmailInvalid',
     VALIDATION_ERROR: 'settings.profile.errValidation',
@@ -132,6 +134,11 @@ async function onSave() {
   const nextEmail = email.value
   if (!USERNAME_RE.test(nextUsername)) {
     formError.value = t('settings.profile.errUsernameInvalid')
+    return
+  }
+  // 保留词预检，最终以后端 USERNAME_RESERVED 为准
+  if (checkUsernameReserved(nextUsername)) {
+    formError.value = t('settings.profile.errUsernameReserved')
     return
   }
   if (!EMAIL_RE.test(nextEmail)) {

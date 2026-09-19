@@ -56,6 +56,7 @@ export default {
       "hasAccount": "Already have an account?",
       "login": "Sign in",
       "invalidUsername": "Username must be 2-32 characters",
+      "usernameReserved": "This username is not allowed, please choose another",
       "invalidEmail": "Please enter a valid email address",
       "emailDomainNotAllowed": "This email domain isn’t supported for now, please use a different email to sign up.",
       "weakPassword": "Password must be at least 8 characters",
@@ -557,6 +558,7 @@ export default {
       "errUsernameExists": "Username already taken",
       "errEmailUsed": "Email already in use",
       "errUsernameInvalid": "Invalid username format",
+      "errUsernameReserved": "This username is not allowed",
       "errEmailInvalid": "Invalid email format",
       "errValidation": "Please check your input",
       "errRateLimited": "Too many attempts, please try again later",
@@ -673,7 +675,19 @@ export default {
     "userDetail": {
       "forceUnbind": "Force unlink",
       "forceUnbindConfirm": "Force-unlink this user's Minecraft account \"{name}\"? Any user will be able to link it again; this action is recorded in the audit log.",
-      "forceUnbindNotFound": "User or Minecraft account not found (it may already be unlinked)"
+      "forceUnbindNotFound": "User or Minecraft account not found (it may already be unlinked)",
+      "governanceTitle": "Username Governance",
+      "sendWarning": "Send Username Warning",
+      "warningFirst": "First warning (7 days)",
+      "warningFinal": "Final warning (3 days left)",
+      "warningSent": "Warning email sent",
+      "warningConfirmTitle": "Confirm username warning",
+      "warningConfirmBody": "The warning email will be sent to the user's registered email address. Choose the warning type.",
+      "deleteAccount": "Delete Account",
+      "deleteConfirmTitle": "Confirm account deletion",
+      "deleteConfirmBody": "This action is irreversible: the account \"{name}\" will be deleted and all of its data will be erased.",
+      "deleteReasonLabel": "Reason (recorded in audit log)",
+      "deleteSuccess": "Account deleted"
     },
     "users": {
       "title": "User management",
