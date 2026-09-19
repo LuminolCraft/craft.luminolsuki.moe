@@ -332,6 +332,7 @@ import { useRoute, useRouter } from 'vue-router'
 import UserAvatar from '@/components/UserAvatar.vue'
 import { api, isAppError } from '@/lib/api'
 import { checkUsernameReserved } from '@/lib/reserved-username'
+import { validateUsername as checkUsernameFormat } from '@/lib/username'
 import { mcAvatarUrl } from '@/lib/minecraft'
 import { useAuthorizationStore } from '@/stores/authorization'
 import { useNexusStore } from '@/stores/nexus'
@@ -484,10 +485,7 @@ async function onCreateBan() {
 // 删除按契约仅 owner 可用，见模板中的 owner-only 判断。
 const DELETE_REASON_MAX = 2000
 
-// ---------- 修改用户名（PATCH /admin/users/:id/username，3-32 位 [A-Za-z0-9_-]） ----------
-const USERNAME_MIN = 3
-const USERNAME_MAX = 32
-const USERNAME_PATTERN = /^[A-Za-z0-9_-]+$/
+// ---------- 修改用户名（PATCH /admin/users/:id/username，规则见 @/lib/username） ----------
 
 const usernameModalOpen = ref(false)
 const changingUsername = ref(false)
@@ -513,7 +511,7 @@ function closeUsernameModal() {
 // 前端先拦格式与保留词（形近变体由 checkUsernameReserved 归一化拦截）；后端仍做最终校验
 function validateUsername(): boolean {
   const name = newUsername.value
-  if (name.length < USERNAME_MIN || name.length > USERNAME_MAX || !USERNAME_PATTERN.test(name)) {
+  if (!checkUsernameFormat(name).ok) {
     usernameFieldError.value = t('admin.userDetail.errUsernameFormat')
     return false
   }
