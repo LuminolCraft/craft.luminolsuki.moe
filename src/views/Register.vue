@@ -71,6 +71,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { checkEmailDomain } from '@/lib/email-domain'
 import { checkUsernameReserved } from '@/lib/reserved-username'
+import { prepareUsername, validateUsername } from '@/lib/username'
 import AuthSplitLayout from '@/components/auth/AuthSplitLayout.vue'
 import AuthButton from '@/components/auth/AuthButton.vue'
 import AuthField from '@/components/auth/AuthField.vue'
@@ -199,8 +200,11 @@ async function onSubmit() {
   errorMsg.value = ''
   formInvalid.value = false
 
-  const name = username.value.trim()
-  if (name.length < 2 || name.length > 32) {
+  // 与后端同一套规则（宽度折叠 + trim + NFC + 码点长度 + 白名单）：
+  // 注册名会被后端派生为 Nexus username，前端预校验必须与 profile / admin 一致，
+  // 否则会出现「前端放行、后端派生名被改写」的静默不一致
+  const name = prepareUsername(username.value)
+  if (!validateUsername(name).ok) {
     formInvalid.value = true
     errorMsg.value = t('auth.register.invalidUsername')
     return
