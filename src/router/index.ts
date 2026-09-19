@@ -135,7 +135,9 @@ const routes = [
     path: '/reset-password',
     name: 'ResetPassword',
     component: () => import('../views/ResetPassword.vue'),
-    meta: { hideChrome: true, guestOnly: true }
+    // 不设 guestOnly：重置凭证是邮件里的 token，与浏览器会话无关——
+    // 已登录其他账号时打开重置链接也必须能进表单（否则流程被守卫拦死）
+    meta: { hideChrome: true }
   },
   {
     path: '/verify-email',
