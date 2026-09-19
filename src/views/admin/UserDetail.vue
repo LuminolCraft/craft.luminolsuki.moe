@@ -123,12 +123,15 @@
         </form>
       </section>
 
-      <!-- 用户名治理：违规提醒 / 删除账号 -->
+      <!-- 用户名治理：修改用户名 / 发送邮件 / 站内提醒 / 删除账号 -->
       <section class="detail-section">
         <h2 class="section-title">{{ t('admin.userDetail.governanceTitle') }}</h2>
         <div class="gov-actions">
-          <button type="button" class="btn" :disabled="sendingWarning" @click="openWarningModal">
-            {{ t('admin.userDetail.sendWarning') }}
+          <button type="button" class="btn" :disabled="changingUsername" @click="openUsernameModal">
+            {{ t('admin.userDetail.changeUsernameTitle') }}
+          </button>
+          <button type="button" class="btn" :disabled="sendingEmail" @click="openEmailModal">
+            {{ t('admin.userDetail.emailTitle') }}
           </button>
           <!-- 站内提醒：POST /admin/notifications {target: userId, type: 'warning'}，title/body 预填违规提醒模板可改 -->
           <button type="button" class="btn" :disabled="sendingInAppWarning" @click="openInAppWarningModal">
@@ -145,30 +148,87 @@
             {{ t('admin.userDetail.deleteAccount') }}
           </button>
         </div>
-        <p v-if="warningSuccess" class="form-success" role="status">{{ t('admin.userDetail.warningSent') }}</p>
+        <p v-if="usernameSuccess" class="form-success" role="status">{{ t('admin.userDetail.usernameSent') }}</p>
+        <p v-if="emailSuccess" class="form-success" role="status">{{ t('admin.userDetail.emailSent') }}</p>
         <p v-if="inAppWarningSuccess" class="form-success" role="status">{{ t('admin.userDetail.inAppWarningSent') }}</p>
       </section>
     </template>
 
     <p v-else class="page-error" role="alert">{{ loadError }}</p>
 
-    <!-- 违规提醒确认弹窗：选择提醒类型（首封 7 天宽限 / 终局剩 3 天），邮件将发至该用户注册邮箱 -->
-    <div v-if="warningModalOpen" class="modal-scrim" @click.self="closeWarningModal">
+    <!-- 修改用户名弹窗：前端先拦格式与保留词（后端 USERNAME_RESERVED / USER_ALREADY_EXISTS 兜底），成功后刷新用户数据 -->
+    <div v-if="usernameModalOpen" class="modal-scrim" @click.self="closeUsernameModal">
       <div class="modal" role="dialog" aria-modal="true">
-        <h2 class="modal-title">{{ t('admin.userDetail.warningConfirmTitle') }}</h2>
-        <p class="modal-body">{{ t('admin.userDetail.warningConfirmBody') }}</p>
+        <h2 class="modal-title">{{ t('admin.userDetail.changeUsernameTitle') }}</h2>
+        <p class="modal-body">{{ t('admin.userDetail.changeUsernameBody') }}</p>
+        <label class="field">
+          <span class="label">{{ t('admin.userDetail.newUsernameLabel') }}</span>
+          <input
+            v-model.trim="newUsername"
+            class="input"
+            type="text"
+            maxlength="32"
+            :disabled="changingUsername"
+            @input="onUsernameInput"
+          />
+        </label>
+        <p v-if="usernameFieldError" class="form-error" role="alert">{{ usernameFieldError }}</p>
         <div class="modal-actions">
-          <button type="button" class="btn ghost" :disabled="sendingWarning" @click="closeWarningModal">
+          <button type="button" class="btn ghost" :disabled="changingUsername" @click="closeUsernameModal">
             {{ t('admin.common.cancel') }}
           </button>
-          <button type="button" class="btn" :disabled="sendingWarning" @click="onSendWarning(false)">
-            {{ t('admin.userDetail.warningFirst') }}
-          </button>
-          <button type="button" class="btn danger" :disabled="sendingWarning" @click="onSendWarning(true)">
-            {{ t('admin.userDetail.warningFinal') }}
+          <button
+            type="button"
+            class="btn"
+            :disabled="changingUsername || !newUsername || !!usernameFieldError"
+            @click="onChangeUsername"
+          >
+            {{ changingUsername ? t('admin.common.saving') : t('admin.common.confirm') }}
           </button>
         </div>
-        <p v-if="warningError" class="form-error" role="alert">{{ warningError }}</p>
+        <p v-if="usernameError" class="form-error" role="alert">{{ usernameError }}</p>
+      </div>
+    </div>
+
+    <!-- 发送邮件弹窗：邮件发至该用户注册邮箱，主题 1-120 字、正文 1-2000 字 -->
+    <div v-if="emailModalOpen" class="modal-scrim" @click.self="closeEmailModal">
+      <div class="modal" role="dialog" aria-modal="true">
+        <h2 class="modal-title">{{ t('admin.userDetail.emailTitle') }}</h2>
+        <p class="modal-body">{{ t('admin.userDetail.emailBody') }}</p>
+        <label class="field">
+          <span class="label">{{ t('admin.userDetail.subjectLabel') }}</span>
+          <input
+            v-model.trim="emailSubject"
+            class="input"
+            type="text"
+            maxlength="120"
+            :disabled="sendingEmail"
+          />
+        </label>
+        <label class="field">
+          <span class="label">{{ t('admin.userDetail.bodyLabel') }}</span>
+          <textarea
+            v-model.trim="emailBody"
+            class="input textarea"
+            rows="5"
+            maxlength="2000"
+            :disabled="sendingEmail"
+          />
+        </label>
+        <div class="modal-actions">
+          <button type="button" class="btn ghost" :disabled="sendingEmail" @click="closeEmailModal">
+            {{ t('admin.common.cancel') }}
+          </button>
+          <button
+            type="button"
+            class="btn"
+            :disabled="sendingEmail || !emailSubject || !emailBody"
+            @click="onSendEmail"
+          >
+            {{ sendingEmail ? t('admin.notificationCompose.sending') : t('admin.notificationCompose.send') }}
+          </button>
+        </div>
+        <p v-if="emailError" class="form-error" role="alert">{{ emailError }}</p>
       </div>
     </div>
 
@@ -271,6 +331,7 @@ import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import UserAvatar from '@/components/UserAvatar.vue'
 import { api, isAppError } from '@/lib/api'
+import { checkUsernameReserved } from '@/lib/reserved-username'
 import { mcAvatarUrl } from '@/lib/minecraft'
 import { useAuthorizationStore } from '@/stores/authorization'
 import { useNexusStore } from '@/stores/nexus'
@@ -312,6 +373,8 @@ function errorText(e: unknown): string {
       VALIDATION_ERROR: 'admin.common.errValidation',
       BAN_ALREADY_REVOKED: 'admin.bans.errAlreadyRevoked',
       BAN_NOT_FOUND: 'admin.bans.errNotFound',
+      USERNAME_RESERVED: 'admin.userDetail.errUsernameReserved',
+      USER_ALREADY_EXISTS: 'admin.userDetail.errUsernameTaken',
     }
     const key = map[e.code]
     if (key && te(key)) return t(key)
@@ -416,45 +479,127 @@ async function onCreateBan() {
   }
 }
 
-// ---------- 用户名治理：违规提醒 / 删除账号 ----------
-// 可见性：本页已由路由守卫要求 admin:access，提醒动作不再重复角色判断（后端 403 兜底）；
+// ---------- 用户名治理：修改用户名 / 发送邮件 / 删除账号 ----------
+// 可见性：本页已由路由守卫要求 admin:access，动作不再重复角色判断（后端 403 兜底）；
 // 删除按契约仅 owner 可用，见模板中的 owner-only 判断。
 const DELETE_REASON_MAX = 2000
 
-const warningModalOpen = ref(false)
-const sendingWarning = ref(false)
-const warningSuccess = ref(false)
-const warningError = ref('')
+// ---------- 修改用户名（PATCH /admin/users/:id/username，3-32 位 [A-Za-z0-9_-]） ----------
+const USERNAME_MIN = 3
+const USERNAME_MAX = 32
+const USERNAME_PATTERN = /^[A-Za-z0-9_-]+$/
 
-function openWarningModal() {
-  warningSuccess.value = false
-  warningError.value = ''
-  warningModalOpen.value = true
+const usernameModalOpen = ref(false)
+const changingUsername = ref(false)
+const usernameSuccess = ref(false)
+const newUsername = ref('')
+const usernameError = ref('')
+const usernameFieldError = ref('')
+
+function openUsernameModal() {
+  usernameSuccess.value = false
+  usernameError.value = ''
+  usernameFieldError.value = ''
+  newUsername.value = ''
+  usernameModalOpen.value = true
 }
 
-function closeWarningModal() {
-  if (sendingWarning.value) return
-  warningModalOpen.value = false
-  warningError.value = ''
+function closeUsernameModal() {
+  if (changingUsername.value) return
+  usernameModalOpen.value = false
+  usernameError.value = ''
 }
 
-async function onSendWarning(final: boolean) {
+// 前端先拦格式与保留词（形近变体由 checkUsernameReserved 归一化拦截）；后端仍做最终校验
+function validateUsername(): boolean {
+  const name = newUsername.value
+  if (name.length < USERNAME_MIN || name.length > USERNAME_MAX || !USERNAME_PATTERN.test(name)) {
+    usernameFieldError.value = t('admin.common.errValidation')
+    return false
+  }
+  if (checkUsernameReserved(name)) {
+    usernameFieldError.value = t('admin.userDetail.errUsernameReserved')
+    return false
+  }
+  usernameFieldError.value = ''
+  return true
+}
+
+function onUsernameInput() {
+  // 空输入清提示，非空即时校验（保留词/非法格式即时反馈）
+  if (!newUsername.value) {
+    usernameFieldError.value = ''
+    return
+  }
+  validateUsername()
+}
+
+async function onChangeUsername() {
   if (!user.value) return
-  warningError.value = ''
-  sendingWarning.value = true
+  if (!validateUsername()) return
+  usernameError.value = ''
+  changingUsername.value = true
   try {
-    await api.post<unknown>(`/admin/users/${user.value.id}/username-warning`, { final })
-    warningSuccess.value = true
-    warningModalOpen.value = false
+    await api.patch<{ ok: boolean; username: string }>(`/admin/users/${user.value.id}/username`, {
+      username: newUsername.value,
+    })
+    // 成功后刷新用户数据，页面标题/头像等同步更新
+    await refreshUser()
+    usernameSuccess.value = true
+    usernameModalOpen.value = false
   } catch (e) {
-    warningError.value = errorText(e)
+    usernameError.value = errorText(e)
   } finally {
-    sendingWarning.value = false
+    changingUsername.value = false
+  }
+}
+
+// ---------- 发送邮件（POST /admin/users/:id/email，主题 1-120 字、正文 1-2000 字） ----------
+const EMAIL_SUBJECT_MAX = 120
+const EMAIL_BODY_MAX = 2000
+
+const emailModalOpen = ref(false)
+const sendingEmail = ref(false)
+const emailSuccess = ref(false)
+const emailSubject = ref('')
+const emailBody = ref('')
+const emailError = ref('')
+
+function openEmailModal() {
+  emailSuccess.value = false
+  emailError.value = ''
+  emailSubject.value = ''
+  emailBody.value = ''
+  emailModalOpen.value = true
+}
+
+function closeEmailModal() {
+  if (sendingEmail.value) return
+  emailModalOpen.value = false
+  emailError.value = ''
+}
+
+async function onSendEmail() {
+  if (!user.value) return
+  const subject = emailSubject.value
+  const body = emailBody.value
+  // 必填 1-120 / 1-2000：maxlength 拦超长、按钮 disabled 拦空，此处兜底
+  if (!subject || subject.length > EMAIL_SUBJECT_MAX || !body || body.length > EMAIL_BODY_MAX) return
+  emailError.value = ''
+  sendingEmail.value = true
+  try {
+    await api.post<{ ok: boolean }>(`/admin/users/${user.value.id}/email`, { subject, body })
+    emailSuccess.value = true
+    emailModalOpen.value = false
+  } catch (e) {
+    emailError.value = errorText(e)
+  } finally {
+    sendingEmail.value = false
   }
 }
 
 // ---------- 站内提醒（POST /admin/notifications，type: warning） ----------
-// title/body 预填 i18n 违规提醒模板，可编辑；交互 mirror 上方邮件违规提醒弹窗。
+// title/body 预填 i18n 违规提醒模板，可编辑；交互 mirror 上方发送邮件弹窗。
 const inAppWarningModalOpen = ref(false)
 const sendingInAppWarning = ref(false)
 const inAppWarningSuccess = ref(false)
