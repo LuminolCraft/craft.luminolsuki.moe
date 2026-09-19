@@ -376,6 +376,7 @@ function errorText(e: unknown): string {
       BAN_NOT_FOUND: 'admin.bans.errNotFound',
       USERNAME_RESERVED: 'admin.userDetail.errUsernameReserved',
       USER_ALREADY_EXISTS: 'admin.userDetail.errUsernameTaken',
+      USER_NOT_FOUND: 'admin.userDetail.errNotFound',
     }
     const key = map[e.code]
     if (key && te(key)) return t(key)

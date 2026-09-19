@@ -59,7 +59,7 @@
                   {{ formatDateTime(log.createdAt) }}
                 </td>
                 <td>
-                  <!-- 操作者：读取期解析出的用户名；解析不到 = 已注销，仍显示 ID 可追溯 -->
+                  <!-- 操作者：actorName 有值 = 解析成功；显式 null = 已注销；字段缺失 = 后端未提供名字 -->
                   <template v-if="log.actorUserId">
                     <router-link
                       v-if="log.actorName"
@@ -68,7 +68,10 @@
                     >
                       {{ log.actorName }}
                     </router-link>
-                    <span v-else class="actor-deleted">{{ t('admin.audit.actorDeleted') }}</span>
+                    <span v-else-if="log.actorName === null" class="actor-deleted">
+                      {{ t('admin.audit.actorDeleted') }}
+                    </span>
+                    <span v-else class="td-dim">{{ t('admin.audit.actorUnresolved') }}</span>
                     <span class="mono-dim actor-id">{{ log.actorUserId }}</span>
                   </template>
                   <span v-else class="td-dim">{{ t('admin.audit.actorAnonymous') }}</span>
@@ -87,12 +90,13 @@
                   <template v-if="log.targetType || log.targetId">
                     {{ log.targetType ? targetTypeLabel(log.targetType) : '—' }}
                     <template v-if="log.targetId">
+                      <!-- 只在解析出名字时才给链接：目标已注销时避免跳到 404 详情页 -->
                       <router-link
-                        v-if="log.targetType === 'user'"
+                        v-if="log.targetType === 'user' && log.targetName"
                         class="actor-link"
                         :to="{ name: 'AdminUserDetail', params: { id: log.targetId } }"
                       >
-                        {{ log.targetName || log.targetId }}
+                        {{ log.targetName }}
                       </router-link>
                       <span v-else class="mono-dim">{{ log.targetName || log.targetId }}</span>
                     </template>
