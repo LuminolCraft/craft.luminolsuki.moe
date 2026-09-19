@@ -87,6 +87,7 @@ import { useNexusStore } from '@/stores/nexus'
 import { useGsap } from '@/composables/useGsap'
 import { isAppError } from '@/lib/api'
 import { checkUsernameReserved } from '@/lib/reserved-username'
+import { validateUsername } from '@/lib/username'
 
 const { t, te } = useI18n()
 const auth = useAuthStore()
@@ -107,7 +108,6 @@ const dirty = computed(
   () => username.value !== (auth.me?.username ?? '') || email.value !== (auth.me?.email ?? ''),
 )
 
-const USERNAME_RE = /^[A-Za-z0-9_-]{3,32}$/
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 function errorText(code: string): string {
@@ -132,7 +132,7 @@ async function onSave() {
 
   const nextUsername = username.value
   const nextEmail = email.value
-  if (!USERNAME_RE.test(nextUsername)) {
+  if (!validateUsername(nextUsername).ok) {
     formError.value = t('settings.profile.errUsernameInvalid')
     return
   }
