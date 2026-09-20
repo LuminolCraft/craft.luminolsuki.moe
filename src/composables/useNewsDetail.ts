@@ -36,7 +36,8 @@ export function useNewsDetail() {
       await newsManager.restoreCachePublic();
       const item = await newsManager.ensureArticleContent(id);
       if (!item) {
-        error.value = '未找到该新闻';
+        // 新闻不存在（已被删除 / id 非法）：不是加载错误，交给视图的 notFound 分支渲染
+        newsItem.value = null;
         loading.value = false;
         return;
       }
