@@ -3,6 +3,8 @@
   <Navbar v-if="!route.meta.hideChrome" />
   <router-view />
   <Footer v-if="!route.meta.hideChrome" />
+  <!-- 生日祝福（1A）：me 就绪后判定「今天生日」，命中即弹一次（认证页不弹） -->
+  <BirthdayGreeting />
 </template>
 
 
@@ -14,6 +16,7 @@ import { useI18n } from 'vue-i18n'
 import Navbar from './components/Navbar.vue'
 import Footer from './components/Footer.vue'
 import MergeGuideBanner from './components/account/MergeGuideBanner.vue'
+import BirthdayGreeting from './components/birthday/BirthdayGreeting.vue'
 import { useAuthStore, AUTH_SYNC_KEY } from './stores/auth'
 
 const route = useRoute()
