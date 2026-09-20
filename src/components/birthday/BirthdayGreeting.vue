@@ -135,15 +135,27 @@ const daysTogether = computed(() => {
 })
 
 /**
+ * 预览 / 重放：URL 带 `?birthday=1`（也接受 `preview` / `true`）时强制展示一次，
+ * 忽略「今天是否生日」与「今年已弹过」两个判定，并**不写**去重 key——供自测与验收。
+ */
+const previewMode = computed(() => {
+  const raw = route.query.birthday
+  const value = Array.isArray(raw) ? raw[0] : raw
+  return value === '1' || value === 'preview' || value === 'true'
+})
+
+/**
  * 是否命中「今天生日」：
  * - 未登录 / 未填生日 / 认证页（hideChrome：登录、注册等）不弹；
  * - 比较只取 MM-DD 且按**浏览器本地日期**（`isBirthdayToday` 内部只用字符串比较，
- *   绝不把生日解析成时间点）。
+ *   绝不把生日解析成时间点）；
+ * - 预览模式（`?birthday=1`）只看登录态，日期与去重都不拦。
  */
 const eligible = computed(() => {
   const me = auth.me
   if (!me?.id) return false
   if (route.meta.hideChrome === true) return false
+  if (previewMode.value) return true
   if (!me.birthday) return false
   return isBirthdayToday(me.birthday, new Date())
 })
@@ -160,11 +172,13 @@ function maybeShow() {
   if (visible.value) return
   const me = auth.me
   if (!me?.id) return
-  const key = birthdayGreetingKey(me.id, localYear())
-  try {
-    if (localStorage.getItem(key) === '1') return
-  } catch {
-    /* 忽略：仅失去去重能力 */
+  if (!previewMode.value) {
+    const key = birthdayGreetingKey(me.id, localYear())
+    try {
+      if (localStorage.getItem(key) === '1') return
+    } catch {
+      /* 忽略：仅失去去重能力 */
+    }
   }
   visible.value = true
   void nextTick(() => {
@@ -175,8 +189,10 @@ function maybeShow() {
 
 /**
  * 记账「今年已弹过」：仅在用户真正收下祝福时调用（见 `onAllBlown` / `close`）。
+ * 预览模式不记账，否则自测会把真实那次祝福吞掉。
  */
 function markSeen() {
+  if (previewMode.value) return
   const me = auth.me
   if (!me?.id) return
   try {
