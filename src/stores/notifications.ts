@@ -16,13 +16,14 @@ import type {
  * 站内通知 store —— 通知域唯一状态入口（组件零网络逻辑）。
  *
  * 数据面：
- * - WS（/api/v1/notifications/ws，同源 Cookie）实时推送 + 指数退避重连（1s 起 ×2、max 30s、jitter 0.8~1.2）
+ * - SSE（`GET /api/v1/notifications/stream`，同源 + 会话 Cookie）实时推送；
+ *   连接断开由 EventSource 自身重连，被彻底关闭时按指数退避重建（1s 起 ×2、max 30s、jitter 0.8~1.2）
  * - REST 权威：unread-count / 列表分页 / 已读回执的 unreadCount 直接覆盖本地
  * - BroadcastChannel（'nexus-notifications'）跨标签页同步推送与已读状态
  *
  * 生命周期：登录后由 auth store 调 connect()（fetchCurrentUser 成功且登录态建立的转移点），
  * 登出/会话失效由 clearAuthState() 调 disconnect()。未登录不建连。
- * generation 计数防止旧 socket 复活：每次 connect/disconnect 递增，一切异步回调先比对。
+ * generation 计数防止旧连接复活：每次 connect/disconnect 递增，一切异步回调先比对。
  */
 
 /** 跨标签页广播消息（BroadcastChannel 'nexus-notifications'） */
@@ -41,29 +42,23 @@ const RECONNECT_MAX_MS = 30000
 const LIST_PAGE_SIZE = 20
 
 /** WS 推送消息体（服务端 → 客户端） */
-interface WsNotificationMessage {
+/** 服务端推送消息体（SSE `data:` 行内容） */
+interface PushMessage {
   type: 'notification'
   payload: NotificationItem
 }
 
 /**
- * WS 基地址：**必须直连 Worker 域**，不能走同源反代。
+ * 实时通知流地址：**同源 SSE**（`GET /api/v1/notifications/stream`）。
  *
- * 线上实测：Netlify 反代 `/api/*` 时会剥离 `Upgrade`/`Connection` 这类
- * hop-by-hop 头，升级请求到不了 Worker（DO 只能回 404），所以同源 WS 永远
- * 建不起来。改为直连 `VITE_WS_BASE_URL`（生产 = `https://luminolcraft-nexus.narcssu.top`），
- * 并用一次性 ticket 鉴权（跨站不依赖 Cookie 属性）。
+ * 为什么不用 WebSocket：生产前端经 Netlify 反代访问同源 `/api/*`，Netlify 会把
+ * `Upgrade`/`Connection` 这类 hop-by-hop 头吃掉，升级请求到不了 Worker（DO 恒 404）；
+ * 直连 Worker 域的 WS 又受用户侧网络影响。SSE 只是普通 HTTP 响应流，经任何反代
+ * 都能过，且同源请求自带会话 Cookie（`withCredentials`）。
  */
-function wsBaseUrl(): string {
-  const configured = import.meta.env.VITE_WS_BASE_URL
-  const base = configured || API_BASE_URL
-  const absolute = base.startsWith('http') ? base : window.location.origin
-  return absolute.replace(/^http/, 'ws')
-}
-
-/** 带一次性 ticket 的 WS 地址（ticket 由 `POST /notifications/ws-ticket` 签发）。 */
-function buildWsUrl(ticket: string): string {
-  return `${wsBaseUrl()}/api/v1/notifications/ws?ticket=${encodeURIComponent(ticket)}`
+function streamUrl(): string {
+  const base = API_BASE_URL.startsWith('http') ? API_BASE_URL : window.location.origin
+  return `${base}/api/v1/notifications/stream`
 }
 
 export const useNotificationsStore = defineStore('notifications', () => {
@@ -72,33 +67,24 @@ export const useNotificationsStore = defineStore('notifications', () => {
   const list = ref<NotificationItem[]>([])
   const unreadCount = ref(0)
   const total = ref(0)
-  /** WS 连接状态：connecting/open/closed/reconnecting */
+  /** 连接状态：connecting/open/closed/reconnecting（实时通道 = SSE） */
   const connectionState = ref<'connecting' | 'open' | 'closed' | 'reconnecting'>('closed')
   /** 列表加载态（铃铛/中心页共用：reconcile 与 fetchList 置位） */
   const listLoading = ref(false)
   const listError = ref(false)
 
   // ---------- 内部连接句柄（不进入持久化/序列化） ----------
-  let ws: WebSocket | null = null
-  /** 连接代际：connect()/disconnect() 递增；一切异步回调（onopen/onclose/重连定时器）先比对，不匹配即丢弃 */
+  let eventSource: EventSource | null = null
+  /** 连接代际：connect()/disconnect() 递增；一切异步回调（onopen/onerror/重连定时器）先比对，不匹配即丢弃 */
   let generation = 0
   let reconnectTimer: ReturnType<typeof setTimeout> | null = null
   let reconnectAttempt = 0
-  /** 应用层保活：每 30s 发 "ping"（服务端自动回 "pong"），防中间层掐空闲连接 */
-  let pingTimer: ReturnType<typeof setInterval> | null = null
   let channel: BroadcastChannel | null = null
 
   function clearReconnectTimer() {
     if (reconnectTimer !== null) {
       clearTimeout(reconnectTimer)
       reconnectTimer = null
-    }
-  }
-
-  function clearPingTimer() {
-    if (pingTimer !== null) {
-      clearInterval(pingTimer)
-      pingTimer = null
     }
   }
 
@@ -164,90 +150,56 @@ export const useNotificationsStore = defineStore('notifications', () => {
     if (propagate) broadcast({ kind: 'notification', payload })
   }
 
-  // ---------- WS 生命周期 ----------
+  // ---------- SSE 生命周期 ----------
 
-  /** 登录态建立后调用（auth store 接线点）；重复调用幂等：连接中/已连接直接返回 */
+  /** 登录态建立后调用（auth store 接线点）；重复调用幂等：已连接/连接中直接返回 */
   function connect() {
-    if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) return
+    if (eventSource && eventSource.readyState !== EventSource.CLOSED) return
     clearReconnectTimer()
     const gen = ++generation
     connectionState.value = 'connecting'
     ensureChannel()
-    void openSocket(gen)
-  }
 
-  /**
-   * 领一次性 ticket → 建连。
-   *
-   * 顺序很关键：先同源 REST 领 ticket（带会话 Cookie），再直连 Worker 域建 WS
-   * （ticket 一次性，重连时重新领）。ticket 端点失败时按既有退避重连。
-   */
-  async function openSocket(gen: number): Promise<void> {
-    let ticket: string
+    let source: EventSource
     try {
-      const issued = await api.post<{ ticket: string }>('/notifications/ws-ticket')
-      if (gen !== generation) return // 期间已登出/重连，丢弃
-      ticket = issued.ticket
-      if (!ticket) throw new Error('empty ws ticket')
-    } catch {
-      if (gen === generation) scheduleReconnect(gen)
-      return
-    }
-
-    let socket: WebSocket
-    try {
-      socket = new WebSocket(buildWsUrl(ticket))
+      source = new EventSource(streamUrl(), { withCredentials: true })
     } catch {
       scheduleReconnect(gen)
       return
     }
-    ws = socket
+    eventSource = source
 
-    socket.onopen = () => {
+    source.onopen = () => {
       if (gen !== generation) return // 旧代际迟到回调，丢弃
       reconnectAttempt = 0
       connectionState.value = 'open'
-      // 应用层保活：每 30s 发 "ping"，服务端自动回 "pong"
-      clearPingTimer()
-      pingTimer = setInterval(() => {
-        if (ws && ws.readyState === WebSocket.OPEN && gen === generation) {
-          try {
-            ws.send('ping')
-          } catch {
-            /* 发送失败交由 onclose 处理重连 */
-          }
-        }
-      }, 30000)
       // 建连/重连成功一律 reconcile：REST 权威覆盖本地（并发拉 unread-count + 第一页）
       void reconcile()
     }
 
-    socket.onmessage = (ev: MessageEvent) => {
+    source.onmessage = (ev: MessageEvent) => {
       if (gen !== generation) return
-      if (ev.data === 'pong') return // 保活回包
       try {
-        const msg = JSON.parse(String(ev.data)) as WsNotificationMessage
+        const msg = JSON.parse(String(ev.data)) as PushMessage
         if (msg?.type === 'notification') applyIncoming(msg.payload, true)
       } catch {
-        /* 非 JSON 消息忽略 */
+        /* 非 JSON（心跳等）忽略 */
       }
     }
 
-    socket.onerror = () => {
-      /* 错误后必然伴随 close，统一由 onclose 走重连，避免双触发 */
-    }
-
-    ws.onclose = () => {
+    source.onerror = () => {
       if (gen !== generation) return
-      scheduleReconnect(gen)
+      connectionState.value = 'reconnecting'
+      // EventSource 自身会重连；只有被彻底关闭（4xx/5xx 等）才由我们按退避重建，
+      // 避免与浏览器内置重连打架。
+      if (eventSource?.readyState === EventSource.CLOSED) scheduleReconnect(gen)
     }
   }
 
   /** 指数退避重连：1s 起 ×2、max 30s、×random(0.8,1.2) jitter；到点后再比对代际 */
   function scheduleReconnect(gen: number) {
     if (gen !== generation) return
-    clearPingTimer()
-    ws = null
+    closeEventSource()
     connectionState.value = 'reconnecting'
     const backoff = Math.min(RECONNECT_BASE_MS * 2 ** reconnectAttempt, RECONNECT_MAX_MS)
     const delay = backoff * (0.8 + Math.random() * 0.4)
@@ -259,21 +211,24 @@ export const useNotificationsStore = defineStore('notifications', () => {
     }, delay)
   }
 
-  /** 登出/会话失效时调用：断开 WS、停掉重连定时器与保活并使所有旧回调失效（代际递增） */
+  /** 关闭 SSE 并清空回调（登出 / 重建连接前调用） */
+  function closeEventSource() {
+    if (!eventSource) return
+    eventSource.onopen = eventSource.onmessage = eventSource.onerror = null
+    try {
+      eventSource.close()
+    } catch {
+      /* 已关闭忽略 */
+    }
+    eventSource = null
+  }
+
+  /** 登出/会话失效时调用：关闭 SSE、停掉重连定时器并使所有旧回调失效（代际递增） */
   function disconnect() {
     generation++
     clearReconnectTimer()
-    clearPingTimer()
     reconnectAttempt = 0
-    if (ws) {
-      ws.onopen = ws.onmessage = ws.onclose = ws.onerror = null
-      try {
-        ws.close()
-      } catch {
-        /* 已关闭/关闭中忽略 */
-      }
-      ws = null
-    }
+    closeEventSource()
     connectionState.value = 'closed'
   }
 
