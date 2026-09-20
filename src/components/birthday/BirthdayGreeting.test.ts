@@ -2,10 +2,10 @@
  * 生日祝福（1A）触发规则 + 吹蜡烛交互测试。
  *
  * 覆盖：
- * - 判定：命中「浏览器本地日期 = 生日 MM-DD」→ 弹一次；记账延后到用户真正
- *   收下祝福（吹完蜡烛 / 点关闭）时才写去重 key；
- *   同年已弹过 / 生日不在今天 / 未填生日 / 认证页（`route.meta.hideChrome`）→ 均不弹；
- * - 预览：`?birthday=1|preview|true` 忽略日期与去重强制展示，且不记账；
+ * - 判定：命中「浏览器本地日期 = 生日 MM-DD」→ 先向后端领取今年名额
+ *   （`POST /me/birthday-greeting`），只有 `shouldShow=true` 才弹；
+ *   后端返回 false（同年已在别的设备 / 浏览器 / 清缓存后弹过）/ 领取失败 /
+ *   生日不在今天 / 未填生日 / 认证页（`route.meta.hideChrome`）→ 均不弹；
  * - 场景与交互：蛋糕有 3 根蜡烛，烛火是纯装饰（不可点击）；入场后到点自动依次
  *   吹灭并进入许愿阶段，「吹蜡烛」按钮可提前吹灭（动效本身由 GSAP 承担，jsdom 不做像素断言）。
  */
@@ -17,8 +17,8 @@ import { createI18n } from 'vue-i18n'
 import { createMemoryHistory, createRouter, type Router } from 'vue-router'
 import BirthdayGreeting from './BirthdayGreeting.vue'
 import zh from '@/i18n/locales/zh'
-import { birthdayGreetingKey } from '@/lib/birthday'
 import { useAuthStore } from '@/stores/auth'
+import { useNexusStore } from '@/stores/nexus'
 import type { User } from '@/types/auth'
 
 const pad = (n: number) => String(n).padStart(2, '0')
@@ -57,81 +57,79 @@ async function makeRouter(path: string, query: Record<string, string> = {}): Pro
 
 const i18n = createI18n({ legacy: false, locale: 'zh', messages: { zh } })
 
-/** 挂载组件（Teleport 到 body，故断言查 document 而非 wrapper.html） */
+/** 默认的「领取成功」：后端说今年由本次展示 */
+const claimOk = async () => ({ shouldShow: true })
+
+/**
+ * 挂载组件（Teleport 到 body，故断言查 document 而非 wrapper.html）。
+ *
+ * `claim` 注入 `claimBirthdayGreeting` 的行为（默认领取成功），
+ * 组件只依赖这个返回值决定是否弹。
+ */
 async function mountGreeting(
   birthday: string | null,
   path = '/',
-  query: Record<string, string> = {},
+  claim: () => Promise<{ shouldShow: boolean }> = claimOk,
 ) {
   const pinia = createPinia()
   setActivePinia(pinia)
   useAuthStore().me = makeUser(birthday)
-  const router = await makeRouter(path, query)
+  vi.spyOn(useNexusStore(), 'claimBirthdayGreeting').mockImplementation(claim)
+  const router = await makeRouter(path)
   mount(BirthdayGreeting, {
     attachTo: document.body,
     global: { plugins: [pinia, i18n, router] },
   })
+  // 领取是异步的：跑完微任务 + 一次渲染
   await new Promise((resolve) => setTimeout(resolve, 0))
+  await nextTick()
   return document.querySelector('.bday-overlay')
 }
 
 afterEach(() => {
   document.body.innerHTML = ''
-  localStorage.clear()
+  vi.restoreAllMocks()
 })
 
 describe('BirthdayGreeting（1A 触发规则）', () => {
-  it('今天生日 → 弹出祝福，但收下之前不写「今年已弹过」key', async () => {
-    const overlay = await mountGreeting(todayBirthday)
+  it('今天生日 + 后端领取到名额 → 弹出祝福，且只领一次', async () => {
+    const claim = vi.fn(claimOk)
+    const overlay = await mountGreeting(todayBirthday, '/', claim)
+
     expect(overlay).not.toBeNull()
     expect(overlay?.textContent).toContain('生日快乐')
-    expect(localStorage.getItem(birthdayGreetingKey('user_test', today.getFullYear()))).toBeNull()
+    expect(claim).toHaveBeenCalledTimes(1)
   })
 
-  it('点「收下祝福」关闭后才记账：关闭后写 key', async () => {
-    const overlay = await mountGreeting(todayBirthday)
-    overlay?.querySelector<HTMLButtonElement>('.bday-btn')?.click()
-    await nextTick()
-    document.querySelector<HTMLButtonElement>('.bday-close')?.click()
-    await nextTick()
-
-    expect(localStorage.getItem(birthdayGreetingKey('user_test', today.getFullYear()))).toBe('1')
+  it('后端返回 shouldShow=false（同年已在别的设备弹过）→ 不弹', async () => {
+    const overlay = await mountGreeting(todayBirthday, '/', async () => ({ shouldShow: false }))
+    expect(overlay).toBeNull()
   })
 
-  it('同年第二次进入 → 不再弹（key 已存在）', async () => {
-    localStorage.setItem(birthdayGreetingKey('user_test', today.getFullYear()), '1')
-    expect(await mountGreeting(todayBirthday)).toBeNull()
+  it('领取失败（离线 / 网络错误）→ 不弹，也不记账（下次登录仍可领）', async () => {
+    const claim = vi.fn(async () => {
+      throw new Error('NETWORK_ERROR')
+    })
+    expect(await mountGreeting(todayBirthday, '/', claim)).toBeNull()
+    expect(claim).toHaveBeenCalledTimes(1)
   })
 
-  it('生日不在今天 → 不弹，且不写 key', async () => {
-    expect(await mountGreeting(otherBirthday)).toBeNull()
-    expect(localStorage.getItem(birthdayGreetingKey('user_test', today.getFullYear()))).toBeNull()
+  it('生日不在今天 → 不弹，且不请求后端', async () => {
+    const claim = vi.fn(claimOk)
+    expect(await mountGreeting(otherBirthday, '/', claim)).toBeNull()
+    expect(claim).not.toHaveBeenCalled()
   })
 
-  it('未填生日 → 不弹', async () => {
-    expect(await mountGreeting(null)).toBeNull()
+  it('未填生日 → 不弹，且不请求后端', async () => {
+    const claim = vi.fn(claimOk)
+    expect(await mountGreeting(null, '/', claim)).toBeNull()
+    expect(claim).not.toHaveBeenCalled()
   })
 
-  it('认证页（hideChrome）→ 不弹且不写 key', async () => {
-    expect(await mountGreeting(todayBirthday, '/login')).toBeNull()
-    expect(localStorage.getItem(birthdayGreetingKey('user_test', today.getFullYear()))).toBeNull()
-  })
-
-  it('预览 ?birthday=1 → 非今天生日也弹，且同年已弹过也弹', async () => {
-    localStorage.setItem(birthdayGreetingKey('user_test', today.getFullYear()), '1')
-    const overlay = await mountGreeting(otherBirthday, '/', { birthday: '1' })
-    expect(overlay).not.toBeNull()
-    expect(overlay?.textContent).toContain('生日快乐')
-  })
-
-  it('预览模式不记账：关闭预览不写 key（真实那次祝福仍会弹）', async () => {
-    const overlay = await mountGreeting(otherBirthday, '/', { birthday: 'preview' })
-    overlay?.querySelector<HTMLButtonElement>('.bday-btn')?.click()
-    await nextTick()
-    document.querySelector<HTMLButtonElement>('.bday-close')?.click()
-    await nextTick()
-
-    expect(localStorage.getItem(birthdayGreetingKey('user_test', today.getFullYear()))).toBeNull()
+  it('认证页（hideChrome）→ 不弹，且不请求后端', async () => {
+    const claim = vi.fn(claimOk)
+    expect(await mountGreeting(todayBirthday, '/login', claim)).toBeNull()
+    expect(claim).not.toHaveBeenCalled()
   })
 })
 
@@ -170,12 +168,15 @@ describe('BirthdayGreeting（场景与吹蜡烛交互）', () => {
       const pinia = createPinia()
       setActivePinia(pinia)
       useAuthStore().me = makeUser(todayBirthday)
+      vi.spyOn(useNexusStore(), 'claimBirthdayGreeting').mockImplementation(claimOk)
       const router = await makeRouter('/')
 
       mount(BirthdayGreeting, {
         attachTo: document.body,
         global: { plugins: [pinia, i18n, router] },
       })
+      // 领取是异步的：两次 microtask 后才进入展示（fake timers 下 setTimeout 不可用）
+      await nextTick()
       await nextTick()
 
       expect(document.querySelectorAll('.cake-candle.is-out')).toHaveLength(0)

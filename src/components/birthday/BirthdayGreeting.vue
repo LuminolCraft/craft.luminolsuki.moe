@@ -1,6 +1,7 @@
 <!-- eslint-disable vue/multi-word-component-names -->
 <template>
-  <!-- 1A 生日祝福：客户端判定（浏览器本地日期 + MM-DD 比对），命中当天弹一次 -->
+  <!-- 1A 生日祝福：客户端判定「今天生日」（浏览器本地日期 + MM-DD 比对），
+       命中后向后端领取今年名额，一年只弹一次（跨设备 / 换浏览器 / 清缓存同理） -->
   <Teleport to="body">
     <div
       v-if="visible"
@@ -66,9 +67,10 @@ import gsap from 'gsap'
 import BirthdayCake from './BirthdayCake.vue'
 import { DURATIONS, EASINGS, STAGGERS } from '@/gsap'
 import { useGsap } from '@/composables/useGsap'
-import { birthdayGreetingKey, isBirthdayToday, localYear } from '@/lib/birthday'
+import { isBirthdayToday } from '@/lib/birthday'
 import { celebrateBirthday, resetCelebration } from '@/lib/confetti'
 import { useAuthStore } from '@/stores/auth'
+import { useNexusStore } from '@/stores/nexus'
 
 /** 星野星点数与浮尘数（装饰层，纯 transform/opacity 动效） */
 const STAR_COUNT = 52
@@ -83,6 +85,7 @@ const CANDLE_COUNT = 3
 const AUTO_BLOW_DELAY_MS = 4600
 
 const auth = useAuthStore()
+const nexus = useNexusStore()
 const route = useRoute()
 const { t } = useI18n()
 
@@ -141,51 +144,45 @@ const daysTogether = computed(() => {
 })
 
 /**
- * 预览 / 重放：URL 带 `?birthday=1`（也接受 `preview` / `true`）时强制展示一次，
- * 忽略「今天是否生日」与「今年已弹过」两个判定，并**不写**去重 key——供自测与验收。
- */
-const previewMode = computed(() => {
-  const raw = route.query.birthday
-  const value = Array.isArray(raw) ? raw[0] : raw
-  return value === '1' || value === 'preview' || value === 'true'
-})
-
-/**
- * 是否命中「今天生日」：
+ * 是否命中「今天生日」（日期判定仍在客户端）：
  * - 未登录 / 未填生日 / 认证页（hideChrome：登录、注册等）不弹；
  * - 比较只取 MM-DD 且按**浏览器本地日期**（`isBirthdayToday` 内部只用字符串比较，
- *   绝不把生日解析成时间点）；
- * - 预览模式（`?birthday=1`）只看登录态，日期与去重都不拦。
+ *   绝不把生日解析成时间点）。
  */
 const eligible = computed(() => {
   const me = auth.me
   if (!me?.id) return false
   if (route.meta.hideChrome === true) return false
-  if (previewMode.value) return true
   if (!me.birthday) return false
   return isBirthdayToday(me.birthday, new Date())
 })
 
 /**
- * 展示判定：命中且「今年未弹过」才弹。
+ * 「一年只弹一次」的**记账**在后端（KV，key 含用户 + 站点年份）：命中今天生日时
+ * 先调 `POST /me/birthday-greeting` 领取今年名额，同一账号在别的设备 / 浏览器 /
+ * 清掉缓存后都会拿到 `shouldShow: false`，不再重复弹。
  *
- * 注意这里**不写**去重 key——标记改由 `markSeen()` 在用户真正收下祝福
- * （吹完蜡烛或点关闭）时写入，避免「弹了但用户没看见/被导航吞掉也烧掉
- * 一整年机会」；代价是未收下就刷新会再弹一次。
- * storage 不可用（隐私模式）时仍然展示，只是无法去重。
+ * 请求失败（离线 / 网络错误）直接跳过本次：不弹、也不记账——不烧掉今年这次机会，
+ * 下次登录仍能领到。
  */
-function maybeShow() {
-  if (visible.value) return
-  const me = auth.me
-  if (!me?.id) return
-  if (!previewMode.value) {
-    const key = birthdayGreetingKey(me.id, localYear())
-    try {
-      if (localStorage.getItem(key) === '1') return
-    } catch {
-      /* 忽略：仅失去去重能力 */
-    }
+let claiming = false
+
+async function claimAndShow() {
+  if (visible.value || claiming) return
+  claiming = true
+  try {
+    const { shouldShow } = await nexus.claimBirthdayGreeting()
+    if (shouldShow) show()
+  } catch {
+    /* 忽略：本次不弹也不记账，下次登录重试 */
+  } finally {
+    claiming = false
   }
+}
+
+/** 展示祝福：入场编排 + 到点自动吹灭 + 焦点落到主按钮 */
+function show() {
+  if (visible.value) return
   visible.value = true
   void nextTick(() => {
     playIntro()
@@ -194,26 +191,11 @@ function maybeShow() {
   })
 }
 
-/**
- * 记账「今年已弹过」：仅在用户真正收下祝福时调用（见 `onAllBlown` / `close`）。
- * 预览模式不记账，否则自测会把真实那次祝福吞掉。
- */
-function markSeen() {
-  if (previewMode.value) return
-  const me = auth.me
-  if (!me?.id) return
-  try {
-    localStorage.setItem(birthdayGreetingKey(me.id, localYear()), '1')
-  } catch {
-    /* 忽略：仅失去去重能力 */
-  }
-}
-
-// me 就绪 / 路由离开认证页 / 跨标签页同步：任一时刻变为命中即弹
+// me 就绪 / 路由离开认证页 / 跨标签页同步：任一时刻变为命中即尝试领取并展示
 watch(
   eligible,
   (ok) => {
-    if (ok) maybeShow()
+    if (ok) void claimAndShow()
   },
   { immediate: true },
 )
@@ -322,8 +304,6 @@ function playIntro() {
 /** 吹灭全部蜡烛 → 进入「愿望已送达」阶段（状态同步置位，视觉随后展开） */
 function onAllBlown() {
   if (blown.value) return
-  // 吹完即视为已收下祝福：此刻才记账「今年已弹过」
-  markSeen()
   blown.value = true
   void nextTick(() => {
     playWish()
@@ -397,8 +377,6 @@ function playWish() {
 
 /** 关掉祝福：停掉补间与环境动效、清掉画布上残留的彩带 */
 function close() {
-  // 主动关闭同样算收下祝福（未吹蜡烛直接关闭也要记账，否则年年重复弹）
-  markSeen()
   clearAutoBlow()
   mm?.kill()
   mm = null
