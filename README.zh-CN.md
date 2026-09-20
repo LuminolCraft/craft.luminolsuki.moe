@@ -512,7 +512,7 @@ graph TB
 
     subgraph Data["数据源"]
         IDB[("IndexedDB<br/>luminolcraft-news v1")]
-        NewsCDN["新闻 manifest +<br/>文章 Markdown（pages.dev）"]
+        NewsCDN["Nexus 代理 /api/v1/news<br/>（manifest + 文章 Markdown）"]
         McSrv["mcstatus.io API"]
         ApiSvc["API 服务<br/>（经同源代理）"]
     end
@@ -988,11 +988,11 @@ flowchart TD
 
 #### 7.7.4 数据源
 
-- Manifest：`https://luminolcraft-news.pages.dev/news.json`（公开的文章 JSON 索引）；正文：同域名下的 Markdown（manifest 中的 GitHub raw URL 会被重写到该域名）；所有请求经 `AbortController` 携带 15 秒超时
+- Manifest + 正文：**同源**读 Nexus 代理 `GET /api/v1/news`（一次请求返回 manifest 指纹 `version` 与全部文章，正文内联）；浏览器不再直连 `luminolcraft-news.pages.dev` / `raw.githubusercontent.com`。代理降级（`bodiesOmitted`）时按条走 `GET /api/v1/news/:id` 懒加载。所有请求经 `AbortController` 携带 15 秒超时
 
 #### 7.7.5 Netlify Functions（遗留）
 
-`.netlify/functions/news.js` 是遗留的新闻代理，**无使用方**（新闻由客户端获取）。`.netlify/functions/version.js` 被 `Footer.vue` 消费，部署环境变量缺失时回退到 GitHub API（`commits/main`）。
+增量同步由 Nexus 新闻代理给出的 `version` / `contentVersion` 驱动（`src/utils/news/news-sync.ts`，带单测）：`version` 未变即整轮跳过（零正文请求）。`.netlify/functions/version.js` 被 `Footer.vue` 消费，部署环境变量缺失时回退到 GitHub API（`commits/main`）。
 
 ---
 

@@ -512,7 +512,7 @@ graph TB
 
     subgraph Data["Data Sources"]
         IDB[("IndexedDB<br/>luminolcraft-news v1")]
-        NewsCDN["News manifest +<br/>article markdown (pages.dev)"]
+        NewsCDN["Nexus proxy /api/v1/news<br/>(manifest + article markdown)"]
         McSrv["mcstatus.io API"]
         ApiSvc["API service<br/>(via same-origin proxy)"]
     end
@@ -988,11 +988,11 @@ The news manager (`src/utils/news/news-manager.ts`) + cache layer (`news-cache.t
 
 #### 7.7.4 Data Source
 
-- Manifest: `https://luminolcraft-news.pages.dev/news.json` (public JSON index of articles); bodies: Markdown on the same domain (GitHub raw URLs in the manifest are rewritten to it); all requests carry a 15-second timeout via `AbortController`
+- Manifest + bodies: fetched **same-origin** from the Nexus proxy `GET /api/v1/news` (one request returns the manifest fingerprint `version` plus every article, with bodies inlined); the browser never talks to `luminolcraft-news.pages.dev` / `raw.githubusercontent.com` directly. When the proxy degrades (`bodiesOmitted`), bodies are lazily fetched one by one from `GET /api/v1/news/:id`. All requests carry a 15-second timeout via `AbortController`
 
 #### 7.7.5 Netlify Functions (legacy)
 
-`.netlify/functions/news.js` is a legacy news proxy with **no consumer** (news is fetched client-side). `.netlify/functions/version.js` is consumed by `Footer.vue` and falls back to the GitHub API (`commits/main`) when deploy env vars are missing.
+`version`/`contentVersion` from the Nexus news proxy drive incremental sync (`src/utils/news/news-sync.ts`, unit-tested): an unchanged `version` skips the whole round (zero body requests). `.netlify/functions/version.js` is consumed by `Footer.vue` and falls back to the GitHub API (`commits/main`) when deploy env vars are missing.
 
 ---
 
