@@ -2,7 +2,8 @@
  * 生日祝福（1A）触发规则 + 吹蜡烛交互测试。
  *
  * 覆盖：
- * - 判定：命中「浏览器本地日期 = 生日 MM-DD」→ 弹一次并写入去重 key；
+ * - 判定：命中「浏览器本地日期 = 生日 MM-DD」→ 弹一次；记账延后到用户真正
+ *   收下祝福（吹完蜡烛 / 点关闭）时才写去重 key；
  *   同年已弹过 / 生日不在今天 / 未填生日 / 认证页（`route.meta.hideChrome`）→ 均不弹；
  * - 场景与交互：蛋糕有 3 根蜡烛；点「吹蜡烛」→ 三根全部熄灭、按钮切换为收下祝福、
  *   心愿文案转为可见（动效本身由 GSAP 承担，jsdom 不做像素断言）。
@@ -75,10 +76,20 @@ afterEach(() => {
 })
 
 describe('BirthdayGreeting（1A 触发规则）', () => {
-  it('今天生日 → 弹出祝福并写入「今年已弹过」key', async () => {
+  it('今天生日 → 弹出祝福，但收下之前不写「今年已弹过」key', async () => {
     const overlay = await mountGreeting(todayBirthday)
     expect(overlay).not.toBeNull()
     expect(overlay?.textContent).toContain('生日快乐')
+    expect(localStorage.getItem(birthdayGreetingKey('user_test', today.getFullYear()))).toBeNull()
+  })
+
+  it('点「收下祝福」关闭后才记账：关闭后写 key', async () => {
+    const overlay = await mountGreeting(todayBirthday)
+    overlay?.querySelector<HTMLButtonElement>('.bday-btn')?.click()
+    await nextTick()
+    document.querySelector<HTMLButtonElement>('.bday-close')?.click()
+    await nextTick()
+
     expect(localStorage.getItem(birthdayGreetingKey('user_test', today.getFullYear()))).toBe('1')
   })
 
