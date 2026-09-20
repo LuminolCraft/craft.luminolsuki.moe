@@ -57,7 +57,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch, nextTick, computed } from 'vue';
+import { ref, onMounted, onUnmounted, watch, nextTick, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useMediaQuery } from '@vueuse/core';
@@ -147,6 +147,15 @@ onMounted(async () => {
   }
   filterNews();
   refresh();
+
+  // 后台同步落地后 manager 的字段不会触发重算，必须据此重新筛选 + 重取分页，
+  // 否则"刚发布的新闻"要等用户翻页/再刷一次才出现。
+  const stopChangeListener = newsManager.onChange(() => {
+    filterNews();
+    refresh();
+  });
+  onUnmounted(stopChangeListener);
+
   await animateCards(newsSectionRef.value);
 });
 

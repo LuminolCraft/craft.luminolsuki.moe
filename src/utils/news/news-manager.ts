@@ -29,6 +29,9 @@ export class NewsManager {
   private readonly db = new NewsCacheDB();
   private readonly NEWS_STORAGE_KEY = 'session_news_data';
 
+  /** 变更订阅者集合（见 onChange / notifyChange）。 */
+  private readonly changeHandlers = new Set<() => void>();
+
   /** 正常同步最短间隔。focus / online / visibilitychange 不会无限打请求。 */
   private readonly MIN_SYNC_INTERVAL = 10 * 60 * 1000;
 
@@ -423,6 +426,9 @@ export class NewsManager {
 
       this.filteredNews = null;
       this.ensureCurrentPageValid();
+
+      // 有实际变化才通知视图（304 / 全部 unchanged 时不惊动页面）
+      if (result.changed) this.notifyChange();
 
       this.debugLog('✅ 增量同步完成:', result);
       return result;
@@ -879,7 +885,9 @@ export class NewsManager {
 
     // 有缓存：立即允许页面显示，再后台同步。
     if (this.hasUsableCache) {
-      void this.syncIfNeeded('initial');
+      // force：每次进列表页都做一次"条件校验"（带 If-None-Match，未变即 304、零正文下载）。
+      // 不能只靠 MIN_SYNC_INTERVAL —— 那会让"刚发布新闻"的访客最多 10 分钟内看不到新内容。
+      void this.syncIfNeeded('initial', true);
       return;
     }
 
@@ -889,6 +897,30 @@ export class NewsManager {
     } catch {
       this.loadError = true;
       throw new Error('没有本地缓存且新闻服务暂时不可用');
+    }
+  }
+
+  /**
+   * 订阅"本地新闻数据已变化"（同步写入新条目 / 删稿后触发）。
+   *
+   * 为什么需要：`allNewsWithContent` 等字段是普通类字段、**非响应式**，后台同步
+   * 完成后视图不会自己重算；页面必须据此重新筛选/重取分页，否则新新闻要等用户
+   * 手动翻页或再刷一次才出现。返回取消订阅函数（页面卸载时调用）。
+   */
+  onChange(handler: () => void): () => void {
+    this.changeHandlers.add(handler);
+    return () => {
+      this.changeHandlers.delete(handler);
+    };
+  }
+
+  private notifyChange(): void {
+    for (const handler of this.changeHandlers) {
+      try {
+        handler();
+      } catch (error) {
+        this.debugLog('变更通知处理失败:', error);
+      }
     }
   }
 
