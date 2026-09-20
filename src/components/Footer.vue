@@ -236,6 +236,9 @@ onMounted(() => {
             <p>{{ t('footer.poweredBy') }} <a href="https://www.netlify.com/" target="_blank" rel="noopener noreferrer">Netlify
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1.5" class="h-4 w-4 ml-1 align-sub" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"></path></svg>
             </a></p>
+            <p>{{ t('footer.mcheadsPrefix') }} <a href="https://mc-heads.net" target="_blank" rel="noopener noreferrer">MCHeads
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1.5" class="h-4 w-4 ml-1 align-sub" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"></path></svg>
+            </a> {{ t('footer.mcheadsSuffix') }}</p>
         </div>
     </footer>
     </div>

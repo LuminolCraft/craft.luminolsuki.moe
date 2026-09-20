@@ -335,7 +335,9 @@ export default {
     "copyright": "© {year} LuminolCraft- 保留所有权利",
     "disclaimer": "\"Minecraft\" 以及\"我的世界\"为 Mojang Studios 的商标，LuminolCraft 与 Mojang 以及 Microsoft 没有任何从属关系。LuminolCraft 不是 Minecraft 官方的服务器。",
     "font": "本网站使用的字体为",
-    "poweredBy": "Powered by"
+    "poweredBy": "Powered by",
+    "mcheadsPrefix": "感谢",
+    "mcheadsSuffix": "提供 Minecraft 头像。"
   },
   "colorScheme": {
     "techPurple": "科技紫",

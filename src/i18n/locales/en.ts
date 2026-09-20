@@ -335,7 +335,9 @@ export default {
     "copyright": "© {year} LuminolCraft",
     "disclaimer": "\"Minecraft\" and \"我的世界\" are trademarks of Mojang Studios. LuminolCraft is not affiliated with Mojang or Microsoft. LuminolCraft is not an official Minecraft server.",
     "font": "The font used on this website is",
-    "poweredBy": "Powered by"
+    "poweredBy": "Powered by",
+    "mcheadsPrefix": "Thanks to",
+    "mcheadsSuffix": "for providing Minecraft avatars."
   },
   "colorScheme": {
     "techPurple": "Tech Purple",
