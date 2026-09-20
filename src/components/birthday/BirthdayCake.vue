@@ -4,24 +4,22 @@
   <div ref="rootRef" class="cake" :class="{ 'is-all-out': allOut }">
     <div class="cake-glow" aria-hidden="true"></div>
 
-    <div class="cake-candles">
-      <button
+    <!-- 蜡烛是纯装饰：不接受点击（单根烛火的触摸目标太小、误触多），
+         熄灭由父组件驱动（自动依次吹灭，或点「吹蜡烛」立即吹灭） -->
+    <div class="cake-candles" aria-hidden="true">
+      <span
         v-for="(candle, i) in candles"
         :key="i"
-        type="button"
         class="cake-candle"
         :class="{ 'is-out': candle.out }"
-        :aria-label="t('birthday.blowCandle')"
-        :aria-pressed="candle.out"
-        @click="blowOne(i)"
       >
-        <span class="cake-wick" aria-hidden="true"></span>
-        <span class="cake-flame" aria-hidden="true"></span>
-        <span class="cake-smoke" aria-hidden="true">
+        <span class="cake-wick"></span>
+        <span class="cake-flame"></span>
+        <span class="cake-smoke">
           <span v-for="puff in 3" :key="puff" class="cake-puff"></span>
         </span>
-        <span class="cake-stick" aria-hidden="true"></span>
-      </button>
+        <span class="cake-stick"></span>
+      </span>
     </div>
 
     <div class="cake-body" aria-hidden="true">
@@ -67,14 +65,12 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { useI18n } from 'vue-i18n'
 import gsap from 'gsap'
 import { useGsap } from '@/composables/useGsap'
 
 const props = withDefaults(defineProps<{ candleCount?: number }>(), { candleCount: 3 })
 const emit = defineEmits<{ (e: 'allBlown'): void }>()
 
-const { t } = useI18n()
 const rootRef = ref<HTMLElement | null>(null)
 const { create, reduceMotion } = useGsap({ scope: rootRef })
 
@@ -96,15 +92,20 @@ function playBlow(index: number, delay = 0) {
   gsap.killTweensOf([flame, smoke, ...puffs])
 
   const short = reduceMotion()
+  // reduce-motion：直接落终态，不再播放熄灭动画（呼吸补间同理不建）
+  if (short) {
+    gsap.set(flame, { scaleY: 0.15, scaleX: 1.7, autoAlpha: 0 })
+    return
+  }
+
   const tl = gsap.timeline({ delay })
   tl.to(flame, {
     scaleY: 0.15,
     scaleX: 1.7,
     autoAlpha: 0,
-    duration: short ? 0.08 : 0.26,
+    duration: 0.26,
     ease: 'power2.in',
   })
-  if (short) return
   tl.fromTo(smoke, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.18, ease: 'none' }, '-=0.04').to(
     puffs,
     {
@@ -120,15 +121,7 @@ function playBlow(index: number, delay = 0) {
   )
 }
 
-function blowOne(index: number) {
-  const candle = candles.value[index]
-  if (!candle || candle.out) return
-  candle.out = true
-  playBlow(index)
-  if (candles.value.every((c) => c.out)) emit('allBlown')
-}
-
-/** 统一吹灭：状态一次到位（供父组件立即推进流程），视觉上逐根错开 */
+/** 统一吹灭（父组件自动调用 / 用户点「吹蜡烛」加速）：蜡烛只做视觉，不接受单根点击 */
 function blowAll() {
   const pending = candles.value
     .map((candle, index) => ({ candle, index }))
@@ -210,13 +203,10 @@ onMounted(() => {
 
 .cake-candle {
   position: relative;
+  display: block;
   width: 0.58rem;
   height: 3.3rem;
-  padding: 0;
-  border: none;
-  background: none;
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
+  pointer-events: none;
 }
 
 .cake-stick {
@@ -301,12 +291,6 @@ onMounted(() => {
   border-radius: 50%;
   background: color-mix(in srgb, var(--text-secondary) 60%, transparent);
   filter: blur(1.6px);
-}
-
-.cake-candle:focus-visible {
-  outline: 2px solid var(--focus-ring-color, var(--vercel-focus-blue));
-  outline-offset: 4px;
-  border-radius: 4px;
 }
 
 /* ---------- 蛋糕体 ---------- */
