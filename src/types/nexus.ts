@@ -31,6 +31,8 @@ export interface MinecraftAccount {
   /** null = 未验证（后端当前绑定时直接写当前时间） */
   verifiedAt?: number | null
   createdAt?: number
+  /** 是否主账号：最早绑定的账号（列表按绑定时间正序，仅首项 true）；站点用户头像取该账号皮肤 */
+  isMain?: boolean
 }
 
 /** 绑定入参（POST /me/minecraft）——只输名字，uuid 由插件进服核验时上报 */
