@@ -106,7 +106,12 @@ export const useNexusStore = defineStore('nexus', () => {
   }
 
   // ---------- 资料更新（PATCH /me） ----------
-  async function updateMe(input: { username?: string; email?: string }): Promise<User> {
+  async function updateMe(input: {
+    username?: string
+    email?: string
+    /** 生日：`YYYY-MM-DD` 设置 / `null` 清空；同值提交后端视为无操作（不消耗自改机会） */
+    birthday?: string | null
+  }): Promise<User> {
     const updated = await api.patch<User>('/me', input)
     // 同步 auth store 的 me（避免多页面读到旧资料；不减负额外交互）
     const { useAuthStore } = await import('@/stores/auth')
@@ -131,6 +136,20 @@ export const useNexusStore = defineStore('nexus', () => {
     await api.delete<unknown>(`/admin/users/${userId}/minecraft/${accountId}`)
   }
 
+  /**
+   * 管理员修改/清空某用户生日（PATCH /admin/users/:id/birthday）。
+   * 与用户自助修改的差别：**不消耗也不重置**用户那一次自改机会；
+   * `null` / 空串 = 清空；同值后端幂等返回 200。
+   */
+  async function adminChangeBirthday(
+    userId: string,
+    birthday: string | null,
+  ): Promise<{ ok: boolean; birthday: string | null }> {
+    return api.patch<{ ok: boolean; birthday: string | null }>(`/admin/users/${userId}/birthday`, {
+      birthday,
+    })
+  }
+
   return {
     minecraftAccounts,
     minecraftLoaded,
@@ -148,6 +167,7 @@ export const useNexusStore = defineStore('nexus', () => {
     fetchMyBans,
     updateMe,
     adminForceUnbindMinecraft,
+    adminChangeBirthday,
     reset,
   }
 })

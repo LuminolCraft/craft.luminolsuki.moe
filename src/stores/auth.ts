@@ -153,9 +153,30 @@ export const useAuthStore = defineStore('auth', () => {
   /**
    * 注册（Better Auth /api/auth/sign-up/email）。
    * 返回是否已自动进入登录态：后端若要求邮箱验证则不会建立 Session。
+   *
+   * `birthday` 为选填生日（`YYYY-MM-DD`）：经后端 `user.additionalFields`
+   * 载体列随注册请求提交，bootstrap 落到 Nexus users.birthday；
+   * 注册填写**不算**用掉那一次自助修改机会。
+   * BA 客户端未启用 `inferAdditionalFields`，故按扩展字段透传（cast）。
    */
-  async function signUp(name: string, email: string, password: string): Promise<boolean> {
-    const { error } = await authClient.signUp.email({ name, email, password })
+  async function signUp(
+    name: string,
+    email: string,
+    password: string,
+    birthday?: string,
+  ): Promise<boolean> {
+    const signUpEmail = authClient.signUp.email as unknown as (opts: {
+      name: string
+      email: string
+      password: string
+      birthday?: string
+    }) => Promise<{ error?: unknown }>
+    const { error } = await signUpEmail({
+      name,
+      email,
+      password,
+      ...(birthday ? { birthday } : {}),
+    })
     if (error) throw toAppError(error)
     try {
       await fetchCurrentUser()

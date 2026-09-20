@@ -50,6 +50,24 @@
           :invalid="formInvalid"
         />
 
+        <!-- 生日（选填）：注册填写不算用掉那一次自助修改机会；不设 max（浏览器时区落后站点时区会误拦） -->
+        <div class="register-field">
+          <label class="register-field-label" for="register-birthday">
+            {{ t('auth.register.birthdayLabel') }}
+          </label>
+          <input
+            id="register-birthday"
+            v-model="birthday"
+            class="register-date-input"
+            type="date"
+            autocomplete="bday"
+            :aria-describedby="'register-birthday-hint'"
+          />
+          <p id="register-birthday-hint" class="register-field-hint">
+            {{ t('auth.register.birthdayHint') }}
+          </p>
+        </div>
+
         <AuthButton :loading="pending">{{ t('auth.register.submit') }}</AuthButton>
       </form>
 
@@ -70,6 +88,7 @@ import { onMounted, onUnmounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { checkEmailDomain } from '@/lib/email-domain'
+import { normalizeBirthday } from '@/lib/birthday'
 import { checkUsernameReserved } from '@/lib/reserved-username'
 import { prepareUsername, validateUsername } from '@/lib/username'
 import AuthSplitLayout from '@/components/auth/AuthSplitLayout.vue'
@@ -93,6 +112,7 @@ const username = ref('')
 const email = ref('')
 const password = ref('')
 const confirmPassword = ref('')
+const birthday = ref('')
 const pending = ref(false)
 const registered = ref(false)
 const verifyDone = ref(false)
@@ -239,9 +259,24 @@ async function onSubmit() {
     return
   }
 
+  // 生日选填：格式 / 日历 / 下限与后端共享同一套规则（@/lib/birthday），
+  // **不判上界**（站点时区今天由后端唯一执行，前端时钟落后会误拦合法生日）；
+  // 残留的非法值仍在前端拦下，避免整表单被后端 400 打回
+  const normalizedBirthday = normalizeBirthday(birthday.value)
+  if (birthday.value && !normalizedBirthday) {
+    formInvalid.value = true
+    errorMsg.value = t('auth.register.invalidBirthday')
+    return
+  }
+
   pending.value = true
   try {
-    const autoSignedIn = await auth.signUp(name, normalizedEmail, password.value)
+    const autoSignedIn = await auth.signUp(
+      name,
+      normalizedEmail,
+      password.value,
+      normalizedBirthday ?? undefined,
+    )
     if (autoSignedIn) {
       // 注册即登录（后端未强制邮箱验证）：回跳安全站内路径，无 redirect 时进入用户中心
       router.replace(resolveInternalPath(route.query.redirect, '/settings'))
@@ -319,6 +354,49 @@ onUnmounted(stopVerifyWaitPolling)
 .register-form .auth-btn {
   max-width: 26rem;
   margin-top: 0.35rem;
+}
+
+/* ---------- 生日（选填，原生 input[type=date]） ---------- */
+.register-field {
+  display: flex;
+  flex-direction: column;
+}
+
+.register-field-label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-color);
+  margin-bottom: 0.4rem;
+}
+
+.register-date-input {
+  width: 100%;
+  max-width: 26rem;
+  padding: 0.6rem 0.8rem;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-color);
+  font-size: 0.92rem;
+  font-family: inherit;
+  transition: border-color 0.15s ease;
+}
+
+.register-date-input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+}
+
+.register-date-input:focus-visible {
+  outline: 2px solid var(--focus-ring-color, var(--vercel-focus-blue));
+  outline-offset: 2px;
+}
+
+.register-field-hint {
+  margin: 0.35rem 0 0;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
 }
 
 .register-error {
