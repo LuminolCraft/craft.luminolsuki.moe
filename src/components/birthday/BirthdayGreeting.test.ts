@@ -6,10 +6,10 @@
  *   收下祝福（吹完蜡烛 / 点关闭）时才写去重 key；
  *   同年已弹过 / 生日不在今天 / 未填生日 / 认证页（`route.meta.hideChrome`）→ 均不弹；
  * - 预览：`?birthday=1|preview|true` 忽略日期与去重强制展示，且不记账；
- * - 场景与交互：蛋糕有 3 根蜡烛；点「吹蜡烛」→ 三根全部熄灭、按钮切换为收下祝福、
- *   心愿文案转为可见（动效本身由 GSAP 承担，jsdom 不做像素断言）。
+ * - 场景与交互：蛋糕有 3 根蜡烛，烛火是纯装饰（不可点击）；入场后到点自动依次
+ *   吹灭并进入许愿阶段，「吹蜡烛」按钮可提前吹灭（动效本身由 GSAP 承担，jsdom 不做像素断言）。
  */
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { nextTick } from 'vue'
 import { createPinia, setActivePinia } from 'pinia'
@@ -157,13 +157,36 @@ describe('BirthdayGreeting（场景与吹蜡烛交互）', () => {
     expect(document.querySelector('.bday-wish')?.textContent).toContain('愿望')
   })
 
-  it('点单根烛火 → 只灭那一根，未全灭则不进入许愿阶段', async () => {
+  it('烛火不接受点击（装饰元素，不是按钮）', async () => {
     const overlay = await mountGreeting(todayBirthday)
-    overlay?.querySelector<HTMLButtonElement>('.cake-candle')?.click()
-    await nextTick()
+    const candle = overlay?.querySelector('.cake-candle')
+    expect(candle?.tagName).toBe('SPAN')
+    expect(overlay?.querySelectorAll('.cake-candle button')).toHaveLength(0)
+  })
 
-    expect(document.querySelectorAll('.cake-candle.is-out')).toHaveLength(1)
-    expect(document.querySelector('.bday-btn')?.textContent).toContain('吹蜡烛')
+  it('到点自动依次吹灭：不点任何烛火也会全灭并进入许愿阶段', async () => {
+    vi.useFakeTimers()
+    try {
+      const pinia = createPinia()
+      setActivePinia(pinia)
+      useAuthStore().me = makeUser(todayBirthday)
+      const router = await makeRouter('/')
+
+      mount(BirthdayGreeting, {
+        attachTo: document.body,
+        global: { plugins: [pinia, i18n, router] },
+      })
+      await nextTick()
+
+      expect(document.querySelectorAll('.cake-candle.is-out')).toHaveLength(0)
+      vi.advanceTimersByTime(5000)
+      await nextTick()
+
+      expect(document.querySelectorAll('.cake-candle.is-out')).toHaveLength(3)
+      expect(document.querySelector('.bday-btn')?.textContent).toContain('收下祝福')
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
   it('收下祝福 → 关闭遮罩并解除滚动锁', async () => {

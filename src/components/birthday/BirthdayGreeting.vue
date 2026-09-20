@@ -75,6 +75,12 @@ const STAR_COUNT = 52
 const MOTE_COUNT = 16
 /** 蜡烛根数：固定 3 根，不暴露年龄 */
 const CANDLE_COUNT = 3
+/**
+ * 自动吹灭延迟（毫秒）：入场编排结束后留一段许愿时间。
+ * 烛火不接受单根点击（移动端触摸目标太小、误触多），到点自动逐根熄灭；
+ * 「吹蜡烛」按钮仍可提前吹灭。
+ */
+const AUTO_BLOW_DELAY_MS = 4600
 
 const auth = useAuthStore()
 const route = useRoute()
@@ -183,6 +189,7 @@ function maybeShow() {
   visible.value = true
   void nextTick(() => {
     playIntro()
+    scheduleAutoBlow()
     blowRef.value?.focus()
   })
 }
@@ -324,7 +331,27 @@ function onAllBlown() {
   })
 }
 
+/** 自动吹灭定时器（弹窗关闭 / 手动吹灭 / 组件卸载时必须清掉） */
+let autoBlowTimer: ReturnType<typeof setTimeout> | null = null
+
+function clearAutoBlow() {
+  if (autoBlowTimer !== null) {
+    clearTimeout(autoBlowTimer)
+    autoBlowTimer = null
+  }
+}
+
+/** 到点自动吹灭：蜡烛只是装饰，用户不需要点任何烛火 */
+function scheduleAutoBlow() {
+  clearAutoBlow()
+  autoBlowTimer = setTimeout(() => {
+    autoBlowTimer = null
+    blowCandles()
+  }, AUTO_BLOW_DELAY_MS)
+}
+
 function blowCandles() {
+  clearAutoBlow()
   cakeRef.value?.blowAll()
 }
 
@@ -372,6 +399,7 @@ function playWish() {
 function close() {
   // 主动关闭同样算收下祝福（未吹蜡烛直接关闭也要记账，否则年年重复弹）
   markSeen()
+  clearAutoBlow()
   mm?.kill()
   mm = null
   wishTl?.kill()
@@ -398,6 +426,7 @@ watch(visible, (open) => {
 onUnmounted(() => {
   window.removeEventListener('keydown', onKeydown)
   document.body.style.overflow = ''
+  clearAutoBlow()
   mm?.kill()
   mm = null
   wishTl?.kill()
