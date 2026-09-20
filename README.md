@@ -107,7 +107,7 @@ This project is a modern SPA that provides the following capabilities:
 
 ### 2.1 Server Status Monitoring
 
-Real-time server online status and player count via the mcsrvstat.us API, displayed as a status card in the homepage Hero section with a real-time status indicator (online/offline). Details in [§7.6](#76-server-status-monitoring).
+Real-time server online status and player count via the mcstatus.io API, displayed as a status card in the homepage Hero section with a real-time status indicator (online/offline). Details in [§7.6](#76-server-status-monitoring).
 
 ### 2.2 News System
 
@@ -513,7 +513,7 @@ graph TB
     subgraph Data["Data Sources"]
         IDB[("IndexedDB<br/>luminolcraft-news v1")]
         NewsCDN["News manifest +<br/>article markdown (pages.dev)"]
-        McSrv["mcsrvstat.us API"]
+        McSrv["mcstatus.io API"]
         ApiSvc["API service<br/>(via same-origin proxy)"]
     end
 
@@ -929,7 +929,7 @@ flowchart TD
 
 ### 7.6 Server Status Monitoring
 
-The homepage Hero section displays a server status card, fetching data via the mcsrvstat.us `/3` API for `craft.luminolsuki.moe`:
+The homepage Hero section displays a server status card, fetching data via the mcstatus.io `/v2/status/java` API for `craft.luminolsuki.moe`:
 
 - **Online status**: green/red status dot + label
 - **Player count**: `online/max`

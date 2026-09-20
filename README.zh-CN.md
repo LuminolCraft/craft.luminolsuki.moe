@@ -107,7 +107,7 @@ LuminolCraft Minecraft 服务器需要一个现代化、高性能的 Web 平台�
 
 ### 2.1 服务器状态监控
 
-通过 mcsrvstat.us API 实时获取服务器在线状态与在线人数，在首页 Hero 区域以状态卡片展示，并带实时状态指示（在线/离线）。详见 [§7.6](#76-服务器状态监控)。
+通过 mcstatus.io API 实时获取服务器在线状态与在线人数，在首页 Hero 区域以状态卡片展示，并带实时状态指示（在线/离线）。详见 [§7.6](#76-服务器状态监控)。
 
 ### 2.2 新闻系统
 
@@ -513,7 +513,7 @@ graph TB
     subgraph Data["数据源"]
         IDB[("IndexedDB<br/>luminolcraft-news v1")]
         NewsCDN["新闻 manifest +<br/>文章 Markdown（pages.dev）"]
-        McSrv["mcsrvstat.us API"]
+        McSrv["mcstatus.io API"]
         ApiSvc["API 服务<br/>（经同源代理）"]
     end
 
@@ -929,7 +929,7 @@ flowchart TD
 
 ### 7.6 服务器状态监控
 
-首页 Hero 区域展示服务器状态卡片，通过 mcsrvstat.us 的 `/3` API 为 `craft.luminolsuki.moe` 获取数据：
+首页 Hero 区域展示服务器状态卡片，通过 mcstatus.io 的 `/v2/status/java` API 为 `craft.luminolsuki.moe` 获取数据：
 
 - **在线状态**：绿色/红色状态点 + 标签
 - **在线人数**：`online/max`

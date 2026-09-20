@@ -483,12 +483,12 @@ const serverStatus = ref('服务器在线')
 
 const fetchServerStatus = async () => {
   try {
-    const response = await fetch('https://api.mcsrvstat.us/3/craft.luminolsuki.moe', {
+    const response = await fetch('https://api.mcstatus.io/v2/status/java/craft.luminolsuki.moe', {
       signal: AbortSignal.timeout(8000),
     })
     if (response.ok) {
       const data = await response.json()
-      serverOnline.value = data.online || false
+      serverOnline.value = data.online === true
       onlinePlayers.value = data.online ? `${data.players?.online || 0}/${data.players?.max || 0}` : '0/0'
       serverStatus.value = data.online ? '服务器在线' : '服务器离线'
     } else {
