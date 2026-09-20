@@ -3,6 +3,11 @@ export default {
     "description": "恭喜！您找到了隐藏页面，凭此页面截图可以找管理员兑换神秘奖励。",
     "backhome": "返回主页"
   },
+  "birthday": {
+    "title": "生日快乐！",
+    "body": "{name}，祝你生日快乐！愿新的一岁冒险顺利、收获满满。",
+    "close": "收下祝福"
+  },
   "auth": {
     "field": {
       "holdToReveal": "按住显示密码"

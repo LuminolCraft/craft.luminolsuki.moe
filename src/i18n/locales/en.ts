@@ -3,6 +3,11 @@ export default {
     "description": "Oops! The page you're looking for doesn't exist.",
     "backhome": "Go back to home"
   },
+  "birthday": {
+    "title": "Happy Birthday!",
+    "body": "{name}, happy birthday! Wishing you great adventures and rich rewards in the year ahead.",
+    "close": "Accept wishes"
+  },
   "auth": {
     "field": {
       "holdToReveal": "Hold to reveal password"
