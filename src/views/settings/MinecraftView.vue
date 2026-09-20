@@ -36,6 +36,9 @@
               <span class="mc-item-info">
                 <span class="mc-item-name">{{ acc.name }}</span>
                 <span class="mc-item-meta">
+                  <span v-if="acc.isMain" class="mc-badge main">
+                    {{ t('minecraft.mainBadge') }}
+                  </span>
                   <span class="mc-badge" :class="{ verified: acc.verifiedAt }">
                     {{ acc.verifiedAt ? t('minecraft.verified') : t('minecraft.unverified') }}
                   </span>
@@ -770,6 +773,14 @@ onMounted(async () => {
 .mc-badge.verified {
   color: var(--primary-color);
   border-color: color-mix(in srgb, var(--primary-color) 40%, transparent);
+}
+
+/* 主账号（最早绑定的账号）：站点用户头像取它的皮肤，故用实心 primary 强调 */
+.mc-badge.main {
+  font-weight: 600;
+  color: var(--primary-color);
+  border-color: color-mix(in srgb, var(--primary-color) 40%, transparent);
+  background: color-mix(in srgb, var(--primary-color) 12%, transparent);
 }
 
 .mc-unbind {

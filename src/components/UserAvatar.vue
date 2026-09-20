@@ -17,7 +17,8 @@ import { API_BASE_URL } from '@/lib/api-base'
 
 /**
  * 用户头像（只读展示）。
- * 数据源：GET /api/v1/media/avatar/:userId —— MC 皮肤头像，由 MC 服务器插件推送到后端。
+ * 数据源：GET /api/v1/media/avatar/:userId —— 主账号（最早绑定的 MC 账号）的
+ * MC 皮肤头像，由 MC 服务器插件推送、后端按主账号口径下发。
  * 约束（spec 减负②）：URL 绝不附加时间戳等缓存穿透参数，让后端 s-maxage 边缘缓存生效；
  * 204 / 加载失败 → 用户名首字母占位。
  */
