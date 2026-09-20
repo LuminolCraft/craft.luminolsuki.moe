@@ -70,9 +70,15 @@ describe('planSync', () => {
     expect(plan.needBody).toEqual([1])
   })
 
-  it('本地已有同版本正文 → 即使整体版本变了也不重复拉正文', () => {
-    const item = remoteItem({ markdownContent: null })
-    const plan = planSync({ localVersion: 'ver-0', local: [localOf(item)], remote: bundle() })
+  it('本地已有同版本正文 → 即使整体版本变了也不重复拉正文（不写库、不重拉）', () => {
+    // 本地正文版本 = contentVersion:v1（与远端一致）；本次远端未内联正文
+    const cachedItem = remoteItem({ markdownContent: '# cached' })
+    const remoteNoInline = remoteItem({ markdownContent: null })
+    const plan = planSync({
+      localVersion: 'ver-0',
+      local: [localOf(cachedItem)],
+      remote: bundle({ version: 'ver-2', items: [remoteNoInline] }),
+    })
     expect(plan.needBody).toEqual([])
     expect(plan.unchanged).toBe(1)
   })
@@ -99,6 +105,23 @@ describe('planSync', () => {
     })
     expect(plan.upsert.map((i) => i.id)).toEqual([1])
     expect(plan.needBody).toEqual([])
+  })
+
+  it('服务端内联了正文但本地没有正文 → 仍须 upsert 把正文落库（回归：详情页「内容加载失败」）', () => {
+    // 本地有元数据记录但没有 markdownContent（线上事故时的缓存形态）
+    const item = remoteItem()
+    const brokenLocal: LocalNewsRecord = {
+      id: item.id,
+      contentFetchedVersion: undefined,
+      sourceFingerprint: sourceFingerprintOf(item as never),
+    }
+    const plan = planSync({
+      localVersion: 'ver-1',
+      local: [brokenLocal],
+      remote: bundle(),
+    })
+    expect(plan.upsert.map((i) => i.id)).toEqual([1])
+    expect(plan.needBody).toEqual([]) // 内联正文已够用，不必再打单篇接口
   })
 
   it('远端已删除的条目 → remove', () => {

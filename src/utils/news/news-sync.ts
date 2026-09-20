@@ -117,21 +117,27 @@ export function planSync(input: {
     const inline = item.markdownContent ?? null;
     const versionKey = contentVersionKey(item);
     const hasLocalBody = Boolean(cached?.markdownContent);
-    const bodyFresh =
-      inline !== null || (hasLocalBody && cached?.contentFetchedVersion === versionKey);
+    /**
+     * 正文新鲜 = **本地已存正文**且版本对得上。
+     *
+     * 注意不能因为"服务端这次内联了正文"就判定新鲜：内联正文必须落到 IndexedDB，
+     * 否则本地记录的 `markdownContent` 永远为空——列表卡片显示「暂无内容」、
+     * 详情页每次都要多打一次单篇请求（线上曾因此表现为「内容加载失败」）。
+     */
+    const localBodyFresh = hasLocalBody && cached?.contentFetchedVersion === versionKey;
     const metadataChanged =
       !cached || cached.sourceFingerprint === undefined
         ? true
         : cached.sourceFingerprint !== sourceFingerprintOf(item);
 
-    // 正文与元数据都新鲜 → 无需写库（manifest 整体版本变化不代表每篇都变了）
-    if (bodyFresh && !metadataChanged) {
+    // 本地正文与元数据都新鲜 → 无需写库（manifest 整体版本变化不代表每篇都变了）
+    if (localBodyFresh && !metadataChanged) {
       plan.unchanged += 1;
       continue;
     }
 
     plan.upsert.push(item);
-    if (inline === null && !bodyFresh) plan.needBody.push(item.id);
+    if (inline === null && !localBodyFresh) plan.needBody.push(item.id);
   }
 
   // 远端一条都没有（异常响应）时不删本地缓存，避免把页面清空
