@@ -142,14 +142,19 @@ const daysTogether = computed(() => {
  */
 const eligible = computed(() => {
   const me = auth.me
-  if (!me?.id || !me.birthday) return false
+  if (!me?.id) return false
   if (route.meta.hideChrome === true) return false
+  if (!me.birthday) return false
   return isBirthdayToday(me.birthday, new Date())
 })
 
 /**
- * 首次展示时就把「今年已弹过」写进 localStorage（按用户 + 本地年份隔离）：
- * 刷新 / 重新进入不再弹；storage 不可用（隐私模式）时仍然展示，只是无法去重。
+ * 展示判定：命中且「今年未弹过」才弹。
+ *
+ * 注意这里**不写**去重 key——标记改由 `markSeen()` 在用户真正收下祝福
+ * （吹完蜡烛或点关闭）时写入，避免「弹了但用户没看见/被导航吞掉也烧掉
+ * 一整年机会」；代价是未收下就刷新会再弹一次。
+ * storage 不可用（隐私模式）时仍然展示，只是无法去重。
  */
 function maybeShow() {
   if (visible.value) return
@@ -158,7 +163,6 @@ function maybeShow() {
   const key = birthdayGreetingKey(me.id, localYear())
   try {
     if (localStorage.getItem(key) === '1') return
-    localStorage.setItem(key, '1')
   } catch {
     /* 忽略：仅失去去重能力 */
   }
@@ -167,6 +171,19 @@ function maybeShow() {
     playIntro()
     blowRef.value?.focus()
   })
+}
+
+/**
+ * 记账「今年已弹过」：仅在用户真正收下祝福时调用（见 `onAllBlown` / `close`）。
+ */
+function markSeen() {
+  const me = auth.me
+  if (!me?.id) return
+  try {
+    localStorage.setItem(birthdayGreetingKey(me.id, localYear()), '1')
+  } catch {
+    /* 忽略：仅失去去重能力 */
+  }
 }
 
 // me 就绪 / 路由离开认证页 / 跨标签页同步：任一时刻变为命中即弹
@@ -282,6 +299,8 @@ function playIntro() {
 /** 吹灭全部蜡烛 → 进入「愿望已送达」阶段（状态同步置位，视觉随后展开） */
 function onAllBlown() {
   if (blown.value) return
+  // 吹完即视为已收下祝福：此刻才记账「今年已弹过」
+  markSeen()
   blown.value = true
   void nextTick(() => {
     playWish()
@@ -335,6 +354,8 @@ function playWish() {
 
 /** 关掉祝福：停掉补间与环境动效、清掉画布上残留的彩带 */
 function close() {
+  // 主动关闭同样算收下祝福（未吹蜡烛直接关闭也要记账，否则年年重复弹）
+  markSeen()
   mm?.kill()
   mm = null
   wishTl?.kill()
