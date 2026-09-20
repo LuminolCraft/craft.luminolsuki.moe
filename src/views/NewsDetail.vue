@@ -94,7 +94,7 @@
 
     <!-- 未找到 -->
     <div v-else class="error-message">
-      <h3>{{ t('news.detail.error.title') }}</h3>
+      <h3>{{ t('news.detail.error.notFoundTitle') }}</h3>
       <p>{{ t('news.detail.error.notFound') }}</p>
       <router-link to="/News" class="back-to-news">{{ t('news.detail.backToList') }}</router-link>
     </div>

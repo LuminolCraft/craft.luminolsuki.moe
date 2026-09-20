@@ -461,7 +461,8 @@ export default {
       "error": {
         "title": "❌ 加载失败",
         "retry": "重试",
-        "notFound": "新闻未找到",
+        "notFound": "该新闻可能已被删除，或链接有误",
+        "notFoundTitle": "新闻不存在",
         "invalidId": "无效的新闻ID",
         "fetchFailed": "新闻加载失败: {error}"
       },
