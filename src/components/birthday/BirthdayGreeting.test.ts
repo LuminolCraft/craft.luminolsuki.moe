@@ -1,15 +1,15 @@
 /**
- * 生日祝福（1A）触发规则测试。
+ * 生日祝福（1A）触发规则 + 吹蜡烛交互测试。
  *
- * 覆盖「什么时候弹、什么时候不弹、今年是否只弹一次」这套判定，动效本身由 GSAP
- * 承担（jsdom 不做像素断言）：
- * - 命中「浏览器本地日期 = 生日 MM-DD」→ 弹一次，并在首次展示时写入去重 key；
- * - 同一年内再次进入（key 已存在）→ 不再弹；
- * - 生日不在今天 → 不弹、不写 key；
- * - 认证页（`route.meta.hideChrome`）→ 不弹。
+ * 覆盖：
+ * - 判定：命中「浏览器本地日期 = 生日 MM-DD」→ 弹一次并写入去重 key；
+ *   同年已弹过 / 生日不在今天 / 未填生日 / 认证页（`route.meta.hideChrome`）→ 均不弹；
+ * - 场景与交互：蛋糕有 3 根蜡烛；点「吹蜡烛」→ 三根全部熄灭、按钮切换为收下祝福、
+ *   心愿文案转为可见（动效本身由 GSAP 承担，jsdom 不做像素断言）。
  */
 import { afterEach, describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
+import { nextTick } from 'vue'
 import { createPinia, setActivePinia } from 'pinia'
 import { createI18n } from 'vue-i18n'
 import { createMemoryHistory, createRouter, type Router } from 'vue-router'
@@ -35,6 +35,8 @@ function makeUser(birthday: string | null): User {
     avatarKey: null,
     birthday,
     birthdaySelfEdited: false,
+    // 固定注册时间：一起走过多少天那行必须有确定值
+    createdAt: Date.UTC(today.getFullYear() - 1, 0, 1),
   }
 }
 
@@ -97,5 +99,48 @@ describe('BirthdayGreeting（1A 触发规则）', () => {
   it('认证页（hideChrome）→ 不弹且不写 key', async () => {
     expect(await mountGreeting(todayBirthday, '/login')).toBeNull()
     expect(localStorage.getItem(birthdayGreetingKey('user_test', today.getFullYear()))).toBeNull()
+  })
+})
+
+describe('BirthdayGreeting（场景与吹蜡烛交互）', () => {
+  it('渲染蛋糕与 3 根未熄灭的蜡烛，并带个人化「第 N 天」文案', async () => {
+    const overlay = await mountGreeting(todayBirthday)
+    expect(overlay?.querySelectorAll('.cake-candle')).toHaveLength(3)
+    expect(overlay?.querySelectorAll('.cake-candle.is-out')).toHaveLength(0)
+    expect(overlay?.querySelector('.bday-days')?.textContent).toContain('第')
+  })
+
+  it('点「吹蜡烛」→ 三根全灭 + 按钮切换为收下祝福 + 心愿文案已就位', async () => {
+    const overlay = await mountGreeting(todayBirthday)
+    const button = overlay?.querySelector<HTMLButtonElement>('.bday-btn')
+    expect(button?.textContent).toContain('吹蜡烛')
+
+    button?.click()
+    await nextTick()
+
+    expect(document.querySelectorAll('.cake-candle.is-out')).toHaveLength(3)
+    expect(document.querySelector('.bday-btn')?.textContent).toContain('收下祝福')
+    expect(document.querySelector('.bday-close')).not.toBeNull()
+    expect(document.querySelector('.bday-wish')?.textContent).toContain('愿望')
+  })
+
+  it('点单根烛火 → 只灭那一根，未全灭则不进入许愿阶段', async () => {
+    const overlay = await mountGreeting(todayBirthday)
+    overlay?.querySelector<HTMLButtonElement>('.cake-candle')?.click()
+    await nextTick()
+
+    expect(document.querySelectorAll('.cake-candle.is-out')).toHaveLength(1)
+    expect(document.querySelector('.bday-btn')?.textContent).toContain('吹蜡烛')
+  })
+
+  it('收下祝福 → 关闭遮罩并解除滚动锁', async () => {
+    const overlay = await mountGreeting(todayBirthday)
+    overlay?.querySelector<HTMLButtonElement>('.bday-btn')?.click()
+    await nextTick()
+    document.querySelector<HTMLButtonElement>('.bday-close')?.click()
+    await nextTick()
+
+    expect(document.querySelector('.bday-overlay')).toBeNull()
+    expect(document.body.style.overflow).toBe('')
   })
 })

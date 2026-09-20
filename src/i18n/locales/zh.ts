@@ -5,7 +5,13 @@ export default {
   },
   "birthday": {
     "title": "生日快乐！",
-    "body": "{name}，祝你生日快乐！愿新的一岁冒险顺利、收获满满。",
+    "body": "{name}，祝你生日快乐！",
+    "days": "今天是你加入 LuminolCraft 的第 {days} 天",
+    "blow": "吹蜡烛",
+    "blowCandle": "吹灭这根蜡烛",
+    "blowHint": "对着烛火许个愿，然后吹灭它们（点一下火苗也行）",
+    "wish": "烛火灭了，愿望已经出发——愿你想要的都拥有。",
+    "wishHint": "愿望已送达",
     "close": "收下祝福"
   },
   "auth": {
