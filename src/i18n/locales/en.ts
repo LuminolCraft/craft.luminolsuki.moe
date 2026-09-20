@@ -5,7 +5,13 @@ export default {
   },
   "birthday": {
     "title": "Happy Birthday!",
-    "body": "{name}, happy birthday! Wishing you great adventures and rich rewards in the year ahead.",
+    "body": "{name}, happy birthday!",
+    "days": "Today is day {days} of your journey on LuminolCraft",
+    "blow": "Blow out the candles",
+    "blowCandle": "Blow out this candle",
+    "blowHint": "Make a wish, then blow them out (clicking a flame works too)",
+    "wish": "The flames are out and your wish is on its way — may you get what you wish for.",
+    "wishHint": "Wish delivered",
     "close": "Accept wishes"
   },
   "auth": {
