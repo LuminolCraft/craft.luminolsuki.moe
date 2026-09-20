@@ -84,25 +84,7 @@ export function isBirthdayToday(birthday: string, localDate: Date): boolean {
   return effectiveMonthDay(birthday, localDate.getFullYear()) === monthDay
 }
 
-/**
- * 本地年份（用于「今年是否已弹过祝福」的存储 key）。
- *
- * 单独抽出便于测试替换，避免测试依赖真实时钟。
- */
-export function localYear(localDate: Date = new Date()): number {
-  return localDate.getFullYear()
-}
-
 /** `<input type="date">` 的展示值：`YYYY-MM-DD`（非法值回退为空串，避免渲染出乱码）。 */
 export function toDateInputValue(birthday: string | null | undefined): string {
   return isValidBirthday(birthday) ? (birthday as string) : ''
-}
-
-/**
- * 「今年已弹过祝福」的存储 key（按用户 + 本地年份隔离）。
- *
- * 只存 localStorage：不落 D1、不跨设备同步；清掉浏览器数据会再弹一次。
- */
-export function birthdayGreetingKey(userId: string, year: number): string {
-  return `birthday-greeting:${userId}:${year}`
 }

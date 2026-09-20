@@ -119,6 +119,17 @@ export const useNexusStore = defineStore('nexus', () => {
     return updated
   }
 
+  /**
+   * 领取「今年生日祝福」的展示名额（POST /me/birthday-greeting）。
+   *
+   * 「今天是否生日」由调用方按浏览器本地日期判定；本接口只做**服务端记账**
+   * （KV，key = 用户 + 站点年份），返回今年是否由本次展示——同一账号同年只有
+   * 第一次返回 true，换设备 / 换浏览器 / 清缓存拿到的都是 false。
+   */
+  async function claimBirthdayGreeting(): Promise<{ shouldShow: boolean }> {
+    return api.post<{ shouldShow: boolean }>('/me/birthday-greeting')
+  }
+
   /** 登出/清态时由 auth store 调用 */
   function reset() {
     minecraftAccounts.value = []
@@ -166,6 +177,7 @@ export const useNexusStore = defineStore('nexus', () => {
     removeAccountLink,
     fetchMyBans,
     updateMe,
+    claimBirthdayGreeting,
     adminForceUnbindMinecraft,
     adminChangeBirthday,
     reset,

@@ -7,11 +7,9 @@
 import { describe, expect, it } from 'vitest'
 import {
   BIRTHDAY_MIN_YEAR,
-  birthdayGreetingKey,
   effectiveMonthDay,
   isBirthdayToday,
   isValidBirthday,
-  localYear,
   normalizeBirthday,
   toDateInputValue,
 } from './birthday'
@@ -94,20 +92,10 @@ describe('isBirthdayToday：纯字符串比较（按浏览器本地日期）', (
 })
 
 describe('展示辅助', () => {
-  it('localYear 取本地年份', () => {
-    expect(localYear(new Date(2026, 0, 1))).toBe(2026)
-    expect(localYear(new Date(2026, 11, 31))).toBe(2026)
-  })
-
   it('toDateInputValue：非法/空值回退空串（input[type=date] 不吃乱码）', () => {
     expect(toDateInputValue('1999-12-31')).toBe('1999-12-31')
     expect(toDateInputValue(null)).toBe('')
     expect(toDateInputValue(undefined)).toBe('')
     expect(toDateInputValue('1999-12-32')).toBe('')
-  })
-
-  it('birthdayGreetingKey：按用户 + 年份隔离', () => {
-    expect(birthdayGreetingKey('user_abc', 2026)).toBe('birthday-greeting:user_abc:2026')
-    expect(birthdayGreetingKey('user_abc', 2026)).not.toBe(birthdayGreetingKey('user_abc', 2027))
   })
 })
