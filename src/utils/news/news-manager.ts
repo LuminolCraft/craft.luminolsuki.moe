@@ -1,8 +1,16 @@
 import debounce from 'lodash/debounce';
 import { marked } from 'marked';
 import { appConfig } from '@/config/app-config';
+import { API_BASE_URL } from '@/lib/api-base';
 import { NewsCacheDB, type CachedNewsItem } from '@/utils/news/news-cache';
 import { renderShortContent } from '@/utils/news/news-markdown';
+import {
+  type RemoteNewsBundle,
+  type RemoteNewsItem,
+  contentVersionKey,
+  planSync,
+  sourceFingerprintOf,
+} from '@/utils/news/news-sync';
 // renderShortContent(item)
 import type { NewsItem, CacheStatus, SyncResult } from '@/types/news';
 
@@ -48,8 +56,16 @@ export class NewsManager {
   hasUsableCache = false;
   isSyncing = false;
 
-  private readonly GITHUB_RAW_BASE = 'https://luminolcraft-news.pages.dev/';
-  private readonly GITEJSON_URL = 'https://luminolcraft-news.pages.dev/news.json';
+  /**
+   * 新闻远端 = Nexus 同源代理（`src/modules/news/news.service.ts`）：
+   * 一次请求拿到 manifest 指纹 + 全部条目（未降级时正文内联），
+   * 不再直连 luminolcraft-news.pages.dev / raw.githubusercontent.com。
+   */
+  private readonly NEWS_API_URL = `${API_BASE_URL}/api/v1/news`;
+  private readonly NEWS_ITEM_URL = (id: number): string => `${API_BASE_URL}/api/v1/news/${id}`;
+
+  /** 本地记录的远端 manifest 指纹（`meta.newsVersion`）；null = 尚未同步过。 */
+  private manifestVersion: string | null = null;
   private readonly SITE_DOMAIN =
     typeof window !== 'undefined' ? window.location.hostname || '' : '';
 
@@ -84,75 +100,6 @@ export class NewsManager {
     this.setupSmartRefresh();
   }
 
-  private async migrateLegacyCache(): Promise<void> {
-    const candidates: unknown[] = [];
-    const legacyKeys = ['news-full-cache', this.NEWS_STORAGE_KEY, 'news-cache'];
-
-    for (const key of legacyKeys) {
-      try {
-        const raw =
-          key === this.NEWS_STORAGE_KEY
-            ? sessionStorage.getItem(key)
-            : localStorage.getItem(key);
-
-        if (!raw) continue;
-        const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed)) candidates.push(...parsed);
-      } catch {
-        // 忽略损坏的旧缓存，不能影响正常启动。
-      }
-    }
-
-    if (candidates.length === 0) return;
-
-    const valid = candidates.filter((item): item is NewsItem =>
-      this.validateNewsData([item]),
-    );
-    if (valid.length === 0) return;
-
-    const deduped = new Map<number, NewsItem>();
-    for (const item of valid) {
-      deduped.set(item.id, item);
-    }
-
-    const now = Date.now();
-    const migrated: CachedNewsItem[] = Array.from(deduped.values()).map((item) => {
-      const fingerprint = this.getSourceFingerprint(item);
-      const contentVersion = this.getContentVersionKey(item);
-      return {
-        ...item,
-        cacheVersion: 1,
-        cachedAt: now,
-        sourceFingerprint: fingerprint,
-        contentFetchedVersion: item.markdownContent ? contentVersion : undefined,
-      };
-    });
-
-    await this.db.putArticles(migrated);
-    await this.db.setMeta('migratedLegacyCacheAt', now);
-
-    for (const key of [
-      'news-full-cache',
-      'news-full-cache-timestamp',
-      'news-cache',
-      'news-cache-timestamp',
-    ]) {
-      try {
-        localStorage.removeItem(key);
-      } catch {
-        // ignore
-      }
-    }
-
-    try {
-      sessionStorage.removeItem(this.NEWS_STORAGE_KEY);
-    } catch {
-      // ignore
-    }
-
-    this.debugLog(`♻️ 已迁移 ${migrated.length} 篇旧新闻缓存到 IndexedDB`);
-  }
-
   private async updateCacheStatusFromMeta(): Promise<void> {
     try {
       const lastSuccessfulSync = await this.db.getMeta<number>('lastSuccessfulSync');
@@ -162,6 +109,10 @@ export class NewsManager {
       const lastUpdate = this.cacheStatus.lastUpdate;
       this.cacheStatus.isStale =
         !lastUpdate || Date.now() - lastUpdate >= this.MIN_SYNC_INTERVAL;
+
+      // 远端 manifest 指纹（Nexus 代理给出）：与本地一致即可跳过整轮同步
+      const version = await this.db.getMeta<string>('newsVersion');
+      this.manifestVersion = typeof version === 'string' && version !== '' ? version : null;
     } catch (error) {
       this.debugLog('读取缓存状态失败:', error);
       this.cacheStatus.isStale = true;
@@ -170,14 +121,7 @@ export class NewsManager {
 
   private async restoreCache(): Promise<void> {
     try {
-      let cached = await this.db.getAllArticles();
-
-      // 第一次升级到新缓存架构时，尽量把旧 localStorage/sessionStorage 缓存迁移进 IndexedDB，
-      // 避免用户因为升级而再次下载所有旧新闻。
-      if (cached.length === 0) {
-        await this.migrateLegacyCache();
-        cached = await this.db.getAllArticles();
-      }
+      const cached = await this.db.getAllArticles();
 
       const valid = cached
         .filter((item) => this.validateCachedNewsItem(item))
@@ -364,91 +308,65 @@ export class NewsManager {
     try {
       this.debugLog(`🔄 开始增量同步 reason=${reason}, force=${force}`);
 
-      // cache:no-cache 允许浏览器复用 HTTP cache，同时向服务器验证资源是否更新。
-      // 不使用 no-store，因为那会主动绕过浏览器 HTTP 缓存。
-      const response = await this.safeFetch(this.GITEJSON_URL, {
+      // 同源 Nexus 代理：`cache: no-cache` 允许浏览器复用 HTTP cache 并回源校验，
+      // 同时带上本地 manifest 指纹（If-None-Match）→ 未变时服务端直接 304。
+      const headers: Record<string, string> = { Accept: 'application/json' };
+      if (this.manifestVersion) headers['If-None-Match'] = `"${this.manifestVersion}"`;
+      const response = await this.safeFetch(this.NEWS_API_URL, {
         cache: force ? 'reload' : 'no-cache',
-        headers: {
-          Accept: 'application/json',
-        },
+        headers,
       });
 
       if (response.status === 304) {
-        // 理论上 fetch 通常会由浏览器把 304 合并成 200；保留此分支以防代理层直接返回 304。
+        // 版本未变：不碰正文、不重写缓存，只刷新"最近成功时间"
         this.cacheStatus.lastUpdate = Date.now();
         this.cacheStatus.isStale = false;
         await this.db.setMeta('lastSuccessfulSync', this.cacheStatus.lastUpdate);
+        result.unchanged = this.allNewsWithContent.length;
         this.debugLog('✅ Manifest 304 Not Modified');
         return result;
       }
 
       if (!response.ok) {
-        throw new Error(`news.json 请求失败: ${response.status} ${response.statusText}`);
+        throw new Error(`新闻接口请求失败: ${response.status} ${response.statusText}`);
       }
 
-      const remoteData: unknown = await response.json();
-      if (!this.validateNewsData(remoteData)) {
-        throw new Error('news.json 数据验证失败');
+      const payload = (await response.json()) as { data?: RemoteNewsBundle };
+      const remote = payload?.data;
+      if (!remote || !Array.isArray(remote.items) || typeof remote.version !== 'string') {
+        throw new Error('新闻接口数据验证失败');
       }
+
+      // 逐条校验：坏条目跳过而不是整组拒绝（服务端已过滤一遍，这里兜底）
+      const remoteItems = this.filterValidNewsItems(remote.items);
+      const bundle: RemoteNewsBundle = { ...remote, items: remoteItems };
 
       const cachedItems = await this.db.getAllArticles();
       const cachedMap = new Map<number, CachedNewsItem>(
         cachedItems.map((item) => [item.id, item]),
       );
-      const remoteMap = new Map<number, NewsItem>(
-        remoteData.map((item) => [item.id, item]),
-      );
+      const plan = planSync({
+        localVersion: this.manifestVersion,
+        local: cachedItems,
+        remote: bundle,
+      });
 
-      // 1) 删除服务器已经不存在的新闻
-      const deletedIds: number[] = [];
-      for (const cached of cachedItems) {
-        if (!remoteMap.has(cached.id)) {
-          deletedIds.push(cached.id);
-        }
-      }
-
-      if (deletedIds.length > 0) {
-        await this.db.deleteArticles(deletedIds);
-        result.deleted = deletedIds.length;
+      // 1) 删除远端已经不存在的新闻
+      if (plan.remove.length > 0) {
+        await this.db.deleteArticles(plan.remove);
+        result.deleted = plan.remove.length;
         result.changed = true;
       }
+      result.unchanged = plan.unchanged;
 
-      // 2) 区分“索引/元数据变化”和“正文变化”。
-      // 只有正文版本变化时才请求 Markdown；标题、标签、置顶等变化只写入本地数据库。
-      const candidates: Array<{
-        remote: NewsItem;
-        cached?: CachedNewsItem;
-        contentNeedsUpdate: boolean;
-      }> = [];
-
-      for (const remote of remoteData) {
-        const cached = cachedMap.get(remote.id);
-
-        if (!cached) {
-          candidates.push({
-            remote,
-            contentNeedsUpdate: true,
-          });
-          continue;
-        }
-
-        const manifestFingerprint = this.getSourceFingerprint(remote);
-        const manifestChanged = manifestFingerprint !== cached.sourceFingerprint;
-        const contentVersion = this.getContentVersionKey(remote);
-        const contentNeedsUpdate =
-          !cached.markdownContent || cached.contentFetchedVersion !== contentVersion;
-
-        if (!manifestChanged && !contentNeedsUpdate) {
-          result.unchanged++;
-          continue;
-        }
-
-        candidates.push({
-          remote,
-          cached,
-          contentNeedsUpdate,
-        });
-      }
+      // 2) 只处理"元数据或正文版本变化"的条目；正文优先用响应内联内容，
+      //    服务端降级（bodiesOmitted）时才按条走 GET /api/v1/news/:id。
+      const needBody = new Set(plan.needBody);
+      const candidates = plan.upsert.map((item) => ({
+        remote: item,
+        cached: cachedMap.get(item.id),
+        needBody: needBody.has(item.id),
+      }));
 
       if (candidates.length > 0) {
         const concurrency = Math.max(
@@ -465,16 +383,15 @@ export class NewsManager {
             const candidate = candidates[index];
             if (!candidate) return;
 
-            const { remote, cached, contentNeedsUpdate } = candidate;
             const resultItem = await this.updateOneArticle(
-              remote,
-              cached,
-              contentNeedsUpdate,
+              candidate.remote,
+              candidate.cached,
+              candidate.needBody,
             );
 
             if (resultItem.updated) {
               result.updated++;
-              if (!cached) result.added++;
+              if (!candidate.cached) result.added++;
               result.changed = true;
             }
 
@@ -500,13 +417,9 @@ export class NewsManager {
       this.cacheStatus.isStale = false;
       await this.db.setMeta('lastSuccessfulSync', this.cacheStatus.lastUpdate);
 
-      // 保存 manifest 的 HTTP 元数据，方便排障/诊断；请求本身仍交给浏览器 HTTP cache 管理。
-      await this.db.setMeta('manifestETag', response.headers.get('ETag'));
-      await this.db.setMeta(
-        'manifestLastModified',
-        response.headers.get('Last-Modified'),
-      );
-      await this.db.setMeta('manifestSyncedAt', this.cacheStatus.lastUpdate);
+      // 记录远端 manifest 指纹：下次同步用它做 304 / 整体跳过判定
+      this.manifestVersion = bundle.version;
+      await this.db.setMeta('newsVersion', bundle.version);
 
       this.filteredNews = null;
       this.ensureCurrentPageValid();
@@ -531,48 +444,34 @@ export class NewsManager {
     }
   }
 
+  /**
+   * 写入单篇：正文优先用同步响应里的内联内容（服务端未降级时）；
+   * 仅当 `needBody`（服务端 bodiesOmitted，或本地还没有正文）时才按条请求
+   * `GET /api/v1/news/:id`。
+   */
   private async updateOneArticle(
-    remote: NewsItem,
+    remote: RemoteNewsItem,
     cached: CachedNewsItem | undefined,
-    contentNeedsUpdate: boolean,
+    needBody: boolean,
   ): Promise<{ updated: boolean; article: CachedNewsItem | null }> {
-    let markdownContent = cached?.markdownContent;
+    let markdownContent = remote.markdownContent ?? cached?.markdownContent;
     let contentFetchedVersion = cached?.contentFetchedVersion;
-    const sourceFingerprint = this.getSourceFingerprint(remote);
-    const contentVersion = this.getContentVersionKey(remote);
+    const sourceFingerprint = sourceFingerprintOf(remote);
+    const contentVersion = contentVersionKey(remote);
 
-    // 只有确定正文版本发生变化时才访问 Markdown。
-    if (contentNeedsUpdate) {
-      const markdownUrl = this.convertGitHubUrlToCloudflare(remote.content);
-
-      if (!markdownUrl) {
-        this.debugLog(`⚠️ 新闻 ${remote.id} content URL 无法转换`);
-      } else {
-        try {
-          const response = await this.safeFetch(markdownUrl, {
-            cache: 'no-cache',
-            headers: {
-              Accept: 'text/markdown,text/plain;q=0.9,*/*;q=0.8',
-            },
-          });
-
-          if (!response.ok) {
-            throw new Error(`Markdown ${response.status} ${response.statusText}`);
-          }
-
-          markdownContent = await response.text();
-          contentFetchedVersion = contentVersion;
-        } catch (error) {
-          this.debugLog(
-            `⚠️ 新闻 ${remote.id} 正文拉取失败，保留旧正文，下一次继续重试:`,
-            error,
-          );
-        }
+    if (remote.markdownContent != null) {
+      // 内联正文：直接落库，无需额外请求
+      contentFetchedVersion = contentVersion;
+    } else if (needBody && !markdownContent) {
+      const fetched = await this.fetchArticleBody(remote.id);
+      if (fetched !== null) {
+        markdownContent = fetched;
+        contentFetchedVersion = contentVersion;
       }
     }
 
     const article: CachedNewsItem = {
-      ...remote,
+      ...this.toNewsItem(remote),
       markdownContent,
       cacheVersion: 1,
       cachedAt: Date.now(),
@@ -586,33 +485,47 @@ export class NewsManager {
     };
   }
 
-  private getContentVersionKey(item: NewsItem): string {
-    if (item.contentVersion) return `contentVersion:${item.contentVersion}`;
-    if (item.updatedAt) return `updatedAt:${item.updatedAt}`;
-    return `contentUrl:${item.content}`;
+  /** 远端条目 → 本地 `NewsItem`（`content` 缺失时落空串，保持既有类型契约）。 */
+  private toNewsItem(remote: RemoteNewsItem): NewsItem {
+    return {
+      id: remote.id,
+      title: remote.title,
+      content: remote.content ?? '',
+      markdownContent: remote.markdownContent ?? undefined,
+      date: remote.date,
+      tags: remote.tags ?? [],
+      image: remote.image ?? undefined,
+      additionalImages: remote.additionalImages ?? undefined,
+      pinned: remote.pinned ?? undefined,
+      updatedAt: remote.updatedAt ?? undefined,
+      contentVersion: remote.contentVersion ?? undefined,
+      summary: remote.summary ?? undefined,
+    };
   }
 
-  /**
-   * 注意：没有 contentVersion/updatedAt 时，这个 fingerprint 无法检测
-   * “同一个 content URL 的 Markdown 被原地修改”。
-   * 因此生产环境强烈建议服务器至少提供 updatedAt，最好提供 contentVersion/hash。
-   */
-  private getSourceFingerprint(item: NewsItem): string {
-    const normalized = {
-      id: item.id,
-      title: item.title,
-      content: item.content,
-      date: item.date,
-      tags: [...(item.tags || [])],
-      image: item.image ?? '',
-      additionalImages: [...(item.additionalImages || [])],
-      pinned: Boolean(item.pinned),
-      updatedAt: item.updatedAt ?? '',
-      contentVersion: item.contentVersion ?? '',
-      summary: item.summary ?? '',
-    };
-
-    return JSON.stringify(normalized);
+  /** 按条拉正文（同源 `GET /api/v1/news/:id`）；失败返回 null，保留旧正文下次再试。 */
+  private async fetchArticleBody(id: number): Promise<string | null> {
+    try {
+      const response = await this.safeFetch(this.NEWS_ITEM_URL(id), {
+        cache: 'no-cache',
+        headers: { Accept: 'application/json' },
+      });
+      if (!response.ok) {
+        throw new Error(`news item ${response.status} ${response.statusText}`);
+      }
+      const payload = (await response.json()) as {
+        data?: { markdownContent?: string | null };
+      };
+      const markdown = payload?.data?.markdownContent;
+      if (typeof markdown !== 'string') {
+        this.debugLog(`⚠️ 新闻 ${id} 正文缺失`);
+        return null;
+      }
+      return markdown;
+    } catch (error) {
+      this.debugLog(`⚠️ 新闻 ${id} 正文拉取失败，保留旧正文，下一次继续重试:`, error);
+      return null;
+    }
   }
 
   /** 强制刷新：不清缓存，只立即验证 manifest。 */
@@ -649,14 +562,20 @@ export class NewsManager {
     this.hasUsableCache = false;
   }
 
-  validateNewsData(data: unknown): data is NewsItem[] {
-    if (!Array.isArray(data)) return false;
-    if (data.length > 1000) return false;
+  /**
+   * 逐条校验远端条目（**坏条跳过**，不再整组拒绝）。
+   *
+   * 旧的 `validateNewsData` 是"任一条不合法 → 全量拒绝"，一条脏数据就能把
+   * 整个新闻页清空（见 BACKEND-PRIVATE.md 4.1 记录的缺陷）；服务端
+   * `src/modules/news/news.schema.ts` 已先过滤一遍，这里是前端兜底。
+   */
+  filterValidNewsItems(data: unknown[]): RemoteNewsItem[] {
+    const valid: RemoteNewsItem[] = [];
 
-    for (const rawItem of data) {
-      if (!rawItem || typeof rawItem !== 'object') return false;
+    for (const rawItem of data.slice(0, 1000)) {
+      if (!rawItem || typeof rawItem !== 'object') continue;
 
-      const item = rawItem as Partial<NewsItem>;
+      const item = rawItem as Partial<RemoteNewsItem>;
 
       if (
         typeof item.id !== 'number' ||
@@ -665,35 +584,35 @@ export class NewsManager {
         typeof item.title !== 'string' ||
         item.title.length === 0 ||
         item.title.length > 200 ||
-        typeof item.content !== 'string' ||
-        item.content.length === 0 ||
-        item.content.length > 2000 ||
         typeof item.date !== 'string' ||
-        !Array.isArray(item.tags) ||
-        item.tags.some((tag: unknown) => typeof tag !== 'string')
+        (item.tags !== undefined && item.tags !== null && !Array.isArray(item.tags)) ||
+        (Array.isArray(item.tags) && item.tags.some((tag) => typeof tag !== 'string'))
       ) {
-        return false;
+        this.debugLog(`⚠️ 跳过形状非法的新闻条目 id=${String(item.id)}`);
+        continue;
       }
 
       if (
         typeof item.markdownContent === 'string' &&
         item.markdownContent.length > 100_000
       ) {
-        return false;
+        this.debugLog(`⚠️ 跳过正文超限的新闻条目 id=${item.id}`);
+        continue;
       }
 
-      if (item.updatedAt !== undefined && typeof item.updatedAt !== 'string') return false;
-      if (item.contentVersion !== undefined && typeof item.contentVersion !== 'string') {
-        return false;
-      }
-      if (item.summary !== undefined && typeof item.summary !== 'string') return false;
+      if (item.updatedAt != null && typeof item.updatedAt !== 'string') continue;
+      if (item.contentVersion != null && typeof item.contentVersion !== 'string') continue;
+      if (item.summary != null && typeof item.summary !== 'string') continue;
 
       if (this.containsXSS(item.title) || this.containsXSS(item.summary ?? '')) {
-        return false;
+        this.debugLog(`⚠️ 跳过含 XSS 特征的新闻条目 id=${item.id}`);
+        continue;
       }
+
+      valid.push(item as RemoteNewsItem);
     }
 
-    return true;
+    return valid;
   }
 
   containsXSS(text: string): boolean {
@@ -852,31 +771,6 @@ export class NewsManager {
     }
   }
 
-  convertGitHubUrlToCloudflare(contentUrl: string): string | null {
-    if (!contentUrl || typeof contentUrl !== 'string') return null;
-
-    if (!contentUrl.startsWith('http')) {
-      return `${this.GITHUB_RAW_BASE}${contentUrl.replace(/^\/+/, '')}`;
-    }
-
-    if (contentUrl.includes('raw.githubusercontent.com/LuminolCraft/news.json')) {
-      const marker = 'raw.githubusercontent.com/LuminolCraft/news.json';
-      const path = contentUrl.split(marker)[1];
-
-      if (!path) return contentUrl;
-
-      const cleanPath = path.replace('/refs/heads/main', '').replace(/^\/+/, '');
-      return `${this.GITHUB_RAW_BASE}${cleanPath}`;
-    }
-
-    if (contentUrl.includes('raw.githubusercontent.com/LuminolMC/Luminol')) {
-      this.debugLog('检测到 LuminolMC 仓库 URL，跳过加载:', contentUrl);
-      return null;
-    }
-
-    return contentUrl;
-  }
-
   async safeFetch(url: string, options: RequestInit = {}): Promise<Response> {
     const controller = new AbortController();
     const timeoutId = window.setTimeout(() => controller.abort(), this.REQUEST_TIMEOUT);
@@ -1031,37 +925,37 @@ export class NewsManager {
 
     if (item.markdownContent) return item;
 
-    const markdownUrl = this.convertGitHubUrlToCloudflare(item.content);
-    if (!markdownUrl) {
-      item.markdownContent = '内容不可用';
+    // 正文按条取：同源 `GET /api/v1/news/:id`（服务端聚合未内联时才走到这里）
+    const markdownContent = await this.fetchArticleBody(id);
+    if (markdownContent === null) {
+      item.markdownContent = item.markdownContent || '内容加载失败';
       return item;
     }
 
-    try {
-      const response = await this.safeFetch(markdownUrl, {
-        cache: 'no-cache',
-        headers: { Accept: 'text/markdown,text/plain;q=0.9,*/*;q=0.8' },
-      });
-      if (!response.ok) throw new Error(`Markdown ${response.status}`);
+    item.markdownContent = markdownContent || '暂无内容';
+    const remote: RemoteNewsItem = {
+      id: item.id,
+      title: item.title,
+      date: item.date,
+      tags: item.tags,
+      image: item.image ?? null,
+      additionalImages: item.additionalImages ?? null,
+      pinned: item.pinned ?? null,
+      summary: item.summary ?? null,
+      updatedAt: item.updatedAt ?? null,
+      content: item.content,
+      contentVersion: item.contentVersion ?? null,
+    };
+    await this.db.putArticle({
+      ...item,
+      cacheVersion: 1,
+      cachedAt: Date.now(),
+      sourceFingerprint: sourceFingerprintOf(remote),
+      contentFetchedVersion: contentVersionKey(remote),
+    } as CachedNewsItem);
 
-      const markdownContent = await response.text();
-      item.markdownContent = markdownContent || '暂无内容';
-
-      const contentVersion = this.getContentVersionKey(item);
-      await this.db.putArticle({
-        ...item,
-        cacheVersion: 1,
-        cachedAt: Date.now(),
-        sourceFingerprint: this.getSourceFingerprint(item),
-        contentFetchedVersion: contentVersion,
-      } as CachedNewsItem);
-
-      const idx = this.allNewsWithContent.findIndex((n) => n.id === id);
-      if (idx >= 0) this.allNewsWithContent[idx] = { ...item };
-    } catch (e) {
-      this.debugLog(`详情正文拉取失败 id=${id}`, e);
-      item.markdownContent = item.markdownContent || '内容加载失败';
-    }
+    const idx = this.allNewsWithContent.findIndex((n) => n.id === id);
+    if (idx >= 0) this.allNewsWithContent[idx] = { ...item };
 
     return item;
   }
