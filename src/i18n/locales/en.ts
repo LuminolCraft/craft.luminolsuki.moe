@@ -461,7 +461,8 @@ export default {
       "error": {
         "title": "❌ Failed to load",
         "retry": "Retry",
-        "notFound": "News not found",
+        "notFound": "This item may have been deleted, or the link is incorrect.",
+        "notFoundTitle": "News not found",
         "invalidId": "Invalid news ID",
         "fetchFailed": "Failed to load news: {error}"
       },
