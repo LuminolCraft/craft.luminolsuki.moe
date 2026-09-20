@@ -12,6 +12,10 @@ export interface User {
   email: string
   emailVerified: boolean
   avatarKey: string | null
+  /** 生日（`YYYY-MM-DD`，可空；纯日期无时区，规则见 @/lib/birthday） */
+  birthday: string | null
+  /** 是否已用掉唯一一次自助修改生日的机会（用后仅管理员可改） */
+  birthdaySelfEdited: boolean
   createdAt?: number
 }
 
@@ -51,6 +55,8 @@ export type ApiErrorCode =
   | 'USER_ALREADY_EXISTS'
   | 'INVALID_PASSWORD'
   | 'USER_NOT_FOUND'
+  /** 生日只能自行修改一次，之后再改需联系管理员（PATCH /me 403） */
+  | 'BIRTHDAY_LOCKED'
   // OAuth
   | 'OAUTH_PROVIDER_UNSUPPORTED'
   | 'OAUTH_CALLBACK_FAILED'

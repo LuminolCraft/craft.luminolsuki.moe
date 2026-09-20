@@ -15,6 +15,13 @@
               {{ user.emailVerified ? t('settings.profile.emailVerified') : t('settings.profile.emailUnverified') }}
             </span>
           </p>
+          <!-- 生日：仅本人与管理端可见；已用掉自助修改机会时标注（管理员仍可改） -->
+          <p class="detail-birthday">
+            {{ t('admin.userDetail.birthdayLabel') }}：{{ user.birthday || '—' }}
+            <span v-if="user.birthday && user.birthdaySelfEdited" class="birthday-locked-tag">
+              {{ t('admin.userDetail.birthdaySelfEdited') }}
+            </span>
+          </p>
         </div>
       </header>
 
@@ -137,6 +144,10 @@
           <button type="button" class="btn" :disabled="sendingInAppWarning" @click="openInAppWarningModal">
             {{ t('admin.userDetail.inAppWarning') }}
           </button>
+          <!-- 修改生日：PATCH /admin/users/:id/birthday，可改可清空，不消耗用户自改机会 -->
+          <button type="button" class="btn" :disabled="savingBirthday" @click="openBirthdayModal">
+            {{ t('admin.userDetail.birthdayTitle') }}
+          </button>
           <!-- 契约：删除仅 owner 可用（后端对非 owner 403），镜像上方 owner-only 角色判断 -->
           <button
             v-if="authz.hasRole('owner')"
@@ -151,6 +162,7 @@
         <p v-if="usernameSuccess" class="form-success" role="status">{{ t('admin.userDetail.usernameSent') }}</p>
         <p v-if="emailSuccess" class="form-success" role="status">{{ t('admin.userDetail.emailSent') }}</p>
         <p v-if="inAppWarningSuccess" class="form-success" role="status">{{ t('admin.userDetail.inAppWarningSent') }}</p>
+        <p v-if="birthdaySuccess" class="form-success" role="status">{{ t('admin.userDetail.birthdaySaved') }}</p>
       </section>
     </template>
 
@@ -187,6 +199,40 @@
           </button>
         </div>
         <p v-if="usernameError" class="form-error" role="alert">{{ usernameError }}</p>
+      </div>
+    </div>
+
+    <!-- 修改生日弹窗：admin/owner 可改可清空，**不消耗也不重置**用户那一次自改机会 -->
+    <div v-if="birthdayModalOpen" class="modal-scrim" @click.self="closeBirthdayModal">
+      <div class="modal" role="dialog" aria-modal="true">
+        <h2 class="modal-title">{{ t('admin.userDetail.birthdayTitle') }}</h2>
+        <p class="modal-body">{{ t('admin.userDetail.birthdayBody') }}</p>
+        <label class="field">
+          <span class="label">{{ t('admin.userDetail.birthdayFieldLabel') }}</span>
+          <input v-model="birthdayInput" class="input" type="date" :disabled="savingBirthday" />
+        </label>
+        <div class="modal-actions">
+          <button type="button" class="btn ghost" :disabled="savingBirthday" @click="closeBirthdayModal">
+            {{ t('admin.common.cancel') }}
+          </button>
+          <button
+            type="button"
+            class="btn danger"
+            :disabled="savingBirthday || !user?.birthday"
+            @click="onClearBirthday"
+          >
+            {{ t('admin.userDetail.birthdayClear') }}
+          </button>
+          <button
+            type="button"
+            class="btn"
+            :disabled="savingBirthday || !birthdayInput"
+            @click="onSaveBirthday"
+          >
+            {{ savingBirthday ? t('admin.common.saving') : t('admin.common.confirm') }}
+          </button>
+        </div>
+        <p v-if="birthdayError" class="form-error" role="alert">{{ birthdayError }}</p>
       </div>
     </div>
 
@@ -331,6 +377,7 @@ import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import UserAvatar from '@/components/UserAvatar.vue'
 import { api, isAppError } from '@/lib/api'
+import { normalizeBirthday, toDateInputValue } from '@/lib/birthday'
 import { checkUsernameReserved } from '@/lib/reserved-username'
 import { cleanUsernameInput, validateUsername as checkUsernameFormat } from '@/lib/username'
 import { mcAvatarUrl } from '@/lib/minecraft'
@@ -559,6 +606,55 @@ async function onChangeUsername() {
   }
 }
 
+// ---------- 修改生日（PATCH /admin/users/:id/birthday，规则见 @/lib/birthday） ----------
+const birthdayModalOpen = ref(false)
+const savingBirthday = ref(false)
+const birthdaySuccess = ref(false)
+const birthdayInput = ref('')
+const birthdayError = ref('')
+
+function openBirthdayModal() {
+  birthdaySuccess.value = false
+  birthdayError.value = ''
+  birthdayInput.value = toDateInputValue(user.value?.birthday)
+  birthdayModalOpen.value = true
+}
+
+function closeBirthdayModal() {
+  birthdayModalOpen.value = false
+  birthdayError.value = ''
+}
+
+/** 提交生日：`null` = 清空；非法格式前端先拦（站点时区上界仍由后端判） */
+async function submitBirthday(birthday: string | null) {
+  if (!user.value) return
+  birthdayError.value = ''
+  savingBirthday.value = true
+  try {
+    await nexus.adminChangeBirthday(user.value.id, birthday)
+    birthdaySuccess.value = true
+    birthdayModalOpen.value = false
+    await refreshUser()
+  } catch (e) {
+    birthdayError.value = errorText(e)
+  } finally {
+    savingBirthday.value = false
+  }
+}
+
+async function onSaveBirthday() {
+  const normalized = normalizeBirthday(birthdayInput.value)
+  if (!normalized) {
+    birthdayError.value = t('admin.userDetail.errBirthdayFormat')
+    return
+  }
+  await submitBirthday(normalized)
+}
+
+async function onClearBirthday() {
+  await submitBirthday(null)
+}
+
 // ---------- 发送邮件（POST /admin/users/:id/email，主题 1-120 字、正文 1-2000 字） ----------
 const EMAIL_SUBJECT_MAX = 120
 const EMAIL_BODY_MAX = 2000
@@ -757,6 +853,23 @@ onMounted(async () => {
 .email-badge.verified {
   color: var(--primary-color);
   border-color: color-mix(in srgb, var(--primary-color) 40%, transparent);
+}
+
+/* 生日行：纯日期展示 + 自改机会已用标记（管理员仍可改） */
+.detail-birthday {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  margin: 0.35rem 0 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.birthday-locked-tag {
+  padding: 0.1rem 0.45rem;
+  border-radius: 99px;
+  border: 1px solid var(--border-color);
+  font-size: 0.7rem;
 }
 
 .detail-section {

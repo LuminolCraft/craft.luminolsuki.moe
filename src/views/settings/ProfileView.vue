@@ -66,6 +66,29 @@
           </div>
         </div>
 
+        <!-- 生日：只能自行修改一次（改过即锁定，之后需联系管理员）；不设 max（同注册页理由） -->
+        <div class="profile-field">
+          <label class="profile-label" for="profile-birthday">
+            {{ t('settings.profile.birthdayLabel') }}
+          </label>
+          <input
+            id="profile-birthday"
+            v-model="birthday"
+            class="profile-input"
+            type="date"
+            autocomplete="bday"
+            :disabled="birthdayLocked"
+            aria-describedby="profile-birthday-hint"
+          />
+          <p id="profile-birthday-hint" class="profile-hint">
+            {{
+              birthdayLocked
+                ? t('settings.profile.birthdayLockedHint')
+                : t('settings.profile.birthdayHint')
+            }}
+          </p>
+        </div>
+
         <div class="profile-actions">
           <button type="submit" class="profile-save" :disabled="saving || !dirty">
             {{ saving ? t('settings.profile.saving') : t('settings.profile.save') }}
@@ -86,6 +109,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useNexusStore } from '@/stores/nexus'
 import { useGsap } from '@/composables/useGsap'
 import { isAppError } from '@/lib/api'
+import { normalizeBirthday, toDateInputValue } from '@/lib/birthday'
 import { checkUsernameReserved } from '@/lib/reserved-username'
 import { cleanUsernameInput, validateUsername } from '@/lib/username'
 
@@ -100,12 +124,28 @@ const myBans = computed(() => nexus.myBans)
 // ---------- 表单 ----------
 const username = ref(auth.me?.username ?? '')
 const email = ref(auth.me?.email ?? '')
+const birthday = ref(toDateInputValue(auth.me?.birthday))
 const saving = ref(false)
 const formError = ref('')
 const savedMessage = ref('')
 
+/** 生日自助修改机会是否已用掉（用掉后输入框锁定，只能找管理员改） */
+const birthdayLocked = computed(() => !!auth.me?.birthdaySelfEdited)
+
+/** 生日当前值（后端口径的 `YYYY-MM-DD` 或 null） */
+const currentBirthday = computed(() => auth.me?.birthday ?? null)
+
+/** 表单里生日归一化后的值：空串 = 清空（null），非法 = null 且由提交前校验拦下 */
+const nextBirthday = computed<string | null>(() => {
+  if (birthday.value === '') return null
+  return normalizeBirthday(birthday.value)
+})
+
 const dirty = computed(
-  () => username.value !== (auth.me?.username ?? '') || email.value !== (auth.me?.email ?? ''),
+  () =>
+    username.value !== (auth.me?.username ?? '') ||
+    email.value !== (auth.me?.email ?? '') ||
+    nextBirthday.value !== currentBirthday.value,
 )
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -117,6 +157,7 @@ function errorText(code: string): string {
     USERNAME_RESERVED: 'settings.profile.errUsernameReserved',
     EMAIL_ALREADY_USED: 'settings.profile.errEmailUsed',
     EMAIL_INVALID: 'settings.profile.errEmailInvalid',
+    BIRTHDAY_LOCKED: 'settings.profile.errBirthdayLocked',
     VALIDATION_ERROR: 'settings.profile.errValidation',
     RATE_LIMITED: 'settings.profile.errRateLimited',
     NETWORK_ERROR: 'settings.profile.errNetwork',
@@ -146,21 +187,36 @@ async function onSave() {
     formError.value = t('settings.profile.errEmailInvalid')
     return
   }
+  // 生日：非空但过不了共享规则（格式/日历/下限）→ 前端拦下；上界仍由后端判
+  if (birthday.value !== '' && nextBirthday.value === null) {
+    formError.value = t('settings.profile.errBirthdayInvalid')
+    return
+  }
+  if (birthdayLocked.value && nextBirthday.value !== currentBirthday.value) {
+    formError.value = t('settings.profile.errBirthdayLocked')
+    return
+  }
 
-  const payload: { username?: string; email?: string } = {}
+  const payload: { username?: string; email?: string; birthday?: string | null } = {}
   if (nextUsername !== auth.me?.username) payload.username = nextUsername
   if (nextEmail !== auth.me?.email) payload.email = nextEmail
+  // 生日同值不提交：后端同值是无操作，但也不该让「保存」按钮亮着却什么都不做
+  if (nextBirthday.value !== currentBirthday.value) payload.birthday = nextBirthday.value
   if (Object.keys(payload).length === 0) return
 
   saving.value = true
   try {
     const updated = await nexus.updateMe(payload)
     const emailChanged = payload.email !== undefined
+    const birthdayChanged = payload.birthday !== undefined
     savedMessage.value = emailChanged
       ? t('settings.profile.savedReverify')
-      : t('settings.profile.saved')
-    // 邮箱变更后端会重置验证状态
-    if (emailChanged) auth.me = updated
+      : birthdayChanged
+        ? t('settings.profile.savedBirthday')
+        : t('settings.profile.saved')
+    // 邮箱变更后端会重置验证状态；生日变更后端会把自改机会置位（输入框随即锁定）
+    if (emailChanged || birthdayChanged) auth.me = updated
+    if (birthdayChanged) birthday.value = toDateInputValue(updated.birthday)
   } catch (e) {
     if (isAppError(e)) formError.value = errorText(e.code)
     else formError.value = t('settings.profile.errGeneric')
@@ -337,6 +393,12 @@ onMounted(async () => {
 .profile-input:focus-visible {
   outline: 2px solid var(--focus-ring-color, var(--vercel-focus-blue));
   outline-offset: 2px;
+}
+
+/* 生日自改机会用掉后锁定：视觉上明确不可编辑（后端 403 BIRTHDAY_LOCKED 兜底） */
+.profile-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .profile-hint {

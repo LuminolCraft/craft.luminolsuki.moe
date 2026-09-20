@@ -140,6 +140,10 @@ export interface AdminUserListItem {
   email?: string
   emailVerified?: boolean
   avatarKey?: string | null
+  /** 生日（`YYYY-MM-DD`，可空；仅本人与管理端可见） */
+  birthday?: string | null
+  /** 是否已用掉唯一一次自助修改生日的机会 */
+  birthdaySelfEdited?: boolean
   createdAt?: number
   roles?: string[]
 }
