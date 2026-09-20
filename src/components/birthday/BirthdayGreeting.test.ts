@@ -5,6 +5,7 @@
  * - 判定：命中「浏览器本地日期 = 生日 MM-DD」→ 弹一次；记账延后到用户真正
  *   收下祝福（吹完蜡烛 / 点关闭）时才写去重 key；
  *   同年已弹过 / 生日不在今天 / 未填生日 / 认证页（`route.meta.hideChrome`）→ 均不弹；
+ * - 预览：`?birthday=1|preview|true` 忽略日期与去重强制展示，且不记账；
  * - 场景与交互：蛋糕有 3 根蜡烛；点「吹蜡烛」→ 三根全部熄灭、按钮切换为收下祝福、
  *   心愿文案转为可见（动效本身由 GSAP 承担，jsdom 不做像素断言）。
  */
@@ -41,7 +42,7 @@ function makeUser(birthday: string | null): User {
   }
 }
 
-async function makeRouter(path: string): Promise<Router> {
+async function makeRouter(path: string, query: Record<string, string> = {}): Promise<Router> {
   const router = createRouter({
     history: createMemoryHistory(),
     routes: [
@@ -49,7 +50,7 @@ async function makeRouter(path: string): Promise<Router> {
       { path: '/login', component: { template: '<div />' }, meta: { hideChrome: true } },
     ],
   })
-  await router.push(path)
+  await router.push({ path, query })
   await router.isReady()
   return router
 }
@@ -57,11 +58,15 @@ async function makeRouter(path: string): Promise<Router> {
 const i18n = createI18n({ legacy: false, locale: 'zh', messages: { zh } })
 
 /** 挂载组件（Teleport 到 body，故断言查 document 而非 wrapper.html） */
-async function mountGreeting(birthday: string | null, path = '/') {
+async function mountGreeting(
+  birthday: string | null,
+  path = '/',
+  query: Record<string, string> = {},
+) {
   const pinia = createPinia()
   setActivePinia(pinia)
   useAuthStore().me = makeUser(birthday)
-  const router = await makeRouter(path)
+  const router = await makeRouter(path, query)
   mount(BirthdayGreeting, {
     attachTo: document.body,
     global: { plugins: [pinia, i18n, router] },
@@ -109,6 +114,23 @@ describe('BirthdayGreeting（1A 触发规则）', () => {
 
   it('认证页（hideChrome）→ 不弹且不写 key', async () => {
     expect(await mountGreeting(todayBirthday, '/login')).toBeNull()
+    expect(localStorage.getItem(birthdayGreetingKey('user_test', today.getFullYear()))).toBeNull()
+  })
+
+  it('预览 ?birthday=1 → 非今天生日也弹，且同年已弹过也弹', async () => {
+    localStorage.setItem(birthdayGreetingKey('user_test', today.getFullYear()), '1')
+    const overlay = await mountGreeting(otherBirthday, '/', { birthday: '1' })
+    expect(overlay).not.toBeNull()
+    expect(overlay?.textContent).toContain('生日快乐')
+  })
+
+  it('预览模式不记账：关闭预览不写 key（真实那次祝福仍会弹）', async () => {
+    const overlay = await mountGreeting(otherBirthday, '/', { birthday: 'preview' })
+    overlay?.querySelector<HTMLButtonElement>('.bday-btn')?.click()
+    await nextTick()
+    document.querySelector<HTMLButtonElement>('.bday-close')?.click()
+    await nextTick()
+
     expect(localStorage.getItem(birthdayGreetingKey('user_test', today.getFullYear()))).toBeNull()
   })
 })
