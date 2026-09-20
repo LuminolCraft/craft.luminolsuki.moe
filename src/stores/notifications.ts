@@ -46,10 +46,24 @@ interface WsNotificationMessage {
   payload: NotificationItem
 }
 
-/** 从 API 基地址推导 WS 地址：生产=同源（契约写法），dev=直连后端端口（:8787） */
-function buildWsUrl(): string {
-  const base = API_BASE_URL.startsWith('http') ? API_BASE_URL : window.location.origin
-  return `${base.replace(/^http/, 'ws')}/api/v1/notifications/ws`
+/**
+ * WS 基地址：**必须直连 Worker 域**，不能走同源反代。
+ *
+ * 线上实测：Netlify 反代 `/api/*` 时会剥离 `Upgrade`/`Connection` 这类
+ * hop-by-hop 头，升级请求到不了 Worker（DO 只能回 404），所以同源 WS 永远
+ * 建不起来。改为直连 `VITE_WS_BASE_URL`（生产 = `https://luminolcraft-nexus.narcssu.top`），
+ * 并用一次性 ticket 鉴权（跨站不依赖 Cookie 属性）。
+ */
+function wsBaseUrl(): string {
+  const configured = import.meta.env.VITE_WS_BASE_URL
+  const base = configured || API_BASE_URL
+  const absolute = base.startsWith('http') ? base : window.location.origin
+  return absolute.replace(/^http/, 'ws')
+}
+
+/** 带一次性 ticket 的 WS 地址（ticket 由 `POST /notifications/ws-ticket` 签发）。 */
+function buildWsUrl(ticket: string): string {
+  return `${wsBaseUrl()}/api/v1/notifications/ws?ticket=${encodeURIComponent(ticket)}`
 }
 
 export const useNotificationsStore = defineStore('notifications', () => {
@@ -159,14 +173,37 @@ export const useNotificationsStore = defineStore('notifications', () => {
     const gen = ++generation
     connectionState.value = 'connecting'
     ensureChannel()
+    void openSocket(gen)
+  }
+
+  /**
+   * 领一次性 ticket → 建连。
+   *
+   * 顺序很关键：先同源 REST 领 ticket（带会话 Cookie），再直连 Worker 域建 WS
+   * （ticket 一次性，重连时重新领）。ticket 端点失败时按既有退避重连。
+   */
+  async function openSocket(gen: number): Promise<void> {
+    let ticket: string
     try {
-      ws = new WebSocket(buildWsUrl())
+      const issued = await api.post<{ ticket: string }>('/notifications/ws-ticket')
+      if (gen !== generation) return // 期间已登出/重连，丢弃
+      ticket = issued.ticket
+      if (!ticket) throw new Error('empty ws ticket')
+    } catch {
+      if (gen === generation) scheduleReconnect(gen)
+      return
+    }
+
+    let socket: WebSocket
+    try {
+      socket = new WebSocket(buildWsUrl(ticket))
     } catch {
       scheduleReconnect(gen)
       return
     }
+    ws = socket
 
-    ws.onopen = () => {
+    socket.onopen = () => {
       if (gen !== generation) return // 旧代际迟到回调，丢弃
       reconnectAttempt = 0
       connectionState.value = 'open'
@@ -185,7 +222,7 @@ export const useNotificationsStore = defineStore('notifications', () => {
       void reconcile()
     }
 
-    ws.onmessage = (ev: MessageEvent) => {
+    socket.onmessage = (ev: MessageEvent) => {
       if (gen !== generation) return
       if (ev.data === 'pong') return // 保活回包
       try {
@@ -196,7 +233,7 @@ export const useNotificationsStore = defineStore('notifications', () => {
       }
     }
 
-    ws.onerror = () => {
+    socket.onerror = () => {
       /* 错误后必然伴随 close，统一由 onclose 走重连，避免双触发 */
     }
 
