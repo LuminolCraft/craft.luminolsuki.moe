@@ -396,6 +396,23 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   /**
+   * 修改登录密码（POST /api/auth/change-password，Better Auth 原生端点）。
+   * 需原密码校验；服务端 `hooks.before` 强制 `revokeOtherSessions`——其他设备
+   * 会话全部撤销、当前设备重签会话 Cookie（当前设备保持登录），故成功后重拉
+   * 设备列表让安全页同步。错误经 toAppError 归一（INVALID_PASSWORD = 原密码
+   * 错误；429 RATE_LIMITED 带 resetAt）。
+   */
+  async function changePassword(currentPassword: string, newPassword: string) {
+    const { error } = await authClient.changePassword({
+      currentPassword,
+      newPassword,
+      revokeOtherSessions: true,
+    })
+    if (error) throw toAppError(error)
+    await fetchSessions()
+  }
+
+  /**
    * 注销账号（DELETE /api/v1/me，不可逆自服务）。
    * 服务端按登录方式强制二选一：有 credential → 必须传 password（BA 验密）；
    * 纯 OAuth → 必须传 confirm: true。成功后旧会话立即失效——清本地态并广播
@@ -456,6 +473,7 @@ export const useAuthStore = defineStore('auth', () => {
     unlinkLinkedAccount,
     changeEmail,
     setPassword,
+    changePassword,
     deleteMyAccount,
     fetchSessions,
     revokeSession,
