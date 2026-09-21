@@ -5,6 +5,10 @@
     <template v-else>
       <LinkedAccounts />
 
+      <!-- 区块 C：修改密码（仅已有邮箱密码的账号；无密码的 OAuth 账号走
+           LinkedAccounts 的「设置密码」区块，两者互补不重叠） -->
+      <ChangePassword v-if="hasCredential" />
+
       <section class="security-section">
         <h2 class="security-section-title">{{ t('auth.security.currentDevice') }}</h2>
         <SessionListItem
@@ -44,6 +48,7 @@ import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import LinkedAccounts from '@/components/auth/LinkedAccounts.vue'
 import SessionListItem from '@/components/auth/SessionListItem.vue'
+import ChangePassword from '@/components/account/ChangePassword.vue'
 import DangerZone from '@/components/account/DangerZone.vue'
 import { useAuthStore } from '@/stores/auth'
 import { useGsap } from '@/composables/useGsap'
@@ -60,6 +65,10 @@ const actionError = ref('')
 
 const currentSessions = computed(() => auth.sessions.filter((s) => s.current))
 const otherSessions = computed(() => auth.sessions.filter((s) => !s.current))
+/** 已有邮箱密码登录方式（判定与 DangerZone.vue 同口径）→ 显示「修改密码」区块 */
+const hasCredential = computed(() =>
+  auth.linkedAccounts.some((a) => a.providerId === 'credential'),
+)
 
 async function onRevoke(id: string) {
   revokingId.value = id
