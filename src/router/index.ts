@@ -227,6 +227,12 @@ const routes = [
         meta: { og: { title: '发布通知 - LuminolCraft', description: '向全员或指定用户发送站内公告与警示。' } }
       },
       {
+        path: 'notifications/sent',
+        name: 'AdminSentNotifications',
+        component: () => import('../views/admin/SentNotificationsView.vue'),
+        meta: { og: { title: '已发公告 - LuminolCraft', description: '查看并删除已发布的站内公告。' } }
+      },
+      {
         path: 'bans',
         name: 'AdminBans',
         component: () => import('../views/admin/BansView.vue'),

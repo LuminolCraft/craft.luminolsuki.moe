@@ -729,6 +729,7 @@ export default {
     "nav": {
       "users": "Users",
       "notifications": "Notifications",
+      "sentNotifications": "Sent Notifications",
       "bans": "Bans",
       "audit": "Audit",
       "backToSite": "Back to site"
@@ -813,6 +814,24 @@ export default {
       "sending": "Sending…",
       "success": "Sent — delivered to {count} user(s)",
       "fail": "Failed to send, please try again"
+    },
+    "sentNotifications": {
+      "title": "Sent Notifications",
+      "subtitle": "Review published announcement batches; delete batches sent by mistake.",
+      "typeLabel": "Type",
+      "typeAnnouncement": "Announcement",
+      "typeWarning": "Warning",
+      "time": "Sent at",
+      "titleLabel": "Title",
+      "bodyLabel": "Body",
+      "reached": "Reached",
+      "unread": "Unread",
+      "delete": "Delete",
+      "deleteConfirm": "Deleting this batch permanently removes this notification from {count} user(s). Delete \"{title}\"?",
+      "deleteSuccess": "Deleted {count} notification(s)",
+      "deleteError": "Delete failed, please retry",
+      "empty": "No announcements sent yet",
+      "loadError": "Failed to load, please retry"
     },
     "users": {
       "title": "User management",

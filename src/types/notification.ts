@@ -47,3 +47,29 @@ export interface AdminNotificationResult {
   ok: boolean
   count: number
 }
+
+/** 管理端「已发布公告」批次聚合行（GET /admin/notifications/sent） */
+export interface SentNotificationBatch {
+  createdBy?: string | null
+  type: NotificationType | string
+  title: string
+  body?: string | null
+  link?: string | null
+  createdAt?: number
+  total?: number
+  unread?: number
+}
+
+/** 删除批次的批次选择器（DELETE /admin/notifications/sent body） */
+export interface SentNotificationSelector {
+  createdAt: number
+  type: NotificationType | string
+  title: string
+  createdBy: string
+}
+
+/** DELETE /admin/notifications/sent 返回体 */
+export interface DeleteSentNotificationsResult {
+  ok: boolean
+  deleted: number
+}

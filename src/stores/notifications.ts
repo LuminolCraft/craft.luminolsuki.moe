@@ -7,8 +7,11 @@ import type { Paged } from '@/types/nexus'
 import type {
   AdminNotificationInput,
   AdminNotificationResult,
+  DeleteSentNotificationsResult,
   MarkReadResult,
   NotificationItem,
+  SentNotificationBatch,
+  SentNotificationSelector,
   UnreadCountResult,
 } from '@/types/notification'
 
@@ -308,6 +311,28 @@ export const useNotificationsStore = defineStore('notifications', () => {
     return typeof res?.count === 'number' ? res.count : 0
   }
 
+  /**
+   * 管理端·已发布公告批次列表（GET /admin/notifications/sent，limit 一次拉满后端上限）。
+   * 批次数量级小（每条 = 一次发布动作），故一次拉满不分页。
+   */
+  async function adminListSent(limit = 100): Promise<SentNotificationBatch[]> {
+    const res = await api.get<{ items: SentNotificationBatch[] }>(
+      `/admin/notifications/sent?limit=${limit}`,
+    )
+    return res?.items ?? []
+  }
+
+  /**
+   * 管理端·删除一批已发布公告（DELETE，body=批次选择器；幂等空删 deleted=0）。
+   * selector 四字段与后端聚合口径一致（createdAt/type/title/createdBy 唯一定位一个批次）。
+   */
+  async function adminDeleteSent(selector: SentNotificationSelector): Promise<number> {
+    const res = await api.delete<DeleteSentNotificationsResult>('/admin/notifications/sent', {
+      data: selector,
+    })
+    return typeof res?.deleted === 'number' ? res.deleted : 0
+  }
+
   return {
     list,
     unreadCount,
@@ -322,5 +347,7 @@ export const useNotificationsStore = defineStore('notifications', () => {
     markRead,
     markAllRead,
     adminSend,
+    adminListSent,
+    adminDeleteSent,
   }
 })
