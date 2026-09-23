@@ -729,6 +729,7 @@ export default {
     "nav": {
       "users": "用户",
       "notifications": "通知发布",
+      "sentNotifications": "已发公告",
       "bans": "封禁",
       "audit": "审计",
       "backToSite": "返回前台"
@@ -813,6 +814,24 @@ export default {
       "sending": "发送中…",
       "success": "已发送，送达 {count} 位用户",
       "fail": "发送失败，请重试"
+    },
+    "sentNotifications": {
+      "title": "已发公告",
+      "subtitle": "查看已发布的公告批次，可删除发错的批次。",
+      "typeLabel": "类型",
+      "typeAnnouncement": "公告",
+      "typeWarning": "警告",
+      "time": "发布时间",
+      "titleLabel": "标题",
+      "bodyLabel": "正文",
+      "reached": "送达",
+      "unread": "未读",
+      "delete": "删除",
+      "deleteConfirm": "删除该批次后，{count} 位用户的这条通知将永久消失，不可恢复。确认删除「{title}」吗？",
+      "deleteSuccess": "已删除 {count} 条通知",
+      "deleteError": "删除失败，请重试",
+      "empty": "还没有发布过公告",
+      "loadError": "加载失败，请重试"
     },
     "users": {
       "title": "用户管理",
