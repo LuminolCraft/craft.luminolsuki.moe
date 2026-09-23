@@ -41,7 +41,7 @@
                   type="button"
                   class="btn ghost del-btn"
                   :disabled="deletingId === batchKey(batch)"
-                  @click="onDelete(batch)"
+                  @click="openDeleteDialog(batch)"
                 >
                   {{ deletingId === batchKey(batch) ? '…' : t('admin.sentNotifications.delete') }}
                 </button>
@@ -55,6 +55,76 @@
     <p v-if="loadError" class="page-error" role="alert">{{ loadError }}</p>
     <p v-if="successText" class="form-success" role="status">{{ successText }}</p>
     <p v-if="deleteError" class="form-error" role="alert">{{ deleteError }}</p>
+
+    <!-- 删除两步确认弹窗（风格对齐 MinecraftView 解绑 / DangerZone 注销：后果说明 → 确认执行） -->
+    <Teleport to="body">
+      <div v-if="deleteTarget" class="sn-overlay" @click.self="closeDeleteDialog">
+        <div
+          class="sn-dialog"
+          role="dialog"
+          aria-modal="true"
+          :aria-label="t('admin.sentNotifications.deleteDialogTitle')"
+        >
+          <div class="sn-dialog-header">
+            <span class="sn-dialog-title">{{ t('admin.sentNotifications.deleteDialogTitle') }}</span>
+            <button
+              type="button"
+              class="sn-dialog-close"
+              :aria-label="t('admin.sentNotifications.deleteClose')"
+              @click="closeDeleteDialog"
+            >
+              <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+                <path d="M3.72 3.72a.75.75 0 0 1 1.06 0L8 6.94l3.22-3.22a.75.75 0 1 1 1.06 1.06L9.06 8l3.22 3.22a.75.75 0 1 1-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 0 1-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 0 1 0-1.06Z" />
+              </svg>
+            </button>
+          </div>
+
+          <!-- Step 1：后果说明 -->
+          <div v-if="deleteStep === 1" class="sn-dialog-body">
+            <div class="sn-dialog-warning" role="alert">
+              <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+                <path d="M6.457 1.047c.659-1.234 2.427-1.234 3.086 0l6.082 11.378A1.75 1.75 0 0 1 14.082 15H1.918a1.75 1.75 0 0 1-1.543-2.575Zm1.763.707a.25.25 0 0 0-.44 0L1.698 13.132a.25.25 0 0 0 .22.368h12.164a.25.25 0 0 0 .22-.368Zm.53 3.996v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 11a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z" />
+              </svg>
+              <span>{{ t('admin.sentNotifications.deleteNoticeTitle') }}</span>
+            </div>
+            <ul class="sn-dialog-effects">
+              <li>{{ t('admin.sentNotifications.deleteEffect1', { count: deleteTarget.total ?? 1 }) }}</li>
+              <li>{{ t('admin.sentNotifications.deleteEffect2', { title: deleteTarget.title }) }}</li>
+              <li>{{ t('admin.sentNotifications.deleteEffect3') }}</li>
+            </ul>
+            <div class="sn-dialog-actions">
+              <button type="button" class="sn-dialog-btn" @click="closeDeleteDialog">
+                {{ t('admin.sentNotifications.deleteCancel') }}
+              </button>
+              <button type="button" class="sn-dialog-btn sn-dialog-btn-primary" @click="deleteStep = 2">
+                {{ t('admin.sentNotifications.deleteContinue') }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Step 2：确认执行 -->
+          <div v-else class="sn-dialog-body">
+            <p class="sn-dialog-hint">
+              {{ t('admin.sentNotifications.deleteConfirmHint', { title: deleteTarget.title }) }}
+            </p>
+            <p v-if="deleteError" class="form-error" role="alert">{{ deleteError }}</p>
+            <div class="sn-dialog-actions">
+              <button type="button" class="sn-dialog-btn" @click="closeDeleteDialog">
+                {{ t('admin.sentNotifications.deleteCancel') }}
+              </button>
+              <button
+                type="button"
+                class="sn-dialog-btn sn-dialog-btn-danger"
+                :disabled="deletingId === batchKey(deleteTarget)"
+                @click="confirmDelete"
+              >
+                {{ deletingId === batchKey(deleteTarget) ? t('admin.sentNotifications.deleting') : t('admin.sentNotifications.deleteConfirmButton') }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
@@ -82,6 +152,9 @@ const deleteError = ref('')
 const successText = ref('')
 const deletingId = ref('')
 const batches = ref<SentNotificationBatch[]>([])
+/** 两步确认弹窗状态（替代原生 confirm，风格对齐 MinecraftView 解绑 / DangerZone 注销） */
+const deleteTarget = ref<SentNotificationBatch | null>(null)
+const deleteStep = ref(1)
 
 /** 行唯一键：批次无独立 id，用选择器四字段拼合（与 DELETE 口径一致） */
 function batchKey(b: SentNotificationBatch): string {
@@ -128,22 +201,37 @@ async function load() {
   }
 }
 
-async function onDelete(batch: SentNotificationBatch) {
-  if (!window.confirm(t('admin.sentNotifications.deleteConfirm', { count: batch.total ?? 1, title: batch.title }))) return
+/** 打开删除确认弹窗：每次重置到后果说明页 */
+function openDeleteDialog(batch: SentNotificationBatch) {
+  deleteTarget.value = batch
+  deleteStep.value = 1
+  deleteError.value = ''
+}
+
+function closeDeleteDialog() {
+  deleteTarget.value = null
+  deleteStep.value = 1
+  deleteError.value = ''
+}
+
+async function confirmDelete() {
+  const target = deleteTarget.value
+  if (!target || deletingId.value) return
   deleteError.value = ''
   successText.value = ''
-  const key = batchKey(batch)
+  const key = batchKey(target)
   deletingId.value = key
   try {
     const deleted = await notifications.adminDeleteSent({
-      createdAt: batch.createdAt ?? 0,
-      type: batch.type,
-      title: batch.title,
-      createdBy: batch.createdBy ?? '',
+      createdAt: target.createdAt ?? 0,
+      type: target.type,
+      title: target.title,
+      createdBy: target.createdBy ?? '',
     })
     // 删除成功即从本地列表移除该行；幂等空删 deleted=0（已被删/并发删）也按成功提示
     batches.value = batches.value.filter((b) => batchKey(b) !== key)
     successText.value = t('admin.sentNotifications.deleteSuccess', { count: deleted })
+    closeDeleteDialog()
   } catch (e) {
     deleteError.value = errorText(e, 'deleteError')
   } finally {
@@ -224,5 +312,171 @@ onMounted(() => {
 .sent-page .form-success,
 .sent-page .form-error {
   margin-top: 0.8rem;
+}
+
+/* ---------- 删除两步确认弹窗（风格对齐 MinecraftView 解绑 / DangerZone 注销） ---------- */
+.sn-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background: rgba(0, 0, 0, 0.55);
+  overflow-y: auto;
+}
+
+.sn-dialog {
+  width: 100%;
+  max-width: 26rem;
+  background: var(--background-color);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.sn-dialog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.85rem 1.1rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.sn-dialog-title {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--text-color);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sn-dialog-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.sn-dialog-close:hover {
+  color: var(--text-color);
+}
+
+.sn-dialog-close svg {
+  width: 16px;
+  height: 16px;
+}
+
+.sn-dialog-close:focus-visible,
+.sn-dialog-btn:focus-visible {
+  outline: 2px solid var(--focus-ring-color, var(--vercel-focus-blue));
+  outline-offset: 2px;
+}
+
+.sn-dialog-body {
+  padding: 1.25rem 1.1rem 1.35rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.sn-dialog-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid color-mix(in srgb, #d4a72c 45%, transparent);
+  background: color-mix(in srgb, #d4a72c 10%, transparent);
+  border-radius: 8px;
+  font-size: 0.85rem;
+  line-height: 1.55;
+  color: var(--text-color);
+}
+
+.sn-dialog-warning svg {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  margin-top: 0.15rem;
+  color: #d4a72c;
+}
+
+.sn-dialog-effects {
+  margin: 0;
+  padding: 0 0 0 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+
+.sn-dialog-hint {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.6;
+  color: var(--text-color);
+  overflow-wrap: anywhere;
+}
+
+.sn-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.6rem;
+}
+
+.sn-dialog-btn {
+  padding: 0.5rem 0.95rem;
+  background: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  color: var(--text-color);
+  font-size: 0.86rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s ease, opacity 0.15s ease;
+}
+
+.sn-dialog-btn:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--text-secondary) 8%, transparent);
+}
+
+.sn-dialog-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.sn-dialog-btn-primary {
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+  color: #fff;
+}
+
+.sn-dialog-btn-danger {
+  background: var(--error-color, #e5484d);
+  border-color: var(--error-color, #e5484d);
+  color: #fff;
+}
+
+.sn-dialog-btn-danger:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--error-color, #e5484d) 88%, #000);
+}
+
+@media (max-width: 896px) {
+  .sn-overlay {
+    padding: 6vh 0.9rem 2rem;
+    /* flex 居中 + overflow-y:auto 会裁掉高于视口的弹层顶部且滚不回去（标题/关闭按钮丢失） */
+    align-items: flex-start;
+  }
 }
 </style>
