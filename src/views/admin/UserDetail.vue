@@ -377,6 +377,7 @@ import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import UserAvatar from '@/components/UserAvatar.vue'
 import { api, isAppError } from '@/lib/api'
+import { normalizeAdminUserDetail } from '@/lib/admin-user'
 import { normalizeBirthday, toDateInputValue } from '@/lib/birthday'
 import { checkUsernameReserved } from '@/lib/reserved-username'
 import { cleanUsernameInput, validateUsername as checkUsernameFormat } from '@/lib/username'
@@ -434,7 +435,7 @@ function errorText(e: unknown): string {
 
 async function refreshUser() {
   const id = String(route.params.id)
-  user.value = await api.get<AdminUserDetail>(`/admin/users/${id}`)
+  user.value = normalizeAdminUserDetail(await api.get<unknown>(`/admin/users/${id}`))
 }
 
 async function onAssignRole() {

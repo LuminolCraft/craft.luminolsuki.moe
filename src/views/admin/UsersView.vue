@@ -58,6 +58,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { api, isAppError } from '@/lib/api'
 import { normalizePaged } from '@/lib/paged'
+import { normalizeAdminUser } from '@/lib/admin-user'
 import type { AdminUserListItem } from '@/types/nexus'
 import { useGsap } from '@/composables/useGsap'
 
@@ -99,8 +100,8 @@ function errorText(e: unknown): string {
 
 async function load(nextPage: number) {
   const data = await api.get<unknown>(`/admin/users?page=${nextPage}&limit=${LIMIT}`)
-  const paged = normalizePaged<AdminUserListItem>(data)
-  users.value = paged.items
+  const paged = normalizePaged<unknown>(data)
+  users.value = paged.items.map(normalizeAdminUser)
   total.value = paged.total
   page.value = nextPage
 }

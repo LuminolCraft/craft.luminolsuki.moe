@@ -23,8 +23,16 @@ vi.mock('@/composables/useGsap', () => ({
 
 const i18n = createI18n({ legacy: false, locale: 'zh', messages: { zh } })
 
+/** 后端实际下发的原始行：snake_case（`created_at`），前端曾因读 `createdAt` 恒显示 `—` */
 function makeUser(id: number) {
-  return { id, username: `u${id}`, email: `u${id}@example.com`, roles: ['user'], createdAt: 0 }
+  return {
+    id: String(id),
+    username: `u${id}`,
+    email: `u${id}@example.com`,
+    email_verified: true,
+    created_at: Date.UTC(2024, 0, 2),
+    roles: ['user'],
+  }
 }
 
 async function mountView() {
@@ -76,5 +84,22 @@ describe('UsersView（管理端用户列表）分页', () => {
     // 末页点「上一页」应回到第 1 页
     await clickPager(0)
     expect(wrapper.find('.pager-label').text()).toContain('1')
+  })
+
+  it('注册时间列渲染日期而非「—」（后端 snake_case created_at）', async () => {
+    getMock.mockResolvedValue({
+      items: [makeUser(1)],
+      total: 1,
+      page: 1,
+      limit: 20,
+    })
+
+    const wrapper = await mountView()
+    const cells = wrapper.findAll('tbody tr td')
+    const joined = cells[3]
+    if (!joined) throw new Error('注册时间列缺失')
+
+    expect(joined.text()).not.toBe('—')
+    expect(joined.text()).toContain(String(new Date(Date.UTC(2024, 0, 2)).getFullYear()))
   })
 })
