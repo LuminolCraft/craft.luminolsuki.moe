@@ -314,16 +314,22 @@
     margin-right: 10px;
   }
 
-  /* TocToggles 移动端样式 - 在侧边栏内 */
+  /* TocToggles 移动端样式 - 推到抽屉底部，靠左排布（主题/语言按钮非居中） */
+  .side-nav {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
   .side-nav .toc-toggles {
-    margin-top: 20px;
+    margin-top: auto;
     padding-top: 20px;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    border-top: 1px solid var(--border-color);
     width: 100%;
-    justify-content: center;
+    justify-content: flex-start;
   }
   .side-nav .theme-toggle {
-    color: rgba(255, 255, 255, 0.7);
+    color: var(--text-secondary);
     width: 36px;
     height: 36px;
   }
