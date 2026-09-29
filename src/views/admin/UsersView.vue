@@ -39,6 +39,7 @@
                 <button
                   type="button"
                   class="sort-btn"
+                  :class="{ busy: loadingPage }"
                   :title="`${t('admin.users.sortJoined')}（${sortDirLabel}）`"
                   @click="toggleSort"
                 >
@@ -116,6 +117,10 @@ import { useGsap } from '@/composables/useGsap'
  *
  * 搜索与排序都由后端在 SQL 层完成（`q` / `sort=created_at` / `order`），前端不做本地排序：
  * 本地只能排当前页 20 条，翻页与搜索时顺序会错乱。
+ *
+ * 排序切换延迟优化（SWR 缓存 + 反向预取）：page1 结果按 `方向|搜索词` 缓存在组件内存
+ * （不落 localStorage）。点击排序命中缓存先渲染（瞬时），随后后台重验拉最新数据覆盖，
+ * 保证最终一致；首屏加载后静默预取反向排序 page1，让第一次点击也命中。
  */
 const { t, te } = useI18n()
 const { create, reduceMotion } = useGsap()
@@ -125,6 +130,8 @@ const LIMIT = 20
 const SEARCH_DEBOUNCE_MS = 300
 /** 最少几个字符才搜：1 个字符命中面太大，等于全表扫描还返回一堆无关用户。 */
 const SEARCH_MIN_LENGTH = 2
+/** SWR 缓存条数上限：asc/desc × 最近几个搜索词，超出淘汰最旧（每条仅 20 行，内存可控）。 */
+const CACHE_MAX = 4
 
 const loading = ref(true)
 const loadingPage = ref(false)
@@ -136,6 +143,23 @@ const total = ref<number | undefined>(undefined)
 const query = ref('')
 const searchInput = ref('')
 const sortDir = ref<'asc' | 'desc'>('asc')
+
+/** page1 SWR 缓存：key = `方向|搜索词`。仅存组件内存，刷新即清。 */
+const page1Cache = new Map<string, { items: AdminUserListItem[]; total?: number }>()
+
+function cacheKey(dir: 'asc' | 'desc', q: string): string {
+  return `${dir}|${q}`
+}
+
+/** 写缓存并淘汰最旧（Map 迭代序即插入序）。 */
+function putCache(key: string, entry: { items: AdminUserListItem[]; total?: number }) {
+  page1Cache.delete(key)
+  page1Cache.set(key, entry)
+  if (page1Cache.size > CACHE_MAX) {
+    const oldest = page1Cache.keys().next().value
+    if (oldest !== undefined) page1Cache.delete(oldest)
+  }
+}
 
 const sortDirLabel = computed(() =>
   sortDir.value === 'asc' ? t('admin.users.sortAsc') : t('admin.users.sortDesc'),
@@ -166,24 +190,65 @@ function errorText(e: unknown): string {
   return t('admin.common.errGeneric')
 }
 
-function buildQuery(nextPage: number): string {
+function buildQuery(nextPage: number, dir: 'asc' | 'desc' = sortDir.value, q: string = query.value): string {
   const params = new URLSearchParams()
   params.set('page', String(nextPage))
   params.set('limit', String(LIMIT))
   params.set('sort', 'created_at')
-  params.set('order', sortDir.value)
-  if (query.value) params.set('q', query.value)
+  params.set('order', dir)
+  if (q) params.set('q', q)
   return params.toString()
+}
+
+/** 应用分页响应到表格；page1 同时写缓存并触发反向预取（用请求发出时的 dir/q，避免竞态串数据）。 */
+function applyPage(data: unknown, nextPage: number, dir: 'asc' | 'desc', q: string) {
+  const paged = normalizePaged<unknown>(data)
+  const items = paged.items.map(normalizeAdminUser)
+  users.value = items
+  total.value = paged.total
+  page.value = nextPage
+  if (nextPage === 1) {
+    putCache(cacheKey(dir, q), { items, total: paged.total })
+    void prefetchOpposite(dir, q)
+  }
 }
 
 async function load(nextPage: number) {
   const seq = ++requestSeq
-  const data = await api.get<unknown>(`/admin/users?${buildQuery(nextPage)}`)
+  const dirAtReq = sortDir.value
+  const qAtReq = query.value
+  const data = await api.get<unknown>(`/admin/users?${buildQuery(nextPage, dirAtReq, qAtReq)}`)
   if (seq !== requestSeq) return
-  const paged = normalizePaged<unknown>(data)
-  users.value = paged.items.map(normalizeAdminUser)
-  total.value = paged.total
-  page.value = nextPage
+  applyPage(data, nextPage, dirAtReq, qAtReq)
+}
+
+/** 命中缓存后的后台重验：静默拉最新数据覆盖表格与缓存，失败保留缓存渲染，下次操作重试。 */
+async function revalidate() {
+  const seq = ++requestSeq
+  const dirAtReq = sortDir.value
+  const qAtReq = query.value
+  try {
+    const data = await api.get<unknown>(`/admin/users?${buildQuery(1, dirAtReq, qAtReq)}`)
+    if (seq !== requestSeq) return
+    applyPage(data, 1, dirAtReq, qAtReq)
+  } catch {
+    /* 重验失败静默：缓存值已在渲染，后端仍为准 */
+  }
+}
+
+/** 静默预取反向排序 page1 入缓存，让下次点击排序直接命中。不触碰表格与 requestSeq。 */
+async function prefetchOpposite(dir: 'asc' | 'desc', q: string) {
+  const opp = dir === 'asc' ? 'desc' : 'asc'
+  const key = cacheKey(opp, q)
+  if (page1Cache.has(key)) return
+  try {
+    const data = await api.get<unknown>(`/admin/users?${buildQuery(1, opp, q)}`)
+    if (page1Cache.has(key)) return
+    const paged = normalizePaged<unknown>(data)
+    putCache(key, { items: paged.items.map(normalizeAdminUser), total: paged.total })
+  } catch {
+    /* 预取失败不影响主流程 */
+  }
 }
 
 async function go(nextPage: number) {
@@ -246,10 +311,23 @@ function clearSearch() {
   applySearch('')
 }
 
-/** 表头点击：升序 ↔ 降序，排序由后端全局执行，故回到第 1 页。 */
+/**
+ * 表头点击：升序 ↔ 降序。排序仍由后端全局执行，故回到第 1 页。
+ * 命中缓存先渲染（requestSeq 自增使在途翻页请求失效），后台重验保鲜；未命中走正常加载。
+ */
 function toggleSort() {
   sortDir.value = sortDir.value === 'asc' ? 'desc' : 'asc'
-  void go(1)
+  const hit = page1Cache.get(cacheKey(sortDir.value, query.value))
+  if (hit) {
+    requestSeq++
+    users.value = hit.items
+    total.value = hit.total
+    page.value = 1
+    loadError.value = ''
+    void revalidate()
+  } else {
+    void go(1)
+  }
 }
 
 function formatDate(ts?: number): string {
@@ -320,5 +398,10 @@ onMounted(async () => {
 
 .sort-icon {
   flex-shrink: 0;
+}
+
+/* 未命中缓存走网络加载期间：图标降透明度示意进行中（命中缓存瞬时渲染，不会出现此态） */
+.sort-btn.busy .sort-icon {
+  opacity: 0.35;
 }
 </style>
