@@ -7,22 +7,16 @@
 
     <form class="compose-form" @submit.prevent="onSubmit">
       <!-- 目标：全员 / 指定用户 / 多选用户 -->
-      <label class="field">
+      <div class="field">
         <span class="label">{{ t('admin.notificationCompose.targetLabel') }}</span>
-        <div class="target-seg" role="radiogroup">
-          <button
-            v-for="mode in TARGET_MODES"
-            :key="mode"
-            type="button"
-            class="seg-btn"
-            :class="{ active: targetMode === mode }"
-            :disabled="sending"
-            @click="targetMode = mode"
-          >
-            {{ t(`admin.notificationCompose.target.${mode}`) }}
-          </button>
-        </div>
-      </label>
+        <SegmentedControl
+          v-model="targetMode"
+          class="target-seg"
+          :options="targetOptions"
+          :disabled="sending"
+          :aria-label="t('admin.notificationCompose.targetLabel')"
+        />
+      </div>
 
       <!-- 用户选择（单选/多选共用：加载用户列表 + 客户端按用户名过滤） -->
       <div v-if="targetMode !== 'all'" class="field">
@@ -69,13 +63,16 @@
       </div>
 
       <!-- 类型 -->
-      <label class="field">
+      <div class="field">
         <span class="label">{{ t('admin.notificationCompose.typeLabel') }}</span>
-        <select v-model="notifType" class="input select" :disabled="sending">
-          <option value="announcement">{{ t('notification.center.type.announcement') }}</option>
-          <option value="warning">{{ t('notification.center.type.warning') }}</option>
-        </select>
-      </label>
+        <SegmentedControl
+          v-model="notifType"
+          class="type-seg"
+          :options="typeOptions"
+          :disabled="sending"
+          :aria-label="t('admin.notificationCompose.typeLabel')"
+        />
+      </div>
 
       <!-- 标题（1-120） -->
       <label class="field">
@@ -136,6 +133,7 @@ import { useNotificationsStore } from '@/stores/notifications'
 import { isInternalPath } from '@/utils/internalPath'
 import type { AdminUserListItem } from '@/types/nexus'
 import { useGsap } from '@/composables/useGsap'
+import SegmentedControl, { type SegmentedOption } from '@/components/SegmentedControl.vue'
 
 /**
  * 管理端·发布站内通知（POST /admin/notifications）。
@@ -148,11 +146,23 @@ const notifications = useNotificationsStore()
 const { create, reduceMotion } = useGsap()
 
 type TargetMode = 'all' | 'user' | 'multi'
-const TARGET_MODES: TargetMode[] = ['all', 'user', 'multi']
 
 // ---------- 表单 ----------
 const targetMode = ref<TargetMode>('all')
+
+/** 分段选择的选项（标签随语言切换，故用 computed 而非常量） */
+const targetOptions = computed<SegmentedOption[]>(() =>
+  (['all', 'user', 'multi'] as const).map((mode) => ({
+    value: mode,
+    label: t(`admin.notificationCompose.target.${mode}`),
+  })),
+)
+
 const notifType = ref<'announcement' | 'warning'>('announcement')
+const typeOptions = computed<SegmentedOption[]>(() => [
+  { value: 'announcement', label: t('notification.center.type.announcement') },
+  { value: 'warning', label: t('notification.center.type.warning') },
+])
 const title = ref('')
 const body = ref('')
 const link = ref('')
@@ -277,39 +287,13 @@ onMounted(() => {
   margin-bottom: 0;
 }
 
-/* 目标分段选择（mirror admin-nav-item 的 hover/active 节奏） */
+/* 目标/类型分段选择：几何与动效由 SegmentedControl 负责，这里只约束宽度 */
 .target-seg {
-  display: flex;
-  gap: 0.4rem;
-  flex-wrap: wrap;
+  max-width: 26rem;
 }
 
-.seg-btn {
-  padding: 0.45rem 0.95rem;
-  background: transparent;
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  color: var(--text-secondary);
-  font-size: 0.84rem;
-  cursor: pointer;
-  transition: color 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
-}
-
-.seg-btn:hover:not(:disabled) {
-  color: var(--text-color);
-  border-color: var(--primary-color);
-}
-
-.seg-btn.active {
-  color: var(--text-color);
-  font-weight: 600;
-  border-color: color-mix(in srgb, var(--primary-color) 45%, transparent);
-  background: color-mix(in srgb, var(--primary-color) 10%, transparent);
-}
-
-.seg-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+.type-seg {
+  max-width: 18rem;
 }
 
 /* 用户选择列表 */
@@ -362,10 +346,6 @@ onMounted(() => {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.select {
-  min-width: 10rem;
 }
 
 .textarea {
