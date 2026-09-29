@@ -256,6 +256,33 @@ const hasMore = computed(() => {
   return logs.value.length === LIMIT
 })
 
+/** 翻页 SWR 缓存：key = 页码|筛选条件，仅组件内存。命中先渲染再后台重验，预取下一页消除翻页等待。 */
+const pageCache = new Map<string, { logs: AuditLog[]; total?: number }>()
+const PAGE_CACHE_MAX = 8
+
+/** 请求序号：缓存命中/翻页/重验并发时只认最后一个响应，避免乱序覆盖。 */
+let requestSeq = 0
+
+function cacheKeyFor(nextPage: number): string {
+  return [
+    nextPage,
+    appliedActorQuery.value,
+    appliedAction.value,
+    appliedFromMs.value ?? '',
+    appliedToMs.value ?? '',
+  ].join('|')
+}
+
+/** 写缓存并淘汰最旧（Map 迭代序即插入序）。 */
+function putPageCache(key: string, entry: { logs: AuditLog[]; total?: number }) {
+  pageCache.delete(key)
+  pageCache.set(key, entry)
+  if (pageCache.size > PAGE_CACHE_MAX) {
+    const oldest = pageCache.keys().next().value
+    if (oldest !== undefined) pageCache.delete(oldest)
+  }
+}
+
 function errorText(e: unknown): string {
   if (isAppError(e)) {
     const map: Record<string, string> = {
@@ -324,12 +351,48 @@ function buildQuery(nextPage: number): string {
 }
 
 async function load(nextPage: number) {
+  const seq = ++requestSeq
+  const key = cacheKeyFor(nextPage)
   const data = await api.get<unknown>(`/admin/audit?${buildQuery(nextPage)}`)
+  if (seq !== requestSeq) return
   const paged = normalizePaged<AuditLog>(data)
   logs.value = paged.items
   total.value = paged.total
   page.value = nextPage
   expanded.value = new Set()
+  putPageCache(key, { logs: paged.items, total: paged.total })
+  // 预取下一页：点「下一页」时大概率直接命中缓存瞬时渲染
+  if (hasMore.value) void prefetch(nextPage + 1)
+}
+
+/** 静默预取目标页入缓存（用调用时的筛选条件捕获 key，不触碰表格与 requestSeq）。 */
+async function prefetch(nextPage: number) {
+  const key = cacheKeyFor(nextPage)
+  if (pageCache.has(key)) return
+  try {
+    const data = await api.get<unknown>(`/admin/audit?${buildQuery(nextPage)}`)
+    if (pageCache.has(key)) return
+    const paged = normalizePaged<AuditLog>(data)
+    putPageCache(key, { logs: paged.items, total: paged.total })
+  } catch {
+    /* 预取失败不影响主流程 */
+  }
+}
+
+/** 命中缓存后的后台重验：静默拉当前页最新数据覆盖表格与缓存，失败保留缓存渲染。 */
+async function revalidate() {
+  const seq = ++requestSeq
+  const key = cacheKeyFor(page.value)
+  try {
+    const data = await api.get<unknown>(`/admin/audit?${buildQuery(page.value)}`)
+    if (seq !== requestSeq) return
+    const paged = normalizePaged<AuditLog>(data)
+    logs.value = paged.items
+    total.value = paged.total
+    putPageCache(key, { logs: paged.items, total: paged.total })
+  } catch {
+    /* 重验失败静默：缓存值已在渲染，后端仍为准 */
+  }
 }
 
 async function loadActionOptions() {
@@ -342,6 +405,18 @@ async function loadActionOptions() {
 }
 
 async function go(nextPage: number) {
+  // 命中缓存：先瞬时渲染（requestSeq 自增使在途请求失效），后台重验保鲜；未命中走正常加载
+  const hit = pageCache.get(cacheKeyFor(nextPage))
+  if (hit) {
+    requestSeq++
+    logs.value = hit.logs
+    total.value = hit.total
+    page.value = nextPage
+    expanded.value = new Set()
+    pageError.value = ''
+    void revalidate()
+    return
+  }
   loadingPage.value = true
   pageError.value = ''
   try {
