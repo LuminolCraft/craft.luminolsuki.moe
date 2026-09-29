@@ -45,7 +45,7 @@
         </table>
       </div>
 
-      <div v-if="hasMore" class="pager">
+      <div v-if="hasMore || page > 1" class="pager">
         <button type="button" class="pager-btn" :disabled="page <= 1 || loadingPage" @click="go(page - 1)">
           {{ t('admin.common.prev') }}
         </button>
