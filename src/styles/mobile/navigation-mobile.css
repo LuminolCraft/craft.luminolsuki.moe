@@ -1,8 +1,8 @@
 @media (max-width: 896px) {
-  /* 移动端导航三列 grid（1fr auto 1fr 两侧等宽）：burger 左 / logo 严格居中于视口 / 操作区右 */
+  /* 移动端导航三列 grid（auto auto 1fr）：burger 左 / logo 紧随其右（不居中）/ 操作区占满右侧推至最右 */
   nav {
     display: grid;
-    grid-template-columns: 1fr auto 1fr;
+    grid-template-columns: auto auto 1fr;
     align-items: center;
     padding: 0 1.2rem;
     /* 去掉毛玻璃：一是省移动端合成开销，二是 backdrop-filter 会让 nav 成为 fixed 子元素的
@@ -11,7 +11,7 @@
     -webkit-backdrop-filter: none;
   }
 
-  /* 三列轨道可收缩（1fr = minmax(auto,1fr)，不置 min-width:0 时按 min-content 撑破导航条） */
+  /* 三列轨道可收缩（不置 min-width:0 时按 min-content 撑破导航条） */
   nav .burger,
   nav .logo-and-title,
   nav .nav-actions {
@@ -26,7 +26,8 @@
   }
 
   .logo-and-title {
-    justify-self: center;
+    justify-self: start;
+    margin-left: 0.9rem;
   }
 
   .nav-actions {
