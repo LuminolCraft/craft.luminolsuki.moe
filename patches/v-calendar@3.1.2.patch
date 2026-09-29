@@ -1,0 +1,43 @@
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+deleted file mode 100644
+index 6a3ac0e16916a57bde13b13bcfe4480678c9fcb1..0000000000000000000000000000000000000000
+diff --git a/dist/cjs/index.js b/dist/cjs/index.js
+index 014828f9bfd46fe97fabd5238e98d05ca44b8bb4..c301d3c8c156cb736376f50382bb32be778df41a 100644
+--- a/dist/cjs/index.js
++++ b/dist/cjs/index.js
+@@ -3043,6 +3043,8 @@ class DateRangeContext {
+   render(data2, range, days) {
+     var _a, _b, _c, _d;
+     let result = null;
++    // Patch: guard empty days (mouseleave re-render) to avoid "n[0] is undefined" TypeError
++    if (!days || days.length === 0) return result;
+     const startDayIndex = days[0].dayIndex;
+     const endDayIndex = days[days.length - 1].dayIndex;
+     if (range.hasRepeat) {
+diff --git a/dist/es/index.js b/dist/es/index.js
+index 606eda056616c69c10d295dd3edead8ef7d1b8f2..4c4b39b90164da718d1b1d8cb3313e9900fefc13 100644
+--- a/dist/es/index.js
++++ b/dist/es/index.js
+@@ -3041,6 +3041,9 @@ class DateRangeContext {
+   render(data2, range, days) {
+     var _a, _b, _c, _d;
+     let result = null;
++    // Patch: mouseleave 触发重渲染时 days 可能为空数组，直接访问 days[0].dayIndex 会抛
++    // "can't access property dayIndex"（生产 AuditView 报错源头）。空 days 无可渲染记录，安全跳过。
++    if (!days || days.length === 0) return result;
+     const startDayIndex = days[0].dayIndex;
+     const endDayIndex = days[days.length - 1].dayIndex;
+     if (range.hasRepeat) {
+diff --git a/dist/mjs/index.mjs b/dist/mjs/index.mjs
+index e126fdd53406fee1408af3544a7707aeac023eb5..d2c1bc9dfae92aa424629933ac7b86b31bad5e35 100644
+--- a/dist/mjs/index.mjs
++++ b/dist/mjs/index.mjs
+@@ -3041,6 +3041,8 @@ class DateRangeContext {
+   render(data2, range, days) {
+     var _a, _b, _c, _d;
+     let result = null;
++    // Patch: guard empty days (mouseleave re-render) to avoid "n[0] is undefined" TypeError
++    if (!days || days.length === 0) return result;
+     const startDayIndex = days[0].dayIndex;
+     const endDayIndex = days[days.length - 1].dayIndex;
+     if (range.hasRepeat) {
