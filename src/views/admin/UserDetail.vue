@@ -401,7 +401,7 @@ const user = ref<AdminUserDetail | null>(null)
 
 // ---------- 角色管理 ----------
 const ALL_ROLES: NexusRoleName[] = ['user', 'moderator', 'admin', 'owner']
-const selectedRole = ref<NexusRoleName>('moderator')
+const selectedRole = ref<NexusRoleName>('user')
 const assigning = ref(false)
 const revokingRole = ref('')
 const roleError = ref('')
