@@ -213,17 +213,27 @@ create((g) => {
 .admin-burger {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: 0.45rem;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  width: 2.75rem;
+  height: 2.75rem;
+  padding: 0;
   background: transparent;
   border: 1px solid var(--border-color);
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+
+.admin-burger:hover {
+  border-color: var(--primary-color);
 }
 
 .admin-burger span {
-  width: 16px;
-  height: 1.5px;
+  width: 20px;
+  height: 2px;
+  border-radius: 1px;
   background: var(--text-color);
 }
 
