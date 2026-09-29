@@ -455,6 +455,27 @@ onMounted(async () => {
   white-space: nowrap;
 }
 
+/* 固定列布局：翻页内容长短不一（长 ID 等）不再撑动列宽，排版两页一致。
+   列宽：时间固定；目标列是长 ID 重灾区，给足配额；详情列 .th-details 已定 5.5rem。 */
+.data-table {
+  table-layout: fixed;
+  width: 100%;
+}
+
+.data-table th:nth-child(1) {
+  width: 11.5rem;
+}
+
+.data-table th:nth-child(2) {
+  width: 22%;
+}
+
+.data-table td {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .mono-dim {
   font-family: ui-monospace, monospace;
   font-size: 0.78rem;
