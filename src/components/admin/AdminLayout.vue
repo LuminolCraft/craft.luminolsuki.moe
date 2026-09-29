@@ -1,10 +1,10 @@
 <template>
   <div class="admin-shell">
     <aside class="admin-sidebar" :class="{ open: sidebarOpen }" aria-label="管理后台导航">
-      <div class="admin-side-head">
+      <RouterLink to="/settings/profile" class="admin-side-head">
         <p class="admin-overline">{{ auth.me?.username }}</p>
         <p class="admin-shell-title">{{ t('admin.shellTitle') }}</p>
-      </div>
+      </RouterLink>
       <nav class="admin-nav">
         <RouterLink
           v-for="item in navItems"
@@ -105,6 +105,24 @@ create((g) => {
   border-right: 1px solid var(--border-color);
   background: var(--background-color);
   z-index: 30;
+}
+
+/* 头部换成可点击链接（跳个人资料）：抹平 a 默认样式，保持原排版 */
+.admin-side-head {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+  border-radius: 6px;
+}
+
+.admin-side-head:hover .admin-shell-title {
+  color: var(--primary-color);
+}
+
+.admin-side-head:focus-visible {
+  outline: 2px solid var(--focus-ring-color, var(--vercel-focus-blue));
+  outline-offset: 4px;
+  border-radius: 6px;
 }
 
 .admin-overline {
