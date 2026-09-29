@@ -32,7 +32,7 @@
         :max-date="new Date()"
         :popover="{ placement: 'bottom-start' }"
       >
-        <template #default="{ inputValue, inputEvents }">
+        <template #default="{ inputValue, inputEvents, showPopover }">
           <input
             class="input filter-input"
             :value="inputValue.start ? `${inputValue.start}${inputValue.end ? ` ~ ${inputValue.end}` : ''}` : ''"
@@ -41,6 +41,8 @@
             :title="t('admin.audit.filterRange')"
             :disabled="loadingPage"
             v-on="inputEvents"
+            @focusin="showPopover"
+            @click="showPopover"
           />
         </template>
       </DatePicker>
