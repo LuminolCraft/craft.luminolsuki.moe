@@ -336,7 +336,9 @@
     margin-inline-start: auto;
   }
 
-  select.input optgroup {
+  select.input optgroup,
+  select.input optgroup::before {
+    background: var(--background-color);
     padding: 0.25rem 0.4rem 0.15rem;
     font-size: 0.7rem;
     font-weight: 600;
