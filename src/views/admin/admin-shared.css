@@ -310,6 +310,56 @@
   outline-offset: 2px;
 }
 
+/* ---------- select 可样式化弹层（渐进增强） ----------
+   支持 appearance: base-select 的浏览器（Chromium 135+ / Safari 26+ / Firefox 新版）
+   完全自定义下拉列表：限高滚动、项目配色；不支持的浏览器整块忽略，回退原生弹层。 */
+select.input {
+  appearance: base-select;
+}
+
+select.input::picker(select) {
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--background-color);
+  box-shadow: 0 8px 24px color-mix(in srgb, black 18%, transparent);
+  padding: 0.3rem;
+  max-height: 18rem;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-secondary) transparent;
+}
+
+select.input::picker-icon {
+  color: var(--text-secondary);
+  margin-inline-start: auto;
+}
+
+select.input optgroup {
+  padding: 0.25rem 0.4rem 0.15rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+select.input option {
+  padding: 0.42rem 0.6rem;
+  border-radius: 6px;
+  color: var(--text-color);
+  background: var(--background-color);
+}
+
+select.input option:hover,
+select.input option:focus {
+  background: color-mix(in srgb, var(--primary-color) 12%, transparent);
+}
+
+select.input option:checked {
+  color: var(--primary-color);
+  background: color-mix(in srgb, var(--primary-color) 14%, transparent);
+}
+
 .textarea {
   resize: vertical;
   font-family: inherit;
