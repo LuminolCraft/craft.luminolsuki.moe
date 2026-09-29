@@ -458,6 +458,8 @@ export default {
       "subtitle": "Discover the latest updates and community stories of LuminolCraft",
       "searchPlaceholder": "Search news...",
       "searchButton": "Search",
+      "layoutList": "List",
+      "layoutGrid": "Grid",
       "tagFilter": "Filter by tag:",
       "allTags": "All tags",
       "cacheStatus": {

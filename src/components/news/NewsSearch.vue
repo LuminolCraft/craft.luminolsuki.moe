@@ -315,12 +315,11 @@
       min-height: 44px;
     }
   
-    /* 插槽内的按钮（如布局切换）与标签触发器同高同行 */
-    .controls-row :deep(.layout-toggle-btn) {
+    /* 插槽内的布局切换（分段选择）与标签触发器同高同行 */
+    .controls-row :deep(.layout-toggle) {
       flex-shrink: 0;
-      min-height: 44px;
-      padding: 8px 12px;
-      justify-content: center;
+      align-self: stretch;
+      --seg-height: 44px;
     }
   }
   

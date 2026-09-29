@@ -458,6 +458,8 @@ export default {
       "subtitle": "发现 LuminolCraft 的最新动态与社区精彩故事",
       "searchPlaceholder": "搜索新闻...",
       "searchButton": "搜索",
+      "layoutList": "列表",
+      "layoutGrid": "网格",
       "tagFilter": "筛选标签:",
       "allTags": "所有标签",
       "cacheStatus": {
