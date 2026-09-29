@@ -63,7 +63,7 @@
     box-shadow: 2px 0 5px rgba(0, 0, 0, 0.15);
     z-index: 9999;
     will-change: transform;
-    padding: 20px 0 calc(20px + env(safe-area-inset-bottom));
+    padding: 14px 0.9rem calc(14px + env(safe-area-inset-bottom));
     margin-top: 64px;
     overflow-y: auto;
 
@@ -90,45 +90,59 @@
     background-color: var(--secondary-color);
   }
 
+  /* 抽屉链接对齐管理后台侧边栏（admin-nav-item）同款：紧凑字号、圆角、hover 背景态 */
   .side-nav a {
     display: block;
-    padding: 21px 20px;
-    color: var(--text-color);
-    font-size: 1.1em;
+    padding: 0.65rem 0.8rem;
+    margin: 0 0 2px;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
     text-decoration: none;
-    margin: 0;
-    border-bottom: 1px solid #181b2435;
-    transition: border 0.3s ease;
+    border-radius: 6px;
+    transition:
+      color 0.15s ease,
+      background-color 0.15s ease;
   }
 
   .side-nav a:hover {
-    border: 1px solid var(--button-hover);
+    color: var(--text-color);
+    background: color-mix(in srgb, var(--text-color) 5%, transparent);
   }
 
-  /* 抽屉内登录态入口：与 .side-nav a 同观感，退出为 button 需显式抹平默认样式 */
+  .side-nav a.router-link-active {
+    color: var(--text-color);
+    font-weight: 600;
+    background: color-mix(in srgb, var(--primary-color) 10%, transparent);
+  }
+
+  /* 抽屉内登录态入口分区；退出为 button 需显式抹平默认样式并保持同款观感 */
   .side-nav-auth {
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    margin-top: 0.9rem;
+    padding-top: 0.9rem;
+    border-top: 1px solid var(--border-color);
   }
 
   .side-nav .side-nav-logout {
     display: block;
     width: 100%;
     min-width: 0;
-    min-height: 44px;
-    padding: 21px 20px;
+    padding: 0.65rem 0.8rem;
     background: none;
     border: 0;
-    border-bottom: 1px solid #181b2435;
-    color: var(--text-color);
+    border-radius: 6px;
+    color: var(--text-secondary);
     font-family: inherit;
-    font-size: 1.1em;
+    font-size: 0.9rem;
     text-align: left;
     cursor: pointer;
-    transition: border 0.3s ease;
+    transition:
+      color 0.15s ease,
+      background-color 0.15s ease;
   }
 
   .side-nav .side-nav-logout:hover:not(:disabled) {
-    border: 1px solid var(--button-hover);
+    color: var(--text-color);
+    background: color-mix(in srgb, var(--text-color) 5%, transparent);
   }
 
   .side-nav .side-nav-logout:disabled {

@@ -114,9 +114,13 @@
             <UserAvatar :user-id="auth.me?.id" :name="auth.me?.username" :size="24" />
             <span class="nav-user-name">{{ auth.me?.username }}</span>
           </router-link>
-          <router-link to="/settings/profile" class="nav-link nav-auth-account">
+          <button
+            type="button"
+            class="nav-auth-btn nav-auth-account"
+            @click="router.push('/settings/profile')"
+          >
             {{ t('auth.nav.account') }}
-          </router-link>
+          </button>
           <button
             type="button"
             class="nav-auth-btn nav-auth-logout"
