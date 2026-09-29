@@ -115,6 +115,61 @@
     background: color-mix(in srgb, var(--primary-color) 10%, transparent);
   }
 
+  /* 登录态用户头部区：头像 + 用户名（跳个人资料）+ 账号与安全，对齐管理后台 admin-side-head */
+  .side-nav-user-head {
+    margin-bottom: 0.9rem;
+    padding-bottom: 0.9rem;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .side-nav-user {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0.35rem 0.8rem;
+    margin: 0 0 2px;
+    border-radius: 6px;
+    color: var(--text-color);
+    text-decoration: none;
+    transition: background-color 0.15s ease;
+  }
+
+  .side-nav-user:hover {
+    background: color-mix(in srgb, var(--text-color) 5%, transparent);
+  }
+
+  .side-nav-user-name {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-color);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .side-nav-security {
+    display: block;
+    width: 100%;
+    padding: 0.5rem 0.8rem;
+    margin: 0 0 2px;
+    border: 0;
+    border-radius: 6px;
+    background: none;
+    color: var(--text-secondary);
+    font-family: inherit;
+    font-size: 0.85rem;
+    text-align: left;
+    cursor: pointer;
+    transition:
+      color 0.15s ease,
+      background-color 0.15s ease;
+  }
+
+  .side-nav-security:hover {
+    color: var(--text-color);
+    background: color-mix(in srgb, var(--text-color) 5%, transparent);
+  }
+
   /* 抽屉内登录态入口分区；退出为 button 需显式抹平默认样式并保持同款观感 */
   .side-nav-auth {
     margin-top: 0.9rem;
@@ -299,7 +354,7 @@
   .logo-and-title .logo-container {
 
     order: 1;
-    
+
   }
 
   .logo-and-title {
