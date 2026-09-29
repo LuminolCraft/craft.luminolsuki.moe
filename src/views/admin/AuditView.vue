@@ -25,20 +25,25 @@
           </option>
         </optgroup>
       </select>
-      <VueDatePicker
-        v-model="filterRange"
-        class="filter-range"
-        range
-        :enable-time-picker="false"
-        auto-apply
-        :clearable="true"
-        :disabled="loadingPage"
-        :max-date="new Date()"
-        :placeholder="t('admin.audit.filterRange')"
-        :aria-label="t('admin.audit.filterRange')"
+      <DatePicker
+        v-model.range="filterRange"
+        :masks="{ input: 'YYYY/MM/DD' }"
         :locale="dateLocale"
-        format="yyyy/MM/dd"
-      />
+        :max-date="new Date()"
+        :popover="{ placement: 'bottom-start' }"
+      >
+        <template #default="{ inputValue, inputEvents }">
+          <input
+            class="input filter-input"
+            :value="inputValue.start ? `${inputValue.start}${inputValue.end ? ` ~ ${inputValue.end}` : ''}` : ''"
+            :placeholder="t('admin.audit.filterRange')"
+            :aria-label="t('admin.audit.filterRange')"
+            :title="t('admin.audit.filterRange')"
+            :disabled="loadingPage"
+            v-on="inputEvents"
+          />
+        </template>
+      </DatePicker>
       <button type="submit" class="btn" :disabled="loadingPage">{{ t('admin.audit.apply') }}</button>
       <button type="button" class="btn ghost" @click="onReset">{{ t('admin.audit.reset') }}</button>
     </form>
@@ -182,9 +187,8 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { VueDatePicker } from '@vuepic/vue-datepicker'
-import '@vuepic/vue-datepicker/dist/main.css'
-import { zhCN, enUS } from 'date-fns/locale'
+import { DatePicker } from 'v-calendar'
+import 'v-calendar/style.css'
 import { api, isAppError } from '@/lib/api'
 import {
   auditActionLabelKey,
@@ -215,16 +219,16 @@ const expanded = ref<Set<string>>(new Set())
 
 const filterActorQuery = ref('')
 const filterAction = ref('')
-/** 日期区间（组件现成 @vuepic/vue-datepicker，range 模式；null = 未选） */
-const filterRange = ref<[Date, Date] | null>(null)
+/** 日期区间（v-calendar DatePicker range 模式；null = 未选） */
+const filterRange = ref<{ start: Date; end: Date } | null>(null)
 // 已应用的过滤条件（切页时沿用，编辑不过滤）
 const appliedActorQuery = ref('')
 const appliedAction = ref('')
 const appliedFromMs = ref<number | undefined>(undefined)
 const appliedToMs = ref<number | undefined>(undefined)
 
-/** 组件 locale 由站点语言映射（zh→zh-CN / en→en-US；date-fns Locale 对象） */
-const dateLocale = computed(() => (locale.value === 'zh' ? zhCN : enUS))
+/** 组件 locale 由站点语言映射（zh→zh-CN / en→en-US） */
+const dateLocale = computed(() => (locale.value === 'zh' ? 'zh-CN' : 'en-US'))
 
 const actionOptions = ref<AuditActionOption[]>([])
 
@@ -350,9 +354,9 @@ async function go(nextPage: number) {
 function onApply() {
   appliedActorQuery.value = filterActorQuery.value
   appliedAction.value = filterAction.value
-  const [from, to] = filterRange.value ?? []
-  appliedFromMs.value = from ? startOfDayMs(from) : undefined
-  appliedToMs.value = to ? endOfDayMs(to) : undefined
+  const range = filterRange.value
+  appliedFromMs.value = range?.start ? startOfDayMs(range.start) : undefined
+  appliedToMs.value = range?.end ? endOfDayMs(range.end) : undefined
   go(1)
 }
 
@@ -602,49 +606,61 @@ onMounted(async () => {
 }
 </style>
 
-<!-- 日期组件菜单 teleport 到 body，scoped 够不到：变量与外观映射放全局块，
-     值全部引用站点主题变量，明暗主题自动跟随 -->
+<!-- 日历弹层 teleport 到 body，scoped 够不到：v-calendar 的 --vc-* 变量全部映射站点
+     主题变量，明暗主题自动跟随；input 用项目 .input 类，无额外样式 -->
 <style>
-.filter-range {
-  width: min(19rem, 100%);
+.vc-container {
+  --vc-font-family: inherit;
+  --vc-white: var(--background-color);
+  --vc-black: var(--text-color);
+  --vc-gray-50: color-mix(in srgb, var(--text-color) 4%, var(--background-color));
+  --vc-gray-100: color-mix(in srgb, var(--text-color) 7%, var(--background-color));
+  --vc-gray-200: color-mix(in srgb, var(--text-color) 12%, var(--background-color));
+  --vc-gray-300: var(--border-color);
+  --vc-gray-400: var(--text-secondary);
+  --vc-gray-500: var(--text-secondary);
+  --vc-gray-600: var(--text-secondary);
+  --vc-gray-700: var(--text-secondary);
+  --vc-gray-800: var(--text-secondary);
+  --vc-gray-900: var(--text-secondary);
+  --vc-accent-100: color-mix(in srgb, var(--primary-color) 12%, transparent);
+  --vc-accent-200: color-mix(in srgb, var(--primary-color) 22%, transparent);
+  --vc-accent-300: color-mix(in srgb, var(--primary-color) 45%, transparent);
+  --vc-accent-400: var(--primary-color);
+  --vc-accent-500: var(--primary-color);
+  --vc-accent-600: var(--primary-color);
+  --vc-accent-700: var(--primary-color);
+  --vc-accent-800: color-mix(in srgb, var(--primary-color) 70%, black);
+  --vc-accent-900: color-mix(in srgb, var(--primary-color) 55%, black);
 }
 
-.filter-range .dp__input {
-  padding: 0.45rem 2.2rem 0.45rem 0.7rem;
+/* 弹层与按钮跟随明暗主题（组件自身 themeColor 固定，靠变量覆盖达成） */
+.vc-popover-content {
+  background: var(--background-color);
   border: 1px solid var(--border-color);
-  border-radius: 6px;
-  background: transparent;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px color-mix(in srgb, black 18%, transparent);
+}
+
+.vc-container .vc-weekday,
+.vc-container .vc-day-content {
   color: var(--text-color);
-  font: inherit;
-  font-size: 0.85rem;
 }
 
-.filter-range .dp__input::placeholder {
-  color: var(--text-secondary);
+.vc-container .vc-day-content:hover {
+  background: color-mix(in srgb, var(--primary-color) 12%, transparent);
 }
 
-.filter-range .dp__input_focus {
-  border-color: var(--primary-color);
+.vc-container .vc-nav-item:hover {
+  background: color-mix(in srgb, var(--primary-color) 12%, transparent);
+  color: var(--text-color);
 }
 
-.dp__theme_light,
-.dp__theme_dark,
-.dp__menu {
-  --dp-background-color: var(--background-color);
-  --dp-text-color: var(--text-color);
-  --dp-primary-color: var(--primary-color);
-  --dp-primary-text-color: var(--background-color);
-  --dp-secondary-color: var(--text-secondary);
-  --dp-border-color: var(--border-color);
-  --dp-menu-border-color: var(--border-color);
-  --dp-border-radius: 6px;
-  --dp-hover-color: color-mix(in srgb, var(--primary-color) 12%, transparent);
-  --dp-hover-text-color: var(--text-color);
-  --dp-icon-color: var(--text-secondary);
-  --dp-disabled-color: color-mix(in srgb, var(--text-secondary) 15%, transparent);
-  --dp-scroll-bar-background: var(--border-color);
-  --dp-scroll-bar-color: var(--text-secondary);
-  --dp-highlight-color: color-mix(in srgb, var(--primary-color) 25%, transparent);
-  --dp-font-family: inherit;
+.vc-container .vc-highlight {
+  background: var(--primary-color);
+}
+
+.vc-container .vc-highlight-content-solid {
+  color: var(--background-color);
 }
 </style>
