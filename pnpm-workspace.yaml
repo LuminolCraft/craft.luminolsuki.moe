@@ -1,0 +1,9 @@
+# pnpm 10+ 默认不跑依赖的构建脚本，未放行的包只装不构建。
+# esbuild 需要 postinstall 才能就位本地二进制，否则 vite / vitest 起不来。
+# packages 字段是 pnpm 8 的硬性要求（缺了会报 "packages field missing or empty"），
+# 本仓库是单包项目，所以只声明根目录自己。
+packages:
+  - "."
+
+allowBuilds:
+  esbuild: true
