@@ -13,6 +13,8 @@
         type="search"
         :placeholder="t('admin.users.filterUsername')"
         :aria-label="t('admin.users.filterUsername')"
+        @input="onSearchInput"
+        @keydown.enter.prevent="searchNow"
       />
       <button v-if="searchInput" type="button" class="btn ghost" @click="clearSearch">
         {{ t('admin.users.clearFilter') }}
@@ -101,7 +103,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { api, isAppError } from '@/lib/api'
 import { normalizePaged } from '@/lib/paged'
@@ -203,8 +205,45 @@ function applySearch(next: string) {
   void go(1)
 }
 
+/** 防抖排期：清空立即恢复无过滤；不足最少长度不请求（保留上一次结果）。 */
+function scheduleSearch(raw: string) {
+  if (searchTimer) clearTimeout(searchTimer)
+  const next = raw.trim()
+  if (next.length === 0) {
+    applySearch('')
+    return
+  }
+  if (next.length < SEARCH_MIN_LENGTH) return
+  searchTimer = setTimeout(() => applySearch(next), SEARCH_DEBOUNCE_MS)
+}
+
+/**
+ * 直接读输入框原始值，而不是只 watch `searchInput`。
+ *
+ * 中文 / 日文输入法组合期间，Vue 的 `v-model` 会跳过 input 事件（组合态未提交
+ * 就不写回 ref），只靠 watcher 会表现为「边输边搜毫无反应，点了别处让输入框
+ * 失焦提交组合后才搜一次」。
+ */
+function onSearchInput(e: Event) {
+  scheduleSearch((e.target as HTMLInputElement).value)
+}
+
+/** 回车立即搜（跳过防抖）：输完按回车应马上出结果。 */
+function searchNow() {
+  if (searchTimer) clearTimeout(searchTimer)
+  const next = searchInput.value.trim()
+  if (next.length === 0) {
+    applySearch('')
+    return
+  }
+  if (next.length < SEARCH_MIN_LENGTH) return
+  applySearch(next)
+}
+
 function clearSearch() {
   searchInput.value = ''
+  if (searchTimer) clearTimeout(searchTimer)
+  applySearch('')
 }
 
 /** 表头点击：升序 ↔ 降序，排序由后端全局执行，故回到第 1 页。 */
@@ -212,18 +251,6 @@ function toggleSort() {
   sortDir.value = sortDir.value === 'asc' ? 'desc' : 'asc'
   void go(1)
 }
-
-watch(searchInput, (raw) => {
-  if (searchTimer) clearTimeout(searchTimer)
-  const next = raw.trim()
-  // 清空立即恢复无过滤；不足最少长度不请求（保留上一次结果）
-  if (next.length === 0) {
-    applySearch('')
-    return
-  }
-  if (next.length < SEARCH_MIN_LENGTH) return
-  searchTimer = setTimeout(() => applySearch(next), SEARCH_DEBOUNCE_MS)
-})
 
 function formatDate(ts?: number): string {
   if (!ts) return '—'
