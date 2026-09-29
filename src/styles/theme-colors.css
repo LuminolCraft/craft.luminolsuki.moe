@@ -204,6 +204,8 @@
    =========================================== */
 
 :root {
+   /* 原生控件（select 弹层 / date 弹层 / 滚动条）跟随浅色主题 */
+   color-scheme: light;
    /* ---- 背景与文本 ---- */
    --background-color: var(--bases-background-color);
    --text-primary: #f1f5f9;
@@ -260,6 +262,8 @@
    =========================================== */
 
 html[data-theme="dark"] {
+   /* 原生控件（select 弹层 / date 弹层 / 滚动条）跟随深色主题 */
+   color-scheme: dark;
    --background-color: var(--bases-dark-background-color);
    --primary-color: var(--bases-dark-primary);
    --primary-gradient: var(--bases-dark-primary-gradient);
