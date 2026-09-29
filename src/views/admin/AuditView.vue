@@ -13,18 +13,31 @@
         type="text"
         :placeholder="t('admin.audit.filterActorQuery')"
       />
-      <select v-model="filterAction" class="input filter-input" :aria-label="t('admin.audit.action')">
-        <option value="">{{ t('admin.audit.filterAnyAction') }}</option>
-        <optgroup
-          v-for="group in actionGroups"
-          :key="group.category"
-          :label="categoryLabel(group.category)"
-        >
-          <option v-for="opt in group.options" :key="opt.action" :value="opt.action">
-            {{ actionLabel(opt.action) }}
-          </option>
-        </optgroup>
-      </select>
+      <!-- 事件筛选：Reka UI headless Select（弹层 JS 渲染，Firefox/Edge 表现一致），
+           触发器复用 .input 类，弹层配色沿用站点主题变量 -->
+      <SelectRoot v-model="selectedAction" :disabled="loadingPage">
+        <SelectTrigger class="input filter-input select-trigger" :aria-label="t('admin.audit.action')">
+          <SelectValue />
+          <SelectIcon class="select-icon">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="m6 9 6 6 6-6" />
+            </svg>
+          </SelectIcon>
+        </SelectTrigger>
+        <SelectPortal>
+          <SelectContent position="popper" :side-offset="6" class="select-menu">
+            <SelectItem :value="ANY_ACTION" class="select-item">
+              {{ t('admin.audit.filterAnyAction') }}
+            </SelectItem>
+            <SelectGroup v-for="group in actionGroups" :key="group.category">
+              <SelectLabel class="select-label">{{ categoryLabel(group.category) }}</SelectLabel>
+              <SelectItem v-for="opt in group.options" :key="opt.action" :value="opt.action" class="select-item">
+                {{ actionLabel(opt.action) }}
+              </SelectItem>
+            </SelectGroup>
+          </SelectContent>
+        </SelectPortal>
+      </SelectRoot>
       <DatePicker
         v-model.range="filterRange"
         :masks="{ input: 'YYYY/MM/DD' }"
@@ -191,6 +204,17 @@ import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { DatePicker } from 'v-calendar'
 import 'v-calendar/style.css'
+import {
+  SelectContent,
+  SelectGroup,
+  SelectIcon,
+  SelectItem,
+  SelectLabel,
+  SelectPortal,
+  SelectRoot,
+  SelectTrigger,
+  SelectValue,
+} from 'reka-ui'
 import { api, isAppError } from '@/lib/api'
 import {
   auditActionLabelKey,
@@ -221,6 +245,14 @@ const expanded = ref<Set<string>>(new Set())
 
 const filterActorQuery = ref('')
 const filterAction = ref('')
+/** Reka Select 不接受空字符串值：「全部事件」用哨兵值表示，映射回空串作为无过滤 */
+const ANY_ACTION = '__any__'
+const selectedAction = computed({
+  get: () => (filterAction.value === '' ? ANY_ACTION : filterAction.value),
+  set: (v: string) => {
+    filterAction.value = v === ANY_ACTION ? '' : v
+  },
+})
 /** 日期区间（v-calendar DatePicker range 模式；null = 未选） */
 const filterRange = ref<{ start: Date; end: Date } | null>(null)
 // 已应用的过滤条件（切页时沿用，编辑不过滤）
@@ -713,5 +745,71 @@ onMounted(async () => {
 
 .vc-container .vc-highlight-content-solid {
   color: var(--background-color);
+}
+
+/* ---------- Reka Select（事件筛选）：触发器复用 .input，弹层配色复刻原 base-select 方案 ---------- */
+.select-trigger {
+  width: min(16rem, 100%);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.select-trigger[data-disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.select-icon {
+  display: inline-flex;
+  flex-shrink: 0;
+  color: var(--text-secondary);
+}
+
+.select-menu {
+  width: var(--reka-select-trigger-width);
+  max-height: min(18rem, var(--reka-select-content-available-height));
+  overflow-y: auto;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--background-color);
+  box-shadow: 0 8px 24px color-mix(in srgb, black 18%, transparent);
+  padding: 0.3rem;
+  z-index: 70;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-secondary) transparent;
+}
+
+.select-label {
+  padding: 0.25rem 0.4rem 0.15rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.select-item {
+  padding: 0.42rem 0.6rem;
+  border-radius: 6px;
+  color: var(--text-color);
+  font-size: 0.88rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+.select-item[data-highlighted] {
+  color: var(--text-color);
+  background: color-mix(in srgb, var(--primary-color) 12%, transparent);
+  outline: none;
+}
+
+.select-item[data-state='checked'] {
+  color: var(--primary-color);
+  background: color-mix(in srgb, var(--primary-color) 14%, transparent);
+  font-weight: 600;
 }
 </style>
