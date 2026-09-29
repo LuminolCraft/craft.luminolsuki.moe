@@ -6,6 +6,7 @@
  * - 末页仍渲染 pager，「上一页」可用、「下一页」禁用；
  * - 点击「注册时间」表头切换 `order=asc|desc` 并回到第 1 页，aria-sort 与 icon 同步；
  * - 搜索边输边搜：防抖 300ms、不足 2 字符不发请求、请求带 `q` 且回第 1 页；
+ * - 输入法组合期间（`v-model` 被 Vue 跳过）仍按防抖发请求；回车立即搜；
  * - 清除搜索后请求不再带 `q`。
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -221,5 +222,46 @@ describe('UsersView（管理端用户列表）搜索', () => {
     await flushPromises()
 
     expect(wrapper.find('.page-empty').text()).toBe('没有匹配的用户')
+  })
+
+  it('输入法组合期间（v-model 被 Vue 跳过）仍按防抖发请求', async () => {
+    getMock.mockResolvedValue(reply([makeUser(1)]))
+    vi.useFakeTimers()
+
+    const wrapper = await mountView()
+    const input = wrapper.find('input[type="search"]')
+    const el = input.element as HTMLInputElement & { composing?: boolean }
+
+    // 模拟 vModelText 的组合态：composing=true 时它忽略 input 事件，searchInput 不更新。
+    // 旧实现只 watch(searchInput)，此时一次请求都不会发出（用户要失焦提交组合后才搜）。
+    el.composing = true
+    el.value = 'al'
+    await input.trigger('input')
+
+    expect(getMock).toHaveBeenCalledTimes(1)
+    vi.advanceTimersByTime(300)
+    await flushPromises()
+
+    expect(requestUrl(1)).toContain('q=al')
+  })
+
+  it('回车立即搜（不等防抖）；不足 2 字符回车不发请求', async () => {
+    getMock.mockResolvedValue(reply([makeUser(1)]))
+    vi.useFakeTimers()
+
+    const wrapper = await mountView()
+    const input = wrapper.find('input[type="search"]')
+
+    await input.setValue('a')
+    await input.trigger('keydown.enter')
+    await flushPromises()
+    expect(getMock).toHaveBeenCalledTimes(1)
+
+    await input.setValue('al')
+    await input.trigger('keydown.enter')
+    await flushPromises()
+
+    expect(getMock).toHaveBeenCalledTimes(2)
+    expect(requestUrl(1)).toContain('q=al')
   })
 })
