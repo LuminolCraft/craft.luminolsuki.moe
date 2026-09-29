@@ -476,6 +476,34 @@ onMounted(async () => {
   white-space: nowrap;
 }
 
+/* 移动端：不压缩列，表格按内容自然宽度交由 .table-wrap 横向滚动（同 users 页），
+   筛选栏纵向堆叠不再挤压 */
+@media (max-width: 896px) {
+  .data-table {
+    table-layout: auto;
+    width: max-content;
+    min-width: 100%;
+  }
+
+  .data-table th:nth-child(1),
+  .data-table th:nth-child(2) {
+    width: auto;
+  }
+
+  .data-table td {
+    overflow: visible;
+    text-overflow: clip;
+  }
+
+  .filter-row {
+    flex-direction: column;
+  }
+
+  .filter-row .filter-input {
+    width: 100%;
+  }
+}
+
 .mono-dim {
   font-family: ui-monospace, monospace;
   font-size: 0.78rem;
