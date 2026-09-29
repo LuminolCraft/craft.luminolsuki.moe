@@ -88,16 +88,19 @@ app.use(router)
 // 注册自定义指令
 app.directive('lenis-scroll', lenisScrollDirective)
 
-// Umami 统计脚本
-head.push({
-  script: [
-    {
-      src: 'https://cloud.umami.is/script.js',
-      'data-website-id': '99722dca-d63f-4f8a-91f0-429d18477455',
-      defer: true,
-    },
-  ],
-})
+// Umami 统计脚本：仅生产构建加载——pnpm dev 时本地测试流量会打进线上统计
+// （Umami 按 hostname 归档，localhost 会作为另一个域名出现在面板里）。
+if (import.meta.env.PROD) {
+  head.push({
+    script: [
+      {
+        src: 'https://cloud.umami.is/script.js',
+        'data-website-id': '99722dca-d63f-4f8a-91f0-429d18477455',
+        defer: true,
+      },
+    ],
+  })
+}
 
 // 路由元数据 SEO 处理（保持原有逻辑）
 router.beforeEach((to) => {
