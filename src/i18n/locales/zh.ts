@@ -925,7 +925,7 @@ export default {
       "target": "目标",
       "filterActorQuery": "按用户名或邮箱过滤",
       "filterAnyAction": "全部事件",
-      "filterFrom": "起始日期",
+      "filterRange": "日期区间",
       "actorDeleted": "已注销",
       "actorAnonymous": "匿名 / 系统",
       "actorUnresolved": "未解析",

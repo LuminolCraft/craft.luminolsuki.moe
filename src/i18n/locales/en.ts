@@ -925,7 +925,7 @@ export default {
       "target": "Target",
       "filterActorQuery": "Filter by username or email",
       "filterAnyAction": "All events",
-      "filterFrom": "From date",
+      "filterRange": "Date range",
       "actorDeleted": "Deleted",
       "actorAnonymous": "Anonymous / system",
       "actorUnresolved": "Unresolved",

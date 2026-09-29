@@ -25,12 +25,19 @@
           </option>
         </optgroup>
       </select>
-      <input
-        v-model="filterFrom"
-        class="input filter-input"
-        type="date"
-        :aria-label="t('admin.audit.filterFrom')"
-        :title="t('admin.audit.filterFrom')"
+      <VueDatePicker
+        v-model="filterRange"
+        class="filter-range"
+        range
+        :enable-time-picker="false"
+        auto-apply
+        :clearable="true"
+        :disabled="loadingPage"
+        :max-date="new Date()"
+        :placeholder="t('admin.audit.filterRange')"
+        :aria-label="t('admin.audit.filterRange')"
+        :locale="dateLocale"
+        format="yyyy/MM/dd"
       />
       <button type="submit" class="btn" :disabled="loadingPage">{{ t('admin.audit.apply') }}</button>
       <button type="button" class="btn ghost" @click="onReset">{{ t('admin.audit.reset') }}</button>
@@ -175,6 +182,9 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { VueDatePicker } from '@vuepic/vue-datepicker'
+import '@vuepic/vue-datepicker/dist/main.css'
+import { zhCN, enUS } from 'date-fns/locale'
 import { api, isAppError } from '@/lib/api'
 import {
   auditActionLabelKey,
@@ -187,7 +197,7 @@ import { useAuthorizationStore } from '@/stores/authorization'
 import type { AuditActionOption, AuditArchive, AuditLog } from '@/types/nexus'
 import { useGsap } from '@/composables/useGsap'
 
-const { t, te } = useI18n()
+const { t, te, locale } = useI18n()
 const authz = useAuthorizationStore()
 const { create, reduceMotion } = useGsap()
 
@@ -205,11 +215,16 @@ const expanded = ref<Set<string>>(new Set())
 
 const filterActorQuery = ref('')
 const filterAction = ref('')
-const filterFrom = ref('')
+/** 日期区间（组件现成 @vuepic/vue-datepicker，range 模式；null = 未选） */
+const filterRange = ref<[Date, Date] | null>(null)
 // 已应用的过滤条件（切页时沿用，编辑不过滤）
 const appliedActorQuery = ref('')
 const appliedAction = ref('')
 const appliedFromMs = ref<number | undefined>(undefined)
+const appliedToMs = ref<number | undefined>(undefined)
+
+/** 组件 locale 由站点语言映射（zh→zh-CN / en→en-US；date-fns Locale 对象） */
+const dateLocale = computed(() => (locale.value === 'zh' ? zhCN : enUS))
 
 const actionOptions = ref<AuditActionOption[]>([])
 
@@ -281,10 +296,14 @@ function toggleDetails(id: string) {
 
 // ---------- 查询 ----------
 
-function fromMsOf(value: string): number | undefined {
-  if (!value) return undefined
-  const ms = new Date(`${value}T00:00:00`).getTime()
-  return Number.isFinite(ms) ? ms : undefined
+/** 当地时区当日 00:00:00.000（fromMs 下界） */
+function startOfDayMs(d: Date): number {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()
+}
+
+/** 当地时区当日 23:59:59.999（toMs 上界，含当天全部时刻） */
+function endOfDayMs(d: Date): number {
+  return startOfDayMs(d) + 86_400_000 - 1
 }
 
 function buildQuery(nextPage: number): string {
@@ -294,6 +313,7 @@ function buildQuery(nextPage: number): string {
   if (appliedActorQuery.value) params.set('actorQuery', appliedActorQuery.value)
   if (appliedAction.value) params.set('action', appliedAction.value)
   if (appliedFromMs.value !== undefined) params.set('fromMs', String(appliedFromMs.value))
+  if (appliedToMs.value !== undefined) params.set('toMs', String(appliedToMs.value))
   return params.toString()
 }
 
@@ -330,17 +350,20 @@ async function go(nextPage: number) {
 function onApply() {
   appliedActorQuery.value = filterActorQuery.value
   appliedAction.value = filterAction.value
-  appliedFromMs.value = fromMsOf(filterFrom.value)
+  const [from, to] = filterRange.value ?? []
+  appliedFromMs.value = from ? startOfDayMs(from) : undefined
+  appliedToMs.value = to ? endOfDayMs(to) : undefined
   go(1)
 }
 
 function onReset() {
   filterActorQuery.value = ''
   filterAction.value = ''
-  filterFrom.value = ''
+  filterRange.value = null
   appliedActorQuery.value = ''
   appliedAction.value = ''
   appliedFromMs.value = undefined
+  appliedToMs.value = undefined
   go(1)
 }
 
@@ -576,5 +599,52 @@ onMounted(async () => {
 .archive-section .form-error,
 .archive-section .form-success {
   margin-top: 0.8rem;
+}
+</style>
+
+<!-- 日期组件菜单 teleport 到 body，scoped 够不到：变量与外观映射放全局块，
+     值全部引用站点主题变量，明暗主题自动跟随 -->
+<style>
+.filter-range {
+  width: min(19rem, 100%);
+}
+
+.filter-range .dp__input {
+  padding: 0.45rem 2.2rem 0.45rem 0.7rem;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-color);
+  font: inherit;
+  font-size: 0.85rem;
+}
+
+.filter-range .dp__input::placeholder {
+  color: var(--text-secondary);
+}
+
+.filter-range .dp__input_focus {
+  border-color: var(--primary-color);
+}
+
+.dp__theme_light,
+.dp__theme_dark,
+.dp__menu {
+  --dp-background-color: var(--background-color);
+  --dp-text-color: var(--text-color);
+  --dp-primary-color: var(--primary-color);
+  --dp-primary-text-color: var(--background-color);
+  --dp-secondary-color: var(--text-secondary);
+  --dp-border-color: var(--border-color);
+  --dp-menu-border-color: var(--border-color);
+  --dp-border-radius: 6px;
+  --dp-hover-color: color-mix(in srgb, var(--primary-color) 12%, transparent);
+  --dp-hover-text-color: var(--text-color);
+  --dp-icon-color: var(--text-secondary);
+  --dp-disabled-color: color-mix(in srgb, var(--text-secondary) 15%, transparent);
+  --dp-scroll-bar-background: var(--border-color);
+  --dp-scroll-bar-color: var(--text-secondary);
+  --dp-highlight-color: color-mix(in srgb, var(--primary-color) 25%, transparent);
+  --dp-font-family: inherit;
 }
 </style>
