@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Smooth option switcher — accessibility adaptation</title>
+  <link href="styles.css" rel="stylesheet">
+  <link href="production.css" rel="stylesheet">
+</head>
+<body>
+  <!-- Entire file is an optional production adaptation, not video source.
+       The input/visual-wrapper sibling order and animation mechanism remain. -->
+  <fieldset class="switcher-field">
+    <legend class="visually-hidden">Plan and billing</legend>
+    <input class="visually-hidden" type="radio" name="mode" id="free" value="free" checked>
+    <input class="visually-hidden" type="radio" name="mode" id="premium" value="premium">
+    <input class="visually-hidden" type="radio" name="version" id="monthly" value="monthly" aria-label="Premium billing: Monthly" checked>
+    <input class="visually-hidden" type="radio" name="version" id="annual" value="annual" aria-label="Premium billing: Annual">
+
+    <div class="btn-wrapper">
+      <div class="main-content">
+        <label for="free" class="free-wrapper">Free</label>
+        <div class="premium-wrapper">
+          <label for="premium" class="premium">Premium</label>
+          <div class="version-menu">
+            <label for="monthly" class="monthly">Monthly</label>
+            <div class="dot" aria-hidden="true">·</div>
+            <label for="annual" class="annual">Annual</label>
+            <div class="menu-slider" aria-hidden="true"></div>
+          </div>
+        </div>
+      </div>
+      <div class="slider" aria-hidden="true"></div>
+    </div>
+  </fieldset>
+</body>
+</html>

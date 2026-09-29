@@ -1,0 +1,3 @@
+interface:
+  display_name: "Smooth Option Switcher"
+  short_description: "CSS option switching with coordinated moving indicators"
