@@ -8,6 +8,7 @@ import App from './App.vue'
 import router from './router'
 import i18n from './i18n'
 import { setupGsap } from '@/gsap'
+import { uiFxPlugin } from '@/composables/useUiFx'
 import { lenisScrollDirective, destroyAllInstances } from '@/directives/lenisScroll'
 import { lenisInstances } from '@/utils/lenisInstances'
 
@@ -84,6 +85,10 @@ app.use(head)
 app.use(createPinia())
 app.use(i18n)
 app.use(router)
+
+// 全站微交互：自定义光标 + Magnetic Corner Brackets 角标
+// 开关与白名单都在 src/config/ui-fx.ts，要关/要增删只改那一个文件
+app.use(uiFxPlugin)
 
 // 注册自定义指令
 app.directive('lenis-scroll', lenisScrollDirective)

@@ -36,6 +36,19 @@ export interface CustomCursorOptions {
   dotDuration?: number
   /** 追踪环跟随时长（秒） */
   ringDuration?: number
+  /**
+   * 有元素角标框时是否把四角让给它。
+   * true = 指针压在 [data-mcf] 元素上时隐藏光标四角（推荐：同一时间只出现一个框）
+   */
+  yieldToFrames?: boolean
+  /** 四角对齐到目标 rect 的跟随时长（秒） */
+  bracketDuration?: number
+}
+
+/** 命中测试结果：只有 target 有值时光标四角才出现 */
+export interface CursorTarget {
+  kind: 'frame' | 'drag'
+  rect: DOMRect
 }
 
 export function supportsCustomCursor(): boolean {
@@ -68,31 +81,72 @@ export function useCustomCursor(options: CustomCursorOptions = {}) {
   let pointerX = 0
   let pointerY = 0
   let moved = false
+  let setBracketLeft: ((v: number) => void) | null = null
+  let setBracketTop: ((v: number) => void) | null = null
+  let setBracketWidth: ((v: number) => void) | null = null
+  let setBracketHeight: ((v: number) => void) | null = null
+  let bracketVisible = false
+  let lastTarget: CursorTarget | null = null
 
-  function hitTest(): void {
-    if (!dot) return
+  const yieldToFrames = options.yieldToFrames ?? true
+  const bracketDuration = options.bracketDuration ?? 0.3
+
+  function hitTest(): CursorTarget | null {
+    if (!dot) return null
     const el = document.elementFromPoint(pointerX, pointerY)
-    if (!el) return
+    if (!el) return null
 
-    const dragZone = el.closest('[data-drag]')
+    // 元素角标框优先：让它的四角负责表现「锁定」，光标四角让位
+    const frameEl = el.closest<HTMLElement>('[data-mcf]')
+    if (frameEl && yieldToFrames) {
+      dragging.value = false
+      hovering.value = true
+      return { kind: 'frame', rect: frameEl.getBoundingClientRect() }
+    }
+
+    const dragZone = el.closest<HTMLElement>('[data-drag]')
+    if (dragZone) {
+      dragging.value = true
+      hovering.value = true
+      return { kind: 'drag', rect: dragZone.getBoundingClientRect() }
+    }
+
     const interactive = el.closest(
       '[data-cursor-hover], a, button, [role="button"], input, textarea, select',
     )
-
-    dragging.value = Boolean(dragZone)
+    dragging.value = false
     hovering.value = Boolean(interactive)
+    return null
+  }
+
+  /** 把四角贴到目标 rect 上（视角 rect，用 transform 定位，避免读 layout） */
+  function syncBrackets(target: CursorTarget | null): void {
+    if (!brackets) return
+    if (!target) {
+      if (bracketVisible) {
+        bracketVisible = false
+        gsap.to(brackets, { autoAlpha: 0, duration: 0.22, ease: EASINGS.hover, overwrite: 'auto' })
+      }
+      return
+    }
+
+    const { left, top, width, height } = target.rect
+    if (!bracketVisible) {
+      bracketVisible = true
+      gsap.set(brackets, { x: left, y: top, width, height })
+      gsap.to(brackets, { autoAlpha: 1, duration: 0.26, ease: EASINGS.hover, overwrite: 'auto' })
+      return
+    }
+
+    setBracketLeft?.(left)
+    setBracketTop?.(top)
+    setBracketWidth?.(width)
+    setBracketHeight?.(height)
   }
 
   function applyState(): void {
     if (!brackets) return
     const mode = dragging.value ? 'drag' : hovering.value ? 'hover' : 'idle'
-    gsap.to(brackets, {
-      autoAlpha: mode === 'idle' ? 0 : 1,
-      scale: mode === 'drag' ? 1.18 : 1,
-      duration: 0.28,
-      ease: EASINGS.hover,
-      overwrite: 'auto',
-    })
     if (ring) {
       gsap.to(ring, {
         scale: mode === 'idle' ? 1 : 1.22,
@@ -107,6 +161,13 @@ export function useCustomCursor(options: CustomCursorOptions = {}) {
   function onMove(event: PointerEvent): void {
     pointerX = event.clientX
     pointerY = event.clientY
+    // 已经对齐到某个元素时，跟随时同步刷新它的 rect（元素可能在被拖动/滚动）
+    if (bracketVisible && lastTarget?.kind === 'frame') {
+      const frameEl = document
+        .elementFromPoint(pointerX, pointerY)
+        ?.closest<HTMLElement>('[data-mcf]')
+      if (frameEl) lastTarget = { kind: 'frame', rect: frameEl.getBoundingClientRect() }
+    }
 
     if (!moved) {
       moved = true
@@ -131,13 +192,17 @@ export function useCustomCursor(options: CustomCursorOptions = {}) {
     queued = true
     raf = requestAnimationFrame(() => {
       queued = false
-      hitTest()
+      const target = hitTest()
+      lastTarget = target
+      syncBrackets(target)
       applyState()
     })
   }
 
   function onLeaveWindow(): void {
-    gsap.to([dot, ring, brackets].filter(Boolean), { autoAlpha: 0, duration: 0.2 })
+    gsap.to([dot, ring].filter(Boolean), { autoAlpha: 0, duration: 0.2 })
+    if (brackets) gsap.to(brackets, { autoAlpha: 0, duration: 0.2 })
+    bracketVisible = false
     moved = false
   }
 
@@ -148,7 +213,6 @@ export function useCustomCursor(options: CustomCursorOptions = {}) {
 
   function onDragEnd(): void {
     dragging.value = false
-    hitTest()
     applyState()
   }
 
@@ -186,9 +250,30 @@ export function useCustomCursor(options: CustomCursorOptions = {}) {
         duration: options.ringDuration ?? RING_FOLLOW,
         ease: EASINGS.snappy,
       }) as unknown as (v: number) => void
+
+      // 四角按目标 rect 走：left/top/width/height 各自 quickTo，尺寸随元素变化
+      setBracketLeft = gsap.quickTo(brackets, 'x', {
+        duration: bracketDuration,
+        ease: EASINGS.snappy,
+      }) as unknown as (v: number) => void
+      setBracketTop = gsap.quickTo(brackets, 'y', {
+        duration: bracketDuration,
+        ease: EASINGS.snappy,
+      }) as unknown as (v: number) => void
+      setBracketWidth = gsap.quickTo(brackets, 'width', {
+        duration: bracketDuration,
+        ease: EASINGS.snappy,
+      }) as unknown as (v: number) => void
+      setBracketHeight = gsap.quickTo(brackets, 'height', {
+        duration: bracketDuration,
+        ease: EASINGS.snappy,
+      }) as unknown as (v: number) => void
     }, root)
 
-    gsap.set([dot, ring, brackets], { autoAlpha: 0, xPercent: -50, yPercent: -50 })
+    // 四角层改成「对齐目标 rect」，不再用居中定位
+    gsap.set([dot, ring], { autoAlpha: 0, xPercent: -50, yPercent: -50 })
+    gsap.set(brackets, { autoAlpha: 0, xPercent: 0, yPercent: 0, width: 0, height: 0 })
+    bracketVisible = false
 
     window.addEventListener('pointermove', onMove, { passive: true })
     window.addEventListener('pointerdown', onDragStart, { passive: true })
@@ -213,6 +298,12 @@ export function useCustomCursor(options: CustomCursorOptions = {}) {
     setDotY = null
     setRingX = null
     setRingY = null
+    setBracketLeft = null
+    setBracketTop = null
+    setBracketWidth = null
+    setBracketHeight = null
+    lastTarget = null
+    bracketVisible = false
     ctx?.revert()
     ctx = null
     root = null
