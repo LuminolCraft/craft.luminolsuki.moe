@@ -1,21 +1,18 @@
 /**
- * useMagneticCornerHover — Magnetic Cursor + Corner Brackets
+ * useMagneticCornerHover — Corner Brackets（固定位置版）
  *
- * 鼠标进入目标元素时，四个 L 形定位角从外侧展开淡入；鼠标在元素内移动时，
- * 四个角参照鼠标位置产生「越靠边吸得越紧」的磁吸位移；离开时平滑收回。
+ * 鼠标进入目标元素时，四个 L 形定位角从外侧展开淡入，离开时平滑收回。
+ * 角的位置**只由元素几何决定，与鼠标位置无关**：鼠标在元素内怎么移动，角都不动。
  *
  * 设计取向：Technical HUD 式的克制微交互（Stripe / Apple / Awwwards 那一类），
  * 不是赛博朋克 HUD——被包裹的元素本身绝不位移、不缩放、不加阴影。
  *
  * 实现要点：
- * - 跟随用 gsap.quickTo()，每个角 x/y 各一个（4 角 × 2 轴 = 8 个）；
- *   mousemove 里只写目标值，绝不新建 tween / timeline。
- * - mousemove 用 requestAnimationFrame 合并，同帧内多次移动只计算一次。
- * - 几何量（rect）缓存，只在 mouseenter 与 ResizeObserver 回调里刷新，
- *   移动过程中不读布局，避免强制同步布局。
- * - 所有动画包在 gsap.context()，卸载时 revert()；quickTo 目标元素另行 killTweensOf。
- * - prefers-reduced-motion：角标仍然出现（内容可见优先），但跳过入场位移、
- *   跳过错峰、跳过磁吸跟随（不启动 rAF 循环）。
+ * - 只有「进入 / 离开」两种状态，各自一条补间；没有 mousemove 驱动的跟随，
+ *   因此不监听 mousemove、不建 quickTo、不跑 rAF 循环。
+ * - 几何量缓存，只在 mouseenter 与 ResizeObserver 回调里刷新。
+ * - 所有动画包在 gsap.context()，卸载时 revert()，并 killTweensOf 每个角。
+ * - prefers-reduced-motion：角标仍然出现（内容可见优先），但跳过入场位移与错峰。
  * - 粗指针（(pointer: coarse) 或 (hover: none)）：整层角标不启用。
  */
 import { onUnmounted } from 'vue'
@@ -36,7 +33,6 @@ const ENTER_STAGGER = 0.03
 const LEAVE_STAGGER = 0.02
 const ENTER_DURATION = 0.45
 const LEAVE_DURATION = 0.3
-const FOLLOW_DURATION = 0.5
 /** 角臂长度固定值（px）：全站统一，避免同一排元素角标大小不一致 */
 const ARM_FIXED = 14
 /** 角臂长度下限（override 可调小，但不低于它） */
@@ -60,8 +56,6 @@ export interface CornerGeometry {
   arm: number
   padding: number
   seedExtra: number
-  magnetStrength: number
-  edgeBias: number
   /** false = 尺寸太小，不值得出角标 */
   ok: boolean
 }
@@ -78,8 +72,6 @@ export function computeCornerGeometry(
   height: number,
   opts: {
     maxArm?: number
-    magnetStrength?: number
-    edgeBias?: number
     paddingOverride?: number
     border?: { top: number; right: number; bottom: number; left: number }
   } = {},
@@ -93,8 +85,6 @@ export function computeCornerGeometry(
     arm,
     padding: opts.paddingOverride ?? GAP_FIXED,
     seedExtra: SEED_EXTRA,
-    magnetStrength: opts.magnetStrength ?? 6,
-    edgeBias: opts.edgeBias ?? 2.2,
     // ok 由管理器用「该元素的 effective minSize」覆写（见 updateGeometry）
     ok: true,
   }
@@ -105,23 +95,15 @@ interface Offset {
   y: number
 }
 
-interface AxisSetters {
-  x: (value: number) => void
-  y: (value: number) => void
-}
-
 interface Frame {
   el: HTMLElement
   corners: HTMLElement[]
   rect: DOMRect | null
-  /** 按当前元素尺寸算出的几何量（臂长 / 间距 / 入场外扩 / 磁吸幅度） */
+  /** 按当前元素尺寸算出的几何量（臂长 / 间距 / 入场外扩） */
   geo: CornerGeometry | null
-  setters: AxisSetters[]
   resizeObserver: ResizeObserver | null
-  pointer: { x: number; y: number }
   active: boolean
   focusActive: boolean
-  queued: boolean
   teardown: (() => void) | null
   /** 尺寸变化时重算几何量，未激活时顺便归位 */
   refreshGeometry: (() => void) | null
@@ -150,10 +132,7 @@ export interface MagneticCornerHoverOptions {
   padding?: number
   /** 元素短边小于该值不成框 */
   minSize?: number
-  /** 磁吸位移上限（px） */
-  magnetStrength?: number
-  /** 边缘加权倍数：越大，鼠标靠边时吸得越紧、居中时越安静 */
-  edgeBias?: number
+
   /** 是否在键盘 focus 时也进入锁定态 */
   activeOnFocus?: boolean
   /** 角标激活色（写进 --corner-accent，由样式读取） */
@@ -198,14 +177,13 @@ export function createMagneticCornerManager(
 ): MagneticCornerHoverManager {
   const armMax = options.armMax ?? ARM_FIXED
   const minSize = options.minSize ?? FRAME_MIN_SIZE
-  const magnetStrength = options.magnetStrength ?? 6
-  const edgeBias = options.edgeBias ?? 2.2
   const activeOnFocus = options.activeOnFocus ?? true
   const accentColor = options.accentColor ?? ''
 
   let ctx: gsap.Context | null = null
   let frames: Frame[] = []
-  let magnetEnabled = true
+  /** false = prefers-reduced-motion：角标仍出现，但不做位移与错峰 */
+  let animateEnabled = true
   /** 用于 createFrame 的早期返回判断：没有 Vue 实例时也安全 */
   const enabled = true
 
@@ -242,8 +220,6 @@ export function createMagneticCornerManager(
 
     const geo = computeCornerGeometry(width, height, {
       maxArm: Number.isFinite(overrideArm) && overrideArm > 0 ? overrideArm : armMax,
-      magnetStrength,
-      edgeBias,
       paddingOverride: Number.isFinite(overrideGap) && overrideGap >= 0 ? overrideGap : undefined,
       border,
     })
@@ -319,21 +295,36 @@ export function createMagneticCornerManager(
 
   /* ---------- 入场 / 收回 ---------- */
 
+  /**
+   * 进入：先把角摆到元素外侧的起点，再补间到静止位。
+   *
+   * 摆位必须在 `frame.active` 守卫**之内**：mouseover 会为每个子元素冒泡触发一次，
+   * 若在守卫之外摆位，指针在元素内从一个子元素移到另一个子元素时，
+   * 角会被反复推回起点而补间又被守卫挡掉，表现就是「框跟着光标位置乱走、贴着某条边」。
+   */
   function enter(frame: Frame): void {
-    // 已在激活态就别重播入场：mouseover 在子元素之间移动会反复触发，
-    // 每帧都 killTweensOf + 重播补间就会看到角标闪烁
     if (frame.active) return
-    frame.active = true
 
+    frame.rect = frame.el.getBoundingClientRect()
     const geo = updateGeometry(frame)
+
+    // 尺寸太小不值得出角标；其余情况一律激活（含「内部还有子框」的父容器）
+    if (!shouldActivate(geo)) {
+      hide(frame)
+      return
+    }
+
+    frame.active = true
+    seedFrame(frame)
 
     frame.corners.forEach((corner, index) => {
       const key = CORNER_KEYS[index]
       if (!key) return
       gsap.killTweensOf(corner)
       const rest = restOffset(key, geo)
+      corner.style.setProperty('--corner-active', '1')
 
-      if (!magnetEnabled) {
+      if (!animateEnabled) {
         // reduce：角标直接可见并归位，不做位移与错峰
         gsap.set(corner, { x: rest.x, y: rest.y, autoAlpha: 1 })
         return
@@ -365,7 +356,7 @@ export function createMagneticCornerManager(
       corner.style.setProperty('--corner-active', '0')
       const seed = seedOffset(key, geo)
 
-      if (!magnetEnabled) {
+      if (!animateEnabled) {
         gsap.set(corner, { autoAlpha: 0, x: seed.x, y: seed.y })
         return
       }
@@ -383,95 +374,6 @@ export function createMagneticCornerManager(
     })
   }
 
-  /* ---------- 磁吸 ---------- */
-
-  /**
-   * 单个角的磁吸目标：方向指向鼠标，幅度随「靠近哪条边」加权。
-   * 贴边时达到 magnetStrength，正中心时趋近 0；toCorner 用于驱动该角的激活色。
-   */
-  function magnetFor(
-    key: CornerKey,
-    frame: Frame,
-    geo: CornerGeometry,
-  ): { x: number; y: number; toCorner: number } {
-    const rect = frame.rect
-    if (!rect || rect.width === 0 || rect.height === 0) return { x: 0, y: 0, toCorner: 0 }
-
-    const px = ((frame.pointer.x - rect.left) / rect.width) * 2 - 1
-    const py = ((frame.pointer.y - rect.top) / rect.height) * 2 - 1
-    const nx = Math.max(-1, Math.min(1, px))
-    const ny = Math.max(-1, Math.min(1, py))
-
-    const left = key === 'tl' || key === 'bl'
-    const top = key === 'tl' || key === 'tr'
-
-    const dirX = left ? nx : -nx
-    const dirY = top ? ny : -ny
-    const nearX = left ? px : -px
-    const nearY = top ? py : -py
-
-    const bias = geo.edgeBias
-    const amp = geo.magnetStrength
-    const weightX = 1 + Math.min(1, Math.max(0, 0.5 + nearX / 2)) * 2 * (bias - 1)
-    const weightY = 1 + Math.min(1, Math.max(0, 0.5 + nearY / 2)) * 2 * (bias - 1)
-
-    return {
-      x: dirX * weightX * amp,
-      y: dirY * weightY * amp,
-      toCorner: Math.max(Math.abs(dirX), Math.abs(dirY)),
-    }
-  }
-
-  function schedule(frame: Frame): void {
-    if (frame.queued) return
-    frame.queued = true
-
-    requestAnimationFrame(() => {
-      frame.queued = false
-      const rect = frame.rect
-      if (!frame.active || !rect || !magnetEnabled) return
-
-      const geo = updateGeometry(frame)
-      ensureSetters(frame)
-
-      frame.corners.forEach((corner, index) => {
-        const key = CORNER_KEYS[index]
-        const setter = frame.setters[index]
-        if (!key || !setter) return
-
-        const rest = restOffset(key, geo)
-        const magnet = magnetFor(key, frame, geo)
-        setter.x(rest.x + magnet.x)
-        setter.y(rest.y + magnet.y)
-        corner.style.setProperty('--corner-active', magnet.toCorner.toFixed(3))
-      })
-    })
-  }
-
-  /**
-   * quickTo 懒创建：一个 quickTo 会常驻一个小 tween 实例。页面上角标框很多，
-   * 全部预建会有上百个 tween 一直在时间线上挂着。这里改成首次 hover 时才为这一框
-   * 创建 8 个 quickTo（4 角 × x/y），离开后缓存在 frame 上复用。
-   */
-  function ensureSetters(frame: Frame): void {
-    if (frame.setters.length) return
-    frame.setters = frame.corners.map((corner) => ({
-      x: gsap.quickTo(corner, 'x', {
-        duration: FOLLOW_DURATION,
-        ease: EASINGS.snappy,
-      }) as unknown as (v: number) => void,
-      y: gsap.quickTo(corner, 'y', {
-        duration: FOLLOW_DURATION,
-        ease: EASINGS.snappy,
-      }) as unknown as (v: number) => void,
-    }))
-  }
-
-  function disposeSetters(frame: Frame): void {
-    frame.corners.forEach((corner) => gsap.killTweensOf(corner))
-    frame.setters = []
-  }
-
   /* ---------- frame 装配 ---------- */
 
   function createFrame(el: HTMLElement, corners: HTMLElement[]): Frame {
@@ -479,12 +381,9 @@ export function createMagneticCornerManager(
       el,
       corners,
       rect: el.getBoundingClientRect(),
-      setters: [],
       resizeObserver: null,
-      pointer: { x: -1, y: -1 },
       active: false,
       focusActive: false,
-      queued: false,
       teardown: null,
       geo: null,
       refreshGeometry: null,
@@ -506,27 +405,10 @@ export function createMagneticCornerManager(
 
     const onEnter = () => {
       frame.rect = el.getBoundingClientRect()
-      const geo = updateGeometry(frame)
-
-      // 尺寸太小不值得出角标；其余情况一律激活（含「内部还有子框」的父容器）
-      if (!shouldActivate(geo)) {
-        hide(frame)
-        return
-      }
-      seedFrame(frame)
       enter(frame)
     }
 
-    const onMove = (event: MouseEvent) => {
-      frame.rect = frame.rect ?? el.getBoundingClientRect()
-      frame.pointer.x = event.clientX
-      frame.pointer.y = event.clientY
-      schedule(frame)
-    }
-
     const onLeave = () => {
-      frame.pointer.x = -1
-      frame.pointer.y = -1
       if (!frame.focusActive) leave(frame)
     }
 
@@ -534,12 +416,6 @@ export function createMagneticCornerManager(
       if (!activeOnFocus) return
       frame.focusActive = true
       frame.rect = el.getBoundingClientRect()
-      const geo = updateGeometry(frame)
-      if (!shouldActivate(geo)) {
-        hide(frame)
-        return
-      }
-      seedFrame(frame)
       enter(frame)
     }
 
@@ -555,7 +431,6 @@ export function createMagneticCornerManager(
     */
     el.addEventListener('mouseenter', onEnter)
     el.addEventListener('mouseover', onEnter)
-    el.addEventListener('mousemove', onMove)
     el.addEventListener('mouseleave', onLeave)
     if (activeOnFocus) {
       el.addEventListener('focusin', onFocusIn)
@@ -565,7 +440,6 @@ export function createMagneticCornerManager(
     frame.teardown = () => {
       el.removeEventListener('mouseenter', onEnter)
       el.removeEventListener('mouseover', onEnter)
-      el.removeEventListener('mousemove', onMove)
       el.removeEventListener('mouseleave', onLeave)
       el.removeEventListener('focusin', onFocusIn)
       el.removeEventListener('focusout', onFocusOut)
@@ -611,7 +485,7 @@ export function createMagneticCornerManager(
   function bind(root: HTMLElement, frameMap: Map<HTMLElement, HTMLElement[]>): () => void {
     if (!enabled) return () => {}
 
-    magnetEnabled = !prefersReducedMotion()
+    animateEnabled = !prefersReducedMotion()
 
     const known = new Set(frames.map((frame) => frame.el))
     const added: Frame[] = []
@@ -632,7 +506,6 @@ export function createMagneticCornerManager(
         frame.teardown = null
         frame.timers.forEach((id) => window.clearTimeout(id))
         frame.timers = []
-        disposeSetters(frame)
       })
       frames = frames.filter((frame) => !added.includes(frame))
     }
@@ -674,7 +547,6 @@ export function createMagneticCornerManager(
       frame.teardown = null
       frame.timers.forEach((id) => window.clearTimeout(id))
       frame.timers = []
-      disposeSetters(frame)
       frames = frames.filter((item) => item !== frame)
     }
   }
@@ -685,7 +557,6 @@ export function createMagneticCornerManager(
       frame.teardown = null
       frame.timers.forEach((id) => window.clearTimeout(id))
       frame.timers = []
-      disposeSetters(frame)
     })
     frames = []
     ctx?.revert()
@@ -708,7 +579,7 @@ export function createMagneticCornerManager(
  * 注意：不再返回 bind()。全站只有一份帧注册表（getSharedCornerManager），
  * 包装组件与自动增强器都往里 addFrame；两边各自 bind 会互相把对方清掉。
  */
-export function useMagneticCornerFrame(options: MagneticCornerHoverOptions = {}) {
+export function useMagneticCornerFrame() {
   const manager = getSharedCornerManager()
   let detach: (() => void) | null = null
 
@@ -721,7 +592,6 @@ export function useMagneticCornerFrame(options: MagneticCornerHoverOptions = {})
   onUnmounted(() => {
     detach?.()
     detach = null
-    void options
   })
 
   return { attach, manager }
