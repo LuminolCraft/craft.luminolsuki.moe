@@ -1,52 +1,119 @@
 <template>
-    <div ref="rootRef" class="home-root">
-        <!-- 噪点叠加层 -->
-        <!-- <div class="noise-overlay" aria-hidden="true"></div> -->
+  <div ref="rootRef" class="home-root">
+    <!-- 顶部区域 -->
+    <header class="hero-section">
+      <div
+        class="header-background"
+        :class="{ 'fade-in': activeLayer === 1 }"
+        :style="{
+          backgroundImage: `url(${currentImage1})`,
+          opacity: activeLayer === 1 ? '1' : '0',
+        }"
+      ></div>
+      <div
+        class="header-background"
+        :style="{
+          backgroundImage: `url(${currentImage2})`,
+          opacity: activeLayer === 2 ? '1' : '0',
+        }"
+      ></div>
 
-        <!-- 顶部区域 -->
-        <header class="hero-section">
-            <div class="header-background" :class="{ 'fade-in': activeLayer === 1 }" :style="{ backgroundImage: `url(${currentImage1})`, opacity: activeLayer === 1 ? '1' : '0' }"></div>
-            <div class="header-background" :style="{ backgroundImage: `url(${currentImage2})`, opacity: activeLayer === 2 ? '1' : '0' }"></div>
-            <div class="hero-overlay" id="heroBg"></div>
-
-            <div class="hero-content">
-                <div class="hero-text">
-                    <h1 class="hero-title">Luminol<br>Craft</h1>
-                    <p class="hero-subtitle">{{ t('hero.subtitle') }}</p>
-                    <p class="hero-description">{{ t('home.hero.description') }}</p>
-                    <div class="hero-actions">
-                        <a href="https://qm.qq.com/q/M29Eyniu8S" target="_blank" rel="noopener noreferrer" class="btn btn-primary">
-                            <i class="fas fa-users"></i>
-                            {{ t('common.joinGroup') }}
-                        </a>
-                    </div>
-                </div>
-                <div class="status-card status-card--float" id="statusCard">
-                    <div class="status-header">
-                        <div class="status-dot" :class="{ online: serverOnline, offline: !serverOnline }"></div>
-                        <span class="status-label" :class="{ offline: !serverOnline }">{{ serverOnline ? '在线' : '离线' }}</span>
-                    </div>
-                    <div class="status-grid">
-                        <div class="status-item"><div class="status-item-label">{{ t('home.serverStatus.playersLabel') }}</div><div class="status-item-value">{{ onlinePlayers }}</div></div>
-                        <div class="status-item"><div class="status-item-label">{{ t('home.serverStatus.versionLabel') }}</div><div class="status-item-value">26.2</div></div>
-                        <div class="status-item"><div class="status-item-label">{{ t('home.serverStatus.typeLabel') }}</div><div class="status-item-value">{{ t('home.serverStatus.typeValue') }}</div></div>
-                        <div class="status-item"><div class="status-item-label">{{ t('home.serverStatus.statusLabel') }}</div><div class="status-item-value">{{ serverStatus }}</div></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 滚动指示器 -->
-            <div class="scroll-indicator">SCROLL ↓</div>
-        </header>
-
-        <!-- 首页布局区域 -->
-        <LayoutCSections
-            :server-online="serverOnline"
-            :online-players="onlinePlayers"
+      <!-- 氛围层：静态渐变兜底 + 极光 + 体积光 -->
+      <div ref="backdropRef" class="hero-backdrop" aria-hidden="true">
+        <div class="hero-backdrop__base" />
+        <component
+          :is="auroraLayer"
+          v-if="auroraLayer"
+          :color-stops="auroraStops"
+          :speed="0.38"
+          :amplitude="1.15"
+          :blend="0.6"
+          :opacity="0.85"
         />
-        <LastViewedPopup />
-        <CookieConsentBanner />
-    </div>
+        <component
+          :is="raysLayer"
+          v-if="raysLayer"
+          rays-origin="top-center"
+          :rays-color="raysColor"
+          :ray-length="1.7"
+          :light-spread="1.1"
+          :mouse-influence="0.07"
+          :opacity="0.42"
+        />
+        <div class="hero-backdrop__grain" />
+      </div>
+
+      <div class="hero-overlay" id="heroBg"></div>
+
+      <div class="hero-content">
+        <div class="hero-text">
+          <div class="hero-title-mask">
+            <h1 ref="titleRef" class="hero-title">Luminol<br />Craft</h1>
+          </div>
+          <p ref="subtitleRef" class="hero-subtitle">{{ t('hero.subtitle') }}</p>
+          <p ref="descriptionRef" class="hero-description">{{ t('home.hero.description') }}</p>
+          <div ref="actionsRef" class="hero-actions">
+            <HomeMagnetic :padding="110" :strength="5">
+              <a
+                href="https://qm.qq.com/q/M29Eyniu8S"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="btn btn-primary"
+              >
+                <i class="fas fa-users"></i>
+                {{ t('common.joinGroup') }}
+              </a>
+            </HomeMagnetic>
+            <a href="#features" class="btn btn-ghost">
+              {{ t('home.features.title') }}
+            </a>
+          </div>
+        </div>
+
+        <HomeMagnetic class="hero-aside" :padding="130" :strength="8">
+          <div class="status-card status-card--float" id="statusCard">
+            <div class="status-header">
+              <div
+                class="status-dot"
+                :class="{ online: serverOnline, offline: !serverOnline }"
+              ></div>
+              <span class="status-label" :class="{ offline: !serverOnline }">{{
+                serverOnline ? '在线' : '离线'
+              }}</span>
+            </div>
+            <div class="status-grid">
+              <div class="status-item">
+                <div class="status-item-label">{{ t('home.serverStatus.playersLabel') }}</div>
+                <div class="status-item-value">{{ onlinePlayers }}</div>
+              </div>
+              <div class="status-item">
+                <div class="status-item-label">{{ t('home.serverStatus.versionLabel') }}</div>
+                <div class="status-item-value">26.2</div>
+              </div>
+              <div class="status-item">
+                <div class="status-item-label">{{ t('home.serverStatus.typeLabel') }}</div>
+                <div class="status-item-value">{{ t('home.serverStatus.typeValue') }}</div>
+              </div>
+              <div class="status-item">
+                <div class="status-item-label">{{ t('home.serverStatus.statusLabel') }}</div>
+                <div class="status-item-value">{{ serverStatus }}</div>
+              </div>
+            </div>
+          </div>
+        </HomeMagnetic>
+      </div>
+
+      <!-- 滚动指示器 -->
+      <div ref="cueRef" class="scroll-indicator">
+        <HeroScrollCue />
+      </div>
+    </header>
+
+    <!-- 首页布局区域 -->
+    <LayoutCSections :server-online="serverOnline" :online-players="onlinePlayers" />
+    <LastViewedPopup />
+    <CookieConsentBanner />
+  </div>
 </template>
 
 <style scoped>
@@ -55,20 +122,20 @@
 
 /* ===== 根容器 / 噪点叠加 ===== */
 .home-root {
-    position: relative;
+  position: relative;
 }
-/* 新增：排除 hero 背景不参与 View Transitions */ 
+/* 新增：排除 hero 背景不参与 View Transitions */
 
 .header-background {
-    view-transition-name: none !important;
+  view-transition-name: none !important;
 }
 
 .hero-overlay {
-    view-transition-name: none !important;
+  view-transition-name: none !important;
 }
 
 .hero-section {
-    view-transition-name: none !important;
+  view-transition-name: none !important;
 }
 .hero-section::after {
   view-transition-name: none !important;
@@ -80,354 +147,429 @@
   view-transition-name: none !important;
 }
 
-.noise-overlay {
-    position: fixed;
-    inset: 0;
-    pointer-events: none;
-    z-index: 9999;
-    mix-blend-mode: overlay;
-    opacity: 0.04;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-}
-
 /* ===== Hero 区域 ===== */
 .hero-section {
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    position: relative;
-    overflow: hidden;
-    background-color: transparent;
-    background: linear-gradient(180deg,
-        rgba(0, 0, 0, 0.3) 0%,
-        rgba(0, 0, 0, 0.2) 70%,
-        rgba(0, 0, 0, 0.1) 90%,
-        transparent 100%);
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+  background-color: #0b0e17;
 }
 
 .header-background {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-    opacity: 0;
-    transition: opacity 2s cubic-bezier(0.4, 0, 0.2, 1);
-    z-index: -2;
-    will-change: transform, opacity;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  opacity: 0;
+  transition: opacity 2s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: -3;
+  will-change: transform, opacity;
 }
 
 .header-background.fade-in {
-    opacity: 1;
+  opacity: 1;
+}
+
+/* 氛围层：位于背景图之上、暗色蒙版之下 */
+.hero-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+}
+
+.hero-backdrop__base {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(70% 60% at 18% 22%, rgb(124 92 255 / 34%), transparent 68%),
+    radial-gradient(60% 55% at 82% 12%, rgb(34 211 238 / 20%), transparent 70%),
+    linear-gradient(
+      180deg,
+      rgb(11 14 23 / 55%) 0%,
+      rgb(11 14 23 / 72%) 60%,
+      rgb(11 14 23 / 94%) 100%
+    );
+}
+
+.hero-backdrop__grain {
+  position: absolute;
+  inset: 0;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
 .hero-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(180deg, rgba(11, 14, 23, 0.55) 0%, rgba(11, 14, 23, 0.7) 50%, rgba(11, 14, 23, 0.95) 100%), linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, transparent 50%);
-    z-index: -1;
-    pointer-events: none;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(11, 14, 23, 0.15) 0%,
+      rgba(11, 14, 23, 0.35) 50%,
+      rgba(11, 14, 23, 0.85) 100%
+    ),
+    linear-gradient(135deg, rgba(99, 102, 241, 0.12) 0%, transparent 52%);
+  z-index: -1;
+  pointer-events: none;
 }
 
-/* hero → features 渐变混合过渡层（ScrollTrigger 驱动 --reveal-size 0 → 120px） */
+/* hero → features 渐变混合过渡层（ScrollTrigger 驱动 --reveal-size 0 → 160px） */
 .hero-section::after {
-    content: '';
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    height: var(--reveal-size, 0px);
-    background: linear-gradient(to bottom, transparent, rgba(11, 14, 23, 0.6));
-    /* 固定深色半透明，不随主题变化，避免 View Transitions 覆盖 */
-    pointer-events: none;
-    z-index: 1;
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: var(--reveal-size, 0px);
+  background: linear-gradient(to bottom, transparent, var(--background-color));
+  pointer-events: none;
+  z-index: 1;
 }
 
 /* 单列左对齐 Hero 内容 */
 .hero-content {
-    position: relative;
-    z-index: 2;
-    max-width: 1200px;
-    width: 100%;
-    margin: 0 auto;
-    padding: 0 40px;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    text-align: left;
+  position: relative;
+  z-index: 2;
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
 }
 
 .hero-text {
-    max-width: 900px;
+  max-width: 900px;
+}
+
+.hero-title-mask {
+  overflow: hidden;
+  margin-bottom: 24px;
 }
 
 .hero-title {
-    font-size: clamp(3rem, 10vw, 8rem);
-    font-weight: 800;
-    line-height: 0.95;
-    letter-spacing: -0.02em;
-    text-align: left;
-    margin-bottom: 24px;
-    background: linear-gradient(135deg, #f1f5f9 0%, #818cf8 50%, #22d3ee 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-    will-change: transform, opacity;
-    font-kerning: none;
-    text-rendering: optimizeSpeed;
-    contain: layout style paint;
+  font-size: clamp(3rem, 10vw, 8rem);
+  font-weight: 800;
+  line-height: 0.95;
+  letter-spacing: -0.02em;
+  text-align: left;
+  margin: 0;
+  background: linear-gradient(135deg, #f8fafc 0%, #c4b5fd 46%, #67e8f9 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  font-kerning: none;
+  text-rendering: optimizeSpeed;
 }
 
-.hero-title .hero-char,
-.hero-title [data-split="char"] {
-    letter-spacing: 0;
-    display: inline-block;
-    transform: translateZ(0);
+/* SplitText 行级揭示：遮罩行 + 逐行渐变（行内的 div 必须自己带 background-clip:text，
+   否则嵌套层在某些渲染路径下拿不到父级的渐变，文字会整体不可见） */
+.hero-title :deep(.hero-line) {
+  display: block;
+  overflow: hidden;
+  background: linear-gradient(135deg, #f8fafc 0%, #c4b5fd 46%, #67e8f9 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  will-change: transform, opacity;
+}
+
+/* R2：主题切换快照帧内纯色兜底，避免 background-clip:text 透明闪烁 */
+:root[data-vt] .hero-title {
+  background: none;
+  color: #f8fafc;
+  -webkit-background-clip: initial;
+  background-clip: initial;
 }
 
 .hero-subtitle {
-    font-size: clamp(1.1rem, 2vw, 1.4rem);
-    color: #aac2da;
-    font-weight: 500;
-    margin-bottom: 20px;
-    max-width: 640px;
-    will-change: transform, opacity;
+  font-size: clamp(1.1rem, 2vw, 1.4rem);
+  color: #cbd5e1;
+  font-weight: 500;
+  margin-bottom: 20px;
+  max-width: 640px;
 }
 
 .hero-description {
-    font-size: 0.95rem;
-    color: var(--text-primary);
-    line-height: 1.8;
-    max-width: 560px;
-    margin-bottom: 32px;
-    will-change: transform, opacity;
+  font-size: 0.95rem;
+  color: rgb(226 232 240 / 0.86);
+  line-height: 1.85;
+  max-width: 560px;
+  margin-bottom: 32px;
 }
 
 .hero-actions {
-    display: flex;
-    gap: 14px;
-    flex-wrap: wrap;
-    will-change: transform, opacity;
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  align-items: center;
 }
 
 .btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    padding: 12px 28px;
-    border-radius: var(--radius-sm);
-    font-size: 0.9rem;
-    font-weight: 600;
-    text-decoration: none;
-    transition: transform 0.25s, box-shadow 0.25s, background 0.25s;
-    cursor: pointer;
-    border: none;
-    font-family: var(--font-main);
-    will-change: transform;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 28px;
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition:
+    transform 0.25s,
+    box-shadow 0.25s,
+    background 0.25s;
+  cursor: pointer;
+  border: none;
+  font-family: var(--font-main);
 }
 
 .btn-primary {
-    background: linear-gradient(135deg, #6366f1 0%, #818cf8 100%);
-    color: white;
-    box-shadow: 0 4px 20px rgba(99, 102, 241, 0.3);
+  background: linear-gradient(135deg, #7c5cff 0%, #a78bfa 100%);
+  color: white;
+  box-shadow: 0 10px 30px rgb(124 92 255 / 34%);
 }
 
 .btn-primary:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 30px rgba(158, 148, 216, 0.4);
+  color: #fff;
+  box-shadow: 0 14px 40px rgb(124 92 255 / 44%);
+}
+
+.btn-ghost {
+  color: rgb(241 245 249 / 0.86);
+  border: 1px solid rgb(255 255 255 / 0.18);
+  background: rgb(255 255 255 / 0.06);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.btn-ghost:hover {
+  color: #fff;
+  border-color: rgb(167 139 250 / 0.55);
+  background: rgb(255 255 255 / 0.1);
 }
 
 /* 漂浮状态卡 */
 .status-card {
-    background: rgba(255, 255, 255, 0.15);
-    border-radius: 12px;
-    padding: 20px;
-    backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-    position: relative;
-    overflow: hidden;
-    will-change: transform, opacity;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 16px;
+  padding: 20px;
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  position: relative;
+  overflow: hidden;
 }
 
 .status-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 4px;
-    background: var(--bases-primary-gradient);
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: var(--bases-primary-gradient);
 }
 
 .status-card--float {
-    position: absolute;
-    right: 40px;
-    bottom: 80px;
-    width: 320px;
-    transform: rotate(-2deg);
-    z-index: 3;
+  width: 320px;
+  transform: rotate(-2deg);
+}
+
+/* 状态卡浮层容器：绝对定位交给外层，卡片本身保持可被 GSAP 变换 */
+.hero-aside {
+  position: absolute;
+  right: 40px;
+  bottom: 90px;
+  width: 320px;
+  z-index: 3;
 }
 
 .status-header {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
 }
 
 .status-label {
-    font-size: 1.2rem;
-    font-weight: 600;
-    color: white;
-    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: white;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 .status-label.offline {
-    color: var(--bases-error-color);
+  color: var(--bases-error-color);
 }
 
 .status-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 15px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
 }
 
 .status-item {
-    text-align: center;
+  text-align: center;
 }
 
 .status-item-label {
-    font-size: 0.9rem;
-    color: rgba(255, 255, 255, 0.8);
-    margin-bottom: 5px;
-    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 5px;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
 }
 
 .status-item-value {
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: white;
-    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: white;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 .status-dot {
-    display: inline-block;
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    position: relative;
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  position: relative;
 }
 
 .status-dot::before {
-    content: '';
-    position: absolute;
-    top: -2px;
-    left: -2px;
-    right: -2px;
-    bottom: -2px;
-    border-radius: 50%;
-    z-index: -1;
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  border-radius: 50%;
+  z-index: -1;
 }
 
 .status-dot.online {
-    background-color: var(--bases-online-dot);
+  background-color: var(--bases-online-dot);
 }
 
 .status-dot.online::before {
-    background-color: var(--bases-online-dot);
+  background-color: var(--bases-online-dot);
 }
 
 .status-dot.offline {
-    background-color: var(--bases-error-color);
+  background-color: var(--bases-error-color);
 }
 
 .status-dot.offline::before {
-    background-color: var(--bases-error-color);
+  background-color: var(--bases-error-color);
 }
 
 /* 滚动指示器 */
 .scroll-indicator {
-    position: absolute;
-    right: 48px;
-    bottom: 24px;
-    z-index: 3;
-    font-size: 0.8rem;
-    letter-spacing: 0.2em;
-    color: rgba(255, 255, 255, 0.7);
-    font-weight: 600;
-    will-change: transform, opacity;
+  position: absolute;
+  right: 48px;
+  bottom: 28px;
+  z-index: 3;
 }
 
 /* ===== 响应式：移动端 hero 相关 ===== */
 @media (max-width: 1024px) {
-    .hero-title {
-        font-size: clamp(2.5rem, 9vw, 5rem);
-    }
+  .hero-title {
+    font-size: clamp(2.5rem, 9vw, 5rem);
+  }
 
-    .status-card--float {
-        right: 24px;
-        bottom: 70px;
-        width: 280px;
-    }
+  .hero-aside {
+    right: 24px;
+    bottom: 70px;
+    width: 280px;
+  }
 }
 
 @media (max-width: 768px) {
-    .hero-content {
-        padding: 0 20px;
-    }
+  .hero-content {
+    padding: 0 20px;
+  }
 
-    .hero-title {
-        font-size: clamp(2.2rem, 12vw, 4rem);
-    }
+  .hero-title {
+    font-size: clamp(2.2rem, 12vw, 4rem);
+  }
 
-    .status-card--float {
-        position: relative;
-        right: auto;
-        bottom: auto;
-        width: 100%;
-        margin-top: 32px;
-        transform: rotate(-2deg);
-    }
+  .hero-aside {
+    position: relative;
+    right: auto;
+    bottom: auto;
+    width: 100%;
+    margin-top: 32px;
+  }
 
-    .scroll-indicator {
-        right: 24px;
-        bottom: 16px;
-    }
+  .status-card--float {
+    position: relative;
+    right: auto;
+    bottom: auto;
+    width: 100%;
+  }
+
+  .scroll-indicator {
+    right: 24px;
+    bottom: 16px;
+  }
 }
 
 @media (max-width: 480px) {
-    .hero-title {
-        font-size: clamp(2rem, 14vw, 3rem);
-    }
+  .hero-title {
+    font-size: clamp(2rem, 14vw, 3rem);
+  }
 
-    .status-card--float {
-        padding: 16px;
-    }
+  .status-card--float {
+    padding: 16px;
+  }
 }
 </style>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, nextTick } from 'vue'
+import { computed, onMounted, onUnmounted, ref, nextTick } from 'vue'
+import type { Component } from 'vue'
 import { useI18n } from 'vue-i18n'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { SplitText } from 'gsap/SplitText'
 import LastViewedPopup from '../components/LastViewedPopup.vue'
 import CookieConsentBanner from '../components/CookieConsentBanner.vue'
+import HeroScrollCue from '../components/home/HeroScrollCue.vue'
+import HomeMagnetic from '../components/home/fx/HomeMagnetic.vue'
+import {
+  LazyHomeAurora,
+  LazyHomeLightRays,
+  shouldUseWebGL,
+} from '../components/home/fx/home-fx-env'
 import { useGsap } from '@/composables/useGsap'
-import { EASINGS, STAGGERS, DURATIONS } from '@/gsap'
+import { EASINGS, DURATIONS } from '@/gsap'
 import LayoutCSections from '../components/home/sections/LayoutCSections.vue'
 
 const { t } = useI18n()
 
 const rootRef = ref<HTMLElement | null>(null)
+const titleRef = ref<HTMLElement | null>(null)
+const subtitleRef = ref<HTMLElement | null>(null)
+const descriptionRef = ref<HTMLElement | null>(null)
+const actionsRef = ref<HTMLElement | null>(null)
+const cueRef = ref<HTMLElement | null>(null)
+const backdropRef = ref<HTMLElement | null>(null)
+
+const auroraStops = ['#0b0e17', '#7c5cff', '#0b0e17']
+const raysColor = '#c4b5fd'
+
+const auroraLayer = computed<Component | null>(() => (shouldUseWebGL() ? LazyHomeAurora : null))
+const raysLayer = computed<Component | null>(() => (shouldUseWebGL() ? LazyHomeLightRays : null))
 
 const backgroundImages = [
   '/images/Image_1764466849.avif',
@@ -455,8 +597,8 @@ const backgroundImages = [
 ]
 
 const currentIndex = ref(0)
-const currentImage1 = ref(backgroundImages[0])
-const currentImage2 = ref(backgroundImages[0])
+const currentImage1 = ref(backgroundImages[0] ?? '')
+const currentImage2 = ref(backgroundImages[0] ?? '')
 const activeLayer = ref(1)
 
 const nextRandomImage = () => {
@@ -467,15 +609,16 @@ const nextRandomImage = () => {
   } while (newIndex === currentIndex.value)
   currentIndex.value = newIndex
   if (activeLayer.value === 1) {
-    currentImage2.value = backgroundImages[newIndex]
+    currentImage2.value = backgroundImages[newIndex] ?? ''
     activeLayer.value = 2
   } else {
-    currentImage1.value = backgroundImages[newIndex]
+    currentImage1.value = backgroundImages[newIndex] ?? ''
     activeLayer.value = 1
   }
 }
 
 let intervalId: ReturnType<typeof setInterval> | null = null
+let statusIntervalId: ReturnType<typeof setInterval> | null = null
 
 const serverOnline = ref(true)
 const onlinePlayers = ref('加载中...')
@@ -489,7 +632,9 @@ const fetchServerStatus = async () => {
     if (response.ok) {
       const data = await response.json()
       serverOnline.value = data.online === true
-      onlinePlayers.value = data.online ? `${data.players?.online || 0}/${data.players?.max || 0}` : '0/0'
+      onlinePlayers.value = data.online
+        ? `${data.players?.online || 0}/${data.players?.max || 0}`
+        : '0/0'
       serverStatus.value = data.online ? '服务器在线' : '服务器离线'
     } else {
       throw new Error('API 请求失败')
@@ -506,127 +651,167 @@ const { create } = useGsap({ scope: rootRef })
 onMounted(async () => {
   intervalId = setInterval(nextRandomImage, 3600)
 
-  // 服务器状态是异步补充信息：不阻塞首屏渲染与动效初始化（外部 API 慢时不再拖住页面）
+  // 服务器状态是异步补充信息：不阻塞首屏渲染与动效初始化
   fetchServerStatus()
-  setInterval(fetchServerStatus, 30000)
+  statusIntervalId = setInterval(fetchServerStatus, 30000)
 
   await nextTick()
 
   create((g) => {
-    const mm = g.matchMedia()
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
-    // 延迟刷新确保 DOM 就绪
-    requestAnimationFrame(() => ScrollTrigger.refresh())
-
-    // ============ reduceMotion: 仅设置终态，不播放动画 ============
-    mm.add('(prefers-reduced-motion: reduce)', () => {
-      g.set('.hero-title, .hero-subtitle, .hero-description, .hero-actions', { autoAlpha: 1, y: 0 })
-      g.set('.status-card--float', { autoAlpha: 1, y: 0, rotation: -2 })
+    // ============ reduce：只设置终态，不播放任何动画 ============
+    if (reduce) {
+      g.set(
+        [
+          '.hero-title',
+          '.hero-subtitle',
+          '.hero-description',
+          '.hero-actions',
+          '.status-card--float',
+        ],
+        { autoAlpha: 1, y: 0, rotation: 0 },
+      )
       g.set('.scroll-indicator', { autoAlpha: 0 })
+      return
+    }
+
+    // ============ 标题行级入场 ============
+    // 注意：这里刻意只用 lines（不加 words/chars）——chars 模式会给每个字符套一层 div，
+    // 与 h1 上的 background-clip:text 渐变在部分渲染路径下会互相干扰导致文字不可见。
+    // 行级 + 遮罩的揭示效果在视觉上等价，且不依赖嵌套包装器。
+    let split: SplitText | null = null
+    try {
+      split = new SplitText(titleRef.value, { type: 'lines', linesClass: 'hero-line' })
+    } catch (error) {
+      console.warn('[Home] SplitText 初始化失败，退化为整块入场', error)
+    }
+
+    g.set(['.hero-subtitle', '.hero-description', '.hero-actions'], { autoAlpha: 0, y: 24 })
+    g.set('.status-card--float', { autoAlpha: 0, y: 44, rotation: -8 })
+    g.set('.scroll-indicator', { autoAlpha: 0, y: 12 })
+
+    const heroTl = g.timeline({ delay: 0.15 })
+
+    if (split) {
+      heroTl.from(split.lines, {
+        yPercent: 118,
+        autoAlpha: 0,
+        stagger: 0.12,
+        duration: DURATIONS.slow,
+        ease: EASINGS.heroReveal,
+      })
+    } else {
+      heroTl.from('.hero-title', {
+        autoAlpha: 0,
+        y: 40,
+        duration: DURATIONS.slow,
+        ease: EASINGS.heroReveal,
+      })
+    }
+
+    heroTl
+      .to(
+        '.hero-subtitle',
+        { autoAlpha: 1, y: 0, duration: DURATIONS.entrance, ease: EASINGS.entrance },
+        '-=0.55',
+      )
+      .to(
+        '.hero-description',
+        { autoAlpha: 1, y: 0, duration: DURATIONS.entrance, ease: EASINGS.entrance },
+        '-=0.35',
+      )
+      .to(
+        '.hero-actions',
+        { autoAlpha: 1, y: 0, duration: DURATIONS.entrance, ease: EASINGS.entrance },
+        '-=0.3',
+      )
+      .to(
+        '.status-card--float',
+        { autoAlpha: 1, y: 0, rotation: -2, duration: DURATIONS.slow, ease: EASINGS.heroReveal },
+        '-=0.5',
+      )
+      .to(
+        '.scroll-indicator',
+        { autoAlpha: 1, y: 0, duration: DURATIONS.standard, ease: EASINGS.entrance },
+        '-=0.3',
+      )
+
+    // ============ 背景视差：三层不同速率 ============
+    g.to('.header-background', {
+      yPercent: 18,
+      scale: 1.12,
+      ease: EASINGS.parallax,
+      scrollTrigger: {
+        trigger: '.hero-section',
+        start: 'top top',
+        end: 'bottom top',
+        scrub: true,
+      },
     })
 
-    // // ============ no-preference: hero 相关动画 ============
-    // mm.add('(prefers-reduced-motion: no-preference)', () => {
-    //   // 1. Hero 标题 SplitText (chars + words)
-    //   const titleSplit = new SplitText('.hero-title', { type: 'chars,words', charsClass: 'hero-char', wordsClass: 'hero-word' })
-    //   g.set(titleSplit.chars, { letterSpacing: 0 })
+    g.to(backdropRef.value, {
+      yPercent: 10,
+      ease: EASINGS.parallax,
+      scrollTrigger: {
+        trigger: '.hero-section',
+        start: 'top top',
+        end: 'bottom top',
+        scrub: true,
+      },
+    })
 
-    //   // 2. Hero 副标题 SplitText (lines)
-    //   const subtitleSplit = new SplitText('.hero-subtitle', { type: 'lines' })
+    g.to('.hero-text', {
+      yPercent: -12,
+      autoAlpha: 0.35,
+      ease: EASINGS.parallax,
+      scrollTrigger: {
+        trigger: '.hero-section',
+        start: 'top top',
+        end: 'bottom top',
+        scrub: true,
+      },
+    })
 
-    //   // 初始隐藏，防止 FOUC
-    //   g.set('.hero-description', { autoAlpha: 0, y: 20 })
-    //   g.set('.hero-actions', { autoAlpha: 0, y: 20 })
-    //   g.set('.status-card--float', { autoAlpha: 0, y: 40, rotation: -8 })
-    //   g.set('.scroll-indicator', { autoAlpha: 1 })
+    // SCROLL 提示：滚动即淡出
+    g.to('.scroll-indicator', {
+      autoAlpha: 0,
+      duration: 0.4,
+      scrollTrigger: {
+        trigger: '.hero-section',
+        start: 'top top',
+        end: '+=220',
+        scrub: true,
+      },
+    })
 
-    //   const heroTl = g.timeline()
+    // ============ hero → features 渐变混合过渡层 ============
+    g.fromTo(
+      '.hero-section',
+      { '--reveal-size': '0px' } as gsap.TweenVars,
+      {
+        '--reveal-size': '180px',
+        ease: 'none',
+        scrollTrigger: {
+          trigger: '.hero-section',
+          start: 'bottom 92%',
+          end: 'bottom 28%',
+          scrub: true,
+        },
+      } as gsap.TweenVars,
+    )
 
-    //   heroTl
-    //     .from(titleSplit.chars, {
-    //       yPercent: 120,
-    //       autoAlpha: 0,
-    //       rotateZ: 8,
-    //       stagger: g.utils.distribute({ from: 'center', amount: 0.6 }),
-    //       duration: DURATIONS.slow,
-    //       ease: EASINGS.heroReveal,
-    //     })
-    //     .from(subtitleSplit.lines, {
-    //       yPercent: 100,
-    //       autoAlpha: 0,
-    //       duration: DURATIONS.standard,
-    //       ease: EASINGS.entrance,
-    //       stagger: 0.1,
-    //     }, '-=0.4')
-    //     .to('.hero-description', {
-    //       autoAlpha: 1,
-    //       y: 0,
-    //       duration: DURATIONS.entrance,
-    //       ease: EASINGS.entrance,
-    //     }, '-=0.3')
-    //     .to('.hero-actions', {
-    //       autoAlpha: 1,
-    //       y: 0,
-    //       duration: DURATIONS.entrance,
-    //       ease: EASINGS.entrance,
-    //     }, '-=0.3')
-    //     // 5. 状态卡入场
-    //     .to('.status-card--float', {
-    //       autoAlpha: 1,
-    //       y: 0,
-    //       rotation: -2,
-    //       duration: DURATIONS.slow,
-    //       ease: EASINGS.heroReveal,
-    //     }, '-=0.4')
+    requestAnimationFrame(() => ScrollTrigger.refresh())
 
-    //   // 3. 背景视差滚动
-    //   g.to('.header-background', {
-    //     yPercent: 30,
-    //     scale: 1.1,
-    //     ease: 'none',
-    //     scrollTrigger: {
-    //       trigger: '.hero-section',
-    //       start: 'top top',
-    //       end: 'bottom top',
-    //       scrub: true,
-    //     },
-    //   })
-
-    //   // 4. SCROLL ↓ 指示器：持续浮动 + 滚动淡出
-    //   g.to('.scroll-indicator', {
-    //     y: 8,
-    //     duration: 1.4,
-    //     ease: 'sine.inOut',
-    //     repeat: -1,
-    //     yoyo: true,
-    //   })
-    //   g.to('.scroll-indicator', {
-    //     autoAlpha: 0,
-    //     duration: 0.4,
-    //     scrollTrigger: {
-    //       trigger: '.hero-section',
-    //       start: 'top top',
-    //       end: '+=200',
-    //       scrub: true,
-    //     },
-    //   })
-
-    //   // 6. hero → features 渐变混合过渡层（::after height 通过 --reveal-size 驱动）
-    //   g.fromTo('.hero-section', { '--reveal-size': '0px' } as gsap.TweenVars, {
-    //     '--reveal-size': '120px',
-    //     ease: 'none',
-    //     scrollTrigger: {
-    //       trigger: '.hero-section',
-    //       start: 'bottom 80%',
-    //       end: 'bottom 20%',
-    //       scrub: true,
-    //     },
-    //   } as gsap.TweenVars)
-    // })
+    return () => {
+      split?.revert()
+      split = null
+    }
   })
 })
 
 onUnmounted(() => {
   if (intervalId) clearInterval(intervalId)
+  if (statusIntervalId) clearInterval(statusIntervalId)
 })
 </script>
