@@ -51,6 +51,12 @@ const SEED_EXTRA = 8
 export interface CornerGeometry {
   width: number
   height: number
+  /**
+   * 边框宽度（px）。角是 absolute、以元素的 **padding box** 为定位基准，
+   * 而 offsetWidth/offsetHeight 是 border box。所以上/左还要再各让出边框宽度，
+   * 否则四边间距会差出一个 border（实测带 1px 边框的元素左上 6px、右下 8px）。
+   */
+  border: { top: number; right: number; bottom: number; left: number }
   arm: number
   padding: number
   seedExtra: number
@@ -75,6 +81,7 @@ export function computeCornerGeometry(
     magnetStrength?: number
     edgeBias?: number
     paddingOverride?: number
+    border?: { top: number; right: number; bottom: number; left: number }
   } = {},
 ): CornerGeometry {
   const arm = Math.max(ARM_FLOOR, opts.maxArm ?? ARM_FIXED)
@@ -82,6 +89,7 @@ export function computeCornerGeometry(
   return {
     width,
     height,
+    border: opts.border ?? { top: 0, right: 0, bottom: 0, left: 0 },
     arm,
     padding: opts.paddingOverride ?? GAP_FIXED,
     seedExtra: SEED_EXTRA,
@@ -203,36 +211,81 @@ export function createMagneticCornerManager(
 
   /* ---------- 几何 ---------- */
 
-  /** 算几何量并写回 CSS 变量。臂长固定，尺寸只决定值不值得框 */
+  /**
+   * 算几何量并写回 CSS 变量。臂长固定，尺寸只决定值不值得框。
+   *
+   * 尺寸取 offsetWidth/offsetHeight 而不是 getBoundingClientRect()：
+   * 角是 absolute、以元素的 padding box 为基准，而 rect 的宽度是 border box。
+   * 元素带 1px 边框时，rect 会让右下两侧各多出 1px，视觉上就是「框不居中、某边多某边少」。
+   * offsetWidth 与角处在同一个坐标空间，四边间距因此严格相等。
+   */
   function updateGeometry(frame: Frame): CornerGeometry {
-    const width = frame.rect?.width ?? 0
-    const height = frame.rect?.height ?? 0
-    const overrideArm = Number(frame.el.dataset.mcfMaxArm ?? '')
-    const overrideGap = Number(frame.el.dataset.mcfGap ?? '')
+    const width = frame.el.offsetWidth || (frame.rect?.width ?? 0)
+    const height = frame.el.offsetHeight || (frame.rect?.height ?? 0)
+    /*
+      注意：属性不存在时 Number(undefined) / Number('') 都是 0，会被误当成
+      「显式指定 gap=0 / arm=0」。必须先判存在再转数字，否则默认间距会被悄悄吃成 0
+      （实测表现：四个角停在原地不展开、框紧贴元素边缘看似没框住）。
+    */
+    const armAttr = frame.el.dataset.mcfMaxArm
+    const gapAttr = frame.el.dataset.mcfGap
+    const overrideArm = armAttr === undefined ? Number.NaN : Number(armAttr)
+    const overrideGap = gapAttr === undefined ? Number.NaN : Number(gapAttr)
+
+    const cs = getComputedStyle(frame.el)
+    const border = {
+      top: Number.parseFloat(cs.borderTopWidth) || 0,
+      right: Number.parseFloat(cs.borderRightWidth) || 0,
+      bottom: Number.parseFloat(cs.borderBottomWidth) || 0,
+      left: Number.parseFloat(cs.borderLeftWidth) || 0,
+    }
 
     const geo = computeCornerGeometry(width, height, {
       maxArm: Number.isFinite(overrideArm) && overrideArm > 0 ? overrideArm : armMax,
       magnetStrength,
       edgeBias,
       paddingOverride: Number.isFinite(overrideGap) && overrideGap >= 0 ? overrideGap : undefined,
+      border,
     })
-    if (Math.min(width, height) < minSize) geo.ok = false
+    // 零尺寸（懒加载图片未加载、display:none 的容器）不算「太小」，直接标为不可激活且不缓存
+    if (width === 0 || height === 0 || Math.min(width, height) < minSize) geo.ok = false
 
-    frame.geo = geo
+    // 只在尺寸有效时缓存：零尺寸时缓存会让后续 enter/seed 都按 0 算，四个角叠在原点
+    if (width > 0 && height > 0) frame.geo = geo
     frame.corners.forEach((corner) => {
       corner.style.setProperty('--corner-arm', `${geo.arm}px`)
     })
     return geo
   }
 
+  /**
+   * 取缓存几何；缓存缺失或已被标为不可激活时重算。
+   *
+   * 为什么要判 `!geo.ok`：懒加载图片在加载完成前 offsetWidth/Height 是 0，
+   * 那次算出的 geo 会被标 ok=false 但仍是合法对象；如果直接返回它，
+   * 图片加载完后的第一次进入就会按 0 尺寸摆角（四个角叠在原点，或框到父级左上角）。
+   */
   function geoOf(frame: Frame): CornerGeometry {
-    return frame.geo ?? updateGeometry(frame)
+    const cached = frame.geo
+    if (cached && cached.width > 0 && cached.height > 0) return cached
+    return updateGeometry(frame)
   }
 
+  /**
+   * 静止位：以元素 padding box 左上角为原点，让角的 L **骑在元素边界上**。
+   *
+   * 角臂是 14px 的方框，若把它的外缘贴到「边界 + gap」，左上的 L 会整条落在元素外侧、
+   * 右下的 L 会整条落在内侧，四边看着就不一样宽。这里改成让 L 的中点对齐边界：
+   *   左/上角顶点 = -(arm/2) - border
+   *   右/下角顶点 = 尺寸 - arm/2 + border
+   * 于是「元素边缘 → L 内缘」四边都等于 arm/2，视觉上元素正好居中。
+   */
   function restOffset(key: CornerKey, geo: CornerGeometry): Offset {
+    const b = geo.border
+    const inset = geo.arm / 2
     return {
-      x: key === 'tl' || key === 'bl' ? -geo.padding : geo.width + geo.padding,
-      y: key === 'tl' || key === 'tr' ? -geo.padding : geo.height + geo.padding,
+      x: key === 'tl' || key === 'bl' ? -inset - b.left : geo.width - inset + b.right,
+      y: key === 'tl' || key === 'tr' ? -inset - b.top : geo.height - inset + b.bottom,
     }
   }
 

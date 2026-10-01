@@ -75,6 +75,9 @@ function overrideFor(el: HTMLElement) {
   return found
 }
 
+/** 元素原始 position 记录在哪个属性上（清理时还原） */
+const POS_ATTR = 'data-fx-pos'
+
 /** 为一个元素插入四个角并登记 */
 function enhance(el: HTMLElement): void {
   if (enhancedRoots.has(el)) return
@@ -85,7 +88,22 @@ function enhance(el: HTMLElement): void {
   // 尺寸太小不值得框（细条这类；override 里可以单独放宽，例如行内文字链接）
   const rect = el.getBoundingClientRect()
   if (rect.width < minSize || rect.height < minSize) return
-  if (getComputedStyle(el).display === 'contents') return
+
+  const computed = getComputedStyle(el)
+  if (computed.display === 'contents') return
+
+  /*
+    关键：角标是 position: absolute，它的包含块是「最近的定位祖先」。
+    li / div / a 这些元素的 position 通常是 static —— 那样四个角会跑到
+    最近的定位祖先（例如 .compare__col）或初始包含块（文档左上角）上，
+    表现就是「框没框住 tag，反而贴在父级左上角」。
+    所以在元素自身补一个 position: relative，让角正好以它为基准。
+  */
+  const originalPosition = el.style.position
+  if (computed.position === 'static') {
+    el.setAttribute(POS_ATTR, originalPosition)
+    el.style.position = 'relative'
+  }
 
   /*
     角标的基础样式必须内联写：这些 span 是运行时插进任意页面组件的 DOM，
@@ -135,9 +153,94 @@ function enhance(el: HTMLElement): void {
   entries.push({ el, corners })
 }
 
+/**
+ * 清理「没有人认领」的角标，并回收被上一份模块实例（HMR / Vue 换节点）遗留的旧增强。
+ *
+ * 角是 position: absolute 且元素通常没有定位祖先时会贴在文档左上角，
+ * 看起来就是「按钮左上角多出一个 L」。认领标记是 UI_FX_FRAME_ATTR：
+ * 没有标记的直接删；有标记但不属于当前 entries 的是陈旧的，撤销标记后让本轮 scan 重新增强。
+ */
+function sweepOrphanCorners(): void {
+  const owned = new Set(entries.map((entry) => entry.el))
+  const stale = new Set<HTMLElement>()
+
+  document.querySelectorAll<HTMLElement>('.magnetic-corner-frame__corner').forEach((corner) => {
+    const parent = corner.parentElement
+    if (!parent) {
+      corner.remove()
+      return
+    }
+    if (!parent.hasAttribute(UI_FX_FRAME_ATTR)) {
+      corner.remove()
+      return
+    }
+    if (!owned.has(parent)) stale.add(parent)
+  })
+
+  stale.forEach((el) => {
+    el.querySelectorAll(':scope > .magnetic-corner-frame__corner').forEach((c) => c.remove())
+    el.removeAttribute(UI_FX_FRAME_ATTR)
+    el.removeAttribute(POS_ATTR)
+    delete el.dataset.mcfMaxArm
+    delete el.dataset.mcfGap
+    enhancedRoots.delete(el)
+  })
+}
+
+/**
+ * 把「已经被别的模块实例打过标记、但不在当前 entries 里」的元素重新纳入管理。
+ *
+ * 开发态热更新会新建一份模块状态，旧实例留下的 data-mcf 与角标还在 DOM 上；
+ * 若不接管，那些角标既不会被清理也不会响应交互，就是「多出来的一个框」。
+ */
+function adoptPending(): void {
+  const owned = new Set(entries.map((entry) => entry.el))
+  document.querySelectorAll<HTMLElement>(`[${UI_FX_FRAME_ATTR}]`).forEach((el) => {
+    if (owned.has(el)) return
+    const corners = Array.from(
+      el.querySelectorAll<HTMLElement>(':scope > .magnetic-corner-frame__corner'),
+    )
+    if (corners.length !== CORNER_KEYS.length) {
+      // 角不完整（被页面组件重渲染截断）→ 撤销标记，交给紧随其后的 scan 重新增强
+      el.removeAttribute(UI_FX_FRAME_ATTR)
+      enhancedRoots.delete(el)
+      return
+    }
+    enhancedRoots.add(el)
+    entries.push({ el, corners })
+  })
+}
+
+/**
+ * 懒加载图片补扫。
+ *
+ * enhance() 会因为「尺寸不足 16px」跳过尚未加载的 img，那时它还没有尺寸；
+ * 加载完成后再扫一次就必须有触发点，否则这张图永远不会被框。
+ * 每个 img 只挂一次监听，loaded 标记避免重复注册。
+ */
+function adoptImages(): void {
+  document.querySelectorAll<HTMLImageElement>('img:not([data-fx-loaded])').forEach((img) => {
+    img.setAttribute('data-fx-loaded', '')
+    const rescan = () => {
+      if (!isEligible(img)) return
+      enhance(img)
+      queueBind()
+    }
+    if (img.complete) rescan()
+    else {
+      img.addEventListener('load', rescan, { once: true })
+      img.addEventListener('error', () => img.removeAttribute('data-fx-loaded'), { once: true })
+    }
+  })
+}
+
 /** 扫描一个子树，命中白名单就增强；超过上限就停并提示一次 */
 function scan(root: ParentNode): void {
   if (!manager) return
+  adoptPending()
+  adoptImages()
+  sweepOrphanCorners()
+
   const matches = root.querySelectorAll<HTMLElement>(selectorText())
 
   for (const el of matches) {
@@ -189,11 +292,17 @@ function unenhanceAll(): void {
   for (const entry of entries) {
     entry.corners.forEach((corner) => corner.remove())
     entry.el.removeAttribute(UI_FX_FRAME_ATTR)
+    // 还原 enhance() 补上的定位，避免把页面元素的 offsetParent 关系永久改掉
+    if (entry.el.hasAttribute(POS_ATTR)) {
+      entry.el.style.position = entry.el.getAttribute(POS_ATTR) ?? ''
+      entry.el.removeAttribute(POS_ATTR)
+    }
     delete entry.el.dataset.mcfMaxArm
     delete entry.el.dataset.mcfGap
   }
   entries = []
   enhancedRoots = new WeakSet<Element>()
+  sweepOrphanCorners()
 }
 
 export function installUiFx(): void {
