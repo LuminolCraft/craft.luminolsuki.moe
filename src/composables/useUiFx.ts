@@ -46,8 +46,6 @@ let onResize: (() => void) | null = null
 let manager = getSharedCornerManager({
   armMax: UI_FX.frames.defaults.maxArm,
   minSize: UI_FX.frames.defaults.minSize,
-  magnetStrength: UI_FX.frames.defaults.magnetStrength,
-  edgeBias: UI_FX.frames.defaults.edgeBias,
 })
 
 /** 元素是否值得增强：只做「已处理 / 逃生舱」两次短路，尺寸判定在 enhance 里按 override 逐元素算 */
@@ -78,6 +76,25 @@ function overrideFor(el: HTMLElement) {
 /** 元素原始 position 记录在哪个属性上（清理时还原） */
 const POS_ATTR = 'data-fx-pos'
 
+/**
+ * 替换元素（replaced element）不会渲染自己的子节点。
+ * 往 <img> / <input> / <canvas> 里塞四个角，DOM 上存在、布局里是 0×0，
+ * 看起来就是「这个元素永远不亮」。这类元素直接不增强。
+ */
+const REPLACED_TAGS = new Set([
+  'IMG',
+  'INPUT',
+  'TEXTAREA',
+  'SELECT',
+  'CANVAS',
+  'VIDEO',
+  'AUDIO',
+  'IFRAME',
+  'EMBED',
+  'OBJECT',
+  'SVG',
+])
+
 /** 为一个元素插入四个角并登记 */
 function enhance(el: HTMLElement): void {
   if (enhancedRoots.has(el)) return
@@ -88,6 +105,8 @@ function enhance(el: HTMLElement): void {
   // 尺寸太小不值得框（细条这类；override 里可以单独放宽，例如行内文字链接）
   const rect = el.getBoundingClientRect()
   if (rect.width < minSize || rect.height < minSize) return
+
+  if (REPLACED_TAGS.has(el.tagName)) return
 
   const computed = getComputedStyle(el)
   if (computed.display === 'contents') return
@@ -211,34 +230,11 @@ function adoptPending(): void {
   })
 }
 
-/**
- * 懒加载图片补扫。
- *
- * enhance() 会因为「尺寸不足 16px」跳过尚未加载的 img，那时它还没有尺寸；
- * 加载完成后再扫一次就必须有触发点，否则这张图永远不会被框。
- * 每个 img 只挂一次监听，loaded 标记避免重复注册。
- */
-function adoptImages(): void {
-  document.querySelectorAll<HTMLImageElement>('img:not([data-fx-loaded])').forEach((img) => {
-    img.setAttribute('data-fx-loaded', '')
-    const rescan = () => {
-      if (!isEligible(img)) return
-      enhance(img)
-      queueBind()
-    }
-    if (img.complete) rescan()
-    else {
-      img.addEventListener('load', rescan, { once: true })
-      img.addEventListener('error', () => img.removeAttribute('data-fx-loaded'), { once: true })
-    }
-  })
-}
 
 /** 扫描一个子树，命中白名单就增强；超过上限就停并提示一次 */
 function scan(root: ParentNode): void {
   if (!manager) return
   adoptPending()
-  adoptImages()
   sweepOrphanCorners()
 
   const matches = root.querySelectorAll<HTMLElement>(selectorText())
@@ -316,8 +312,6 @@ export function installUiFx(): void {
     getSharedCornerManager({
       armMax: UI_FX.frames.defaults.maxArm,
       minSize: UI_FX.frames.defaults.minSize,
-      magnetStrength: UI_FX.frames.defaults.magnetStrength,
-      edgeBias: UI_FX.frames.defaults.edgeBias,
     })
 
   // ---------- 光标层 ----------

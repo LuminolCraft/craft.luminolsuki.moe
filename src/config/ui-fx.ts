@@ -14,10 +14,6 @@ export interface UiFxFrameOverride {
   selector: string
   /** 该元素的最小可框尺寸（px），用来放宽文字链接这类小元素 */
   minSize?: number
-  /** 磁吸位移上限（px） */
-  magnetStrength?: number
-  /** 边缘加权倍数 */
-  edgeBias?: number
 }
 
 export interface UiFxConfig {
@@ -45,8 +41,6 @@ export interface UiFxConfig {
        * 按尺寸缩放会让同排元素的角标大小不一致，观感很廉价。
        */
       maxArm: number
-      magnetStrength: number
-      edgeBias: number
       /** 元素短边小于该值不成框 */
       minSize: number
     }
@@ -76,9 +70,7 @@ export const UI_FX: UiFxConfig = {
       '.status__cell',
       '.demo__item',
       '.compare__col',
-      '.gallery__item',
       '.team-row',
-      '.team-row__avatar',
       '.team-row__id',
       '.team-row__icon',
       '.team-row__gh',
@@ -126,23 +118,17 @@ export const UI_FX: UiFxConfig = {
 
     defaults: {
       maxArm: 14,
-      magnetStrength: 6,
-      edgeBias: 2.2,
       minSize: 16,
     },
 
     /*
-      override 只允许调「值不值得框」（minSize）与磁吸幅度（magnetStrength）。
-      臂长与间距刻意不开放逐元素覆盖：一旦开放，同一排元素的角标大小就会不一致。
+      角的位置完全由元素几何决定（不跟随鼠标），所以这里只需要调「值不值得框」（minSize）。
+      臂长与间距也不开放逐元素覆盖：一旦开放，同一排元素的角标大小就会不一致。
     */
     overrides: [
       { selector: '.team-row__id', minSize: 8 },
       { selector: '.team-row__icon', minSize: 8 },
       { selector: '.team-row__gh', minSize: 8 },
-      { selector: '.tag', magnetStrength: 3 },
-      { selector: '.btn', magnetStrength: 4 },
-      { selector: '.status__cell', magnetStrength: 3 },
-      { selector: '.gallery__item', magnetStrength: 5 },
     ],
   },
 }

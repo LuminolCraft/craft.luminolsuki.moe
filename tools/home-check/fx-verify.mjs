@@ -73,10 +73,10 @@ for (const selector of [
   '.team-row__id',
   '.team-row__gh',
   '.team-row__icon',
-  '.team-row__avatar',
   '.btn--primary',
   '.status__cell',
   '.compare__col',
+  '.cta__panel',
 ]) {
   const raw = await browser.evaluate(PROBE(selector))
   report[selector] = raw ? JSON.parse(raw) : { found: false }

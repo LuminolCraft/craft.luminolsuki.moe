@@ -38,21 +38,16 @@ import {
   useMagneticCornerFrame,
 } from '@/composables/useMagneticCornerHover'
 
-// 微调点：padding 角标外扩距离 · armLength 角臂长度 · magnetStrength 磁吸上限 · edgeBias 边缘加权
+// 微调点：padding 角标外扩距离 · armLength 角臂长度
+// 两者只写进根节点的 data-mcf-max-arm / data-mcf-gap，由共享管理器在 hover 时读取；
+// 所以同一页面上每个包装层都能用自己的值，不受「管理器单例」影响。
 // 说明：class 不声明为 prop，靠 attrs 直接落到根节点，使用方可以自由控制布局（flex / grid / 撑满）
-const props = withDefaults(
+withDefaults(
   defineProps<{
-    /** 角标相对元素边缘的外扩距离（px）。传 0 或负值表示按臂长比例自适应 */
+    /** 角标相对元素边缘的外扩距离（px）。传 0 表示用全站默认值 8 */
     padding?: number
-    /**
-     * 角臂长度上限（px）。留空或传 0 表示完全自适应：
-     * arm = clamp(10, min(width, height, 220) × 0.11, 28)
-     */
+    /** 角臂长度（px）。传 0 表示用全站默认值 14；不低于 8 */
     armLength?: number
-    /** 磁吸位移上限（px） */
-    magnetStrength?: number
-    /** 边缘加权倍数：越大，鼠标靠边时吸得越紧、居中时越安静 */
-    edgeBias?: number
     /** 是否在键盘 focus 时也进入锁定态 */
     activeOnFocus?: boolean
     /** 角标激活色，留空则取 var(--accent) */
@@ -61,8 +56,6 @@ const props = withDefaults(
   {
     padding: 0,
     armLength: 0,
-    magnetStrength: 6,
-    edgeBias: 2.2,
     activeOnFocus: true,
     accentColor: '',
   },
@@ -76,14 +69,7 @@ const rootRef = ref<HTMLElement | null>(null)
  */
 const cornerEls: Array<HTMLElement | undefined> = []
 
-const { attach } = useMagneticCornerFrame({
-  armMax: props.armLength > 0 ? props.armLength : undefined,
-  padding: props.padding > 0 ? props.padding : undefined,
-  magnetStrength: props.magnetStrength,
-  edgeBias: props.edgeBias,
-  activeOnFocus: props.activeOnFocus,
-  accentColor: props.accentColor,
-})
+const { attach } = useMagneticCornerFrame()
 
 /** v-for + :ref 每次更新都会调用；按 key 写入固定槽位，保证顺序与 CORNER_KEYS 一致 */
 function setCornerRef(key: (typeof CORNER_KEYS)[number], el: HTMLElement | null): void {
