@@ -37,18 +37,16 @@ const LEAVE_STAGGER = 0.02
 const ENTER_DURATION = 0.45
 const LEAVE_DURATION = 0.3
 const FOLLOW_DURATION = 0.5
-/** 角标自适应参数：臂长随元素尺寸走，避免大元素上角标小得像蚂蚁、小元素上粗得像画框 */
-const ARM_RATIO = 0.11
-const ARM_MIN = 10
-const ARM_MAX = 28
-/** 角标参考尺寸上限：超过这个尺寸的元素不再继续放大臂长 */
-const ARM_SIZE_CAP = 220
-/** 元素短边小于该值不成框（进度条这类细条跳过） */
-export const FRAME_MIN_SIZE = 24
-/** 入场起点相对臂长再往元素外侧退的比例 */
-const SEED_RATIO = 0.6
-const SEED_MIN = 6
-const SEED_MAX = 16
+/** 角臂长度固定值（px）：全站统一，避免同一排元素角标大小不一致 */
+const ARM_FIXED = 14
+/** 角臂长度下限（override 可调小，但不低于它） */
+const ARM_FLOOR = 8
+/** 角标相对元素边缘的外扩距离（px），固定值 */
+const GAP_FIXED = 8
+/** 元素短边小于该值的兜底阈值（实际以 ui-fx 的 frames.defaults.minSize 为准） */
+export const FRAME_MIN_SIZE = 16
+/** 入场起点相对元素边缘再往外的距离（px） */
+const SEED_EXTRA = 8
 
 export interface CornerGeometry {
   width: number
@@ -62,34 +60,35 @@ export interface CornerGeometry {
   ok: boolean
 }
 
-/** 按元素尺寸与上限算出一套角标几何量（导出供 CursorLayer 等复用同一套尺寸） */
+/**
+ * 角标几何量。
+ *
+ * 臂长刻意**不随元素尺寸变化**：同一排元素用同一个臂长，观感才整齐。
+ * 按尺寸缩放会让小元素上的角粗得像画框、大元素上的角小得像蚂蚁，实测很廉价。
+ * 元素尺寸只用来决定「值不值得框」（短边过小直接跳过）。
+ */
 export function computeCornerGeometry(
   width: number,
   height: number,
   opts: {
     maxArm?: number
-    minArm?: number
     magnetStrength?: number
     edgeBias?: number
     paddingOverride?: number
   } = {},
 ): CornerGeometry {
-  const maxArm = opts.maxArm ?? ARM_MAX
-  const minArm = Math.min(opts.minArm ?? ARM_MIN, maxArm)
-  const reference = Math.min(width, height, ARM_SIZE_CAP)
-  const arm = Math.round(Math.min(maxArm, Math.max(minArm, reference * ARM_RATIO)))
-  const defaultPadding = Math.min(14, Math.max(6, Math.round(arm * 0.45)))
-  const seedExtra = Math.min(SEED_MAX, Math.max(SEED_MIN, Math.round(arm * SEED_RATIO)))
+  const arm = Math.max(ARM_FLOOR, opts.maxArm ?? ARM_FIXED)
 
   return {
     width,
     height,
     arm,
-    padding: opts.paddingOverride ?? defaultPadding,
-    seedExtra,
+    padding: opts.paddingOverride ?? GAP_FIXED,
+    seedExtra: SEED_EXTRA,
     magnetStrength: opts.magnetStrength ?? 6,
     edgeBias: opts.edgeBias ?? 2.2,
-    ok: Math.min(width, height) >= FRAME_MIN_SIZE,
+    // ok 由管理器用「该元素的 effective minSize」覆写（见 updateGeometry）
+    ok: true,
   }
 }
 
@@ -128,12 +127,8 @@ export interface MagneticCornerHoverManager {
   destroy: () => void
   /** 立即隐藏某框的角标（不做收回动画） */
   hide: (frame: Frame) => void
-  /** 当前激活的最内层框元素（光标层按它对齐四角） */
-  activeFrameElement: () => HTMLElement | null
   /** 尺寸批变时统一重算 */
   updateAllGeometry: () => void
-  /** 该元素内部是否还有别的角标框 */
-  hasInnerFrame: (el: HTMLElement) => boolean
   /** 当前登记的 frame 数量 */
   frameCount: () => number
   /** 登记单个 frame（包装组件用；与增强器共用同一份注册表，所以不会互相覆盖） */
@@ -141,9 +136,9 @@ export interface MagneticCornerHoverManager {
 }
 
 export interface MagneticCornerHoverOptions {
-  /** 臂长上限（px）。不传走自适应公式；传了就作为该框的硬上限 */
+  /** 角臂长度（px）。不传用全站固定值 14；不低于 8 */
   armMax?: number
-  /** 间距固定值（px）。不传按臂长比例自适应 */
+  /** 固定间距（px）。不传用全站固定值 8 */
   padding?: number
   /** 元素短边小于该值不成框 */
   minSize?: number
@@ -161,10 +156,16 @@ export interface MagneticCornerHoverOptions {
 /** 全站共用一份帧注册表：包装组件与自动增强器都注册到它 */
 let sharedManager: MagneticCornerHoverManager | null = null
 
-export function getSharedCornerManager(): MagneticCornerHoverManager | null {
+/**
+ * 取全站唯一的角标管理器；首次调用时的 options 生效（后调用的 options 被忽略）。
+ * useUiFx 安装时会带上 UI_FX.frames.defaults，所以配置里的 minSize 等能真正生效。
+ */
+export function getSharedCornerManager(
+  options: MagneticCornerHoverOptions = {},
+): MagneticCornerHoverManager | null {
   if (sharedManager) return sharedManager
   if (!supportsMagneticCorner() || prefersReducedMotion()) return null
-  sharedManager = createMagneticCornerManager()
+  sharedManager = createMagneticCornerManager(options)
   return sharedManager
 }
 
@@ -187,7 +188,7 @@ export function prefersReducedMotion(): boolean {
 export function createMagneticCornerManager(
   options: MagneticCornerHoverOptions = {},
 ): MagneticCornerHoverManager {
-  const armMax = options.armMax ?? ARM_MAX
+  const armMax = options.armMax ?? ARM_FIXED
   const minSize = options.minSize ?? FRAME_MIN_SIZE
   const magnetStrength = options.magnetStrength ?? 6
   const edgeBias = options.edgeBias ?? 2.2
@@ -202,7 +203,7 @@ export function createMagneticCornerManager(
 
   /* ---------- 几何 ---------- */
 
-  /** 按当前元素尺寸重算几何量，并写回 CSS 变量（臂长/间距随元素大小变化） */
+  /** 算几何量并写回 CSS 变量。臂长固定，尺寸只决定值不值得框 */
   function updateGeometry(frame: Frame): CornerGeometry {
     const width = frame.rect?.width ?? 0
     const height = frame.rect?.height ?? 0
@@ -266,9 +267,10 @@ export function createMagneticCornerManager(
   /* ---------- 入场 / 收回 ---------- */
 
   function enter(frame: Frame): void {
+    // 已在激活态就别重播入场：mouseover 在子元素之间移动会反复触发，
+    // 每帧都 killTweensOf + 重播补间就会看到角标闪烁
     if (frame.active) return
     frame.active = true
-    suppressAncestors(frame.el)
 
     const geo = updateGeometry(frame)
 
@@ -452,8 +454,9 @@ export function createMagneticCornerManager(
     const onEnter = () => {
       frame.rect = el.getBoundingClientRect()
       const geo = updateGeometry(frame)
-      // 尺寸太小不值得出角标；内层还有框时让内层接住
-      if (!geo.ok || hasInnerFrame(el)) {
+
+      // 尺寸太小不值得出角标；其余情况一律激活（含「内部还有子框」的父容器）
+      if (!shouldActivate(geo)) {
         hide(frame)
         return
       }
@@ -479,7 +482,7 @@ export function createMagneticCornerManager(
       frame.focusActive = true
       frame.rect = el.getBoundingClientRect()
       const geo = updateGeometry(frame)
-      if (!geo.ok || hasInnerFrame(el)) {
+      if (!shouldActivate(geo)) {
         hide(frame)
         return
       }
@@ -524,17 +527,18 @@ export function createMagneticCornerManager(
     return frame
   }
 
-  /* ---------- 内层优先 ---------- */
-
-  /** 该元素内部是否还有别的角标框（有就让内层接住，避免两个框同时出现） */
-  function hasInnerFrame(el: HTMLElement): boolean {
-    return el.querySelector(`[${FRAME_ATTR}]`) !== null
-  }
+  /* ---------- 激活判据 ---------- */
 
   /**
-   * 立即隐藏该框的角标（不做收回动画）。
-   * 用于「尺寸太小」与「内层抢占」两种情况：外层不该慢慢淡出，而要马上让位。
+   * 是否激活这个框：只看尺寸够不够。
+   * 内部还有子框**不再**阻止父框激活 —— 指针进子容器时父框与子框一起亮，
+   * 形成「父框大、子框小」的嵌套层次。
    */
+  function shouldActivate(geo: CornerGeometry): boolean {
+    return geo.ok
+  }
+
+  /** 立即隐藏该框的角标（不做收回动画），用于尺寸过小的元素 */
   function hide(frame: Frame): void {
     frame.active = false
     frame.timers.forEach((id) => window.clearTimeout(id))
@@ -544,29 +548,6 @@ export function createMagneticCornerManager(
       corner.style.setProperty('--corner-active', '0')
       gsap.set(corner, { autoAlpha: 0 })
     })
-  }
-
-  /**
-   * 内层框激活时把祖先链上的其他框压下去。
-   * 外层框本身不参与指针交互，所以直接在激活时清掉祖先的角即可。
-   */
-  function suppressAncestors(el: HTMLElement): void {
-    let parent = el.parentElement?.closest(`[${FRAME_ATTR}]`) ?? null
-    while (parent) {
-      const ancestor = frames.find((f) => f.el === parent)
-      if (ancestor?.active) hide(ancestor)
-      parent = parent.parentElement?.closest(`[${FRAME_ATTR}]`) ?? null
-    }
-  }
-
-  /** 当前处于激活态的框（供光标层对齐用，取最内层那个） */
-  function activeFrameElement(): HTMLElement | null {
-    let found: HTMLElement | null = null
-    for (const frame of frames) {
-      if (!frame.active) continue
-      if (!found || found.contains(frame.el)) found = frame.el
-    }
-    return found
   }
 
   /**
@@ -662,9 +643,7 @@ export function createMagneticCornerManager(
     bind,
     destroy,
     hide,
-    activeFrameElement,
     updateAllGeometry,
-    hasInnerFrame,
     frameCount,
     addFrame,
   }

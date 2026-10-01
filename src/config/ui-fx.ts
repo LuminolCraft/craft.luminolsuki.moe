@@ -12,12 +12,8 @@
 
 export interface UiFxFrameOverride {
   selector: string
-  /** 臂长上限（px） */
-  maxArm?: number
   /** 该元素的最小可框尺寸（px），用来放宽文字链接这类小元素 */
   minSize?: number
-  /** 固定间距（px），不传按臂长比例自适应 */
-  gap?: number
   /** 磁吸位移上限（px） */
   magnetStrength?: number
   /** 边缘加权倍数 */
@@ -33,8 +29,6 @@ export interface UiFxConfig {
     dot: boolean
     /** 追踪环 */
     ring: boolean
-    /** 指针压在 [data-mcf] 元素上时隐藏光标四角，让元素角标独自表现锁定 */
-    yieldToFrames: boolean
   }
   frames: {
     enabled: boolean
@@ -44,10 +38,13 @@ export interface UiFxConfig {
     offSelectors: string[]
     /** 一页最多增强多少个元素，超出按 DOM 顺序丢弃并 warn 一次 */
     maxFrames: number
-    /** 默认参数（可被 overrides 与元素自身属性覆盖） */
+    /** 默认参数 */
     defaults: {
+      /**
+       * 角臂长度（px）。全站统一，不随元素尺寸缩放 ——
+       * 按尺寸缩放会让同排元素的角标大小不一致，观感很廉价。
+       */
       maxArm: number
-      minArm: number
       magnetStrength: number
       edgeBias: number
       /** 元素短边小于该值不成框 */
@@ -65,7 +62,6 @@ export const UI_FX: UiFxConfig = {
     enabled: true,
     dot: true,
     ring: true,
-    yieldToFrames: true,
   },
 
   frames: {
@@ -103,6 +99,17 @@ export const UI_FX: UiFxConfig = {
       '.admin-nav-item',
       '.auth-btn',
       '.auth-field',
+      // 其他页面（Support / News / Rules / Archive）实存类名
+      '.vercel-card',
+      '.sponsorship-methods > *',
+      '.thank-you',
+      '.news-card',
+      '.news-grid > *',
+      '.toolbar-row > *',
+      '.archive-section',
+      '.rules-card',
+      '.markdown-body > pre',
+      '.markdown-body > blockquote',
     ],
 
     offSelectors: [
@@ -118,23 +125,24 @@ export const UI_FX: UiFxConfig = {
     maxFrames: 120,
 
     defaults: {
-      maxArm: 28,
-      minArm: 10,
+      maxArm: 14,
       magnetStrength: 6,
       edgeBias: 2.2,
-      minSize: 24,
+      minSize: 16,
     },
 
+    /*
+      override 只允许调「值不值得框」（minSize）与磁吸幅度（magnetStrength）。
+      臂长与间距刻意不开放逐元素覆盖：一旦开放，同一排元素的角标大小就会不一致。
+    */
     overrides: [
-      // 整行很窄的元素用小臂，避免角标吃掉行高
-      { selector: '.team-row', maxArm: 14, gap: 6 },
-      { selector: '.team-row__id', maxArm: 10, gap: 4, minSize: 8 },
-      { selector: '.team-row__icon', maxArm: 10, gap: 4, minSize: 8 },
-      { selector: '.team-row__gh', maxArm: 10, gap: 4, minSize: 8 },
-      { selector: '.tag', maxArm: 12, gap: 5, magnetStrength: 3 },
-      { selector: '.btn', maxArm: 14, gap: 6, magnetStrength: 4 },
-      { selector: '.status__cell', maxArm: 16, magnetStrength: 3 },
-      { selector: '.gallery__item', maxArm: 18, magnetStrength: 5 },
+      { selector: '.team-row__id', minSize: 8 },
+      { selector: '.team-row__icon', minSize: 8 },
+      { selector: '.team-row__gh', minSize: 8 },
+      { selector: '.tag', magnetStrength: 3 },
+      { selector: '.btn', magnetStrength: 4 },
+      { selector: '.status__cell', magnetStrength: 3 },
+      { selector: '.gallery__item', magnetStrength: 5 },
     ],
   },
 }

@@ -37,8 +37,18 @@ let bindQueued = false
 let warnedAboutLimit = false
 let onResize: (() => void) | null = null
 
-// 全站共用一份帧注册表：包装组件（MagneticCornerFrame）也注册到它，所以这里不新建实例
-const manager = getSharedCornerManager()
+/*
+  全站共用的角标管理器（单例）。
+  首参在第一次 installUiFx() 时传入 UI_FX.frames.defaults —— 工厂若拿不到这些值
+  会退回内置兜底 minSize，config 里放宽的 minSize 就不生效（实测 team-row__gh 因此被判太矮）。
+  包装组件走 useMagneticCornerFrame → 同一个 getSharedCornerManager()，共用这一份注册表。
+*/
+let manager = getSharedCornerManager({
+  armMax: UI_FX.frames.defaults.maxArm,
+  minSize: UI_FX.frames.defaults.minSize,
+  magnetStrength: UI_FX.frames.defaults.magnetStrength,
+  edgeBias: UI_FX.frames.defaults.edgeBias,
+})
 
 /** 元素是否值得增强：只做「已处理 / 逃生舱」两次短路，尺寸判定在 enhance 里按 override 逐元素算 */
 function isEligible(el: HTMLElement): boolean {
@@ -70,17 +80,12 @@ function enhance(el: HTMLElement): void {
   if (enhancedRoots.has(el)) return
 
   const override = overrideFor(el)
-  const gap = override?.gap
-  const maxArm = override?.maxArm
   const minSize = override?.minSize ?? UI_FX.frames.defaults.minSize
 
-  // 尺寸太小不值得框（文字链接、细条这类；override 里可以单独放宽）
+  // 尺寸太小不值得框（细条这类；override 里可以单独放宽，例如行内文字链接）
   const rect = el.getBoundingClientRect()
   if (rect.width < minSize || rect.height < minSize) return
   if (getComputedStyle(el).display === 'contents') return
-
-  if (typeof maxArm === 'number') el.dataset.mcfMaxArm = String(maxArm)
-  if (typeof gap === 'number') el.dataset.mcfGap = String(gap)
 
   /*
     角标的基础样式必须内联写：这些 span 是运行时插进任意页面组件的 DOM，
@@ -97,8 +102,8 @@ function enhance(el: HTMLElement): void {
       left: '0',
       boxSizing: 'border-box',
       // 显式给一个基准尺寸：只靠 --corner-arm 变量时，运行时插入的元素在没有该变量的一刻会塌成 0
-      width: `${UI_FX.frames.defaults.minArm}px`,
-      height: `${UI_FX.frames.defaults.minArm}px`,
+      width: `${UI_FX.frames.defaults.maxArm}px`,
+      height: `${UI_FX.frames.defaults.maxArm}px`,
       pointerEvents: 'none',
       opacity: '0',
       visibility: 'hidden',
@@ -197,6 +202,14 @@ export function installUiFx(): void {
   if (typeof window === 'undefined' || typeof document === 'undefined') return
 
   installed = true
+  manager =
+    manager ??
+    getSharedCornerManager({
+      armMax: UI_FX.frames.defaults.maxArm,
+      minSize: UI_FX.frames.defaults.minSize,
+      magnetStrength: UI_FX.frames.defaults.magnetStrength,
+      edgeBias: UI_FX.frames.defaults.edgeBias,
+    })
 
   // ---------- 光标层 ----------
   if (UI_FX.cursor.enabled && supportsCustomCursorSafe()) {
@@ -221,8 +234,11 @@ export function installUiFx(): void {
     })
     observer.observe(document.body, { childList: true, subtree: true })
 
-    onResize = () => manager.updateAllGeometry()
-    window.addEventListener('resize', onResize, { passive: true })
+    const activeManager = manager
+    if (activeManager) {
+      onResize = () => activeManager.updateAllGeometry()
+      window.addEventListener('resize', onResize, { passive: true })
+    }
   }
 }
 
