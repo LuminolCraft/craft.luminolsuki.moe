@@ -35,6 +35,9 @@ coverage
 # Vitest
 __screenshots__/
 
+# 本地验收脚本的临时产物（截图 / headless Chrome profile / 构建临时目录）
+.tmp-build/
+
 # Trae IDE
 .trae/
 

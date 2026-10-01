@@ -15,7 +15,12 @@
     "type-check": "vue-tsc --build",
     "lint": "eslint . --fix --cache",
     "format": "prettier --write --experimental-cli src/",
-    "generate-sitemap": "tsx src/utils/generate-sitemap.ts"
+    "generate-sitemap": "tsx src/utils/generate-sitemap.ts",
+    "check:home:capture": "node tools/home-check/capture.mjs",
+    "check:home:scroll": "node tools/home-check/scroll.mjs",
+    "check:home:pointer": "node tools/home-check/pointer.mjs",
+    "check:home:theme": "node tools/home-check/theme.mjs",
+    "check:home:cleanup": "node tools/home-check/cleanup.mjs"
   },
   "dependencies": {
     "@unhead/ssr": "^2.0.19",
@@ -31,6 +36,7 @@
     "lenis": "^1.3.25",
     "lodash": "^4.17.21",
     "marked": "^17.0.1",
+    "ogl": "1.0.11",
     "pinia": "^3.0.4",
     "rehype-autolink-headings": "^7.1.0",
     "rehype-highlight": "^7.0.2",
