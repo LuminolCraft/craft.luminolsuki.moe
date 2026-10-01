@@ -19,14 +19,20 @@
 export type TeamStyle = 'artistic' | 'cinema' | 'bento' | 'random'
 export type ResolvedTeamStyle = Exclude<TeamStyle, 'random'>
 
-export const TEAM_STYLE_OPTIONS: readonly ResolvedTeamStyle[] = ['artistic', 'cinema', 'bento'] as const
+export const TEAM_STYLE_OPTIONS: readonly ResolvedTeamStyle[] = [
+  'artistic',
+  'cinema',
+  'bento',
+] as const
 
 /**
  * 当前激活的 team 样式。
  *
+ * 已固定为 `'bento'`：首页重构后三人团队区块统一走球状散布 + 光标排斥方案，
+ * 不再随机三选一（随机会让重构效果有 1/3 概率被旧样式覆盖，线上表现也不可预测）。
  * 修改此值后刷新页面即可切换 team section 样式（Vite HMR 也会自动重载）。
  */
-export const CURRENT_TEAM_STYLE: TeamStyle = 'random'
+export const CURRENT_TEAM_STYLE: TeamStyle = 'bento'
 
 let _resolvedTeamStyleCache: ResolvedTeamStyle | null = null
 
