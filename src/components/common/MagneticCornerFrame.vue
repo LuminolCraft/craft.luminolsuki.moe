@@ -12,10 +12,10 @@
   <div
     ref="rootRef"
     class="magnetic-corner-frame"
-    :style="{
-      '--corner-arm': `${armLength}px`,
-      '--corner-accent': accentColor || 'var(--accent, #a78bfa)',
-    }"
+    data-mcf=""
+    :data-mcf-max-arm="armLength > 0 ? armLength : undefined"
+    :data-mcf-gap="padding > 0 ? padding : undefined"
+    :style="{ '--corner-accent': accentColor || 'var(--accent, #a78bfa)' }"
   >
     <slot />
 
@@ -35,16 +35,19 @@ import { onMounted, ref } from 'vue'
 import {
   CORNER_KEYS,
   supportsMagneticCorner,
-  useMagneticCornerHover,
+  useMagneticCornerFrame,
 } from '@/composables/useMagneticCornerHover'
 
 // 微调点：padding 角标外扩距离 · armLength 角臂长度 · magnetStrength 磁吸上限 · edgeBias 边缘加权
 // 说明：class 不声明为 prop，靠 attrs 直接落到根节点，使用方可以自由控制布局（flex / grid / 撑满）
 const props = withDefaults(
   defineProps<{
-    /** 角标相对元素边缘的外扩距离（px） */
+    /** 角标相对元素边缘的外扩距离（px）。传 0 或负值表示按臂长比例自适应 */
     padding?: number
-    /** 角臂长度（px），由 --corner-arm 驱动 */
+    /**
+     * 角臂长度上限（px）。留空或传 0 表示完全自适应：
+     * arm = clamp(10, min(width, height, 220) × 0.11, 28)
+     */
     armLength?: number
     /** 磁吸位移上限（px） */
     magnetStrength?: number
@@ -56,8 +59,8 @@ const props = withDefaults(
     accentColor?: string
   }>(),
   {
-    padding: 8,
-    armLength: 18,
+    padding: 0,
+    armLength: 0,
     magnetStrength: 6,
     edgeBias: 2.2,
     activeOnFocus: true,
@@ -73,8 +76,9 @@ const rootRef = ref<HTMLElement | null>(null)
  */
 const cornerEls: Array<HTMLElement | undefined> = []
 
-const { bind } = useMagneticCornerHover({
-  padding: props.padding,
+const { attach } = useMagneticCornerFrame({
+  armMax: props.armLength > 0 ? props.armLength : undefined,
+  padding: props.padding > 0 ? props.padding : undefined,
   magnetStrength: props.magnetStrength,
   edgeBias: props.edgeBias,
   activeOnFocus: props.activeOnFocus,
@@ -96,11 +100,17 @@ onMounted(() => {
   const corners = cornerEls.filter((el): el is HTMLElement => el !== undefined)
   if (corners.length !== CORNER_KEYS.length) return
 
-  bind(root, new Map<HTMLElement, HTMLElement[]>([[root, corners]]))
+  // 登记到共享注册表：与 useUiFx 的自动增强共用同一份 frames，互不覆盖
+  attach(root, corners)
 })
 </script>
 
 <style scoped>
+/*
+  布局中性化：包装层不设置 display / width / height。
+  块级盒子在 grid 与 flex 容器里会被自动拉伸，不会改变原有排版；
+  唯一的例外是行内场景（按钮、进度条），用 .mcf-inline 明确声明。
+*/
 .magnetic-corner-frame {
   position: relative;
   --corner-active: 0;
@@ -115,8 +125,14 @@ onMounted(() => {
 /* 角标层：绝对定位、不参与布局；JS 负责写入 transform 与 autoAlpha */
 .magnetic-corner-frame__corner {
   position: absolute;
+  /* inset 归零：即使父级被改成 flex/grid，角也不会被拉伸成横条 */
+  inset: auto;
   top: 0;
   left: 0;
+  flex: 0 0 auto;
+  box-sizing: border-box;
+  /* 角是装饰层：绝不吃指针命中，否则 elementFromPoint 会命中角自己 */
+  pointer-events: none;
   width: var(--corner-arm, 18px);
   height: var(--corner-arm, 18px);
   pointer-events: none;
@@ -153,30 +169,14 @@ onMounted(() => {
   }
 }
 
-/* 布局辅助类：包装层默认是块级盒子，这三个类让它在行内场景里不破坏原有排版 */
-.magnetic-corner-frame.mcf-row {
-  display: flex;
-  align-items: center;
-  gap: inherit;
-}
-
-/* 让包装层贴合内部控件宽度，用于按钮、进度条这类不该被拉满的元素 */
+/*
+  唯一的布局辅助类：让包装层贴合内部控件宽度。
+  只给按钮、进度条这类「不该被拉满」的行内场景用。
+  网格单元 / 对比栏不需要辅助类：块级盒子本来就会被拉伸。
+*/
 .magnetic-corner-frame.mcf-inline {
   display: inline-block;
   width: fit-content;
-}
-
-/* 让包装层撑满父级，用于网格单元、对比栏这类需要占满的元素 */
-.magnetic-corner-frame.mcf-fill {
-  display: flex;
-  align-items: stretch;
-  width: 100%;
-  height: 100%;
-}
-
-.magnetic-corner-frame.mcf-fill > :deep(*) {
-  min-width: 0;
-  width: 100%;
 }
 
 @media (prefers-reduced-motion: reduce) {
