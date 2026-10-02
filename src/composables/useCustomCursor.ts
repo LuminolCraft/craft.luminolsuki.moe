@@ -52,6 +52,7 @@ export function supportsCustomCursor(): boolean {
 export function useCustomCursor(options: CustomCursorOptions = {}) {
   const active = ref(false)
   const hovering = ref(false)
+  const dragging = ref(false)
 
   let ctx: gsap.Context | null = null
   let dot: HTMLElement | null = null
@@ -69,25 +70,21 @@ export function useCustomCursor(options: CustomCursorOptions = {}) {
   let pointerY = 0
   let moved = false
 
-  function applyRingState(): void {
-    if (!ring) return
-    gsap.to(ring, {
-      scale: hovering.value ? 1.22 : 1,
-      opacity: hovering.value ? 0.85 : 0.55,
-      duration: 0.32,
-      ease: EASINGS.hover,
-      overwrite: 'auto',
-    })
-  }
-
+  /**
+   * 命中检测只更新两个状态标记，外观交给 CSS（见 CursorLayer.vue）：
+   * 尺寸、配色、缩放都是 CSS 变量，JS 不参与补间，主题切换也不会留下旧色。
+   */
   function hitTest(): void {
     const el = document.elementFromPoint(pointerX, pointerY)
-    const next = Boolean(
-      el?.closest('[data-cursor-hover], a, button, [role="button"], [data-drag]'),
+    if (!el) return
+
+    const nextDragging = Boolean(el.closest('[data-drag]'))
+    const nextHovering = Boolean(
+      el.closest('[data-cursor-hover], a, button, [role="button"], [data-drag]'),
     )
-    if (next === hovering.value) return
-    hovering.value = next
-    applyRingState()
+
+    if (nextDragging !== dragging.value) dragging.value = nextDragging
+    if (nextHovering !== hovering.value) hovering.value = nextHovering
   }
 
   function onMove(event: PointerEvent): void {
@@ -174,6 +171,7 @@ export function useCustomCursor(options: CustomCursorOptions = {}) {
     queued = false
     moved = false
     hovering.value = false
+    dragging.value = false
     active.value = false
     customCursorEnabled.value = false
     document.documentElement.removeAttribute('data-custom-cursor')
@@ -191,5 +189,5 @@ export function useCustomCursor(options: CustomCursorOptions = {}) {
     destroy()
   })
 
-  return { active, hovering, bind, destroy }
+  return { active, hovering, dragging, bind, destroy }
 }
