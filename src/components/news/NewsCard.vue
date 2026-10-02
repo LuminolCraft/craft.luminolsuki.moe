@@ -1,7 +1,12 @@
 <template>
     <article
       class="news-item"
-      :class="{ pinned: !!item.pinned, 'has-cover': hasImage }"
+      :class="{
+        pinned: !!item.pinned,
+        'has-cover': hasImage,
+        'no-cover': !hasImage,
+        'list-item': layout === 'list',
+      }"
       @click="$emit('click', item)"
     >
       <div class="news-item-body">
@@ -61,6 +66,7 @@
   const props = defineProps<{
     item: NewsItem;
     maxCardTags?: number;
+    layout?: 'list' | 'grid';
   }>();
   
   const emit = defineEmits<{
@@ -75,6 +81,8 @@
     new Date(props.item.date).toLocaleDateString('zh-CN')
   );
   
+  const isWideNoCover = computed(() => props.layout === 'list' && !hasImage.value);
+
   const excerpt = computed(() => {
     const raw = (props.item.summary || props.item.markdownContent || '').toString();
     const plain = raw
@@ -94,7 +102,8 @@
       .replace(/\s+/g, ' ')
       .trim();
     if (!plain) return '暂无内容';
-    const maxLen = 120;
+    // 列表模式且无封面：没有配图占位，正文可以多留一些
+    const maxLen = isWideNoCover.value ? 260 : 120;
     return plain.length > maxLen ? `${plain.slice(0, maxLen)}…` : plain;
   });
   
@@ -289,6 +298,16 @@
     max-width: 100%;
     min-width: 0;
     padding: 1.25rem 1.5rem;
+  }
+
+  /* 列表模式无封面：整行都是正文，不按配图卡的两行截断 */
+  .news-item.list-item.no-cover .news-item-body {
+    width: 100%;
+    max-width: 100%;
+  }
+  .news-item.list-item.no-cover .news-item-desc {
+    -webkit-line-clamp: 5 !important;
+    line-clamp: 5 !important;
   }
 
   :deep(.list-mode) .news-item {

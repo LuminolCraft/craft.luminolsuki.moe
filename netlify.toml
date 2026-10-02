@@ -4,9 +4,10 @@
 
 [build.environment]
   NODE_VERSION = "22"
-  # 钉 pnpm 版本与本地一致：lockfile v9 + patchedDependencies（v-calendar 补丁）需要较新 pnpm，
-  # 构建机默认版本过旧会在 Install dependencies 阶段报非零退出
-  PNPM_VERSION = "9.12.1"
+  # 钉 pnpm 版本与本地一致：pnpm-workspace.yaml 里的 patchedDependencies（v-calendar 补丁）
+  # 与 allowBuilds 需要 pnpm 10+（11 起才从 workspace 读补丁配置），旧版会在
+  # Install dependencies 阶段报非零退出
+  PNPM_VERSION = "12.8.1"
   # API 基地址留空 = 同源：浏览器只与 craft.luminolsuki.moe 通信，
   # /api/* 由下方 redirects 同源反代到 Worker（Cookie 第一方，规避跨站分区）
   VITE_API_BASE_URL = ""

@@ -1,0 +1,729 @@
+/* ============================================================
+   home-styles.css
+   首页样式（桌面）。原是 Home.vue 的 <style scoped>，抽出为全局文件；
+   每个选择器都挂在 .home-page 之下，避免外泄到其他页面。
+   ============================================================ */
+/* ------------------------------------------------------------------ */
+/* 令牌                                                                */
+/* 画布与主色走 theme-colors.css 的语义变量（单一来源），                */
+/* 其余为 Vercel 灰阶的本地令牌（与 theme-colors.css 同一套数值）。      */
+/* ------------------------------------------------------------------ */
+
+:root {
+  --canvas: var(--background-color); /* 浅色 #fafafa / 深色 #010102 */
+  --surface-1: #ffffff;
+  --surface-2: #f4f4f5;
+  --ink: var(--vercel-gray-900);
+  --ink-muted: var(--vercel-gray-500);
+  --subtle: #8f8f8f;
+  --hairline: var(--vercel-gray-100);
+  --accent: var(--primary-color);
+  --gutter: 24px;
+  --maxw: 1400px;
+}
+
+html[data-theme='dark'] {
+  --surface-1: #0f1011;
+  --surface-2: #17181a;
+  --ink: #f7f8f8;
+  --ink-muted: #8a8f98;
+  --subtle: #6b7079;
+  --hairline: #23252a;
+}
+
+/* ------------------------------------------------------------------ */
+/* 基础                                                                */
+/* ------------------------------------------------------------------ */
+
+.home-page {
+  min-height: 100vh;
+  background: var(--canvas);
+  color: var(--ink);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
+    'Hiragino Sans GB', 'Microsoft YaHei', Roboto, Helvetica, Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: clip;
+}
+
+.home-page * {
+  box-sizing: border-box;
+}
+
+/* 系统光标的隐藏统一由 CursorLayer.vue 的全局规则负责（门禁 data-custom-cursor），
+   首页不再单独写一份，避免两份规则互相覆盖。 */
+
+.home-page .wrap {
+  max-width: var(--maxw);
+  margin: 0 auto;
+  padding-inline: var(--gutter);
+}
+
+.home-page .eyebrow {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+.home-page .h2 {
+  margin: 8px 0 0;
+  font-size: 28px;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.6px;
+  color: var(--ink);
+}
+
+.home-page .h3 {
+  margin: 8px 0 0;
+  font-size: 22px;
+  font-weight: 500;
+  line-height: 1.25;
+  letter-spacing: -0.4px;
+  color: var(--ink);
+}
+
+.home-page .lead {
+  margin: 12px 0 0;
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--ink-muted);
+}
+
+
+.home-page .body {
+  margin: 12px 0 0;
+  max-width: 720px;
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--ink-muted);
+}
+
+.home-page .hairline {
+  height: 1px;
+  background: var(--hairline);
+  margin: 24px 0;
+}
+
+/* ------------------------------------------------------------------ */
+/* 按钮                                                                */
+/* ------------------------------------------------------------------ */
+
+.home-page .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 40px;
+  padding: 0 20px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 0.18s ease, border-color 0.18s ease,
+    color 0.18s ease, opacity 0.18s ease;
+}
+
+.home-page .btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.home-page .btn--primary {
+  background: var(--accent);
+  color: #ffffff;
+}
+
+.home-page .btn--primary:hover {
+  opacity: 0.88;
+}
+
+.home-page .btn--ghost {
+  background: transparent;
+  color: inherit;
+  border-color: currentColor;
+  opacity: 0.9;
+}
+
+.home-page .btn--ghost:hover {
+  opacity: 1;
+}
+
+/* ------------------------------------------------------------------ */
+/* 1. Hero                                                            */
+/* ------------------------------------------------------------------ */
+
+.home-page .hero {
+  position: relative;
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 128px var(--gutter) 96px;
+  overflow: hidden;
+  --ink: #ffffff;
+  --ink-muted: rgba(255, 255, 255, 0.74);
+  --subtle: rgba(255, 255, 255, 0.6);
+  --hairline: rgba(255, 255, 255, 0.24);
+  color: #ffffff;
+}
+
+@supports (min-height: 100svh) {
+  .home-page .hero {
+    min-height: 100svh;
+  }
+}
+
+.home-page .hero__bg {
+  position: absolute;
+  inset: 0;
+}
+
+.home-page .hero__img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.home-page .hero__scrim {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.home-page .hero__inner {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 940px;
+  text-align: center;
+}
+
+.home-page .hero__content {
+  padding: 40px 24px;
+}
+
+.home-page .hero__title {
+  margin: 20px 0 0;
+  font-size: 56px;
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -1.8px;
+  color: #ffffff;
+}
+
+.home-page .hero__rule {
+  height: 1px;
+  width: min(320px, 70%);
+  margin: 28px auto 0;
+  background: linear-gradient(
+    90deg,
+    rgba(167, 139, 250, 0) 0%,
+    var(--accent) 50%,
+    rgba(167, 139, 250, 0) 100%
+  );
+}
+
+.home-page .hero__sub {
+  margin: 24px auto 0;
+  max-width: 620px;
+  font-size: 18px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.home-page .hero__actions {
+  margin-top: 32px;
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.home-page .hero__actions .btn--ghost {
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.36);
+}
+
+/* ------------------------------------------------------------------ */
+/* 2. 状态带                                                           */
+/* ------------------------------------------------------------------ */
+
+.home-page .status {
+  border-top: 1px solid var(--hairline);
+  border-bottom: 1px solid var(--hairline);
+  padding: 64px 0;
+}
+
+.home-page .status__grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+}
+
+.home-page .status__cell {
+  padding: 8px 4px;
+}
+
+.home-page .status__value {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+}
+
+.home-page .status__num {
+  font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 40px;
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -1px;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 离线：状态点转为告警色，与「在线」的强调色区分 */
+.home-page .status__dot.is-offline {
+  background: var(--danger, #e5484d);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--danger, #e5484d) 16%, transparent);
+}
+
+.home-page .status__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex: 0 0 auto;
+}
+
+.home-page .status__label {
+  margin-top: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+/* ------------------------------------------------------------------ */
+/* 3. 滚动演示区                                                       */
+/* ------------------------------------------------------------------ */
+
+.home-page .demo {
+  padding: 96px 0 0;
+}
+
+.home-page .demo__grid {
+  display: grid;
+  grid-template-columns: 5fr 7fr;
+  gap: 64px;
+  align-items: start;
+  min-height: 240vh;
+}
+
+.demo__left,
+.home-page .demo__right {
+  position: sticky;
+  top: 120px;
+  align-self: start;
+}
+
+.home-page .demo__item {
+  padding: 24px 0;
+  opacity: 0.22;
+  will-change: opacity;
+}
+
+.home-page .demo__item.is-active {
+  opacity: 1;
+}
+
+.home-page .demo__head {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.home-page .demo__num {
+  font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 13px;
+  letter-spacing: 0.4px;
+  color: var(--ink-muted);
+  transition: color 0.35s ease;
+}
+
+.home-page .demo__item.is-active .demo__num {
+  color: var(--accent);
+}
+
+.home-page .demo__item.is-active .eyebrow {
+  color: var(--ink);
+}
+
+.home-page .demo__title {
+  margin: 14px 0 0;
+  font-size: 28px;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.6px;
+  color: var(--ink);
+}
+
+.home-page .demo__desc {
+  margin: 14px 0 0;
+  max-width: 480px;
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--ink-muted);
+}
+
+.home-page .demo__media {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  border-radius: 16px;
+  overflow: hidden;
+  background: var(--surface-2);
+}
+
+.home-page .demo__media-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  will-change: transform, opacity;
+}
+
+/* ------------------------------------------------------------------ */
+/* 4. 截图带                                                           */
+/* ------------------------------------------------------------------ */
+
+.home-page .gallery {
+  padding: 96px 0;
+  overflow-x: clip;
+}
+
+.home-page .section-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 32px;
+  margin-bottom: 40px;
+}
+
+.home-page .section-head__text {
+  max-width: 720px;
+}
+
+.home-page .progress {
+  position: relative;
+  width: 160px;
+  height: 1px;
+  background: var(--hairline);
+  flex: 0 0 auto;
+  margin-bottom: 6px;
+}
+
+.home-page .progress__bar {
+  position: absolute;
+  inset: 0;
+  background: var(--ink);
+  transform: scaleX(0);
+  transform-origin: left center;
+  will-change: transform;
+}
+
+/*
+  轮播舞台：两侧渐隐过渡的定位父级。
+  自己用负 margin 撑到视口左右边缘（与轮播同一套 bleed 技巧），
+  这样 left/right: 0 的过渡层正好贴在屏幕边上，而不是贴在内容栏边缘。
+*/
+.home-page .gallery__stage {
+  position: relative;
+  margin-inline: calc(50% - 50vw);
+}
+
+.home-page .gallery__rail {
+  display: flex;
+  gap: 14px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  /* 舞台已负责 bleed，这里只用 padding 把首尾截图对齐到内容栏 */
+  padding-inline: calc(50vw - 50%);
+  padding-block: 4px;
+  scroll-padding-inline: calc(50vw - 50%);
+  cursor: grab;
+  touch-action: pan-y;
+}
+
+/* 拖动中：跟手优先 */
+.home-page .gallery__rail.is-dragging {
+  cursor: grabbing;
+  user-select: none;
+}
+
+.home-page .gallery__item {
+  -webkit-user-drag: none;
+  user-select: none;
+}
+
+/* 光标层是叠加元素，不改系统光标：命中点仍精确，也不需要处理输入框例外 */
+
+.home-page .gallery__rail::-webkit-scrollbar {
+  display: none;
+}
+
+.home-page .gallery__item {
+  flex: 0 0 auto;
+  width: 22vw;
+  aspect-ratio: 16 / 10;
+  height: auto;
+  object-fit: cover;
+  border-radius: 10px;
+  display: block;
+}
+
+/* ------------------------------------------------------------------ */
+/* 5. 对比                                                             */
+/* ------------------------------------------------------------------ */
+
+.home-page .compare {
+  padding: 96px 0;
+}
+
+.home-page .compare__grid {
+  display: grid;
+  grid-template-columns: 7fr 5fr;
+  gap: 80px;
+  align-items: start;
+}
+
+.home-page .compare__col {
+  display: block;
+}
+
+.home-page .compare__figure {
+  border-radius: 16px;
+  overflow: hidden;
+  background: var(--surface-2);
+}
+
+.home-page .compare__figure img {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+  will-change: transform;
+}
+
+.home-page .compare__figure--wide img {
+  aspect-ratio: 16 / 10;
+}
+
+.home-page .compare__figure--tall img {
+  aspect-ratio: 10 / 7;
+}
+
+.home-page .compare__eyebrow {
+  margin-top: 28px;
+}
+
+.home-page .tags {
+  list-style: none;
+  display: flex;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+}
+
+.home-page .tag {
+  flex: 1 1 0;
+  padding: 10px 12px;
+  border: 1px solid var(--hairline);
+  border-radius: 8px;
+  font-size: 14px;
+  color: var(--ink-muted);
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* ------------------------------------------------------------------ */
+/* 6. 团队                                                             */
+/* ------------------------------------------------------------------ */
+
+.home-page .team {
+  padding: 96px 0;
+}
+
+.home-page .team__list {
+  margin-top: 40px;
+}
+
+.home-page .team__item {
+  border-top: 1px solid var(--hairline);
+  padding: 24px 0;
+}
+
+.home-page .team__item:first-child {
+  border-top: 0;
+}
+
+.home-page .team__item.is-offset {
+  padding-left: 8%;
+}
+
+.home-page .team-row {
+  display: block;
+}
+
+.home-page .team-row__inner {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.home-page .team-row__idx {
+  font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 13px;
+  color: var(--subtle);
+  flex: 0 0 auto;
+  width: 24px;
+}
+
+.home-page .team-row__avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex: 0 0 auto;
+  box-shadow: 0 0 0 1px var(--hairline);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.home-page .team-row:hover .team-row__avatar {
+  transform: scale(1.03);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+.home-page .team-row__id {
+  min-width: 0;
+}
+
+.home-page .team-row__name-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.home-page .team-row__name {
+  font-size: 22px;
+  font-weight: 500;
+  line-height: 1.25;
+  letter-spacing: -0.4px;
+  color: var(--ink);
+}
+
+.home-page .team-row__owner {
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.home-page .team-row__role {
+  margin-top: 4px;
+  font-size: 14px;
+  color: var(--ink-muted);
+}
+
+.home-page .team-row__links {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.home-page .team-row__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  color: var(--subtle);
+  transition: color 0.18s ease;
+}
+
+.home-page .team-row__icon:hover {
+  color: var(--accent);
+}
+
+.home-page .team-row__icon:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.home-page .team-row__gh {
+  flex: 0 0 auto;
+  font-size: 14px;
+  color: var(--ink-muted);
+  text-decoration: none;
+  transition: color 0.18s ease;
+}
+
+.home-page .team-row__gh:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+.home-page .team-row__gh:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ------------------------------------------------------------------ */
+/* 7. CTA                                                              */
+/* ------------------------------------------------------------------ */
+
+.home-page .cta {
+  padding: 96px 0 160px;
+}
+
+.home-page .cta__panel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 40px;
+  padding: 48px;
+  border-radius: 24px;
+  background: var(--surface-2);
+}
+
+.home-page .cta__text .lead {
+  max-width: 520px;
+}
+
+
+
+
+@media (prefers-reduced-motion: reduce) {
+  .team-row__avatar,
+  .btn,
+  .team-row__gh,
+  .home-page .team-row__icon {
+    transition: none;
+  }
+}

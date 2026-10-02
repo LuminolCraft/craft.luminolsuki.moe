@@ -5,9 +5,7 @@ settings:
   excludeLinksFromLockfile: false
 
 patchedDependencies:
-  v-calendar@3.1.2:
-    hash: 447kxrwxmejn2fbib4l43cijua
-    path: patches/v-calendar@3.1.2.patch
+  v-calendar@3.1.2: ceff2a009a5e948b3bd701fa9530b8f2a0352a1843b5b8f6768bf44d976c2cc8
 
 importers:
 
@@ -52,6 +50,9 @@ importers:
       marked:
         specifier: ^17.0.1
         version: 17.0.1
+      ogl:
+        specifier: 1.0.11
+        version: 1.0.11
       pinia:
         specifier: ^3.0.4
         version: 3.0.4(typescript@5.9.3)(vue@3.5.26(typescript@5.9.3))
@@ -99,7 +100,7 @@ importers:
         version: 5.1.0
       v-calendar:
         specifier: ^3.1.2
-        version: 3.1.2(patch_hash=447kxrwxmejn2fbib4l43cijua)(@popperjs/core@2.11.8)(vue@3.5.26(typescript@5.9.3))
+        version: 3.1.2(patch_hash=ceff2a009a5e948b3bd701fa9530b8f2a0352a1843b5b8f6768bf44d976c2cc8)(@popperjs/core@2.11.8)(vue@3.5.26(typescript@5.9.3))
       vue:
         specifier: ^3.5.25
         version: 3.5.26(typescript@5.9.3)
@@ -2346,6 +2347,9 @@ packages:
 
   obug@2.1.1:
     resolution: {integrity: sha512-uTqF9MuPraAQ+IsnPf366RG4cP9RtUi7MLO1N3KEc+wb0a6yKpeL0lmk2IB1jY5KHPAlTc6T/JRdC/YqxHNwkQ==}
+
+  ogl@1.0.11:
+    resolution: {integrity: sha512-kUpC154AFfxi16pmZUK4jk3J+8zxwTWGPo03EoYA8QPbzikHoaC82n6pNTbd+oEaJonaE8aPWBlX7ad9zrqLsA==}
 
   ohash@2.0.11:
     resolution: {integrity: sha512-RdR9FQrFwNBNXAr4GixM8YaRZRJ5PUWbKYbE5eOsrwAjJW0q2REGcf79oYPsLyskQCZG1PLN+S/K1V00joZAoQ==}
@@ -5391,6 +5395,8 @@ snapshots:
 
   obug@2.1.1: {}
 
+  ogl@1.0.11: {}
+
   ohash@2.0.11: {}
 
   open@10.2.0:
@@ -5912,7 +5918,7 @@ snapshots:
 
   util-deprecate@1.0.2: {}
 
-  v-calendar@3.1.2(patch_hash=447kxrwxmejn2fbib4l43cijua)(@popperjs/core@2.11.8)(vue@3.5.26(typescript@5.9.3)):
+  v-calendar@3.1.2(patch_hash=ceff2a009a5e948b3bd701fa9530b8f2a0352a1843b5b8f6768bf44d976c2cc8)(@popperjs/core@2.11.8)(vue@3.5.26(typescript@5.9.3)):
     dependencies:
       '@popperjs/core': 2.11.8
       '@types/lodash': 4.17.25
