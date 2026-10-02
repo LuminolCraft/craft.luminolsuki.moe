@@ -8,7 +8,7 @@
 /* ------------------------------------------------------------------ */
 
 @media (max-width: 1024px) {
-  .home-page :global(:root) {
+  :root {
     --gutter: 20px;
   }
 
@@ -47,7 +47,7 @@
   }
 }
 @media (max-width: 768px) {
-  .home-page :global(:root) {
+  :root {
     --gutter: 20px;
   }
 
@@ -120,7 +120,7 @@
   }
 }
 @media (max-width: 480px) {
-  .home-page :global(:root) {
+  :root {
     --gutter: 16px;
   }
 
