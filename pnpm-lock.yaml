@@ -5,9 +5,7 @@ settings:
   excludeLinksFromLockfile: false
 
 patchedDependencies:
-  v-calendar@3.1.2:
-    hash: 447kxrwxmejn2fbib4l43cijua
-    path: patches/v-calendar@3.1.2.patch
+  v-calendar@3.1.2: ceff2a009a5e948b3bd701fa9530b8f2a0352a1843b5b8f6768bf44d976c2cc8
 
 importers:
 
@@ -102,7 +100,7 @@ importers:
         version: 5.1.0
       v-calendar:
         specifier: ^3.1.2
-        version: 3.1.2(patch_hash=447kxrwxmejn2fbib4l43cijua)(@popperjs/core@2.11.8)(vue@3.5.26(typescript@5.9.3))
+        version: 3.1.2(patch_hash=ceff2a009a5e948b3bd701fa9530b8f2a0352a1843b5b8f6768bf44d976c2cc8)(@popperjs/core@2.11.8)(vue@3.5.26(typescript@5.9.3))
       vue:
         specifier: ^3.5.25
         version: 3.5.26(typescript@5.9.3)
@@ -5920,7 +5918,7 @@ snapshots:
 
   util-deprecate@1.0.2: {}
 
-  v-calendar@3.1.2(patch_hash=447kxrwxmejn2fbib4l43cijua)(@popperjs/core@2.11.8)(vue@3.5.26(typescript@5.9.3)):
+  v-calendar@3.1.2(patch_hash=ceff2a009a5e948b3bd701fa9530b8f2a0352a1843b5b8f6768bf44d976c2cc8)(@popperjs/core@2.11.8)(vue@3.5.26(typescript@5.9.3)):
     dependencies:
       '@popperjs/core': 2.11.8
       '@types/lodash': 4.17.25

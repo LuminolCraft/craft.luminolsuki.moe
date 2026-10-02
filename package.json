@@ -20,7 +20,10 @@
     "check:home:scroll": "node tools/home-check/scroll.mjs",
     "check:home:pointer": "node tools/home-check/pointer.mjs",
     "check:home:theme": "node tools/home-check/theme.mjs",
-    "check:home:cleanup": "node tools/home-check/cleanup.mjs"
+    "check:home:cleanup": "node tools/home-check/cleanup.mjs",
+    "check:home:corners": "node tools/home-check/corners.mjs",
+    "check:home:corners-shot": "node tools/home-check/corners-shot.mjs",
+    "check:home:errors": "node tools/home-check/errors.mjs"
   },
   "dependencies": {
     "@unhead/ssr": "^2.0.19",
@@ -83,10 +86,5 @@
     "vite-plugin-vue-devtools": "^8.0.5",
     "vitest": "^4.0.14",
     "vue-tsc": "^3.2.1"
-  },
-  "pnpm": {
-    "patchedDependencies": {
-      "v-calendar@3.1.2": "patches/v-calendar@3.1.2.patch"
-    }
   }
 }

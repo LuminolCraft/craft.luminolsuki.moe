@@ -60,17 +60,17 @@ onMounted(() => {
   @import './styles/typography.css';
   @import './styles/vercel-design-system.css';  /* Vercel Design System */
   @import './styles/responsive.css';
-  @import './styles/gsap-splittext.css'; 
-    * {                               
+  @import './styles/gsap-splittext.css';
+    * {
         margin: 0;
         padding: 0;
         box-sizing: border-box;
     }
-  
+
     html {
         scroll-behavior: smooth;
     }
-  
+
     body {
         font-family: var(--vercel-font-family, var(--font-primary));
         font-size: var(--vercel-font-size-base, var(--font-size-base));
@@ -89,7 +89,9 @@ onMounted(() => {
         color: var(--link-hover-color);
         text-decoration: none;
     }
-
+    ul li {
+        list-style-type: none;
+    }
     /* 全局部分样式 - 保留原有背景 */
     section {
         padding: var(--spacing-16) 0;
