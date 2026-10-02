@@ -36,6 +36,7 @@
           v-for="item in paginatedNews"
           :key="item.id"
           :item="item"
+          :layout="layoutMode"
           @click="goToDetail"
           @tag-click="handleTagToggle"
         />
@@ -257,6 +258,12 @@ watch(isLoading, async (newVal, oldVal) => {
   border-radius: 12px !important;
   flex-shrink: 0;
 }
+/* 列表模式无封面：没有配图占位，正文占满整行 */
+.news-grid.list-mode :deep(.news-item:not(.has-cover) .news-item-body) {
+  width: 100% !important;
+  max-width: 100% !important;
+  padding: 1.5rem 1.75rem !important;
+}
 /* 列表模式封面在左侧（通过父容器 .cover-left 控制） */
 .news-grid.list-mode.cover-left :deep(.news-item .news-item-cover) {
   right: auto !important;
@@ -266,6 +273,13 @@ watch(isLoading, async (newVal, oldVal) => {
   margin-left: auto !important;
   padding: 1.5rem 1.75rem 1.5rem 2.5rem !important;
   width: calc(100% - 30% - 1.5rem) !important;
+}
+/* 无封面时左封面位置无意义，正文回到整行 */
+.news-grid.list-mode.cover-left :deep(.news-item:not(.has-cover) .news-item-body) {
+  margin-left: 0 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  padding: 1.5rem 1.75rem !important;
 }
 
 /* 网格模式 */
@@ -298,6 +312,11 @@ watch(isLoading, async (newVal, oldVal) => {
     width: calc(100% - 9rem - 0.75rem) !important;
     padding: 0.75rem !important;
   }
+  .news-grid.list-mode :deep(.news-item:not(.has-cover) .news-item-body) {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 1rem !important;
+  }
   .news-grid.list-mode :deep(.news-item .news-item-cover) {
     width: 9rem !important;
     top: 0.5rem !important;
@@ -313,6 +332,12 @@ watch(isLoading, async (newVal, oldVal) => {
     margin-left: auto !important;
     padding: 0.75rem 0.75rem 0.75rem 1rem !important;
     width: calc(100% - 9rem - 0.75rem) !important;
+  }
+  .news-grid.list-mode.cover-left :deep(.news-item:not(.has-cover) .news-item-body) {
+    margin-left: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 1rem !important;
   }
 
   .news-grid.grid-mode {
@@ -378,6 +403,11 @@ watch(isLoading, async (newVal, oldVal) => {
     width: calc(100% - 9rem - 0.75rem) !important;
     padding: 0.75rem !important;
   }
+  .news-grid.list-mode :deep(.news-item:not(.has-cover) .news-item-body) {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 1rem !important;
+  }
   .news-grid.list-mode :deep(.news-item .news-item-cover) {
     width: 9rem !important;
     top: 0.5rem !important;
@@ -393,6 +423,12 @@ watch(isLoading, async (newVal, oldVal) => {
     margin-left: auto !important;
     padding: 0.75rem 0.75rem 0.75rem 1rem !important;
     width: calc(100% - 9rem - 0.75rem) !important;
+  }
+  .news-grid.list-mode.cover-left :deep(.news-item:not(.has-cover) .news-item-body) {
+    margin-left: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 1rem !important;
   }
 }
 </style>
