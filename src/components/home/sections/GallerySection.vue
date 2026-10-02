@@ -247,6 +247,7 @@ onUnmounted(() => {
           size="20rem"
           :div-count="10"
           :edge-fade="0.55"
+          cross-inset="4px"
         />
         <HomeGradualBlur
           position="right"
@@ -254,6 +255,7 @@ onUnmounted(() => {
           size="20rem"
           :div-count="10"
           :edge-fade="0.55"
+          cross-inset="4px"
         />
         <div
           ref="railEl"
