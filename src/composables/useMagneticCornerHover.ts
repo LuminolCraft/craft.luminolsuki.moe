@@ -412,8 +412,27 @@ export function createMagneticCornerManager(
       if (!frame.focusActive) leave(frame)
     }
 
+    /*
+      焦点锁定只给键盘用。
+      点击 RouterLink 之类的元素会让焦点留在它身上；若把「点出来的焦点」也算锁定态，
+      鼠标移开时 leave() 会被 focusActive 挡住，角标就永远挂在那里不消失
+      （实测后台侧边栏导航点击后就是这样）。这里按「最近一次交互是鼠标还是键盘」判断，
+      键盘 Tab 仍保留锁定态。
+    */
+    let clickFocused = false
+
+    const onPointerDown = () => {
+      clickFocused = true
+      frame.focusActive = false
+    }
+
+    const onKeyDown = () => {
+      clickFocused = false
+    }
+
     const onFocusIn = () => {
       if (!activeOnFocus) return
+      if (clickFocused) return
       frame.focusActive = true
       frame.rect = el.getBoundingClientRect()
       enter(frame)
@@ -432,17 +451,21 @@ export function createMagneticCornerManager(
     el.addEventListener('mouseenter', onEnter)
     el.addEventListener('mouseover', onEnter)
     el.addEventListener('mouseleave', onLeave)
+    el.addEventListener('pointerdown', onPointerDown, { passive: true })
     if (activeOnFocus) {
       el.addEventListener('focusin', onFocusIn)
       el.addEventListener('focusout', onFocusOut)
+      window.addEventListener('keydown', onKeyDown, { passive: true })
     }
 
     frame.teardown = () => {
       el.removeEventListener('mouseenter', onEnter)
       el.removeEventListener('mouseover', onEnter)
       el.removeEventListener('mouseleave', onLeave)
+      el.removeEventListener('pointerdown', onPointerDown)
       el.removeEventListener('focusin', onFocusIn)
       el.removeEventListener('focusout', onFocusOut)
+      window.removeEventListener('keydown', onKeyDown)
       frame.resizeObserver?.disconnect()
       frame.resizeObserver = null
     }
