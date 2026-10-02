@@ -40,6 +40,13 @@ const props = withDefaults(
     curve?: 'linear' | 'bezier' | 'ease-in' | 'ease-out' | 'ease-in-out'
     /** 是否再叠一层到页面底色的渐变，让边缘收得更干净 */
     tint?: boolean
+    /**
+     * 最外侧的底色浓度（0~1）。取 1 会把边缘彻底压成页面底色，看着像硬切一刀；
+     * 0.5~0.7 之间是「淡出」而不是「盖住」，过渡更柔。
+     */
+    edgeFade?: number
+    /** 过渡带尺寸上限（视口百分比），窄屏用它避免整条内容被糊掉 */
+    sizeCap?: number
     /** 叠层透明度 */
     opacity?: number
   }>(),
@@ -50,6 +57,8 @@ const props = withDefaults(
     divCount: 6,
     curve: 'bezier',
     tint: true,
+    edgeFade: 0.62,
+    sizeCap: 26,
     opacity: 1,
   },
 )
@@ -75,19 +84,18 @@ const containerStyle = computed<CSSProperties>(() => {
   const style: CSSProperties = {}
   style[props.position] = '0'
 
-  /*
-    尺寸上限跟着视口走：窄屏上两条固定 11rem 的过渡带会把整条轮播糊掉，
-    所以用 min(配置尺寸, 24vw/24vh) 让它随视口收缩。
-  */
+  // 尺寸上限跟着视口走：窄屏上固定宽度的过渡带会把整条内容糊掉
   if (vertical) {
-    style.height = `min(${props.size}, 24vh)`
+    style.height = `min(${props.size}, ${props.sizeCap}vh)`
     style.left = '0'
     style.right = '0'
   } else {
-    style.width = `min(${props.size}, 24vw)`
+    style.width = `min(${props.size}, ${props.sizeCap}vw)`
     style.top = '0'
     style.bottom = '0'
   }
+  // 最外侧的底色浓度交给 tint 的渐变读取
+  style['--gb-edge-fade'] = String(props.edgeFade)
   return style
 })
 
@@ -139,21 +147,49 @@ const layers = computed<CSSProperties[]>(() => {
   inset: 0;
 }
 
-/* 边缘再压一层到页面底色的渐变：只让最外侧完全落到底色，向内迅速透明 */
+/*
+  边缘淡出：不是「盖住」而是「淡出」。
+  最外侧只到 --gb-edge-fade 的浓度（默认 0.62），并且分四段平滑衰减，
+  避免出现一条能看出边界的实色带。
+*/
 .gradual-blur__tint {
-  background: linear-gradient(to right, var(--canvas) 0%, transparent 100%);
+  background: linear-gradient(
+    to right,
+    color-mix(in srgb, var(--canvas) calc(var(--gb-edge-fade, 0.62) * 100%), transparent) 0%,
+    color-mix(in srgb, var(--canvas) calc(var(--gb-edge-fade, 0.62) * 55%), transparent) 42%,
+    color-mix(in srgb, var(--canvas) calc(var(--gb-edge-fade, 0.62) * 16%), transparent) 74%,
+    transparent 100%
+  );
 }
 
 .gradual-blur--right .gradual-blur__tint {
-  background: linear-gradient(to left, var(--canvas) 0%, transparent 100%);
+  background: linear-gradient(
+    to left,
+    color-mix(in srgb, var(--canvas) calc(var(--gb-edge-fade, 0.62) * 100%), transparent) 0%,
+    color-mix(in srgb, var(--canvas) calc(var(--gb-edge-fade, 0.62) * 55%), transparent) 42%,
+    color-mix(in srgb, var(--canvas) calc(var(--gb-edge-fade, 0.62) * 16%), transparent) 74%,
+    transparent 100%
+  );
 }
 
 .gradual-blur--top .gradual-blur__tint {
-  background: linear-gradient(to bottom, var(--canvas) 0%, transparent 100%);
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--canvas) calc(var(--gb-edge-fade, 0.62) * 100%), transparent) 0%,
+    color-mix(in srgb, var(--canvas) calc(var(--gb-edge-fade, 0.62) * 55%), transparent) 42%,
+    color-mix(in srgb, var(--canvas) calc(var(--gb-edge-fade, 0.62) * 16%), transparent) 74%,
+    transparent 100%
+  );
 }
 
 .gradual-blur--bottom .gradual-blur__tint {
-  background: linear-gradient(to top, var(--canvas) 0%, transparent 100%);
+  background: linear-gradient(
+    to top,
+    color-mix(in srgb, var(--canvas) calc(var(--gb-edge-fade, 0.62) * 100%), transparent) 0%,
+    color-mix(in srgb, var(--canvas) calc(var(--gb-edge-fade, 0.62) * 55%), transparent) 42%,
+    color-mix(in srgb, var(--canvas) calc(var(--gb-edge-fade, 0.62) * 16%), transparent) 74%,
+    transparent 100%
+  );
 }
 
 @media (prefers-reduced-motion: reduce) {

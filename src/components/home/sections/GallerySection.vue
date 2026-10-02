@@ -234,8 +234,27 @@ onUnmounted(() => {
           叠层 backdrop-filter 让截图在接近视口边缘时逐级模糊并收进页面底色，
           避免图片被视口硬切。
         -->
-        <HomeGradualBlur position="left" :strength="2" size="11rem" :div-count="6" />
-        <HomeGradualBlur position="right" :strength="2" size="11rem" :div-count="6" />
+        <!--
+          参数按「柔」调过（峰值模糊 14px 与原来一致，只是斜率变缓、淡出更浅）：
+          - size 22rem → 20rem：变化铺在 320px 的距离上，不会在窄带里突然糊掉
+          - div-count 6 → 10：层次更细，看不出分层台阶
+          - strength 2 → 1.3：叠层变多会抬高峰值，这里压回来，峰值仍约 14px
+          - edge-fade 0.55：最外侧只淡到 55% 底色，是「淡出」不是「盖住」
+        -->
+        <HomeGradualBlur
+          position="left"
+          :strength="1.3"
+          size="20rem"
+          :div-count="10"
+          :edge-fade="0.55"
+        />
+        <HomeGradualBlur
+          position="right"
+          :strength="1.3"
+          size="20rem"
+          :div-count="10"
+          :edge-fade="0.55"
+        />
         <div
           ref="railEl"
           class="gallery__rail"
