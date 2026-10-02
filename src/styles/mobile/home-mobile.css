@@ -22,6 +22,15 @@
     gap: 32px;
   }
 
+  /* 移动端对调：运行状态提前，综合服务器版本靠后（桌面端 4 列不受影响） */
+  .home-page .status__grid > :nth-child(3) {
+    order: 2;
+  }
+
+  .home-page .status__grid > :nth-child(4) {
+    order: 1;
+  }
+
   .home-page .demo__grid {
     grid-template-columns: 1fr;
     gap: 40px;
