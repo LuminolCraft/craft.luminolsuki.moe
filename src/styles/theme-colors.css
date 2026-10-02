@@ -1,13 +1,14 @@
 /**
  * 色彩系统 - 基于 Vercel Geist Design System + LuminolCraft 紫色主题
- * 
+ *
  * 核心原则：
- * - 保留项目紫色渐变背景主题 (#f2eefc)
+ * - 保留项目紫色主题与 Vercel 中性色系
+ * - 背景画布：浅色 #fafafa / 深色 #010102（与首页统一的中性底色）
  * - 整合 Vercel 中性灰阶色系 (#171717 → #fafafa)
  * - 添加 Vercel 工作流强调色 (Ship Red / Preview Pink / Develop Blue)
  * - 添加 Vercel 控制台代码颜色 (Blue / Purple / Pink)
  * - Shadow-as-Border 阴影色彩系统
- * 
+ *
  * @author LuminolCraft Team
  * @version 3.0.0
  * @since 2025-12-27
@@ -82,10 +83,10 @@
    --bases-text-secondary: var(--bases-text-light-2);
    --bases-text-primary: #f1f5f9;
 
-   /* ---- 背景颜色 (保留紫色渐变主题) ---- */
-   --bases-bg: #f2eefc;
-   --bases-background-color: #f2eefc;
-   --bases-background-gradient: linear-gradient(135deg, var(--bases-white) 0%, var(--bases-white-soft) 50%, var(--bases-white-mute) 100%);
+   /* ---- 背景颜色 (中性浅灰画布，与首页 --canvas 统一) ---- */
+   --bases-bg: #fafafa;
+   --bases-background-color: #fafafa;
+   --bases-background-gradient: linear-gradient(135deg, #ffffff 0%, #fafafa 50%, #f2f2f2 100%);
    --bases-section-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
 
    /* ---- 卡片相关 ---- */
@@ -146,9 +147,9 @@
    --bases-dark-text-secondary: #f2eefc;
    --bases-dark-text-primary: #f1f5f9;
 
-   --bases-dark-bg: #0f0f14;
+   --bases-dark-bg: #010102;
    --bases-dark-background-color: var(--bases-dark-bg);
-   --bases-dark-background-gradient: linear-gradient(135deg, #0a0a0f 0%, #0f0f14 50%, #14141a 100%);
+   --bases-dark-background-gradient: linear-gradient(135deg, #000000 0%, #010102 50%, #0a0a0f 100%);
    --bases-dark-section-gradient: linear-gradient(135deg, #0a0a0f 0%, #111116 50%, #16161d 100%);
 
    --bases-dark-card-bg: #18181e;

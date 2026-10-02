@@ -5,30 +5,30 @@
    ============================================================ */
 /* ------------------------------------------------------------------ */
 /* 令牌                                                                */
+/* 画布与主色走 theme-colors.css 的语义变量（单一来源），                */
+/* 其余为 Vercel 灰阶的本地令牌（与 theme-colors.css 同一套数值）。      */
 /* ------------------------------------------------------------------ */
 
 :root {
-  --canvas: #fafafa;
+  --canvas: var(--background-color); /* 浅色 #fafafa / 深色 #010102 */
   --surface-1: #ffffff;
   --surface-2: #f4f4f5;
-  --ink: #171717;
-  --ink-muted: #666666;
+  --ink: var(--vercel-gray-900);
+  --ink-muted: var(--vercel-gray-500);
   --subtle: #8f8f8f;
-  --hairline: #ebebeb;
-  --accent: #a78bfa;
+  --hairline: var(--vercel-gray-100);
+  --accent: var(--primary-color);
   --gutter: 24px;
   --maxw: 1400px;
 }
 
 html[data-theme='dark'] {
-  --canvas: #010102;
   --surface-1: #0f1011;
   --surface-2: #17181a;
   --ink: #f7f8f8;
   --ink-muted: #8a8f98;
   --subtle: #6b7079;
   --hairline: #23252a;
-  --accent: #828fff;
 }
 
 /* ------------------------------------------------------------------ */
