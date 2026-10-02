@@ -49,6 +49,11 @@ const props = withDefaults(
     sizeCap?: number
     /** 叠层透明度 */
     opacity?: number
+    /**
+     * 垂直于过渡方向的内缩量（CSS 长度）。
+     * 容器自带 padding 时用它把过渡带收到内容区，避免比内容「胖」一圈。
+     */
+    crossInset?: string
   }>(),
   {
     position: 'bottom',
@@ -59,7 +64,8 @@ const props = withDefaults(
     tint: true,
     edgeFade: 0.62,
     sizeCap: 26,
-    opacity: 1,
+    opacity: 0.2,
+    crossInset: '0',
   },
 )
 
@@ -87,12 +93,12 @@ const containerStyle = computed<CSSProperties>(() => {
   // 尺寸上限跟着视口走：窄屏上固定宽度的过渡带会把整条内容糊掉
   if (vertical) {
     style.height = `min(${props.size}, ${props.sizeCap}vh)`
-    style.left = '0'
-    style.right = '0'
+    style.left = props.crossInset
+    style.right = props.crossInset
   } else {
     style.width = `min(${props.size}, ${props.sizeCap}vw)`
-    style.top = '0'
-    style.bottom = '0'
+    style.top = props.crossInset
+    style.bottom = props.crossInset
   }
   // 最外侧的底色浓度交给 tint 的渐变读取
   style['--gb-edge-fade'] = String(props.edgeFade)
