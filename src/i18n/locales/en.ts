@@ -934,6 +934,7 @@ export default {
       "evidenceStale": "Settings changed",
       "evidenceRemove": "Remove",
       "evidenceFrameIndex": "Frame {index}",
+      "evidenceSplitFrames": "Animated image will be split into frames (motion lost)",
       "evidenceOverTarget": "Above target size",
       "evidenceOverallProgress": "Upload progress {done}/{total}",
       "evidenceSettingsTitle": "Compression settings",

@@ -166,6 +166,10 @@
               <span v-if="item.setIndex !== null" class="queue-badge">
                 {{ t('admin.bans.evidenceFrameIndex', { index: item.setIndex }) }}
               </span>
+              <!-- 动画 AVIF 拆帧组的明示提示：每组只在首帧子项上显示一次 -->
+              <span v-if="item.setId !== null && item.setIndex === 0" class="queue-badge warn">
+                {{ t('admin.bans.evidenceSplitFrames') }}
+              </span>
               <span v-if="item.overTarget" class="queue-badge warn">{{ t('admin.bans.evidenceOverTarget') }}</span>
               <span v-if="item.stale && item.status === 'ready'" class="queue-badge warn">
                 {{ t('admin.bans.evidenceStale') }}
@@ -623,7 +627,8 @@ async function processItem(item: QueueItem) {
     const index = queue.value.indexOf(item)
     if (index === -1) return // 弹窗已重开/队列已清空：丢弃过期结果，避免污染新队列
     const subItems = result.items.map((encoded, i) =>
-      readySubItem(item, encoded, evidenceFileName(ext, i), setId, i),
+      // 文件名帧号从 1 起三位补零（f001…）；setIndex 保持 0..N-1 供后端排序
+      readySubItem(item, encoded, evidenceFileName(ext, i + 1), setId, i),
     )
     queue.value.splice(index, 1, ...subItems)
     return

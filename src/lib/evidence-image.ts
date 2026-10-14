@@ -90,10 +90,12 @@ export function randomToken(length = 12): string {
   return out
 }
 
-/** 证据产物文件名：evi_{token}.{ext}；拆帧序列带序号 evi_{token}_{index}.{ext} */
+/** 证据产物文件名：evi_{token}.{ext}；拆帧序列带帧号 evi_{token}_f{nnn}.{ext}（帧号三位补零，如 f001） */
 export function evidenceFileName(ext: string, index?: number): string {
   const token = randomToken()
-  return index === undefined ? `evi_${token}.${ext}` : `evi_${token}_${index}.${ext}`
+  return index === undefined
+    ? `evi_${token}.${ext}`
+    : `evi_${token}_f${String(index).padStart(3, '0')}.${ext}`
 }
 
 /** 拆帧序列的 setId：set_{24 位随机}，满足后端 ^[A-Za-z0-9_-]{6,64}$ */

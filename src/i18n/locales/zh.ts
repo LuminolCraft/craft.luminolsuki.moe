@@ -934,6 +934,7 @@ export default {
       "evidenceStale": "参数已变更",
       "evidenceRemove": "移除",
       "evidenceFrameIndex": "帧 {index}",
+      "evidenceSplitFrames": "动图将转为帧序列（丢失动效）",
       "evidenceOverTarget": "仍超目标体积",
       "evidenceOverallProgress": "上传进度 {done}/{total}",
       "evidenceSettingsTitle": "压缩设置",
