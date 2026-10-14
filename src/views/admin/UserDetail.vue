@@ -68,6 +68,13 @@
               height="32"
             />
             <span class="mc-mini-name">{{ acc.name }}</span>
+            <!-- 主号标记：main_alt owner 端（无关联时最早绑定账号）；已封禁：账号 uuid 的有效封禁摘要，理由悬停可见 -->
+            <span v-if="acc.isMain" class="mc-mini-tag main">{{ t('admin.userDetail.mainAccountTag') }}</span>
+            <span
+              v-if="acc.activeBan"
+              class="mc-mini-tag banned"
+              :title="t('admin.userDetail.bannedTagTip', { reason: acc.activeBan.reason })"
+            >{{ t('admin.userDetail.bannedTag') }}</span>
             <span class="mc-mini-uuid">{{ acc.uuid }}</span>
             <button
               type="button"
@@ -471,6 +478,13 @@ async function onRevokeRole(role: string) {
 const forceUnbindingId = ref('')
 const mcUnbindError = ref('')
 
+/** 后端 MC_ACCOUNT_BANNED 的 message 形如「该 Minecraft 账号存在有效封禁，无法解绑：<理由>」，截取首个全角冒号后的理由 */
+function banReasonFromMessage(message?: string): string {
+  if (!message) return ''
+  const idx = message.indexOf('：')
+  return idx >= 0 ? message.slice(idx + 1).trim() : ''
+}
+
 async function onForceUnbind(acc: MinecraftAccount) {
   if (!user.value) return
   if (!window.confirm(t('admin.userDetail.forceUnbindConfirm', { name: acc.name }))) return
@@ -489,6 +503,12 @@ async function onForceUnbind(acc: MinecraftAccount) {
         : t('admin.common.errGeneric')
     } else if (code === 'RATE_LIMITED') {
       mcUnbindError.value = t('admin.common.errRateLimited')
+    } else if (code === 'MC_ACCOUNT_BANNED') {
+      // 409：账号存在有效封禁（message 携带封禁理由），理由插值展示；截取失败退化为不带理由文案
+      const reason = banReasonFromMessage(isAppError(e) ? e.message : undefined)
+      mcUnbindError.value = reason
+        ? t('admin.userDetail.errUnbindBanned', { reason })
+        : t('admin.userDetail.errUnbindBannedNoReason')
     } else {
       mcUnbindError.value = t('admin.common.errGeneric')
     }
@@ -1077,6 +1097,26 @@ onMounted(async () => {
   font-size: 0.9rem;
   font-weight: 600;
   color: var(--text-color);
+}
+
+/* 账号徽标（主号 / 已封禁）：mirror admin-shared.css 的 status-badge 药丸风格 */
+.mc-mini-tag {
+  flex-shrink: 0;
+  padding: 0.1rem 0.5rem;
+  border-radius: 99px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.mc-mini-tag.main {
+  color: var(--primary-color);
+  background: color-mix(in srgb, var(--primary-color) 10%, transparent);
+}
+
+.mc-mini-tag.banned {
+  color: var(--error-color, #e5484d);
+  background: color-mix(in srgb, var(--error-color, #e5484d) 10%, transparent);
 }
 
 .mc-mini-uuid {

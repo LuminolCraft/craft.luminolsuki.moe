@@ -154,10 +154,27 @@ export interface AdminUserListItem {
   roles?: string[]
 }
 
+/** 管理端用户详情附带的 MC 账号当前有效封禁摘要（activeBan；无有效封禁时为 null） */
+export interface MinecraftBanSummary {
+  id: string
+  reason: string
+  /** null/缺省 = 永久封禁 */
+  expiresAt?: number | null
+  createdAt?: number
+}
+
+/** 管理端用户详情（GET /admin/users/:id）的 minecraftAccounts 项：通用 MC 账号 + 管理侧聚合字段 */
+export interface AdminMinecraftAccount extends MinecraftAccount {
+  /** 是否主号：main_alt 关联 owner 端；名下完全无关联时为最早绑定的账号 */
+  isMain?: boolean
+  /** 该账号 uuid 当前有效 minecraft 封禁摘要；null = 无有效封禁 */
+  activeBan?: MinecraftBanSummary | null
+}
+
 /** 用户详情（GET /admin/users/:id）：附角色与 MC 账号（后端补齐） */
 export interface AdminUserDetail extends AdminUserListItem {
   updatedAt?: number
-  minecraftAccounts?: MinecraftAccount[]
+  minecraftAccounts?: AdminMinecraftAccount[]
 }
 
 /** 分页信封宽容类型：items 必有，total/page/limit 以后端实际为准 */
