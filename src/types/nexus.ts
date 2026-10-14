@@ -127,6 +127,10 @@ export interface BanEvidence {
   contentType: string
   size: number
   sha256?: string
+  /** 拆帧序列 ID（随 multipart setId 字段产生；单元素集合无此字段） */
+  setId?: string
+  /** 拆帧序列内序号 0..N-1（单元素集合无此字段） */
+  setIndex?: number
   uploadedBy?: string | null
   createdAt?: number
 }

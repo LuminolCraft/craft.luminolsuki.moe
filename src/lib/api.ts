@@ -45,6 +45,16 @@ apiClient.interceptors.response.use(
   },
 )
 
+/** multipart 上传附加选项 */
+export interface UploadOptions {
+  /** 附加 multipart 文本字段（如封禁证据的 setId / setIndex） */
+  fields?: Record<string, string>
+  /** 上传文件名（Blob 无自带 name，或需要重命名如 evi_xxx.avif 时指定） */
+  filename?: string
+  /** 上传进度回调（0-100；responseTotal 未知时不回调） */
+  onProgress?: (percent: number) => void
+}
+
 /** 类型化请求门面：拦截器已解包信封，调用方直接拿到 data */
 export const api = {
   get<T>(url: string): Promise<T> {
@@ -61,12 +71,25 @@ export const api = {
   },
   /**
    * multipart 文件上传。不要手动设 Content-Type——由浏览器自动生成含 boundary 的头。
-   * 本轮唯一用途：管理端封禁证据上传（POST /admin/bans/:id/evidence）。
+   * 用途：管理端封禁证据上传（POST /admin/bans/:id/evidence），支持附加文本字段
+   * 与 axios onUploadProgress 进度（重编码后的队列项按 0-100 汇报）。
    */
-  upload<T>(url: string, file: File, fieldName = 'file'): Promise<T> {
+  upload<T>(url: string, file: File | Blob, options: UploadOptions = {}, fieldName = 'file'): Promise<T> {
     const form = new FormData()
-    form.append(fieldName, file)
-    return apiClient.post(url, form) as Promise<T>
+    if (options.filename) {
+      form.append(fieldName, file, options.filename)
+    } else {
+      form.append(fieldName, file)
+    }
+    for (const [key, value] of Object.entries(options.fields ?? {})) {
+      form.append(key, value)
+    }
+    return apiClient.post(url, form, {
+      onUploadProgress: (event) => {
+        if (!options.onProgress || !event.total) return
+        options.onProgress(Math.min(100, Math.round((event.loaded / event.total) * 100)))
+      },
+    }) as Promise<T>
   },
 }
 

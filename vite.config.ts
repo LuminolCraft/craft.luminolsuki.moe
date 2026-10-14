@@ -28,6 +28,11 @@ export default defineConfig({
     vue(),
     vueDevTools(),
   ],
+  worker: {
+    // @jsquash/avif 与 @ffmpeg/ffmpeg 的 wasm worker 内部含动态 import（代码分割），
+    // 默认 iife 格式不支持，必须产出 ESM worker（type: 'module'）
+    format: 'es',
+  },
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url))
