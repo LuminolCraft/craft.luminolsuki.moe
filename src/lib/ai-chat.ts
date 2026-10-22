@@ -11,7 +11,8 @@
 import { API_BASE_URL } from '@/lib/api-base'
 
 export interface AiMessage {
-  role: 'user' | 'assistant'
+  /** system 由 cortex 降级拼进问题前缀（上游协议没有 system 字段） */
+  role: 'system' | 'user' | 'assistant'
   content: string
 }
 

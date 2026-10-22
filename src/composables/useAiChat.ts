@@ -43,8 +43,10 @@ export function useAiChat(options: UseAiChatOptions = {}) {
     error.value = null
 
     const history = messages.value.slice(-MAX_HISTORY)
+    // system 走标准 role，不用 user 冒充——cortex 会把 system 拼进问题前缀，
+    // 用 user 塞进去会被当成用户的另一个提问
     const payload: AiMessage[] = options.systemPrompt
-      ? [{ role: 'user', content: options.systemPrompt }, ...history]
+      ? [{ role: 'system', content: options.systemPrompt }, ...history]
       : history
 
     controller = new AbortController()
