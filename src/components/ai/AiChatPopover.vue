@@ -47,6 +47,24 @@
           >
             新对话
           </button>
+          <button
+            type="button"
+            class="ai-icon-btn"
+            aria-label="在整页打开"
+            title="在整页打开"
+            @click="openFullPage"
+          >
+            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+              <path
+                d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </button>
           <button type="button" class="ai-icon-btn" aria-label="关闭" @click="close">
             <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
               <path
@@ -166,7 +184,7 @@
 
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref, watch, type ComponentPublicInstance } from 'vue'
-import { RouterLink } from 'vue-router'
+import { RouterLink, useRouter } from 'vue-router'
 import gsap from 'gsap'
 import AiMessageContent from './AiMessageContent.vue'
 import { useAiChat } from '@/composables/useAiChat'
@@ -174,6 +192,7 @@ import { useAuthStore } from '@/stores/auth'
 import { EASINGS } from '@/gsap/config/easings'
 
 const auth = useAuthStore()
+const router = useRouter()
 
 /** 头像：圆形裁切 + 透明底的 AVIF（96px，3.5KB），深浅主题都不出现白角 */
 const AVATAR = '/images/luminol-avatar-96.avif'
@@ -286,6 +305,12 @@ function quickAsk(text: string): void {
 function close(): void {
   open.value = false
   abort()
+}
+
+/** 整页对话：弹窗收起（正在收的流会中断），整页那边是独立的一段对话 */
+function openFullPage(): void {
+  close()
+  void router.push('/Luminol')
 }
 
 onMounted(() => {

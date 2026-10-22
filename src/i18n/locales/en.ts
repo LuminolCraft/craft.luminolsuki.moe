@@ -288,6 +288,7 @@ export default {
     "detailedRules": "Detailed",
     "support": "Support Us",
     "news": "News",
+    "assistant": "Assistant",
     "monitoring": "Monitoring",
     "joinGroup": "Join Group",
     "copyright": "© {year} LuminolMC. All rights reserved.",
