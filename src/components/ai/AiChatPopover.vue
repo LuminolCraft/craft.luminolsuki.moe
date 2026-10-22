@@ -10,16 +10,25 @@
 <template>
   <div class="ai-root">
     <Transition name="ai-fab">
-      <button
-        v-if="!open"
-        type="button"
-        class="ai-fab"
-        aria-label="打开 Luminol 助手"
-        @click="openPanel"
-      >
-        <img :src="AVATAR" alt="" class="ai-fab-avatar" width="32" height="32" />
-        <span class="ai-fab-label">Luminol</span>
-      </button>
+      <div v-if="!open" class="ai-dock" @mouseenter="showQuick" @mouseleave="hideQuick">
+        <div class="ai-quick" aria-hidden="true">
+          <button
+            v-for="(item, index) in QUICK_ASKS"
+            :key="item"
+            :ref="(el) => setChipRef(el, index)"
+            type="button"
+            class="ai-quick-chip"
+            tabindex="-1"
+            @click="quickAsk(item)"
+          >
+            {{ item }}
+          </button>
+        </div>
+        <button type="button" class="ai-fab" aria-label="打开 Luminol 助手" @click="openPanel">
+          <img :src="AVATAR" alt="" class="ai-fab-avatar" width="32" height="32" />
+          <span class="ai-fab-label">Luminol</span>
+        </button>
+      </div>
     </Transition>
 
     <Transition name="ai-panel">
@@ -156,11 +165,13 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, ref, watch, type ComponentPublicInstance } from 'vue'
 import { RouterLink } from 'vue-router'
+import gsap from 'gsap'
 import AiMessageContent from './AiMessageContent.vue'
 import { useAiChat } from '@/composables/useAiChat'
 import { useAuthStore } from '@/stores/auth'
+import { EASINGS } from '@/gsap/config/easings'
 
 const auth = useAuthStore()
 
@@ -174,6 +185,7 @@ const open = ref(false)
 const draft = ref('')
 const bodyRef = ref<HTMLElement | null>(null)
 const textareaRef = ref<HTMLTextAreaElement | null>(null)
+const chipEls: Array<HTMLElement | null> = []
 
 const { messages, streaming, sending, error, send, abort, clear } = useAiChat()
 
@@ -201,16 +213,87 @@ watch(draft, () => {
   el.style.height = `${Math.min(el.scrollHeight, 108)}px`
 })
 
+/* ---------- hover 快捷提问气泡（Vue Bits「BubbleMenu」的改写） ---------- */
+
+// 微调点：QUICK_IN / QUICK_OUT 弹出与收回时长（秒）· QUICK_STAGGER 逐个间隔（秒）
+const QUICK_IN = 0.45
+const QUICK_OUT = 0.16
+const QUICK_STAGGER = 0.06
+
+/** 触屏没有 hover、reduced-motion 不做弹出动画：两种情况都不启用 */
+const hoverFx = ref(false)
+
+/** 气泡当前是否处于展开态；面板打开时 dock 卸载，要复位 */
+let quickShown = false
+
+function setChipRef(el: Element | ComponentPublicInstance | null, index: number): void {
+  chipEls[index] = (el as HTMLElement | null) ?? null
+}
+
+function showQuick(): void {
+  if (!hoverFx.value || quickShown) return
+  quickShown = true
+  const chips = chipEls.filter((el): el is HTMLElement => el !== null)
+  if (chips.length === 0) return
+  gsap.killTweensOf(chips)
+  // 逐个弹出 + 随机抖角，back.out 过冲是 BubbleMenu 的标志手感
+  gsap.fromTo(
+    chips,
+    { opacity: 0, scale: 0, y: 6 },
+    {
+      opacity: 1,
+      scale: 1,
+      y: 0,
+      pointerEvents: 'auto',
+      rotation: () => gsap.utils.random(-7, 7),
+      duration: QUICK_IN,
+      ease: EASINGS.bounce,
+      stagger: QUICK_STAGGER,
+    },
+  )
+}
+
+function hideQuick(): void {
+  if (!hoverFx.value) return
+  quickShown = false
+  const chips = chipEls.filter((el): el is HTMLElement => el !== null)
+  if (chips.length === 0) return
+  gsap.killTweensOf(chips)
+  gsap.to(chips, {
+    opacity: 0,
+    scale: 0,
+    y: 6,
+    pointerEvents: 'none',
+    duration: QUICK_OUT,
+    ease: 'power2.in',
+    stagger: 0.03,
+  })
+}
+
 function openPanel(): void {
   open.value = true
+  quickShown = false
   scrollToBottom()
   void nextTick(() => textareaRef.value?.focus())
+}
+
+/** 点气泡 = 开面板并直接把问题发出去（与面板内快捷提问行为一致）；游客只开面板 */
+function quickAsk(text: string): void {
+  openPanel()
+  if (auth.isAuthenticated) void submitText(text)
 }
 
 function close(): void {
   open.value = false
   abort()
 }
+
+onMounted(() => {
+  hoverFx.value =
+    typeof window !== 'undefined' &&
+    window.matchMedia('(hover: hover) and (pointer: fine)').matches &&
+    !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+})
 
 async function submitText(text: string): Promise<void> {
   if (sending.value) return
@@ -233,7 +316,11 @@ function submit(): void {
   font-family: var(--font-primary, inherit);
 }
 
-/* ---------- 悬浮按钮 ---------- */
+/* ---------- 悬浮按钮 + 快捷提问气泡 ---------- */
+.ai-dock {
+  position: relative;
+}
+
 .ai-fab {
   display: flex;
   align-items: center;
@@ -265,6 +352,52 @@ function submit(): void {
 .ai-fab-label {
   font-size: 0.875rem;
   font-weight: 600;
+}
+
+/* 快捷提问气泡：hover 悬浮按钮时以弹簧曲线逐个弹出（弧形排在左上方）。
+   仅精确指针设备启用；触屏直接 display:none，面板内仍有同款快捷提问。 */
+.ai-quick-chip {
+  position: absolute;
+  z-index: 1;
+  padding: 7px 12px;
+  border: 1px solid color-mix(in srgb, var(--text-color) 12%, transparent);
+  border-radius: 999px;
+  background: var(--background-color, #fff);
+  color: var(--text-color);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  white-space: nowrap;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  opacity: 0;
+  transform: scale(0);
+  pointer-events: none;
+  transition: background 0.15s ease;
+}
+
+.ai-quick-chip:hover {
+  background: color-mix(in srgb, var(--text-color) 6%, transparent);
+}
+
+.ai-quick-chip:nth-child(1) {
+  right: calc(100% + 14px);
+  bottom: 2px;
+}
+
+.ai-quick-chip:nth-child(2) {
+  right: calc(100% + 32px);
+  bottom: 40px;
+}
+
+.ai-quick-chip:nth-child(3) {
+  right: calc(100% + 66px);
+  bottom: 72px;
+}
+
+@media (hover: none), (pointer: coarse) {
+  .ai-quick-chip {
+    display: none;
+  }
 }
 
 /* ---------- 面板 ---------- */
@@ -620,21 +753,57 @@ function submit(): void {
 }
 
 /* ---------- 过渡 ---------- */
-.ai-fab-enter-active,
-.ai-fab-leave-active,
-.ai-panel-enter-active,
+/* 面板从悬浮按钮角落弹起/收回：进出场都带 back 类过冲，transform-origin 对准按钮 */
+.ai-panel-enter-active {
+  transition:
+    opacity 0.3s ease,
+    transform 0.46s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
 .ai-panel-leave-active {
   transition:
-    opacity 0.16s ease,
-    transform 0.16s ease;
+    opacity 0.2s ease-in,
+    transform 0.3s cubic-bezier(0.36, 0, 0.66, -0.56);
+}
+
+.ai-panel-enter-from {
+  opacity: 0;
+  transform: translateY(26px) scale(0.86);
+}
+
+.ai-panel-leave-to {
+  opacity: 0;
+  transform: translateY(14px) scale(0.9);
+}
+
+.ai-panel-enter-active,
+.ai-panel-leave-active {
+  transform-origin: 100% 100%;
+}
+
+.ai-fab-enter-active,
+.ai-fab-leave-active {
+  transition:
+    opacity 0.18s ease,
+    transform 0.18s ease;
 }
 
 .ai-fab-enter-from,
-.ai-fab-leave-to,
-.ai-panel-enter-from,
-.ai-panel-leave-to {
+.ai-fab-leave-to {
   opacity: 0;
-  transform: translateY(8px) scale(0.98);
+  transform: translateY(8px) scale(0.96);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ai-panel-enter-active,
+  .ai-panel-leave-active {
+    transition: opacity 0.16s ease;
+  }
+
+  .ai-panel-enter-from,
+  .ai-panel-leave-to {
+    transform: none;
+  }
 }
 
 /* ---------- 移动端：铺满可视区，避免输入框被软键盘顶掉 ---------- */
@@ -651,6 +820,17 @@ function submit(): void {
     height: 100dvh;
     border: none;
     border-radius: 0;
+  }
+
+  /* 全屏面板做角落缩放没有意义，退化为纯淡入淡出 */
+  .ai-panel-enter-active,
+  .ai-panel-leave-active {
+    transition: opacity 0.18s ease;
+  }
+
+  .ai-panel-enter-from,
+  .ai-panel-leave-to {
+    transform: none;
   }
 
   .ai-fab-label {
