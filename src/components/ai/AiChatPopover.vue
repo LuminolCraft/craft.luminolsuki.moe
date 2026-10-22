@@ -14,85 +14,90 @@
         v-if="!open"
         type="button"
         class="ai-fab"
-        aria-label="打开 AI 助手"
+        aria-label="打开 Luminol 助手"
         @click="openPanel"
       >
-        <span class="ai-fab-dot" aria-hidden="true"></span>
+        <img :src="AVATAR" alt="" class="ai-fab-avatar" width="32" height="32" />
         <span class="ai-fab-label">Luminol</span>
       </button>
     </Transition>
 
     <Transition name="ai-panel">
-      <section
-        v-if="open"
-        class="ai-panel"
-        role="dialog"
-        aria-modal="false"
-        aria-label="Luminol AI 助手"
-      >
+      <section v-if="open" class="ai-panel" role="dialog" aria-label="Luminol AI 助手">
         <header class="ai-header">
-          <div class="ai-title">
-            <span class="ai-avatar" aria-hidden="true">L</span>
-            <div>
-              <strong>Luminol</strong>
-              <small>问网站和服务器的事</small>
-            </div>
+          <img :src="AVATAR" alt="Luminol" class="ai-header-avatar" width="28" height="28" />
+          <div class="ai-header-text">
+            <span class="ai-name">Luminol</span>
+            <span class="ai-sub">社区助手</span>
           </div>
-          <div class="ai-actions">
-            <button
-              v-if="auth.isAuthenticated && messages.length > 0"
-              type="button"
-              class="ai-icon-btn"
-              title="清空对话"
-              @click="clear"
-            >
-              清空
-            </button>
-            <button type="button" class="ai-icon-btn" title="关闭" @click="close">✕</button>
-          </div>
+          <button
+            v-if="auth.isAuthenticated && messages.length > 0"
+            type="button"
+            class="ai-text-btn"
+            @click="clear"
+          >
+            新对话
+          </button>
+          <button type="button" class="ai-icon-btn" aria-label="关闭" @click="close">
+            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+              <path
+                d="M6 6l12 12M18 6L6 18"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+              />
+            </svg>
+          </button>
         </header>
 
         <div ref="bodyRef" class="ai-body">
           <div v-if="!auth.isAuthenticated" class="ai-guest">
-            <p>登录后才能使用 AI 助手～</p>
+            <img :src="AVATAR" alt="" class="ai-guest-avatar" width="64" height="64" />
+            <p class="ai-guest-title">登录后就能问我了</p>
             <p class="ai-guest-sub">AI 额度是公共资源，只对已登录的玩家开放。</p>
             <RouterLink class="ai-guest-link" to="/Login" @click="close">去登录</RouterLink>
           </div>
 
           <template v-else>
-            <div v-if="messages.length === 0 && !streaming" class="ai-hint">
-              <p>可以问我这些：</p>
-              <button
-                v-for="item in QUICK_ASKS"
-                :key="item"
-                type="button"
-                class="ai-chip"
-                :disabled="sending"
-                @click="submitText(item)"
-              >
-                {{ item }}
-              </button>
+            <div v-if="messages.length === 0 && !sending" class="ai-empty">
+              <img :src="AVATAR" alt="" class="ai-empty-avatar" width="56" height="56" />
+              <p class="ai-empty-title">有什么可以帮你？</p>
+              <div class="ai-chips">
+                <button
+                  v-for="item in QUICK_ASKS"
+                  :key="item"
+                  type="button"
+                  class="ai-chip"
+                  :disabled="sending"
+                  @click="submitText(item)"
+                >
+                  {{ item }}
+                </button>
+              </div>
             </div>
 
             <div
               v-for="(message, index) in messages"
               :key="index"
-              class="ai-bubble"
-              :class="message.role === 'user' ? 'ai-bubble--user' : 'ai-bubble--bot'"
+              class="ai-msg"
+              :class="message.role === 'user' ? 'ai-msg--user' : 'ai-msg--bot'"
             >
-              <AiMessageContent v-if="message.role === 'assistant'" :content="message.content" />
-              <span v-else class="ai-user-text">{{ message.content }}</span>
+              <p v-if="message.role === 'user'" class="ai-user-bubble">{{ message.content }}</p>
+              <AiMessageContent v-else :content="message.content" />
             </div>
 
-            <div v-if="streaming" class="ai-bubble ai-bubble--bot">
-              <AiMessageContent :content="streaming" />
-              <span class="ai-caret" aria-hidden="true"></span>
+            <div v-if="sending" class="ai-msg ai-msg--bot">
+              <AiMessageContent v-if="streaming" :content="streaming" />
+              <div v-else class="ai-typing" aria-label="正在思考">
+                <span></span><span></span><span></span>
+              </div>
             </div>
 
             <div v-if="error" class="ai-error">
               <span>{{ error.message }}</span>
               <button
-                v-if="error.status === 429"
+                v-if="error.status === 429 || error.status >= 500"
                 type="button"
                 class="ai-retry"
                 @click="submitText(lastQuestion)"
@@ -103,27 +108,48 @@
           </template>
         </div>
 
-        <form v-if="auth.isAuthenticated" class="ai-input" @submit.prevent="submit">
-          <textarea
-            v-model="draft"
-            class="ai-textarea"
-            :disabled="sending"
-            rows="1"
-            maxlength="2000"
-            placeholder="问问进服流程、规则、指令…"
-            @keydown.enter.exact.prevent="submit"
-          ></textarea>
-          <button
-            v-if="sending"
-            type="button"
-            class="ai-send ai-send--stop"
-            title="停止生成"
-            @click="abort"
-          >
-            停
-          </button>
-          <button v-else type="submit" class="ai-send" :disabled="!draft.trim()">发送</button>
-        </form>
+        <div v-if="auth.isAuthenticated" class="ai-composer">
+          <div class="ai-input-wrap" :class="{ 'is-busy': sending }">
+            <textarea
+              ref="textareaRef"
+              v-model="draft"
+              class="ai-textarea"
+              rows="1"
+              maxlength="2000"
+              placeholder="问进服流程、规则、指令…"
+              @keydown.enter.exact.prevent="submit"
+            ></textarea>
+            <button
+              v-if="sending"
+              type="button"
+              class="ai-send ai-send--stop"
+              aria-label="停止生成"
+              @click="abort"
+            >
+              <span class="ai-stop-square" aria-hidden="true"></span>
+            </button>
+            <button
+              v-else
+              type="submit"
+              class="ai-send"
+              :disabled="!draft.trim()"
+              aria-label="发送"
+              @click="submit"
+            >
+              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                <path
+                  d="M12 19V5M12 5l-6 6M12 5l6 6"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </button>
+          </div>
+          <p class="ai-disclaimer">Luminol 也会出错，重要信息以公告为准。</p>
+        </div>
       </section>
     </Transition>
   </div>
@@ -138,12 +164,16 @@ import { useAuthStore } from '@/stores/auth'
 
 const auth = useAuthStore()
 
+/** 头像：圆形裁切 + 透明底的 AVIF（96px，3.5KB），深浅主题都不出现白角 */
+const AVATAR = '/images/luminol-avatar-96.avif'
+
 /** 快捷提问：覆盖最高频的三类「导向型」问题，引导用户先问对方向。 */
 const QUICK_ASKS = ['怎么进服务器？', '有哪些规则？', '服务器地址是什么？']
 
 const open = ref(false)
 const draft = ref('')
 const bodyRef = ref<HTMLElement | null>(null)
+const textareaRef = ref<HTMLTextAreaElement | null>(null)
 
 const { messages, streaming, sending, error, send, abort, clear } = useAiChat()
 
@@ -163,9 +193,18 @@ function scrollToBottom(): void {
 // 但对话面板本来就该始终显示最新内容，这个取舍可以接受
 watch([messages, streaming], scrollToBottom, { deep: true })
 
+// 输入框随内容增高：多行问题时不让用户在 24px 高的小框里滚
+watch(draft, () => {
+  const el = textareaRef.value
+  if (!el) return
+  el.style.height = 'auto'
+  el.style.height = `${Math.min(el.scrollHeight, 108)}px`
+})
+
 function openPanel(): void {
   open.value = true
   scrollToBottom()
+  void nextTick(() => textareaRef.value?.focus())
 }
 
 function close(): void {
@@ -199,26 +238,28 @@ function submit(): void {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 16px 10px 12px;
-  border: 1px solid var(--border-color);
+  padding: 6px 16px 6px 6px;
+  border: 1px solid color-mix(in srgb, var(--text-color) 10%, transparent);
   border-radius: 999px;
   background: var(--background-color, #fff);
   color: var(--text-color);
-  box-shadow: var(--shadow-md, 0 6px 20px rgba(0, 0, 0, 0.12));
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
   cursor: pointer;
-  transition: transform 0.18s ease, box-shadow 0.18s ease;
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease;
 }
 
 .ai-fab:hover {
   transform: translateY(-2px);
-  box-shadow: var(--shadow-lg, 0 10px 28px rgba(0, 0, 0, 0.16));
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
 }
 
-.ai-fab-dot {
-  width: 8px;
-  height: 8px;
+.ai-fab-avatar {
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
-  background: var(--primary-color);
+  display: block;
 }
 
 .ai-fab-label {
@@ -230,74 +271,79 @@ function submit(): void {
 .ai-panel {
   display: flex;
   flex-direction: column;
-  width: min(400px, calc(100vw - 32px));
-  height: min(560px, calc(100vh - 120px));
-  border: 1px solid var(--border-color);
-  border-radius: 16px;
+  width: min(420px, calc(100vw - 32px));
+  height: min(620px, calc(100vh - 120px));
+  border: 1px solid color-mix(in srgb, var(--text-color) 10%, transparent);
+  border-radius: 18px;
   background: var(--background-color, #fff);
-  box-shadow: var(--shadow-lg, 0 16px 40px rgba(0, 0, 0, 0.18));
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.18);
   overflow: hidden;
 }
 
 .ai-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 12px 14px;
-  border-bottom: 1px solid var(--border-color);
-}
-
-.ai-title {
-  display: flex;
-  align-items: center;
   gap: 10px;
-  min-width: 0;
+  padding: 12px 12px 12px 16px;
 }
 
-.ai-avatar {
-  display: grid;
-  place-items: center;
-  width: 30px;
-  height: 30px;
-  flex: none;
+.ai-header-avatar {
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
-  background: var(--primary-color);
-  color: #fff;
-  font-weight: 700;
-  font-size: 0.875rem;
+  flex: none;
 }
 
-.ai-title strong {
-  display: block;
-  font-size: 0.875rem;
-  line-height: 1.2;
+.ai-header-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+  line-height: 1.25;
 }
 
-.ai-title small {
-  display: block;
+.ai-name {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.ai-sub {
   font-size: 0.6875rem;
   color: var(--text-secondary);
 }
 
-.ai-actions {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.ai-icon-btn {
-  padding: 4px 8px;
+.ai-text-btn {
+  flex: none;
+  padding: 5px 10px;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   background: transparent;
   color: var(--text-secondary);
   font-size: 0.75rem;
   cursor: pointer;
 }
 
+.ai-text-btn:hover {
+  background: color-mix(in srgb, var(--text-color) 6%, transparent);
+  color: var(--text-color);
+}
+
+.ai-icon-btn {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
 .ai-icon-btn:hover {
-  background: var(--border-color);
+  background: color-mix(in srgb, var(--text-color) 6%, transparent);
   color: var(--text-color);
 }
 
@@ -305,96 +351,190 @@ function submit(): void {
 .ai-body {
   flex: 1;
   overflow-y: auto;
-  padding: 14px;
+  padding: 4px 16px 16px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 18px;
   overscroll-behavior: contain;
 }
 
-.ai-bubble {
-  max-width: 92%;
-  padding: 9px 12px;
-  border-radius: 12px;
+.ai-msg {
+  display: flex;
+  flex-direction: column;
+}
+
+.ai-msg--user {
+  align-items: flex-end;
+}
+
+.ai-msg--bot {
+  align-items: stretch;
+}
+
+/* 用户气泡：文本色 7% 叠加，深浅主题共用一套值，不用写两遍 */
+.ai-user-bubble {
+  max-width: 85%;
+  margin: 0;
+  padding: 9px 14px;
+  border-radius: 18px;
+  border-bottom-right-radius: 6px;
+  background: color-mix(in srgb, var(--text-color) 7%, transparent);
+  color: var(--text-color);
   font-size: 0.9375rem;
-  line-height: 1.6;
+  line-height: 1.65;
+  white-space: pre-wrap;
   word-break: break-word;
 }
 
-.ai-bubble--user {
-  align-self: flex-end;
-  background: var(--primary-color);
-  color: #fff;
-  border-bottom-right-radius: 4px;
+/* 助手消息不套气泡：文字直接铺在背景上，读起来更像对话而不是聊天气泡墙 */
+.ai-msg--bot :deep(.ai-content) {
+  max-width: 100%;
 }
 
-.ai-bubble--bot {
-  align-self: flex-start;
-  background: var(--border-color, rgba(128, 128, 128, 0.12));
-  color: var(--text-color);
-  border-bottom-left-radius: 4px;
+/* 三点加载：比闪烁光标更像「在思考」，也不会让人以为卡住 */
+.ai-typing {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 22px;
 }
 
-.ai-user-text {
-  white-space: pre-wrap;
+.ai-typing span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--text-secondary);
+  animation: ai-bounce 1.4s infinite ease-in-out both;
 }
 
-/* 流式光标：只有正在生成时出现，让用户知道还在跑 */
-.ai-caret {
-  display: inline-block;
-  width: 2px;
-  height: 1em;
-  margin-left: 2px;
-  vertical-align: text-bottom;
-  background: var(--text-color);
-  animation: ai-blink 1s step-end infinite;
+.ai-typing span:nth-child(1) {
+  animation-delay: -0.32s;
+}
+.ai-typing span:nth-child(2) {
+  animation-delay: -0.16s;
 }
 
-@keyframes ai-blink {
-  50% {
-    opacity: 0;
+@keyframes ai-bounce {
+  0%,
+  80%,
+  100% {
+    opacity: 0.3;
+    transform: translateY(0);
+  }
+  40% {
+    opacity: 1;
+    transform: translateY(-3px);
   }
 }
 
-.ai-hint {
+/* ---------- 空状态 ---------- */
+.ai-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin: auto;
+  padding: 20px 0;
+  text-align: center;
+}
+
+.ai-empty-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+}
+
+.ai-empty-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.ai-chips {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  color: var(--text-secondary);
-  font-size: 0.8125rem;
+  width: 100%;
+  margin-top: 6px;
 }
 
 .ai-chip {
-  padding: 8px 12px;
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
+  padding: 10px 14px;
+  border: 1px solid color-mix(in srgb, var(--text-color) 12%, transparent);
+  border-radius: 12px;
   background: transparent;
   color: var(--text-color);
   font-size: 0.8125rem;
   text-align: left;
   cursor: pointer;
+  transition: background 0.15s ease;
 }
 
 .ai-chip:hover:not(:disabled) {
-  border-color: var(--primary-color);
-  color: var(--primary-color);
+  background: color-mix(in srgb, var(--text-color) 5%, transparent);
 }
 
+/* ---------- 未登录 ---------- */
+.ai-guest {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin: auto;
+  padding: 24px 12px;
+  text-align: center;
+}
+
+.ai-guest-avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  margin-bottom: 4px;
+}
+
+.ai-guest-title {
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.ai-guest-sub {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.8125rem;
+  line-height: 1.6;
+}
+
+.ai-guest-link {
+  margin-top: 8px;
+  padding: 9px 20px;
+  border-radius: 10px;
+  background: var(--text-color);
+  color: var(--background-color, #fff);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+/* ---------- 错误 ---------- */
 .ai-error {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  padding: 8px 10px;
-  border-radius: 8px;
-  background: rgba(220, 38, 38, 0.1);
+  padding: 9px 12px;
+  border-radius: 10px;
+  background: color-mix(in srgb, #dc2626 10%, transparent);
   color: #dc2626;
   font-size: 0.8125rem;
+  line-height: 1.5;
 }
 
 .ai-retry {
   flex: none;
-  padding: 3px 8px;
+  padding: 3px 9px;
   border: 1px solid currentColor;
   border-radius: 6px;
   background: transparent;
@@ -403,78 +543,80 @@ function submit(): void {
   cursor: pointer;
 }
 
-/* ---------- 未登录 ---------- */
-.ai-guest {
-  margin: auto;
-  padding: 24px;
-  text-align: center;
-  color: var(--text-color);
-}
-
-.ai-guest-sub {
-  margin-top: 6px;
-  color: var(--text-secondary);
-  font-size: 0.8125rem;
-}
-
-.ai-guest-link {
-  display: inline-block;
-  margin-top: 14px;
-  padding: 8px 18px;
-  border-radius: 8px;
-  background: var(--primary-color);
-  color: #fff;
-  font-size: 0.8125rem;
-  text-decoration: none;
-}
-
 /* ---------- 输入区 ---------- */
-.ai-input {
+.ai-composer {
+  padding: 8px 16px 12px;
+}
+
+.ai-input-wrap {
   display: flex;
   align-items: flex-end;
   gap: 8px;
-  padding: 10px 12px;
-  border-top: 1px solid var(--border-color);
+  padding: 8px 8px 8px 14px;
+  border: 1px solid color-mix(in srgb, var(--text-color) 14%, transparent);
+  border-radius: 22px;
+  background: var(--background-color, #fff);
+  transition: border-color 0.15s ease;
+}
+
+.ai-input-wrap:focus-within {
+  border-color: color-mix(in srgb, var(--text-color) 30%, transparent);
 }
 
 .ai-textarea {
   flex: 1;
-  max-height: 96px;
-  padding: 8px 10px;
-  border: 1px solid var(--border-color);
-  border-radius: 10px;
+  min-height: 24px;
+  max-height: 108px;
+  padding: 0;
+  border: none;
   background: transparent;
   color: var(--text-color);
   font-family: inherit;
-  font-size: 0.875rem;
+  font-size: 0.9375rem;
   line-height: 1.5;
   resize: none;
+  outline: none;
 }
 
-.ai-textarea:focus {
-  outline: none;
-  border-color: var(--primary-color);
+.ai-textarea::placeholder {
+  color: var(--text-secondary);
 }
 
 .ai-send {
   flex: none;
-  padding: 9px 16px;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
   border: none;
-  border-radius: 10px;
-  background: var(--primary-color);
-  color: #fff;
-  font-size: 0.8125rem;
-  font-weight: 600;
+  border-radius: 50%;
+  background: var(--text-color);
+  color: var(--background-color, #fff);
   cursor: pointer;
+  transition: opacity 0.15s ease;
 }
 
 .ai-send:disabled {
-  opacity: 0.45;
+  opacity: 0.25;
   cursor: not-allowed;
 }
 
 .ai-send--stop {
-  background: var(--text-secondary);
+  background: color-mix(in srgb, var(--text-color) 88%, transparent);
+}
+
+.ai-stop-square {
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+  background: var(--background-color, #fff);
+}
+
+.ai-disclaimer {
+  margin: 8px 0 0;
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 0.6875rem;
 }
 
 /* ---------- 过渡 ---------- */
@@ -482,7 +624,9 @@ function submit(): void {
 .ai-fab-leave-active,
 .ai-panel-enter-active,
 .ai-panel-leave-active {
-  transition: opacity 0.16s ease, transform 0.16s ease;
+  transition:
+    opacity 0.16s ease,
+    transform 0.16s ease;
 }
 
 .ai-fab-enter-from,
@@ -507,6 +651,14 @@ function submit(): void {
     height: 100dvh;
     border: none;
     border-radius: 0;
+  }
+
+  .ai-fab-label {
+    display: none;
+  }
+
+  .ai-fab {
+    padding: 6px;
   }
 }
 </style>

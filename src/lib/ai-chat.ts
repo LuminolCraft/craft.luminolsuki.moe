@@ -60,18 +60,26 @@ export interface StreamChatOptions {
  * error 帧再 `[DONE]`。所以这里同时要看帧内容里的 error，不能只看 status。
  */
 export async function streamChat(options: StreamChatOptions): Promise<void> {
-  const res = await fetch(`${API_BASE_URL}/api/v1/ai/chat`, {
-    method: 'POST',
-    credentials: 'include',
-    headers: { 'Content-Type': 'application/json' },
-    signal: options.signal,
-    body: JSON.stringify({
-      model: 'nhic-agent',
-      messages: options.messages,
-      stream: true,
-      stream_options: { include_usage: true },
-    }),
-  })
+  let res: Response
+  try {
+    res = await fetch(`${API_BASE_URL}/api/v1/ai/chat`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      signal: options.signal,
+      body: JSON.stringify({
+        model: 'nhic-agent',
+        messages: options.messages,
+        stream: true,
+        stream_options: { include_usage: true },
+      }),
+    })
+  } catch (err) {
+    // 用户主动取消不算故障，保留 AbortError 让上层按取消处理
+    if ((err as Error).name === 'AbortError') throw err
+    // 原生 fetch 只会抛「Failed to fetch / Load failed」，直接显示给用户等于没说
+    throw makeError('网络连接失败，请检查网络后重试', 'network_error', 0)
+  }
 
   if (!res.ok) {
     const { message, code } = parseErrorBody(await res.text())
