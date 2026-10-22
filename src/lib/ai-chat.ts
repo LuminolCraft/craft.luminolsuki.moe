@@ -49,6 +49,13 @@ function parseErrorBody(raw: string): { message: string; code: string } {
 export interface StreamChatOptions {
   messages: AiMessage[]
   signal?: AbortSignal
+  /**
+   * 会话 ID。首次对话传空，服务端新开一个并在响应头回 `X-Cortex-Session-Id`；
+   * 之后每轮都带上，AI 才能接得上前面聊了什么。
+   */
+  sessionId?: string | null
+  /** 服务端分配的会话 ID。只在首次（或旧会话失效重建）时回调。 */
+  onSessionId?: (id: string) => void
   /** 每收到一段增量调用一次。注意内容可能以任意长度切分，不要假设是完整句子。 */
   onDelta: (text: string) => void
 }
@@ -60,12 +67,15 @@ export interface StreamChatOptions {
  * error 帧再 `[DONE]`。所以这里同时要看帧内容里的 error，不能只看 status。
  */
 export async function streamChat(options: StreamChatOptions): Promise<void> {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+  if (options.sessionId) headers['X-Session-Id'] = options.sessionId
+
   let res: Response
   try {
     res = await fetch(`${API_BASE_URL}/api/v1/ai/chat`, {
       method: 'POST',
       credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       signal: options.signal,
       body: JSON.stringify({
         model: 'nhic-agent',
@@ -85,6 +95,11 @@ export async function streamChat(options: StreamChatOptions): Promise<void> {
     const { message, code } = parseErrorBody(await res.text())
     throw makeError(message, code, res.status)
   }
+
+  // 会话 ID 在响应头里（跨域时由 nexus 的 CORS exposeHeaders 放行）。
+  // 读不到就保持原值：下轮继续用旧 ID，最坏是服务端重新分配一个。
+  const returnedSessionId = res.headers.get('X-Cortex-Session-Id')
+  if (returnedSessionId) options.onSessionId?.(returnedSessionId)
 
   if (!res.body) throw makeError('AI 服务未返回内容', 'empty_body', 502)
 

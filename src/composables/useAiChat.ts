@@ -22,6 +22,11 @@ export function useAiChat(options: UseAiChatOptions = {}) {
   const streaming = ref('')
   const sending = ref(false)
   const error = ref<AiChatError | null>(null)
+  /**
+   * 服务端会话 ID。首轮由服务端分配，之后每轮带上——AI 的多轮记忆挂在
+   * 这个 ID 对应的上游会话上，不带就等于每轮都换一个人来答。
+   */
+  const sessionId = ref<string | null>(null)
 
   let controller: AbortController | null = null
 
@@ -55,6 +60,10 @@ export function useAiChat(options: UseAiChatOptions = {}) {
       await streamChat({
         messages: payload,
         signal: controller.signal,
+        sessionId: sessionId.value,
+        onSessionId: (id) => {
+          sessionId.value = id
+        },
         onDelta: (delta) => {
           streaming.value += delta
         },
@@ -84,13 +93,20 @@ export function useAiChat(options: UseAiChatOptions = {}) {
     }
   }
 
+  /**
+   * 清空并重开一段对话。
+   *
+   * 会话 ID 必须一起丢掉：留着的话，界面上是新的对话，服务端却还在旧的
+   * 上下文里，答出来的东西会和屏幕上看到的对不上。
+   */
   function clear(): void {
     abort()
     messages.value = []
     streaming.value = ''
     error.value = null
     sending.value = false
+    sessionId.value = null
   }
 
-  return { messages, streaming, sending, error, send, abort, clear }
+  return { messages, streaming, sending, error, sessionId, send, abort, clear }
 }
