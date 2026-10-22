@@ -13,7 +13,7 @@
  * 流式友好：围栏未闭合（``` 出现但还没等来收尾）也当代码块渲染，
  * 否则生成代码时用户会看到内容在「普通文本 ↔ 代码块」之间反复跳。
  */
-import { isAllowedAiUrl } from './ai-chat'
+import { isAllowedAiUrl } from './ai-url'
 
 export type InlineToken =
   | { type: 'text'; value: string }

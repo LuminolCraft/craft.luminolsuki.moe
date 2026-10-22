@@ -7,13 +7,9 @@
   <div class="ai-content">
     <template v-for="(block, index) in blocks" :key="index">
       <pre v-if="block.type === 'code'" class="ai-code"><code>{{ block.code }}</code></pre>
-      <component
-        :is="`h${Math.min(block.level + 2, 6)}`"
-        v-else-if="block.type === 'heading'"
-        class="ai-heading"
-      >
+      <p v-else-if="block.type === 'heading'" class="ai-heading" :data-level="block.level">
         <AiInlineTokens :tokens="block.tokens" />
-      </component>
+      </p>
       <ol v-else-if="block.type === 'list' && block.ordered" class="ai-list">
         <li v-for="(item, i) in block.items" :key="i"><AiInlineTokens :tokens="item" /></li>
       </ol>
@@ -52,10 +48,18 @@ const blocks = computed(() => parseAiMarkdown(props.content))
   margin: 0;
 }
 
+/* 不带 h1~h6 标签：弹窗/页面里出现大标题会撑破布局，
+   视觉层级靠 data-level 调字号即可，语义上这里也不该是文档标题 */
 .ai-heading {
   margin: 0.25em 0 0;
   font-weight: var(--font-weight-bold, 600);
   font-size: 1rem;
+  line-height: 1.4;
+}
+
+.ai-heading[data-level='1'],
+.ai-heading[data-level='2'] {
+  font-size: 1.0625rem;
 }
 
 .ai-list {

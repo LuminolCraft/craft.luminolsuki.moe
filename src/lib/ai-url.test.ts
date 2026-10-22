@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { isAllowedAiUrl } from './ai-chat'
+import { isAllowedAiUrl } from './ai-url'
 
 /**
  * 链接白名单是防钓鱼的最后一道闸：AI 输出里的链接如果只是「看起来像站内」，
