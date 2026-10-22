@@ -21,6 +21,12 @@ describe('isAllowedAiUrl', () => {
     expect(isAllowedAiUrl('https://cortex.narcssu.top/health')).toBe(true)
   })
 
+  it('规则详细版腾讯文档 PDF 放行，其它腾讯文档路径不放行', () => {
+    expect(isAllowedAiUrl('https://docs.qq.com/pdf/DQUZYS0FKenFmYWZx')).toBe(true)
+    expect(isAllowedAiUrl('https://docs.qq.com/doc/DQUZYS0FKenFmYWZx')).toBe(false)
+    expect(isAllowedAiUrl('https://docs.qq.com.evil.com/pdf/x')).toBe(false)
+  })
+
   it('形似自有域名的钓鱼域不放行', () => {
     expect(isAllowedAiUrl('https://luminolsuki.moe.evil.com/login')).toBe(false)
     expect(isAllowedAiUrl('https://notluminolsuki.moe/login')).toBe(false)

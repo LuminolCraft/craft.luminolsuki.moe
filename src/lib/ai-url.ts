@@ -8,7 +8,17 @@
  * 内容还在（用户能看到「这里」两个字），只是跳不过去。
  */
 
-const ALLOWED_HOSTS = ['luminolsuki.moe', 'narcssu.top']
+/**
+ * 站外白名单：host + 可选路径前缀（不写 pathPrefix 表示该域下不限路径）。
+ *
+ * 腾讯文档是「服务器规则详细版」PDF 的存放处，属于确实需要的站外目标；
+ * 限定 `/pdf/` 前缀，避免模型顺手把用户导向腾讯文档里的任意页面。
+ */
+const ALLOWED_HOSTS: ReadonlyArray<{ host: string; pathPrefix?: string }> = [
+  { host: 'luminolsuki.moe' },
+  { host: 'narcssu.top' },
+  { host: 'docs.qq.com', pathPrefix: '/pdf/' },
+]
 
 /**
  * 判断链接是否可点。
@@ -38,5 +48,9 @@ export function isAllowedAiUrl(href: string | undefined): boolean {
   if (url.protocol !== 'https:') return false
 
   const host = url.hostname.toLowerCase()
-  return ALLOWED_HOSTS.some((allowed) => host === allowed || host.endsWith(`.${allowed}`))
+  return ALLOWED_HOSTS.some((entry) => {
+    const hostMatches = host === entry.host || host.endsWith(`.${entry.host}`)
+    if (!hostMatches) return false
+    return entry.pathPrefix ? url.pathname.startsWith(entry.pathPrefix) : true
+  })
 }
