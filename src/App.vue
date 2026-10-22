@@ -1,4 +1,6 @@
 <template>
+  <!-- 进站加载画面：接管 index.html 的静态 #boot，就绪后像素解体揭开网站（只播一次） -->
+  <PixelLoadingScreen />
   <!-- 认证页（meta.hideChrome）隐藏全局导航/页脚，保证分屏布局全屏沉浸 -->
   <Navbar v-if="!route.meta.hideChrome" />
   <router-view />
@@ -17,7 +19,7 @@ import { useHead } from '@unhead/vue'
 import { useI18n } from 'vue-i18n'
 import Navbar from './components/Navbar.vue'
 import Footer from './components/Footer.vue'
-import MergeGuideBanner from './components/account/MergeGuideBanner.vue'
+import PixelLoadingScreen from './components/common/PixelLoadingScreen.vue'
 import BirthdayGreeting from './components/birthday/BirthdayGreeting.vue'
 import AiChatPopover from './components/ai/AiChatPopover.vue'
 import { useAuthStore, AUTH_SYNC_KEY } from './stores/auth'

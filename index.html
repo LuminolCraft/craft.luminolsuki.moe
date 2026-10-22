@@ -23,8 +23,63 @@
     <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css"></noscript>
 
     <!-- Umami 统计脚本由 src/main.ts 在生产构建下注入（dev 不打点，避免污染线上统计） -->
+
+    <!--
+      进站启动画面：JS 解析期间就有内容可看，避免白屏。
+      Vue 应用挂载后由 PixelLoadingScreen 接管（同样式的像素格拼装 → 就绪后解体揭开），
+      视觉必须与组件保持一致：#0b0e17 底 + 主题紫头像光晕 + LOADING 字样。
+    -->
+    <style>
+      #boot {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        background: #0b0e17;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      #boot__inner {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 14px;
+      }
+      #boot__avatar {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: radial-gradient(circle at 35% 30%, #a98cff, #6d4fe0 70%);
+        animation: boot-pulse 1.6s ease-in-out infinite;
+      }
+      #boot__label {
+        color: #b9aaff;
+        font: 500 12px/16px ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+        letter-spacing: 0.3em;
+      }
+      @keyframes boot-pulse {
+        0%,
+        100% {
+          box-shadow: 0 0 0 0 rgb(124 92 255 / 45%);
+        }
+        50% {
+          box-shadow: 0 0 0 14px rgb(124 92 255 / 0%);
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        #boot__avatar {
+          animation: none;
+        }
+      }
+    </style>
   </head>
   <body>
+    <div id="boot" role="status" aria-label="页面加载中">
+      <div id="boot__inner">
+        <img id="boot__avatar" src="/images/luminol-avatar-96.avif" alt="" width="56" height="56" />
+        <span id="boot__label">LOADING</span>
+      </div>
+    </div>
     <div id="app"></div>
     <script type="module" src="/src/main.ts"></script>
   </body>
