@@ -139,7 +139,8 @@ function retry(): void {
   max-width: 820px;
   min-height: calc(100vh - 160px);
   margin: 0 auto;
-  padding: 32px 20px 0;
+  /* --space-20 = 80px：给固定导航栏留位，与其他页面（Support / SimpleRules）一致 */
+  padding: var(--space-20, 80px) 20px 0;
 }
 
 /* ---------- 头部 ---------- */
@@ -148,7 +149,9 @@ function retry(): void {
   flex-direction: column;
   align-items: center;
   gap: 8px;
-  padding-bottom: 20px;
+  /* 页面 padding 只到导航栏底边，这里再留一点呼吸位，
+     否则头像会顶在固定导航栏下沿 */
+  padding: var(--space-6, 24px) 0 20px;
   text-align: center;
 }
 
@@ -350,7 +353,7 @@ function retry(): void {
 
 @media (max-width: 640px) {
   .lum-page {
-    padding: 20px 14px 0;
+    padding: var(--space-16, 64px) 14px 0;
   }
 
   .lum-bubble {
