@@ -9,7 +9,6 @@ import { onMounted, onUnmounted, ref, watch } from 'vue'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import MagneticCornerFrame from '@/components/common/MagneticCornerFrame.vue'
-import HomePixelReveal from '@/components/home/fx/HomePixelReveal.vue'
 import { useGsap } from '@/composables/useGsap'
 import { useServerStatus } from '@/composables/useServerStatus'
 
@@ -89,51 +88,43 @@ onUnmounted(() => {
     <div class="wrap">
       <div class="status__grid">
         <MagneticCornerFrame>
-          <HomePixelReveal :cols="10" :rows="4">
-            <div class="status__cell">
-              <div class="status__value">
-                <span ref="playerNumEl" class="status__num">{{ playersLabel }}</span>
-              </div>
-              <div class="status__label">在线玩家</div>
+          <div class="status__cell">
+            <div class="status__value">
+              <span ref="playerNumEl" class="status__num">{{ playersLabel }}</span>
             </div>
-          </HomePixelReveal>
+            <div class="status__label">在线玩家</div>
+          </div>
         </MagneticCornerFrame>
 
         <MagneticCornerFrame>
-          <HomePixelReveal :cols="10" :rows="4">
-            <div class="status__cell">
-              <div class="status__value">
-                <span class="status__num">26.2</span>
-              </div>
-              <div class="status__label">纯净生存服务器版本</div>
+          <div class="status__cell">
+            <div class="status__value">
+              <span class="status__num">26.2</span>
             </div>
-          </HomePixelReveal>
+            <div class="status__label">纯净生存服务器版本</div>
+          </div>
         </MagneticCornerFrame>
 
         <MagneticCornerFrame>
-          <HomePixelReveal :cols="10" :rows="4">
-            <div class="status__cell">
-              <div class="status__value">
-                <span class="status__num">1.21.7/8</span>
-              </div>
-              <div class="status__label">综合生存服务器版本</div>
+          <div class="status__cell">
+            <div class="status__value">
+              <span class="status__num">1.21.7/8</span>
             </div>
-          </HomePixelReveal>
+            <div class="status__label">综合生存服务器版本</div>
+          </div>
         </MagneticCornerFrame>
 
         <MagneticCornerFrame>
-          <HomePixelReveal :cols="10" :rows="4">
-            <div class="status__cell">
-              <div class="status__value">
-                <span class="status__dot" :class="{ 'is-offline': !online }" aria-hidden="true" />
-                <span
-                  :ref="(el) => { if (el) fadeEls.push(el as HTMLElement) }"
-                  class="status__num"
-                >{{ statusLabel }}</span>
-              </div>
-              <div class="status__label">运行状态</div>
+          <div class="status__cell">
+            <div class="status__value">
+              <span class="status__dot" :class="{ 'is-offline': !online }" aria-hidden="true" />
+              <span
+                :ref="(el) => { if (el) fadeEls.push(el as HTMLElement) }"
+                class="status__num"
+              >{{ statusLabel }}</span>
             </div>
-          </HomePixelReveal>
+            <div class="status__label">运行状态</div>
+          </div>
         </MagneticCornerFrame>
       </div>
     </div>
