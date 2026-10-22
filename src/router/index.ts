@@ -61,6 +61,26 @@ const routes = [
     }
   },
   {
+    // Luminol 聊天页：与全局悬浮弹窗共用 AI 链路，区别是整页沉浸式对话
+    path: '/Luminol',
+    name: 'luminol',
+    component: () => import('../views/LuminolChat.vue'),
+    meta: {
+      title: 'Luminol - LuminolCraft 社区助手',
+      description: '和 LuminolCraft 社区的 Luminol 聊聊：进服流程、服务器规则、常用指令、最近公告。',
+      og: {
+        title: 'Luminol - LuminolCraft 社区助手',
+        description: '和 LuminolCraft 社区的 Luminol 聊聊：进服流程、服务器规则、常用指令、最近公告。',
+        image: {
+          url: 'https://imagehosting-ez2.pages.dev/images/c25a955166388e1257c23d01c78a62e6.webp',
+          width: 1200,
+          height: 630,
+          alt: 'LuminolCraft 社区助手 Luminol'
+        }
+      }
+    }
+  },
+  {
     path: '/News',
     name: 'news',
     component: () => import('../views/News.vue'),

@@ -5,6 +5,8 @@
   <Footer v-if="!route.meta.hideChrome" />
   <!-- 生日祝福（1A）：me 就绪后判定「今天生日」，命中即弹一次（认证页不弹） -->
   <BirthdayGreeting />
+  <!-- AI 悬浮助手：全站可用，认证页（分屏沉浸）不显示 -->
+  <AiChatPopover v-if="!route.meta.hideChrome" />
 </template>
 
 
@@ -17,6 +19,7 @@ import Navbar from './components/Navbar.vue'
 import Footer from './components/Footer.vue'
 import MergeGuideBanner from './components/account/MergeGuideBanner.vue'
 import BirthdayGreeting from './components/birthday/BirthdayGreeting.vue'
+import AiChatPopover from './components/ai/AiChatPopover.vue'
 import { useAuthStore, AUTH_SYNC_KEY } from './stores/auth'
 
 const route = useRoute()
