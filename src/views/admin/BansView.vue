@@ -15,6 +15,7 @@
           <thead>
             <tr>
               <th>{{ t('admin.bans.type') }}</th>
+              <th>{{ t('admin.bans.target') }}</th>
               <th>{{ t('admin.bans.reason') }}</th>
               <th>{{ t('admin.bans.status') }}</th>
               <th>{{ t('admin.bans.expires') }}</th>
@@ -25,12 +26,21 @@
           <tbody>
             <tr v-for="ban in bans" :key="ban.id" :class="{ 'row-revoked': ban.revokedAt }">
               <td><span class="type-badge" :data-type="ban.type">{{ typeLabel(ban.type) }}</span></td>
+              <td class="td-target">
+                <template v-if="ban.minecraftUsername || ban.minecraftUuid">
+                  <span class="target-name">{{ ban.minecraftUsername || ban.minecraftUuid }}</span>
+                  <span v-if="ban.minecraftUsername && ban.minecraftUuid" class="target-uuid">{{
+                    ban.minecraftUuid
+                  }}</span>
+                </template>
+                <span v-else class="td-dim">{{ ban.minecraftAccountId || t('admin.bans.targetUnknown') }}</span>
+              </td>
               <td class="td-reason">{{ ban.reason }}</td>
               <td>
                 <span class="status-badge" :data-status="banStatus(ban)">{{ statusLabel(ban) }}</span>
               </td>
               <td class="td-dim">{{ ban.expiresAt ? formatDate(ban.expiresAt) : t('admin.bans.permanent') }}</td>
-              <td class="td-dim">{{ ban.createdBy || '—' }}</td>
+              <td class="td-dim" :title="ban.createdBy || ''">{{ creatorLabel(ban) }}</td>
               <td class="td-actions">
                 <template v-if="banStatus(ban) === 'active'">
                   <button type="button" class="row-btn" @click="openEdit(ban)">{{ t('admin.bans.edit') }}</button>
@@ -326,6 +336,15 @@ function statusLabel(ban: Ban): string {
 function typeLabel(type: string): string {
   const key = `settings.ban.type${type.charAt(0).toUpperCase()}${type.slice(1)}`
   return te(key) ? t(key) : type
+}
+
+/**
+ * 创建者展示：后端把 created_by 里的 user_xxx 解析成用户名（createdByName）。
+ * 解析不到（用户已删除）或非用户命名空间（插件侧的 mc:<uuid> / system:*）时
+ * 回落原始值，悬停 title 保留原文便于追溯。
+ */
+function creatorLabel(ban: Ban): string {
+  return ban.createdByName || ban.createdBy || '—'
 }
 
 function formatDate(ts?: number | null): string {

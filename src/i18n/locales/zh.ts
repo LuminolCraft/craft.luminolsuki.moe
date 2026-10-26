@@ -892,6 +892,7 @@ export default {
       "title": "封禁管理",
       "subtitle": "查看、修改与撤销站内封禁。",
       "target": "目标",
+      "targetUnknown": "未知目标",
       "type": "类型",
       "reason": "原因",
       "status": "状态",

@@ -892,6 +892,7 @@ export default {
       "title": "Ban management",
       "subtitle": "View, edit and revoke site bans.",
       "target": "Target",
+      "targetUnknown": "Unknown target",
       "type": "Type",
       "reason": "Reason",
       "status": "Status",

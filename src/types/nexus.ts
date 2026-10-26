@@ -93,6 +93,10 @@ export type BanType = 'website' | 'minecraft' | 'chat'
 export interface Ban {
   id: string
   minecraftAccountId: string | null
+  /** 目标 MC 身份的快照 UUID（账号解绑/删除后仍在，缺省表示老数据或非 MC 封禁） */
+  minecraftUuid?: string | null
+  /** 目标 MC 用户名快照 */
+  minecraftUsername?: string | null
   type: BanType | string
   reason: string
   createdAt?: number
@@ -100,6 +104,8 @@ export interface Ban {
   expiresAt?: number | null
   revokedAt?: number | null
   createdBy?: string | null
+  /** 管理端列表专用：createdBy 解析出的用户名（非用户命名空间或用户已删时为 null） */
+  createdByName?: string | null
   revokedBy?: string | null
 }
 
