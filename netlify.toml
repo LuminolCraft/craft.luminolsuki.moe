@@ -12,15 +12,30 @@
   # /api/* 由下方 redirects 同源反代到 Worker（Cookie 第一方，规避跨站分区）
   VITE_API_BASE_URL = ""
 
+# 缓存策略。注意：Netlify 的 headers `for` 只支持结尾通配（`/*`、`/dir/*`），
+# 之前写的 `/*.css` / `/*.js` 一条都不生效，等于所有资源走默认策略——HTML 和
+# SPA 深链被 Netlify Edge 缓存成 ttl≈1 年（响应头实证 cache-status: hit;
+# ttl=31535987）。发布后深链仍返回旧 HTML，引用的旧 hash 资源已被新部署顶掉，
+# 页面就停在加载画面。故：先全局 no-cache 兜底，再给带哈希的产物覆盖长缓存。
 [[headers]]
-  for = "/*.css"
+  for = "/*"
   [headers.values]
-    Cache-Control = "public, max-age=0, must-revalidate"
+    Cache-Control = "no-cache"
 
 [[headers]]
-  for = "/*.js"
+  for = "/assets/*"
   [headers.values]
-    Cache-Control = "public, max-age=0, must-revalidate"
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/images/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/favicon.ico"
+  [headers.values]
+    Cache-Control = "public, max-age=604800"
 
 [[headers]]
   for = "/index.html"
