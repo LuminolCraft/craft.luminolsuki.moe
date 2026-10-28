@@ -131,7 +131,7 @@ html[data-theme='dark'] {
 }
 
 .home-page .btn:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--focus-ring-color);
   outline-offset: 2px;
 }
 
@@ -184,18 +184,18 @@ html[data-theme='dark'] {
   inset: 0;
 }
 
-.home-page .hero__img {
+/* MorphSlider 容器：等 LCP 后由组件侧 style 淡入，首帧前露出本层底色 */
+.home-page .hero__morph {
   position: absolute;
   inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
+  background: var(--bases-dark-bg);
 }
 
 .home-page .hero__scrim {
   position: absolute;
   inset: 0;
+  /* pointer-events 放行到下层 canvas：背景轮播支持拖拽切换 */
+  pointer-events: none;
   background: rgba(0, 0, 0, 0.4);
 }
 
@@ -313,15 +313,57 @@ html[data-theme='dark'] {
   color: var(--ink-muted);
 }
 
+/* CRT 扫线：44×28 的小屏（.status__screen）里扫线本质是 1D 平移，用 CSS 就够，
+   不值得为它单开第 3 个 WebGL context + 一次 200-400ms 的 shader 编译。
+   注意：这块小屏**当前不存在**（Status 只有四格大字 + CountUp），本段是预留钩子，
+   元素加进来即生效 —— 不要当成死代码删掉。 */
+.home-page .status__scan {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    180deg,
+    rgba(0, 191, 166, 0.055) 0 1px,
+    transparent 1px 3px
+  );
+}
+
+.home-page .status__scan::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(0, 191, 166, 0.5), transparent);
+  animation: status-scan 3.6s linear infinite;
+}
+
+@keyframes status-scan {
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(26px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-page .status__scan::after {
+    animation: none;
+    transform: translateY(16px);
+  }
+}
+
 /* ------------------------------------------------------------------ */
 /* 3. 滚动演示区                                                       */
 /* ------------------------------------------------------------------ */
 
-.home-page .demo {
+.home-page .showcase {
   padding: 96px 0 0;
 }
 
-.home-page .demo__grid {
+.home-page .showcase__grid {
   display: grid;
   grid-template-columns: 5fr 7fr;
   gap: 64px;
@@ -329,30 +371,30 @@ html[data-theme='dark'] {
   min-height: 240vh;
 }
 
-.demo__left,
-.home-page .demo__right {
+.showcase__left,
+.home-page .showcase__right {
   position: sticky;
   top: 120px;
   align-self: start;
 }
 
-.home-page .demo__item {
+.home-page .showcase__item {
   padding: 24px 0;
   opacity: 0.22;
   will-change: opacity;
 }
 
-.home-page .demo__item.is-active {
+.home-page .showcase__item.is-active {
   opacity: 1;
 }
 
-.home-page .demo__head {
+.home-page .showcase__head {
   display: flex;
   align-items: baseline;
   gap: 12px;
 }
 
-.home-page .demo__num {
+.home-page .showcase__num {
   font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
   font-size: 13px;
   letter-spacing: 0.4px;
@@ -360,15 +402,15 @@ html[data-theme='dark'] {
   transition: color 0.35s ease;
 }
 
-.home-page .demo__item.is-active .demo__num {
+.home-page .showcase__item.is-active .showcase__num {
   color: var(--accent);
 }
 
-.home-page .demo__item.is-active .eyebrow {
+.home-page .showcase__item.is-active .eyebrow {
   color: var(--ink);
 }
 
-.home-page .demo__title {
+.home-page .showcase__title {
   margin: 14px 0 0;
   font-size: 28px;
   font-weight: 600;
@@ -377,7 +419,7 @@ html[data-theme='dark'] {
   color: var(--ink);
 }
 
-.home-page .demo__desc {
+.home-page .showcase__desc {
   margin: 14px 0 0;
   max-width: 480px;
   font-size: 16px;
@@ -385,7 +427,7 @@ html[data-theme='dark'] {
   color: var(--ink-muted);
 }
 
-.home-page .demo__media {
+.home-page .showcase__media {
   position: relative;
   aspect-ratio: 16 / 9;
   border-radius: 16px;
@@ -393,7 +435,7 @@ html[data-theme='dark'] {
   background: var(--surface-2);
 }
 
-.home-page .demo__media-img {
+.home-page .showcase__media-img {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -424,74 +466,232 @@ html[data-theme='dark'] {
   max-width: 720px;
 }
 
-.home-page .progress {
-  position: relative;
-  width: 160px;
-  height: 1px;
-  background: var(--hairline);
-  flex: 0 0 auto;
-  margin-bottom: 6px;
-}
-
-.home-page .progress__bar {
-  position: absolute;
-  inset: 0;
-  background: var(--ink);
-  transform: scaleX(0);
-  transform-origin: left center;
-  will-change: transform;
-}
-
 /*
-  轮播舞台：两侧渐隐过渡的定位父级。
-  自己用负 margin 撑到视口左右边缘（与轮播同一套 bleed 技巧），
-  这样 left/right: 0 的过渡层正好贴在屏幕边上，而不是贴在内容栏边缘。
+  截图带舞台：自己用负 margin 撑到视口左右边缘（bleed），
+  让 DriftWall 的 3D 平面铺满可视宽度，而不是贴在内容栏里。
 */
 .home-page .gallery__stage {
   position: relative;
   margin-inline: calc(50% - 50vw);
 }
 
+/* 桌面档：DriftWall 壁画 */
+.home-page .gallery__wall {
+  height: 62vh;
+  min-height: 420px;
+}
+
+@media (max-width: 1279px) {
+  .home-page .gallery__wall {
+    height: 56vh;
+  }
+}
+
+/* 静态文字说明（原来的进度条 rAF 已退役） */
+.home-page .gallery__meta {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.4px;
+  color: var(--ink-muted);
+  white-space: nowrap;
+}
+
+/* 跳过链接：默认 sr-only，聚焦时现身 */
+.home-page .gallery__skip {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+
+.home-page .gallery__skip:focus-visible {
+  position: static;
+  display: inline-block;
+  width: auto;
+  height: auto;
+  margin-bottom: 14px;
+  padding: 8px 14px;
+  overflow: visible;
+  clip: auto;
+  border: 1px solid var(--hairline);
+  border-radius: 8px;
+  background: var(--card-bg);
+  color: var(--ink);
+  font-size: 14px;
+  outline: 2px solid var(--focus-ring-color, #8b5cf6);
+  outline-offset: 2px;
+}
+
+/* 窄屏档：22 张单列，原生 scroll-snap（零 JS / 零 rAF） */
 .home-page .gallery__rail {
   display: flex;
   gap: 14px;
   overflow-x: auto;
   overflow-y: hidden;
+  scroll-snap-type: x mandatory;
   scrollbar-width: none;
   -ms-overflow-style: none;
-  /* 舞台已负责 bleed，这里只用 padding 把首尾截图对齐到内容栏 */
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
   padding-inline: calc(50vw - 50%);
-  padding-block: 4px;
   scroll-padding-inline: calc(50vw - 50%);
-  cursor: grab;
-  touch-action: pan-y;
+  padding-block: 4px;
 }
-
-/* 拖动中：跟手优先 */
-.home-page .gallery__rail.is-dragging {
-  cursor: grabbing;
-  user-select: none;
-}
-
-.home-page .gallery__item {
-  -webkit-user-drag: none;
-  user-select: none;
-}
-
-/* 光标层是叠加元素，不改系统光标：命中点仍精确，也不需要处理输入框例外 */
 
 .home-page .gallery__rail::-webkit-scrollbar {
   display: none;
 }
 
-.home-page .gallery__item {
+.home-page .gallery__rail-item {
   flex: 0 0 auto;
-  width: 22vw;
-  aspect-ratio: 16 / 10;
+  width: 82vw;
+  scroll-snap-align: center;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.home-page .gallery__rail-item img {
+  display: block;
+  width: 100%;
   height: auto;
+  aspect-ratio: 16 / 10;
   object-fit: cover;
   border-radius: 10px;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* 静态档（reduced-motion / 低端）：3 列网格，全部可见可聚焦 */
+.home-page .gallery__grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.home-page .gallery__cell {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  border-radius: 10px;
+  overflow: hidden;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.home-page .gallery__cell img {
   display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* 三档之间 150ms opacity 交叉（键盘切档不硬跳） */
+.home-page .gallery-swap-enter-active,
+.home-page .gallery-swap-leave-active {
+  transition: opacity 150ms ease;
+}
+
+.home-page .gallery-swap-enter-from,
+.home-page .gallery-swap-leave-to {
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-page .gallery-swap-enter-active,
+  .home-page .gallery-swap-leave-active {
+    transition: none;
+  }
+}
+
+.home-page .gallery__rail-item:focus-visible,
+.home-page .gallery__cell:focus-visible {
+  outline: 2px solid var(--focus-ring-color, #8b5cf6);
+  outline-offset: 2px;
+}
+
+/* ------------------------------------------------------------------ */
+/* 截图 lightbox（与 NewsDetail 同一套观感，颜色走主题令牌）            */
+/* ------------------------------------------------------------------ */
+
+.home-page .lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--canvas) 12%, rgba(10, 10, 14, 0.94));
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.home-page .lightbox__image {
+  max-width: 90%;
+  max-height: 88vh;
+  object-fit: contain;
+  border-radius: 12px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+}
+
+.home-page .lightbox__close,
+.home-page .lightbox__nav {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--card-bg);
+  color: var(--text-color);
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.home-page .lightbox__close:hover,
+.home-page .lightbox__nav:hover {
+  background: var(--primary-color);
+  color: #fff;
+}
+
+.home-page .lightbox__close:focus-visible,
+.home-page .lightbox__nav:focus-visible {
+  outline: 2px solid var(--focus-ring-color, #8b5cf6);
+  outline-offset: 2px;
+}
+
+.home-page .lightbox__close {
+  top: 24px;
+  right: 24px;
+}
+
+.home-page .lightbox__nav--prev {
+  left: 24px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.home-page .lightbox__nav--next {
+  right: 24px;
+  top: 50%;
+  transform: translateY(-50%);
 }
 
 /* ------------------------------------------------------------------ */
@@ -513,8 +713,13 @@ html[data-theme='dark'] {
   display: block;
 }
 
+/* BorderGlow 卡片：卡面需要有内边距，否则文字贴边 */
+.home-page .compare__card {
+  padding: 20px;
+}
+
 .home-page .compare__figure {
-  border-radius: 16px;
+  border-radius: 12px;
   overflow: hidden;
   background: var(--surface-2);
 }
@@ -601,19 +806,26 @@ html[data-theme='dark'] {
   width: 24px;
 }
 
+/* 头像：PixelTransition 外壳（方块圆角，与 MagneticCornerFrame 的直角色调一致） */
 .home-page .team-row__avatar {
   width: 56px;
   height: 56px;
-  border-radius: 50%;
-  object-fit: cover;
   flex: 0 0 auto;
+  border-radius: 999px;
   box-shadow: 0 0 0 1px var(--hairline);
-  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease;
 }
 
 .home-page .team-row:hover .team-row__avatar {
   transform: scale(1.03);
   box-shadow: 0 0 0 1px var(--accent);
+}
+
+/* 像素溶解的第二层：同一张头像的「更清透」版，用于让溶解有一帧可见变化 */
+.home-page .team-row__avatar-alt {
+  filter: saturate(1.35) brightness(1.06);
 }
 
 .home-page .team-row__id {
@@ -671,7 +883,7 @@ html[data-theme='dark'] {
 }
 
 .home-page .team-row__icon:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--focus-ring-color);
   outline-offset: 2px;
 }
 
@@ -689,7 +901,7 @@ html[data-theme='dark'] {
 }
 
 .home-page .team-row__gh:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--focus-ring-color);
   outline-offset: 2px;
   border-radius: 4px;
 }
@@ -699,7 +911,45 @@ html[data-theme='dark'] {
 /* ------------------------------------------------------------------ */
 
 .home-page .cta {
+  position: relative;
   padding: 96px 0 160px;
+  overflow: hidden;
+}
+
+/* 地平线光带：贴底 30vh，纯 CSS（CTA 不用 WebGL，理由见 CtaSection 头部注释）。
+   三层叠加：柔和的水平辉光 + 一条「地平线」亮带 + 最底部的一点收边，
+   所有色标都用 color-mix 从 --primary-color 派生，避免硬编码紫色，
+   也不再用硬拐点（42%/44% 那种会让边缘看起来像色块边界）。 */
+.home-page .cta__waves {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 30vh;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      120% 92% at 50% 100%,
+      color-mix(in srgb, var(--primary-color) 16%, transparent),
+      transparent 72%
+    ),
+    linear-gradient(
+      180deg,
+      transparent 0%,
+      color-mix(in srgb, var(--primary-color) 5%, transparent) 46%,
+      color-mix(in srgb, var(--primary-color) 12%, transparent) 62%,
+      transparent 86%
+    );
+  /* 顶底都要淡出：任何一层在容器边缘仍有残留强度，都会与相邻区块
+     （上方 CTA 面板 / 下方 footer 过渡区的纯白）形成一条水平色差线 */
+  mask-image: linear-gradient(180deg, transparent, #000 42%, #000 62%, transparent 96%);
+  -webkit-mask-image: linear-gradient(180deg, transparent, #000 42%, #000 62%, transparent 96%);
+}
+
+.home-page .cta > .wrap {
+  position: relative;
+  z-index: 1;
 }
 
 .home-page .cta__panel {
@@ -726,4 +976,21 @@ html[data-theme='dark'] {
   .home-page .team-row__icon {
     transition: none;
   }
+}
+
+/* ------------------------------------------------------------------ */
+/* 滚动展开幕（ScrollExpand）：Team 与 CTA 之间的沉浸过渡               */
+/* ------------------------------------------------------------------ */
+
+.home-page .world-expand {
+  margin: 96px 0 0;
+}
+
+.home-page .world-expand__line {
+  margin: 0;
+  font-size: clamp(1.25rem, 2.4vw, 1.75rem);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: #fff;
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.5);
 }

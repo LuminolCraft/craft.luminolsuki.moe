@@ -31,19 +31,19 @@
     order: 1;
   }
 
-  .home-page .demo__grid {
+  .home-page .showcase__grid {
     grid-template-columns: 1fr;
     gap: 40px;
     min-height: 0;
   }
 
-  .demo__left,
-  .home-page .demo__right {
+  .showcase__left,
+  .home-page .showcase__right {
     position: static;
     top: auto;
   }
 
-  .home-page .demo__item {
+  .home-page .showcase__item {
     opacity: 1;
   }
 
@@ -51,8 +51,9 @@
     gap: 56px;
   }
 
-  .home-page .gallery__item {
-    width: 30vw;
+  /* 静态档在平板竖屏用 2 列（壁纸档是满宽 3D 平面，不受这里影响） */
+  .home-page .gallery__grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 @media (max-width: 768px) {
@@ -73,11 +74,11 @@
     font-size: 16px;
   }
 
-  .home-page .demo {
+  .home-page .showcase {
     padding-top: 80px;
   }
 
-  .home-page .demo__item {
+  .home-page .showcase__item {
     padding: 20px 0;
   }
 
@@ -89,14 +90,6 @@
     flex-direction: column;
     align-items: flex-start;
     gap: 20px;
-  }
-
-  .home-page .progress {
-    width: 100%;
-  }
-
-  .home-page .gallery__item {
-    width: 46vw;
   }
 
   .home-page .compare {
@@ -150,8 +143,8 @@
     font-size: 32px;
   }
 
-  .home-page .gallery__item {
-    width: 78vw;
+  .home-page .gallery__grid {
+    grid-template-columns: 1fr;
   }
 
   .home-page .team-row__idx {
