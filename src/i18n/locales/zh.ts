@@ -493,7 +493,8 @@ export default {
       "additionalImages": "附加图片",
       "noImages": "暂无附加图片",
       "backToList": "返回新闻列表",
-      "tocTitle": "文章目录"
+      "tocTitle": "文章目录",
+      "readCountUnit": "次阅读"
     }
   },
   "monitoring": {

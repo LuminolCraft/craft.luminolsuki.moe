@@ -493,7 +493,8 @@ export default {
       "additionalImages": "Additional Images",
       "noImages": "No additional images",
       "backToList": "Back to news list",
-      "tocTitle": "Table of Contents"
+      "tocTitle": "Table of Contents",
+      "readCountUnit": "reads"
     }
   },
   "monitoring": {

@@ -29,9 +29,16 @@
           {{ newsItem.title }}
         </h2>
 
-        <!-- 元信息：日期 + 标签 -->
+        <!-- 元信息：日期 + 阅读次数 + 标签 -->
         <div class="article-meta">
           <span class="article-date">{{ formatDate(newsItem.date, locale) }}</span>
+          <span v-if="readCount !== null" class="article-reads">
+            <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+              <path fill="currentColor" d="M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9M12,17A5,5 0 0,1 7,12A5,5 0 0,1 12,7A5,5 0 0,1 17,12A5,5 0 0,1 12,17M12,2C17,2 21.78,5.61 23.36,10.27C23.5,10.72 23.5,11.28 23.36,11.73C21.78,16.39 17,20 12,20C7,20 2.22,16.39 0.64,11.73C0.5,11.28 0.5,10.72 0.64,10.27C2.22,5.61 7,2 12,2Z" />
+            </svg>
+            <CountUp :to="readCount" separator="," :duration="1" class="article-reads-number" />
+            <span class="article-reads-unit">{{ t('news.detail.readCountUnit') }}</span>
+          </span>
           <div class="article-tags">
             <span
               v-for="tag in newsItem.tags"
@@ -47,12 +54,14 @@
           </div>
         </div>
 
-        <!-- 封面图 -->
-        <div
-          v-if="hasImage(newsItem)"
-          class="article-cover"
-          :style="{ backgroundImage: `url('${cleanImageUrl(newsItem.image)}')` }"
-        ></div>
+        <!-- 封面图：骨架占位 + 加载完成渐显（原 backgroundImage 版无 load 事件，无法做骨架） -->
+        <div v-if="hasImage(newsItem)" class="article-cover">
+          <ImageSkeleton
+            :src="cleanImageUrl(newsItem.image)"
+            :alt="newsItem.title ?? ''"
+            eager
+          />
+        </div>
 
         <!-- 文章正文（unified 渲染） -->
         <div class="article-content markdown-body" v-html="renderedHtml"></div>
@@ -67,7 +76,11 @@
               class="gallery-item"
               @click="lightbox.open(index, $event)"
             >
-              <img :src="imgUrl" :alt="t('news.detail.additionalImages') + ' ' + (index + 1)" @error="handleImageError" loading="lazy" />
+              <ImageSkeleton
+                :src="imgUrl"
+                :alt="t('news.detail.additionalImages') + ' ' + (index + 1)"
+                @error="handleImageError"
+              />
             </div>
           </div>
         </div>
@@ -120,6 +133,8 @@ import { ref, computed, onMounted, watch, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import SidebarToc from '@/components/SidebarToc.vue';
+import ImageSkeleton from '@/components/common/ImageSkeleton.vue';
+import CountUp from '@/bits/CountUp.vue';
 import { useNewsDetail } from '@/composables/useNewsDetail';
 import { useLightbox } from '@/composables/useLightbox';
 import { useReadingProgress } from '@/composables/useReadingProgress';
@@ -147,6 +162,7 @@ const {
   newsItem,
   renderedHtml,
   tocItems,
+  readCount,
   loadNews,
   retryLoad: retry
 } = useNewsDetail();
@@ -194,6 +210,37 @@ const retryLoad = () => {
 onMounted(() => {
   if (newsId.value !== null) loadNews(newsId.value);
 });
+
+// 8. 正文（v-html）图片骨架：markdown 渲染出的 img 无法用 Vue 组件，
+//    渲染后逐张打状态类（.img-skel-pending → .img-skel-ready，样式见 markdown-body.css），
+//    缓存命中（img.complete）的图不打扰。
+function decorateArticleImages(): void {
+  const root = articleRef.value;
+  if (!root) return;
+  root.querySelectorAll<HTMLImageElement>('.markdown-body img').forEach((img) => {
+    if (img.dataset.skelBound === '1') return;
+    img.dataset.skelBound = '1';
+    if (img.complete && img.naturalWidth > 0) {
+      img.classList.add('img-skel-ready');
+      return;
+    }
+    img.classList.add('img-skel-pending');
+    const settle = (): void => {
+      img.classList.remove('img-skel-pending');
+      img.classList.add('img-skel-ready');
+    };
+    img.addEventListener('load', settle, { once: true });
+    img.addEventListener('error', () => img.classList.remove('img-skel-pending'), { once: true });
+  });
+}
+
+watch(
+  renderedHtml,
+  () => {
+    nextTick(decorateArticleImages);
+  },
+  { immediate: true }
+);
 
 watch(
   () => route.query.id,
@@ -269,6 +316,20 @@ html[data-theme='dark'] .article-title {
   color: var(--text-secondary, rgba(60, 60, 60, 0.66));
 }
 
+/* 阅读次数（CountUp 数字动画） */
+.article-reads {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.875rem;
+  font-weight: var(--font-weight-medium, 500);
+  color: var(--text-secondary, rgba(60, 60, 60, 0.66));
+}
+
+.article-reads-number {
+  font-variant-numeric: tabular-nums;
+}
+
 .article-tags {
   display: flex;
   gap: 8px;
@@ -299,8 +360,7 @@ html[data-theme='dark'] .article-title {
   width: 100%;
   height: 380px;
   border-radius: var(--radius-image, 12px);
-  background-size: cover;
-  background-position: center;
+  overflow: hidden; /* 内部改为 ImageSkeleton 的 <img>，裁掉直角溢出 */
   margin-bottom: 32px;
   box-shadow: var(--shadow-card, 0 4px 12px rgba(0, 0, 0, 0.1));
 }

@@ -25,6 +25,8 @@ export function useNewsDetail() {
   const newsItem = ref<NewsItem | null>(null);
   const renderedHtml = ref('');
   const tocItems = ref<TocRenderItem[]>([]);
+  /** 阅读次数（详情页 CountUp 动画目标）；上报失败 / 未返回前为 null，不显示。 */
+  const readCount = ref<number | null>(null);
 
   const loadNews = async (id: number) => {
     try {
@@ -32,6 +34,7 @@ export function useNewsDetail() {
       error.value = null;
       renderedHtml.value = '';
       tocItems.value = [];
+      readCount.value = null;
 
       await newsManager.restoreCachePublic();
       const item = await newsManager.ensureArticleContent(id);
@@ -43,6 +46,11 @@ export function useNewsDetail() {
       }
       newsItem.value = item;
       document.title = `${item.title} - LuminolCraft`;
+
+      // 阅读计数上报（服务端按访客 + 日去重）：不阻塞正文渲染，失败静默
+      void newsManager.recordRead(id).then((count) => {
+        if (count !== null) readCount.value = count;
+      });
 
       if (item.markdownContent) {
         try {
@@ -75,6 +83,7 @@ export function useNewsDetail() {
     newsItem,
     renderedHtml,
     tocItems,
+    readCount,
     loadNews,
     retryLoad,
   };

@@ -1,3 +1,13 @@
+<!--
+  SidebarToc —— 文章目录侧栏（BranchedMenu 版）
+
+  原版是自绘的平铺列表（badge + 缩进 + 滑动高亮条）；
+  现在换成 Vue Bits 系「BranchedMenu」树枝目录：
+  - h2（depthLevel 0）→ 分区头（可折叠，点击滚动到 h2）
+  - h3/h4（depthLevel 1/2）→ 分区下的子项（BranchedMenu 只有两级，h4 与 h3 同层渲染）
+  - 高亮随阅读进度：沿用 createTocObserver 的 IntersectionObserver + 滚动兜底，
+    把当前章节 id 通过受控 `active` prop 传给 BranchedMenu（进入折叠分区会自动展开）
+-->
 <template>
   <div v-if="tocItems.length > 0" class="sidebar-toc">
     <!-- 标题栏 -->
@@ -7,37 +17,18 @@
     <!-- 内容区 -->
     <div class="toc-collapse-wrapper">
       <div class="toc-scroll-container custom-scrollbar">
-        <div class="toc-content" ref="tocContentRef">
-          <a
-            v-for="item in tocItems"
-            :key="item.id"
-            :href="`#${item.id}`"
-            class="toc-item"
-            :class="[
-              `toc-level-${item.depthLevel}`,
-              { 'toc-active': activeId === item.id },
-            ]"
-            :data-heading-id="item.id"
-            :aria-label="item.text"
-            :title="item.text"
-            @click.prevent="handleClick(item.id)"
-          >
-            <div class="toc-badge" :class="{ 'toc-badge-index': item.badgeKind === 'index' }">
-              <template v-if="item.badgeKind === 'index'">{{ item.badgeIndex }}</template>
-              <template v-else>
-                <span class="toc-badge-dot" :class="{ 'toc-badge-dot-sm': item.badgeKind === 'dot-sm' }"></span>
-              </template>
-            </div>
-            <div class="toc-label" :class="item.labelStyle === 'primary' ? 'toc-label-primary' : 'toc-label-secondary'">
-              {{ item.text }}
-            </div>
-          </a>
-          <div
-            v-if="activeId"
-            class="toc-active-indicator"
-            :style="indicatorStyle"
-          ></div>
-        </div>
+        <BranchedMenu
+          :items="menuItems"
+          :default-open="allOpenIndices"
+          :active="activeId ?? ''"
+          :width="248"
+          :row-height="34"
+          :font-size="13"
+          color="var(--text-color)"
+          accent-color="var(--primary-color)"
+          line-color="color-mix(in srgb, var(--text-color) 18%, transparent)"
+          @select="handleSelect"
+        />
       </div>
     </div>
   </div>
@@ -47,6 +38,9 @@
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import type { TocRenderItem } from '@/utils/markdown/toc'
 import { createTocObserver, scrollToHeading } from '@/utils/markdown/toc'
+import BranchedMenu, {
+  type BranchedMenuItem,
+} from '@/components/bits/BranchedMenu.vue'
 
 interface Props {
   tocItems: TocRenderItem[]
@@ -64,45 +58,68 @@ const emit = defineEmits<{
   (e: 'active-change', id: string | null): void
 }>()
 
-const tocContentRef = ref<HTMLElement | null>(null)
 const activeId = ref<string | null>(null)
 let cleanupObserver: (() => void) | null = null
 let isUserInteracting = false
 let updateTimer: ReturnType<typeof setTimeout> | null = null
 let lastActiveId: string | null = null
 
-const indicatorStyle = computed(() => {
-  if (!activeId.value || !tocContentRef.value) {
-    return { opacity: 0, top: '0px', height: '0px' }
+/**
+ * 平铺的 tocItems → BranchedMenu 的两级结构。
+ * depthLevel 0 起一个新分区并收集后续 1/2 级作为 children；
+ * 分区内没有子级（连续 h2）就渲染成叶子；
+ * 文章若以 h3 开头（没有前置 h2），该条目降级为叶子分区。
+ */
+const menuItems = computed<BranchedMenuItem[]>(() => {
+  const result: BranchedMenuItem[] = []
+  let current: { label: string; value: string; children: BranchedMenuItem['children'] } | null =
+    null
+
+  const flush = () => {
+    if (!current) return
+    if (current.children && current.children.length > 0) {
+      result.push({ label: current.label, value: current.value, children: current.children })
+    } else {
+      result.push({ label: current.label, value: current.value })
+    }
+    current = null
   }
-  const activeEl = tocContentRef.value.querySelector(
-    `.toc-item[data-heading-id="${CSS.escape(activeId.value)}"]`,
-  ) as HTMLElement | null
-  if (!activeEl) {
-    return { opacity: 0, top: '0px', height: '0px' }
+
+  for (const item of props.tocItems) {
+    if (item.depthLevel === 0) {
+      flush()
+      current = { label: item.text, value: item.id, children: [] }
+    } else if (current) {
+      current.children!.push({ value: item.id, label: item.text })
+    } else {
+      result.push({ label: item.text, value: item.id })
+    }
   }
-  return {
-    opacity: 1,
-    top: `${activeEl.offsetTop}px`,
-    height: `${activeEl.offsetHeight}px`,
-  }
+  flush()
+  return result
 })
 
-function scrollTocContainerTo(id: string) {
-  if (!tocContentRef.value) return
-  const activeEl = tocContentRef.value.querySelector(
-    `.toc-item[data-heading-id="${CSS.escape(id)}"]`,
-  )
-  if (!activeEl) return
-  const container = tocContentRef.value
-  const itemTop = (activeEl as HTMLElement).offsetTop
-  const itemHeight = (activeEl as HTMLElement).offsetHeight
-  const containerHeight = container.clientHeight
-  const targetTop = itemTop - containerHeight / 2 + itemHeight / 2
-  container.scrollTo({ top: Math.max(0, targetTop), behavior: 'smooth' })
+/** 所有分区默认展开 */
+const allOpenIndices = computed(() => menuItems.value.map((_, i) => i))
+
+/** 让当前高亮项在目录滚动容器里保持可见（等待 DOM 更新后按视口差值滚动） */
+function scrollTocContainerTo() {
+  void nextTick(() => {
+    const container = document.querySelector<HTMLElement>(
+      '.sidebar-toc .toc-scroll-container',
+    )
+    if (!container) return
+    const activeEl = container.querySelector<HTMLElement>('[data-active]')
+    if (!activeEl) return
+    const cRect = container.getBoundingClientRect()
+    const aRect = activeEl.getBoundingClientRect()
+    const delta = aRect.top + aRect.height / 2 - (cRect.top + cRect.height / 2)
+    if (Math.abs(delta) > 40)
+      container.scrollBy({ top: delta, behavior: 'smooth' })
+  })
 }
 
-function handleClick(id: string) {
+function handleSelect(id: string) {
   if (updateTimer) {
     clearTimeout(updateTimer)
     updateTimer = null
@@ -111,7 +128,7 @@ function handleClick(id: string) {
   activeId.value = id
   emit('active-change', id)
   scrollToHeading(id, props.scrollOffset)
-  scrollTocContainerTo(id)
+  scrollTocContainerTo()
   setTimeout(() => {
     isUserInteracting = false
   }, 600)
@@ -214,7 +231,7 @@ html[data-theme='dark'] .toc-widget-title {
   max-height: calc(100vh - 220px);
   overflow-y: auto;
   overflow-x: hidden;
-  padding-right: 4px;
+  padding: 0.5rem 4px 0.5rem 0;
 }
 .toc-scroll-container.custom-scrollbar::-webkit-scrollbar {
   width: 4px;
@@ -228,129 +245,6 @@ html[data-theme='dark'] .toc-widget-title {
 }
 .toc-scroll-container.custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: var(--primary-color, #a78bfa);
-}
-.toc-content {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.toc-item {
-  position: relative;
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  padding: 8px 12px;
-  border-radius: var(--radius-standard, 6px);
-  text-decoration: none;
-  color: var(--text-secondary, rgba(60, 60, 60, 0.66));
-  transition: all 0.2s ease;
-  cursor: pointer;
-  z-index: 1;
-}
-html[data-theme='dark'] .toc-item {
-  color: var(--text-secondary, rgba(200, 200, 200, 0.66));
-}
-.toc-item:hover {
-  background: var(--glass-bg, rgba(255, 255, 255, 0.6));
-  color: var(--text-color, #171717);
-}
-html[data-theme='dark'] .toc-item:hover {
-  background: var(--glass-bg, rgba(24, 24, 30, 0.6));
-  color: var(--text-color, #f2eefc);
-}
-.toc-item.toc-active {
-  color: var(--primary-color, #a78bfa);
-  font-weight: var(--font-weight-medium, 500);
-  background: transparent; /* 新增 */
-}
-.toc-level-0 {
-  padding-left: 4px;
-}
-.toc-level-1 {
-  padding-left: 28px;
-}
-.toc-level-2 {
-  padding-left: 52px;
-}
-
-.toc-badge {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 20px;
-  height: 20px;
-  margin-top: 1px;
-  font-size: var(--font-size-caption, 0.75rem);
-  font-weight: var(--font-weight-semibold, 600);
-  color: var(--text-secondary, rgba(60, 60, 60, 0.66));
-}
-html[data-theme='dark'] .toc-badge {
-  color: var(--text-secondary, rgba(200, 200, 200, 0.66));
-}
-.toc-item.toc-active .toc-badge {
-  color: var(--primary-color, #a78bfa);
-}
-.toc-badge-index {
-  background: var(--glass-bg, rgba(255, 255, 255, 0.6));
-  border: 1px solid var(--glass-border, rgba(158, 148, 216, 0.3));
-  border-radius: var(--radius-pill, 9999px);
-  padding: 0 6px;
-}
-html[data-theme='dark'] .toc-badge-index {
-  background: var(--glass-bg, rgba(24, 24, 30, 0.6));
-}
-.toc-item.toc-active .toc-badge-index {
-  background: var(--primary-color, #a78bfa);
-  color: #fff;
-  border-color: var(--primary-color, #a78bfa);
-}
-.toc-badge-dot {
-  display: block;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: currentColor;
-  opacity: 0.6;
-}
-.toc-badge-dot-sm {
-  width: 4px;
-  height: 4px;
-}
-.toc-item.toc-active .toc-badge-dot {
-  opacity: 1;
-}
-
-.toc-label {
-  flex: 1;
-  min-width: 0;
-  font-size: var(--font-size-button, 0.875rem);
-  line-height: 1.5;
-  word-break: break-word;
-  overflow-wrap: break-word;
-}
-.toc-label-primary {
-  font-weight: var(--font-weight-medium, 500);
-}
-.toc-label-secondary {
-  font-size: var(--font-size-caption, 0.75rem);
-  opacity: 0.85;
-}
-
-.toc-active-indicator {
-  position: absolute;
-  left: 0;
-  width: 3px;
-  border-radius: 0 3px 3px 0;
-  background: var(--primary-color, #a78bfa);
-  transition: top 0.25s cubic-bezier(0.4, 0, 0.2, 1),
-    height 0.25s cubic-bezier(0.4, 0, 0.2, 1),
-    opacity 0.2s ease;
-  z-index: 0;
-  pointer-events: none;
-  will-change: top, height;
 }
 
 @media (max-width: 1200px) {

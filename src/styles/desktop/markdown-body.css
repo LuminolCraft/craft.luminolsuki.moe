@@ -472,3 +472,63 @@ html[data-theme='dark'] .markdown-body strong {
     display: none;
   }
 }
+
+/* ------------------------------------------------------------------
+   正文图片骨架（v-html 内容无法用 Vue 组件，img 也不能有伪元素/子元素，
+   所以骨架直接画在 img 自身的 background 上：底色 + 周期扫光渐变）。
+   状态类由 NewsDetail 的 decorateArticleImages() 维护：
+   - .img-skel-pending  加载中：占位最小高度 + shimmer
+   - .img-skel-ready    加载完成：一次 blur 渐显动画
+   ------------------------------------------------------------------ */
+.markdown-body figure.md-figure {
+  position: relative;
+}
+
+.markdown-body img.img-skel-pending {
+  min-height: 220px;
+  width: 100%;
+  object-fit: cover;
+  background-color: var(--skeleton-block-bg, rgba(0, 0, 0, 0.06));
+  background-image: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--primary-color, #a78bfa) 12%, transparent),
+    transparent
+  );
+  background-size: 200% 100%;
+  background-repeat: no-repeat;
+  animation: md-img-sweep 1.4s ease-in-out infinite;
+}
+
+@keyframes md-img-sweep {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}
+
+.markdown-body img.img-skel-ready {
+  animation: md-img-reveal 0.6s ease-out both;
+}
+
+@keyframes md-img-reveal {
+  from {
+    opacity: 0.25;
+    filter: blur(8px);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .markdown-body img.img-skel-pending {
+    animation: none;
+  }
+  .markdown-body img.img-skel-ready {
+    animation: none;
+  }
+}

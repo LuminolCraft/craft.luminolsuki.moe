@@ -66,6 +66,13 @@ export class NewsManager {
    */
   private readonly NEWS_API_URL = `${API_BASE_URL}/api/v1/news`;
   private readonly NEWS_ITEM_URL = (id: number): string => `${API_BASE_URL}/api/v1/news/${id}`;
+  /** 阅读次数批量读取（`GET /api/v1/news/read-counts`）。 */
+  private readonly NEWS_READ_COUNTS_URL = `${API_BASE_URL}/api/v1/news/read-counts`;
+  /** 阅读计数上报（`POST /api/v1/news/:id/read`，同访客同日服务端去重）。 */
+  private readonly NEWS_READ_URL = (id: number): string => `${API_BASE_URL}/api/v1/news/${id}/read`;
+
+  /** 阅读次数内存缓存（NewsManager 实例生命周期内复用，避免列表翻页重复拉取）。 */
+  private readCounts: Record<number, number> | null = null;
 
   /** 本地记录的远端 manifest 指纹（`meta.newsVersion`）；null = 尚未同步过。 */
   private manifestVersion: string | null = null;
@@ -927,6 +934,70 @@ export class NewsManager {
   /** 详情页：按 id 取一条（可能还没有 markdownContent）。 */
   getNewsById(id: number): NewsItem | undefined {
     return this.allNewsWithContent.find((item) => item.id === id);
+  }
+
+  /**
+   * 批量读取阅读次数（新闻卡片 meta 展示）。
+   *
+   * 实例内缓存：首次拉取后翻页 / 重新筛选不再打接口；`force` 用于
+   * 后台同步落地后刷新。失败返回空对象（卡片不显示次数，不影响列表），
+   * 不写缓存、下次再试。
+   */
+  async fetchReadCounts(force = false): Promise<Record<number, number>> {
+    if (this.readCounts && !force) return this.readCounts;
+
+    try {
+      const response = await this.safeFetch(this.NEWS_READ_COUNTS_URL, {
+        cache: 'no-cache',
+        headers: { Accept: 'application/json' },
+      });
+      if (!response.ok) {
+        throw new Error(`read-counts ${response.status} ${response.statusText}`);
+      }
+      const payload = (await response.json()) as {
+        data?: { counts?: Record<string, number> };
+      };
+      const counts: Record<number, number> = {};
+      for (const [rawId, count] of Object.entries(payload?.data?.counts ?? {})) {
+        const id = Number(rawId);
+        if (Number.isSafeInteger(id) && id > 0 && typeof count === 'number') {
+          counts[id] = count;
+        }
+      }
+      this.readCounts = counts;
+      return counts;
+    } catch (error) {
+      this.debugLog('⚠️ 阅读次数拉取失败（卡片不显示次数）:', error);
+      return {};
+    }
+  }
+
+  /**
+   * 详情页上报一次阅读，返回服务端最新计数；失败返回 null（详情页不显示次数）。
+   *
+   * 去重与防刷在服务端（同访客同日 KV 去重 + per-IP 限流），前端不做本地
+   * 去重——刷新页面交给服务端判定。成功后顺手更新实例缓存，列表回退时
+   * 卡片数字与详情页一致。
+   */
+  async recordRead(id: number): Promise<number | null> {
+    try {
+      const response = await this.safeFetch(this.NEWS_READ_URL(id), {
+        method: 'POST',
+        headers: { Accept: 'application/json' },
+      });
+      if (!response.ok) {
+        throw new Error(`read ${response.status} ${response.statusText}`);
+      }
+      const payload = (await response.json()) as { data?: { readCount?: number } };
+      const readCount = payload?.data?.readCount;
+      if (typeof readCount !== 'number') return null;
+      if (!this.readCounts) this.readCounts = {};
+      this.readCounts[id] = readCount;
+      return readCount;
+    } catch (error) {
+      this.debugLog(`⚠️ 新闻 ${id} 阅读上报失败:`, error);
+      return null;
+    }
   }
 
   /** 详情页：只恢复缓存，不挂监听、不启后台刷新。 */

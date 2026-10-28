@@ -11,6 +11,8 @@ export interface NewsItem {
     updatedAt?: string;
     contentVersion?: string;
     summary?: string;
+    /** 阅读次数（`GET /api/v1/news/read-counts` 下发；详情页上报后更新）。 */
+    readCount?: number;
   }
   
   export interface CacheStatus {
