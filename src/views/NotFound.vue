@@ -1,15 +1,55 @@
 <template>
     <Navbar />
-    <div class="container">
-        <svg class="bg-sketch" viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-            <path class="bg-path" d="M50,200 Q300,100 600,250 T1150,200" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.3" />
-            <path class="bg-path" d="M50,400 Q300,500 600,350 T1150,400" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.2" />
-            <path class="bg-path" d="M50,600 Q300,700 600,550 T1150,600" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.25" />
-        </svg>
+    <div class="not-found-page">
+        <!-- 背景：Vue Bits「Dither」像素抖动（OGL shader），与 Minecraft 像素美学契合。
+             主题紫低对比绘制，pointer-events 关闭、读屏不可见。 -->
+        <div class="bg-dither" aria-hidden="true">
+            <Dither
+                :color="tokens.isDark ? tokens.primary : tokens.primaryDeep"
+                :bg-color="tokens.canvas"
+                :enable-mouse-interaction="false"
+                :pixel-size="3"
+                :fade="tokens.isDark ? 0.28 : 0.3"
+                :color-num="tokens.isDark ? 4 : 24"
+                :bias="tokens.isDark ? 0.2 : 0"
+            />
+        </div>
         <div class="not-found-content">
-            <h1 class="error-code">404</h1>
+            <!-- 404 大字：ParticleText 粒子聚集 + 鼠标推斥。
+                 canvas 对读屏不可见，组件模板自带 sr-only 文本兜底。 -->
+            <div class="error-code">
+                <ParticleText
+                    text="404"
+                    :font-size="'clamp(5rem, 12vw, 8rem)'"
+                    :font-weight="700"
+                    :particle-size="3"
+                    :density="3"
+                    glow
+                    trigger="mount"
+                    :color="tokens.isDark ? tokens.primary : tokens.primaryDeep"
+                    highlight-color="#c4b5fd"
+                />
+            </div>
             <p class="error-description">{{ t('404.description') }}</p>
-            <a href="/" class="btn-back-home vercel-btn vercel-btn-primary">{{ t('404.backhome') }}</a>
+            <div class="error-actions">
+                <a href="/" class="btn-back-home vercel-btn vercel-btn-primary">{{ t('404.backhome') }}</a>
+            </div>
+            <!-- 逃跑按钮：躲满 patience 次后 relent 停下，抓到显示彩蛋文案 -->
+            <div class="dodge-area">
+                <DodgeField
+                    :taunts="TAUNTS"
+                    :ink-color="tokens.primary"
+                    contrast-color="#18181b"
+                    :patience="4"
+                    :field-height="150"
+                >
+                    <template #default="{ caught, gave }">
+                        <button type="button" class="btn-reward" :class="{ 'btn-reward--caught': caught }">
+                            {{ caught ? '什么都没有😛' : gave ? '好吧…' : '领取神秘奖励' }}
+                        </button>
+                    </template>
+                </DodgeField>
+            </div>
         </div>
     </div>
     <Footer />
@@ -17,26 +57,22 @@
 
 
 <style scoped>
-.container {
+/* 注意：不能用全局已有的 .container 类名（responsive.css 里是 max-width:1200px
+   的版心容器），否则背景画布不满屏 */
+.not-found-page {
     position: relative;
     min-height: 100vh;
     display: flex;
     align-items: center;
     justify-content: center;
+    overflow: hidden;
 }
 
-.bg-sketch {
+.bg-dither {
     position: absolute;
     inset: 0;
-    width: 100%;
-    height: 100%;
-    color: var(--primary-color, #9e94d8);
-    pointer-events: none;
     z-index: 0;
-}
-
-.bg-path {
-    will-change: transform, opacity;
+    pointer-events: none;
 }
 
 .not-found-content {
@@ -46,23 +82,26 @@
     padding: var(--space-10) var(--space-5);
 }
 
+/* 粒子字容器：canvas 需要固定高度（对应 clamp 最大 8rem 的字号再加采样余量），
+   否则测量为 0 高、粒子不渲染 */
 .error-code {
-    font-size: clamp(5rem, 12vw, 8rem);
-    font-weight: 600;
-    line-height: 1.00;
-    letter-spacing: -2.0px;
-    color: var(--primary-color);
+    height: clamp(6.5rem, 14vw, 9.5rem);
     margin: 0 0 var(--space-6) 0;
-    will-change: transform, opacity;
 }
 
 .error-description {
     font-size: var(--font-size-body-large);
     font-weight: 400;
     line-height: 1.80;
-    color: var(--text-secondary);
+    /* 往正文色靠 18%：纯 secondary 灰压在抖动纹理上偏虚 */
+    color: color-mix(in srgb, var(--text-color) 82%, var(--text-secondary));
     margin: 0 0 var(--space-10) 0;
     will-change: transform, opacity;
+}
+
+.error-actions {
+    display: flex;
+    justify-content: center;
 }
 
 .btn-back-home:hover::before {
@@ -113,14 +152,55 @@
     box-shadow: var(--shadow-border);
 }
 
+/* 逃跑按钮的自定义按钮样式（DodgeField 自定义插槽，样式由调用方负责）。
+   ink 为主题紫；caught 态由 DodgeField 的 caught slot prop 驱动 */
+.dodge-area {
+    width: min(360px, 100%);
+    margin: var(--space-6) auto 0;
+}
+
+.btn-reward {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    padding: 10px 24px;
+    border: 1px solid color-mix(in srgb, var(--df-ink, var(--primary-color)) 50%, transparent);
+    border-radius: 9999px;
+    /* 实底混色（而非半透明），保证在抖动纹理背景上仍可读 */
+    background: color-mix(in srgb, var(--df-ink, var(--primary-color)) 14%, var(--background-color, #fff));
+    color: var(--text-color);
+    font-family: inherit;
+    font-size: 0.95rem;
+    font-weight: 500;
+    line-height: 1.4;
+    cursor: pointer;
+    user-select: none;
+    touch-action: manipulation;
+    transition:
+        background-color 220ms ease,
+        color 220ms ease,
+        border-color 220ms ease;
+}
+
+.btn-reward--caught {
+    background: var(--df-ink, var(--primary-color));
+    border-color: var(--df-ink, var(--primary-color));
+    color: #18181b;
+}
+
+.btn-reward:focus-visible {
+    outline: 2px solid var(--focus-ring-color);
+    outline-offset: 2px;
+}
+
 @media (max-width: 768px) {
     .not-found-content {
         padding: var(--space-8) var(--space-4);
     }
 
     .error-code {
-        font-size: clamp(4rem, 15vw, 6rem);
-        letter-spacing: -1.28px;
+        height: clamp(5.5rem, 16vw, 7rem);
     }
 
     .error-description {
@@ -137,66 +217,43 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { SplitText } from 'gsap/SplitText'
 import { useGsap } from '@/composables/useGsap'
-import { EASINGS, DURATIONS, STAGGERS } from '@/gsap'
+import { DURATIONS } from '@/gsap'
+import Dither from '@/components/bits/Dither.vue'
+import ParticleText from '@/components/bits/ParticleText.vue'
+import DodgeField from '@/components/bits/DodgeField.vue'
+import { useBitsTokens } from '@/bits/bits-tokens'
 import Navbar from '../components/Navbar.vue'
 
 const { t } = useI18n()
 const { create } = useGsap()
+const tokens = useBitsTokens()
+
+// 逃跑按钮的中文 taunts：自定义插槽下由 slot 模板消费（caught / gave 态文案）
+const TAUNTS = ['领取神秘奖励', '再试试', '快抓住了', '差一点点', '好吧…']
 
 onMounted(() => {
   create((g) => {
-    g.set('.error-code, .error-description, .btn-back-home', { autoAlpha: 0 })
+    g.set('.error-description, .btn-back-home', { autoAlpha: 0 })
 
     const mm = g.matchMedia()
 
     // reduceMotion: simple fade-in only
     mm.add('(prefers-reduced-motion: reduce)', () => {
-      g.set('.error-code, .error-description, .btn-back-home', { autoAlpha: 1 })
-      g.set('.bg-path', { drawSVG: '100%' })
+      g.set('.error-description, .btn-back-home', { autoAlpha: 1 })
     })
 
-    // normal animation
+    // normal animation（404 大字由 ParticleText 自带的 mount 聚集动画负责）
     mm.add('(prefers-reduced-motion: no-preference)', () => {
-      // Background SVG draw — pen-sketch effect
-      g.from('.bg-path', {
-        drawSVG: '0%',
-        duration: 2.4,
-        ease: 'power2.inOut',
-        stagger: 0.2,
-      })
-
-      // Split "404" into chars with rotation stagger
-      const split = new SplitText('.error-code', { type: 'chars' })
-      // Reveal the parent (hidden for FOUC) so the chars are visible while animating in
-      g.set('.error-code', { autoAlpha: 1 })
-      const tl = g.timeline({ defaults: { ease: EASINGS.bounce } })
-      tl.from(split.chars, {
-        autoAlpha: 0,
-        y: -80,
-        rotation: () => g.utils.random(-12, 12),
-        scale: 0.3,
-        stagger: { each: 0.12, from: 'center' },
-        duration: DURATIONS.slow,
-      })
-      tl.fromTo('.error-description',
-        { autoAlpha: 0, y: 20 },
-        { autoAlpha: 1, y: 0, duration: DURATIONS.entrance },
-      '-=0.3')
-      tl.fromTo('.btn-back-home',
-        { autoAlpha: 0, y: 20 },
-        { autoAlpha: 1, y: 0, duration: DURATIONS.entrance },
-      '-=0.2')
-
-      // Continuous float on error-code (yoyo)
-      g.to('.error-code', {
-        y: -16,
-        duration: 2.4,
-        ease: 'sine.inOut',
-        repeat: -1,
-        yoyo: true,
-      })
+      g.timeline()
+        .fromTo('.error-description',
+          { autoAlpha: 0, y: 20 },
+          { autoAlpha: 1, y: 0, duration: DURATIONS.entrance },
+        )
+        .fromTo('.btn-back-home',
+          { autoAlpha: 0, y: 20 },
+          { autoAlpha: 1, y: 0, duration: DURATIONS.entrance },
+        '-=0.2')
     })
   })
 })
