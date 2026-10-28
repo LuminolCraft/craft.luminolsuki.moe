@@ -73,10 +73,20 @@
         @click="onClick"
       >
         <span class="sling-btn__face">
-          <span ref="iconRef" class="sling-btn__icon">
-            <slot>
-              <HugeiconsIcon :icon="ArrowUp02Icon as IconArray" :size="Math.round(size * 0.4)" :stroke-width="2.2" />
-            </slot>
+          <span
+            ref="iconRef"
+            class="sling-btn__icon"
+            :data-launch="heldLabel && held ? '' : undefined"
+          >
+            <span class="sling-btn__idle">
+              <slot>
+                <HugeiconsIcon :icon="ArrowUp02Icon as IconArray" :size="Math.round(size * 0.4)" :stroke-width="2.2" />
+              </slot>
+            </span>
+            <span v-if="heldLabel" class="sling-btn__launch" aria-hidden="true">
+              <HugeiconsIcon :icon="ArrowUp02Icon as IconArray" :size="18" :stroke-width="2.4" />
+              <span>{{ heldLabel }}</span>
+            </span>
           </span>
         </span>
       </button>
@@ -113,6 +123,8 @@ interface SlingButtonProps {
   spread?: number
   axis?: SlingAxis
   tapSends?: boolean
+  /** 拖拽中按钮内容切换为「箭头 + 该文字」（空串 = 不启用切换） */
+  heldLabel?: string
   disabled?: boolean
   ariaLabel?: string
   className?: string
@@ -166,6 +178,7 @@ const props = withDefaults(defineProps<SlingButtonProps>(), {
   spread: 60,
   axis: 'any',
   tapSends: true,
+  heldLabel: '',
   disabled: false,
   ariaLabel: 'Send',
   className: '',
@@ -692,7 +705,42 @@ const rootStyle = computed(
 
 .sling-btn__icon {
   display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
   will-change: transform;
+}
+
+/* 拖拽中切换为「箭头 + 发射！」：idle 层缩小淡出，launch 层放大淡入 */
+.sling-btn__idle {
+  display: inline-flex;
+  align-items: center;
+  transition: opacity 160ms cubic-bezier(0.23, 1, 0.32, 1), transform 160ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.sling-btn__launch {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  position: absolute;
+  inset: 0;
+  justify-content: center;
+  white-space: nowrap;
+  opacity: 0;
+  transform: scale(0.6);
+  transition: opacity 160ms cubic-bezier(0.23, 1, 0.32, 1), transform 160ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.sling-btn__icon[data-launch] .sling-btn__idle {
+  opacity: 0;
+  transform: scale(0.6);
+  pointer-events: none;
+}
+
+.sling-btn__icon[data-launch] .sling-btn__launch {
+  display: inline-flex;
+  opacity: 1;
+  transform: scale(1);
 }
 
 .sr-only {

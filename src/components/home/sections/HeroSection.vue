@@ -200,6 +200,7 @@ onUnmounted(() => {
               icon-color="#ffffff"
               accent-color="#e9dcff"
               band-color="rgba(0,0,0,0.22)"
+              held-label="发射！"
               @send="openQqGroup"
             >
               加入交流群
