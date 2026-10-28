@@ -183,21 +183,22 @@ const RIGHT_GLOW = tokens.isDark ? '260 60 65' : '255 92 76'
         />
 
         <!-- 文字介绍是这部分的重点：图片只是占位氛围 -->
-        <div class="compare__worlds-notes">
+         
+        <!-- <div class="compare__worlds-notes">
           <div v-for="note in WORLD_NOTES" :key="note.name" class="compare__worlds-note">
             <h4 class="compare__worlds-name">{{ note.name }}</h4>
             <p class="compare__worlds-desc">{{ note.desc }}</p>
             <p class="compare__worlds-meta">
               <span class="compare__worlds-level">推荐等级：{{ note.level }}</span>
-              <!-- <span
+              <span
                 class="compare__worlds-access"
                 :class="note.access === 'tp' ? 'is-tp' : 'is-indirect'"
               >
                 {{ note.access === 'tp' ? '» 点击传送 «' : '» 无法直接前往 «' }}
-              </span> -->
+              </span>
             </p>
           </div>
-        </div>
+        </div> -->
       </div>
     </div>
   </section>
