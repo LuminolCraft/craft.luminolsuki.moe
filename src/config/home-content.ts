@@ -44,7 +44,7 @@ export function shotAt(n: number): string {
   return SHOTS[((n % total) + total) % total] as string
 }
 
-export interface DemoStage {
+export interface ShowcaseStage {
   index: string
   eyebrow: string
   title: string
@@ -53,7 +53,7 @@ export interface DemoStage {
 }
 
 /** 滚动演示区的四段文案与配图 */
-export const demoStages: DemoStage[] = [
+export const showcaseStages: ShowcaseStage[] = [
   {
     index: '01',
     eyebrow: '纯净生存',

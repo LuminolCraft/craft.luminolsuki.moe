@@ -13,11 +13,13 @@ import { onMounted, ref } from 'vue'
 import { useHomeReveal } from '@/composables/useHomeAnimations'
 import HeroSection from '@/components/home/sections/HeroSection.vue'
 import StatusSection from '@/components/home/sections/StatusSection.vue'
-import DemoSection from '@/components/home/sections/DemoSection.vue'
+import ShowcaseSection from '@/components/home/sections/ShowcaseSection.vue'
 import GallerySection from '@/components/home/sections/GallerySection.vue'
 import CompareSection from '@/components/home/sections/CompareSection.vue'
 import TeamSection from '@/components/home/sections/TeamSection.vue'
 import CtaSection from '@/components/home/sections/CtaSection.vue'
+import ScrollExpand from '@/components/bits/ScrollExpand.vue'
+import { shotAt } from '@/config/home-content'
 
 const pageEl = ref<HTMLElement | null>(null)
 
@@ -33,10 +35,27 @@ onMounted(() => {
   <div ref="pageEl" class="home-page">
     <HeroSection />
     <StatusSection />
-    <DemoSection />
+    <ShowcaseSection />
     <GallerySection />
     <CompareSection />
     <TeamSection />
+    <section class="world-expand" aria-label="我们的世界">
+      <ScrollExpand
+        :src="shotAt(3)"
+        alt="LuminolCraft 服务器世界全景"
+        title="我们的世界"
+        scroll-hint="继续滚动"
+        :start-width="46"
+        :start-height="56"
+        :media-zoom="1.3"
+        :scroll-distance="1.1"
+        :hold-distance="0.3"
+        :overlay-scrim="0.5"
+        use-window-scroll
+      >
+        <p class="world-expand__line">这个世界，由每一位玩家共同建造。</p>
+      </ScrollExpand>
+    </section>
     <CtaSection />
   </div>
 </template>
