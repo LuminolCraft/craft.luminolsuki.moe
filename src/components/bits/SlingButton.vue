@@ -613,6 +613,9 @@ const rootStyle = computed(
 }
 
 .sling-btn.is-pill .sling-btn__padwrap {
+  /* display: block 必须显式：padwrap 是 span，relative 不会像 absolute 那样
+     隐式块化，纯 inline 元素上 transform 不渲染（拖拽时按钮纹丝不动） */
+  display: block;
   position: relative;
   inset: auto;
   height: var(--sl-size);
