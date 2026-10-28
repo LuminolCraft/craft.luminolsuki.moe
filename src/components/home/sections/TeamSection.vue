@@ -3,15 +3,22 @@
 
   名单来自 config/team-members.ts（全站共用一份），角色名走 i18n 的 home.team.roles.*，
   组件里不再硬编码任何成员或角色文案。
+
+  头像用 Vue Bits「PixelTransition」：hover / 焦点进入时像素溶解到「更清透」的一版。
+  低端 → 4×4 网格；reduced-motion / 粗指针 → 不渲染网格（头像普通显示）。
 -->
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import MagneticCornerFrame from '@/components/common/MagneticCornerFrame.vue'
+import PixelTransition from '@/components/bits/PixelTransition.vue'
+import { useFxMode, useFxQuality } from '@/bits/bits-motion'
 import { useGsap } from '@/composables/useGsap'
 import { contributors } from '@/config/team-members'
+import { DURATIONS } from '@/gsap/config/durations'
+import { EASINGS } from '@/gsap/config/easings'
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -21,6 +28,12 @@ const rootRef = ref<HTMLElement | null>(null)
 const listEl = ref<HTMLElement | null>(null)
 
 const { create } = useGsap({ scope: rootRef })
+
+/** 粗指针 / reduced-motion 下不挂像素网格（pointer 档位 off 即两者都命中） */
+const pixelMode = useFxMode('pointer')
+const pixelEnabled = computed(() => pixelMode.value === 'live')
+const quality = useFxQuality()
+const gridSize = computed(() => (quality.value === 'low' ? 4 : 6))
 
 function roleLabel(roleKey: string): string {
   return t(`home.team.roles.${roleKey}`)
@@ -32,8 +45,8 @@ onMounted(() => {
     gsap.from(listEl.value, {
       y: 24,
       autoAlpha: 0,
-      duration: 0.6,
-      ease: 'power3.out',
+      duration: DURATIONS.entrance,
+      ease: EASINGS.entrance,
       scrollTrigger: { trigger: listEl.value, start: 'top 80%', once: true },
     })
   })
@@ -62,14 +75,40 @@ onMounted(() => {
             <div class="team-row__inner">
               <span class="team-row__idx">{{ String(i + 1).padStart(2, '0') }}</span>
 
-              <img
+              <PixelTransition
                 class="team-row__avatar"
-                :src="member.avatar"
-                :alt="member.name"
-                width="56"
-                height="56"
-                loading="lazy"
-              />
+                :grid-size="gridSize"
+                :enabled="pixelEnabled"
+                :border-radius="999"
+                pixel-color="var(--card-bg)"
+                :fill-span="0.28"
+                :clear-span="0.22"
+                :pixel-duration="0.06"
+              >
+                <template #first>
+                  <img
+                    :src="member.avatar"
+                    alt=""
+                    width="56"
+                    height="56"
+                    loading="eager"
+                    decoding="sync"
+                  />
+                </template>
+                <template #second>
+                  <!-- 第二层是同一张头像的「更清透」版（饱和 + 亮度微调）：
+                       溶解必须有一帧可见变化，否则像素块掠过什么都看不出来 -->
+                  <img
+                    class="team-row__avatar-alt"
+                    :src="member.avatar"
+                    alt=""
+                    width="56"
+                    height="56"
+                    loading="eager"
+                    decoding="sync"
+                  />
+                </template>
+              </PixelTransition>
 
               <div class="team-row__id">
                 <div class="team-row__name-row">
