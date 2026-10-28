@@ -47,25 +47,7 @@
           >
             新对话
           </button>
-          <button
-            type="button"
-            class="ai-icon-btn"
-            aria-label="在整页打开"
-            title="在整页打开"
-            @click="openFullPage"
-          >
-            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-              <path
-                d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.8"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-            </svg>
-          </button>
-          <button type="button" class="ai-icon-btn" aria-label="关闭" @click="close">
+                                <button type="button" class="ai-icon-btn" aria-label="关闭" @click="close">
             <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
               <path
                 d="M6 6l12 12M18 6L6 18"
@@ -115,10 +97,18 @@
             </div>
 
             <div v-if="sending" class="ai-msg ai-msg--bot">
+              <!-- ThoughtLine：首 token 到达前 working，之后 settle 成「已思考」，回答铺在其下方 -->
+              <ThoughtLine
+                :working="!streaming"
+                label="思考中…"
+                done-label=""
+                :show-timer="false"
+                glyph="sparkle"
+                :font-size="14"
+                collapsible
+                collapse-on-settle
+              />
               <AiMessageContent v-if="streaming" :content="streaming" />
-              <div v-else class="ai-typing" aria-label="正在思考">
-                <span></span><span></span><span></span>
-              </div>
             </div>
 
             <div v-if="error" class="ai-error">
@@ -184,15 +174,15 @@
 
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref, watch, type ComponentPublicInstance } from 'vue'
-import { RouterLink, useRouter } from 'vue-router'
+import { RouterLink } from 'vue-router'
 import gsap from 'gsap'
 import AiMessageContent from './AiMessageContent.vue'
+import ThoughtLine from '@/components/bits/ThoughtLine.vue'
 import { useAiChat } from '@/composables/useAiChat'
 import { useAuthStore } from '@/stores/auth'
 import { EASINGS } from '@/gsap/config/easings'
 
 const auth = useAuthStore()
-const router = useRouter()
 
 /** 头像：圆形裁切 + 透明底的 AVIF（96px，3.5KB），深浅主题都不出现白角 */
 const AVATAR = '/images/luminol-avatar-96.avif'
@@ -305,12 +295,6 @@ function quickAsk(text: string): void {
 function close(): void {
   open.value = false
   abort()
-}
-
-/** 整页对话：弹窗收起（正在收的流会中断），整页那边是独立的一段对话 */
-function openFullPage(): void {
-  close()
-  void router.push('/Luminol')
 }
 
 onMounted(() => {
@@ -547,42 +531,6 @@ function submit(): void {
 /* 助手消息不套气泡：文字直接铺在背景上，读起来更像对话而不是聊天气泡墙 */
 .ai-msg--bot :deep(.ai-content) {
   max-width: 100%;
-}
-
-/* 三点加载：比闪烁光标更像「在思考」，也不会让人以为卡住 */
-.ai-typing {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  height: 22px;
-}
-
-.ai-typing span {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--text-secondary);
-  animation: ai-bounce 1.4s infinite ease-in-out both;
-}
-
-.ai-typing span:nth-child(1) {
-  animation-delay: -0.32s;
-}
-.ai-typing span:nth-child(2) {
-  animation-delay: -0.16s;
-}
-
-@keyframes ai-bounce {
-  0%,
-  80%,
-  100% {
-    opacity: 0.3;
-    transform: translateY(0);
-  }
-  40% {
-    opacity: 1;
-    transform: translateY(-3px);
-  }
 }
 
 /* ---------- 空状态 ---------- */
