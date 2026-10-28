@@ -89,8 +89,8 @@
 import { ArrowUp02Icon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/vue'
 import type { IconArray } from '@hugeicons/vue'
-import { animate, motionValue, useReducedMotion } from 'motion-v'
-import type { AnimationPlaybackControls } from 'motion-v'
+import { motionValue, useReducedMotion } from 'motion-v'
+import { gsap } from 'gsap'
 import { computed, onMounted, onUnmounted, ref, useId, watch } from 'vue'
 import type { CSSProperties } from 'vue'
 
@@ -199,8 +199,7 @@ const dotEls: (HTMLSpanElement | null)[] = []
 let power = 0
 let grip: Grip | null = null
 let dir = { ux: 0, uy: -1 }
-let animX: AnimationPlaybackControls | null = null
-let animY: AnimationPlaybackControls | null = null
+let settleTween: gsap.core.Tween | null = null
 let armedNow = false
 let dotPending = false
 let dotTimer: ReturnType<typeof setTimeout> | undefined
@@ -322,8 +321,7 @@ onMounted(() => {
 watch(
   () => [props.size, props.strokeWidth, props.armAt, props.maxPull, props.axis],
   () => {
-    animX?.stop()
-    animY?.stop()
+    stopSettle()
     px.jump(0)
     py.jump(0)
     movePad()
@@ -332,6 +330,12 @@ watch(
   { flush: 'post' }
 )
 
+/**
+ * 松手回弹：gsap elastic 弹回原位（拖得越远回弹越猛，观感即"弹射"）。
+ * 不用 motion-v 的 animate(MotionValue, spring) —— 实测 2.8.0 该路径
+ * 不驱动 MotionValue（600ms 后数值纹丝不动），弹弓会卡在拖拽位置不回弹。
+ * MotionValue 经代理对象交给 gsap 驱动，onUpdate 写回 px/py。
+ */
 const settle = (v0: { x: number; y: number }) => {
   if (reduce.value) {
     const fx = fxRef.value
@@ -346,8 +350,29 @@ const settle = (v0: { x: number; y: number }) => {
     }, 200)
     return
   }
-  animX = animate(px, 0, { type: 'spring', duration: 0.4, bounce: props.recoil, velocity: v0.x })
-  animY = animate(py, 0, { type: 'spring', duration: 0.4, bounce: props.recoil, velocity: v0.y })
+  stopSettle()
+  const proxy = { x: px.get(), y: py.get() }
+  const fling = Math.min(Math.hypot(v0.x, v0.y) / 4000, 1)
+  settleTween = gsap.to(proxy, {
+    x: 0,
+    y: 0,
+    duration: 0.55 + 0.25 * fling,
+    ease: 'elastic.out(1, 0.42)',
+    onUpdate: () => {
+      px.set(proxy.x)
+      py.set(proxy.y)
+    },
+    onComplete: () => {
+      px.set(0)
+      py.set(0)
+      settleTween = null
+    },
+  })
+}
+
+const stopSettle = () => {
+  settleTween?.kill()
+  settleTween = null
 }
 
 const onPointerDown = (e: PointerEvent) => {
@@ -356,8 +381,7 @@ const onPointerDown = (e: PointerEvent) => {
   if (!el) return
   const rect = el.getBoundingClientRect()
   const scale = rect.width / (el.offsetWidth || rect.width) || 1
-  animX?.stop()
-  animY?.stop()
+  stopSettle()
   const x = px.get()
   const y = py.get()
   const dNow = Math.hypot(x, y)
@@ -484,8 +508,7 @@ const onClick = () => {
 }
 
 onUnmounted(() => {
-  animX?.stop()
-  animY?.stop()
+  stopSettle()
   clearTimeout(dotTimer)
   clearTimeout(sentTimer)
   clearTimeout(settleTimer)
