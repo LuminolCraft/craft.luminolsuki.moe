@@ -1,9 +1,16 @@
 import { type Ref } from 'vue';
 import { useGsap } from '@/composables/useGsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { SplitText } from 'gsap/SplitText';
-import { EASINGS, DURATIONS, STAGGERS } from '@/gsap';
+import { EASINGS } from '@/gsap';
 
+/**
+ * 新闻详情页入场动画。
+ *
+ * 历史：标题曾用 SplitText 拆字 + `from: 'center'` 逐字弹入（每字 1s），
+ * 正文逐段落 stagger 浮现——用户实测「阅读兴趣掉一大半」，整体推翻：
+ * 详情页是**阅读场景**，动画只做一次轻快的整块入场，正文内容不做入场
+ * （读到哪里哪里才浮现是阅读杀手）。图片画廊保留批量入场，时长收紧。
+ */
 export function useArticleAnimations(containerRef: Ref<HTMLElement | null>) {
   const { create, reduceMotion } = useGsap({ scope: containerRef });
 
@@ -14,61 +21,44 @@ export function useArticleAnimations(containerRef: Ref<HTMLElement | null>) {
       const mm = gsap.matchMedia();
       mm.add('(prefers-reduced-motion: reduce)', () => {
         gsap.set(
-          '#news-detail .article-title, .article-meta, .article-cover, #news-detail .article-content > *, .gallery-item',
-          { autoAlpha: 1, y: 0, yPercent: 0, rotateZ: 0, scale: 1 },
+          '#news-detail .article-title, .article-meta, .article-cover, .gallery-item',
+          { autoAlpha: 1, y: 0, scale: 1 },
         );
       });
       mm.add('(prefers-reduced-motion: no-preference)', () => {
-        const titleSplit = new SplitText('#news-detail .article-title', {
-          type: 'chars,words',
-        });
-        gsap.from(titleSplit.chars, {
-          yPercent: 120,
+        // 标题整块一次到位：不拆字、不加 stagger
+        gsap.from('#news-detail .article-title', {
           autoAlpha: 0,
-          rotateZ: 6,
-          stagger: STAGGERS.parallaxChars,
-          duration: DURATIONS.slow,
-          ease: EASINGS.heroReveal,
+          y: 14,
+          duration: 0.35,
+          ease: EASINGS.entrance,
           scrollTrigger: {
             trigger: '#news-detail .article-title',
-            start: 'top 85%',
+            start: 'top 90%',
             once: true,
           },
         });
         gsap.from('.article-meta, .article-cover', {
           autoAlpha: 0,
-          y: 20,
-          stagger: 0.1,
-          duration: DURATIONS.entrance,
+          y: 12,
+          stagger: 0.05,
+          duration: 0.35,
           ease: EASINGS.entrance,
           scrollTrigger: {
             trigger: '#news-detail',
-            start: 'top 75%',
-            once: true,
-          },
-        });
-        gsap.from('#news-detail .article-content > *', {
-          autoAlpha: 0,
-          y: 30,
-          stagger: STAGGERS.list,
-          duration: DURATIONS.entrance,
-          ease: EASINGS.entrance,
-          scrollTrigger: {
-            trigger: '.article-content',
-            start: 'top 80%',
+            start: 'top 88%',
             once: true,
           },
         });
         ScrollTrigger.batch('.gallery-item', {
-          start: 'top 85%',
+          start: 'top 88%',
           batchMax: 6,
           onEnter: (batch) =>
             gsap.from(batch, {
               autoAlpha: 0,
-              y: 40,
-              scale: 0.9,
-              stagger: 0.08,
-              duration: DURATIONS.entrance,
+              y: 24,
+              stagger: 0.05,
+              duration: 0.35,
               ease: EASINGS.entrance,
               overwrite: true,
             }),
