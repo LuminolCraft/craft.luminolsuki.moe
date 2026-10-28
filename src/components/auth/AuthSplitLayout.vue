@@ -178,7 +178,8 @@ onUnmounted(() => {
 .art-blob {
   position: absolute;
   border-radius: 50%;
-  filter: blur(72px);
+  /* 柔边烘进渐变（不再用 filter: blur）：72px 大半径 blur 叠加 GSAP 无限缩放
+     会迫使 GPU 每帧重光栅化三张 ~46vmax 纹理，是认证页掉帧的主因 */
   will-change: transform;
 }
 .art-blob-a {
@@ -186,7 +187,7 @@ onUnmounted(() => {
   height: 46vmax;
   top: -18%;
   left: -14%;
-  background: radial-gradient(circle at 35% 35%, color-mix(in srgb, var(--primary-color) 46%, transparent), transparent 66%);
+  background: radial-gradient(circle at 35% 35%, color-mix(in srgb, var(--primary-color) 46%, transparent) 2%, transparent 76%);
   opacity: 0.55;
 }
 .art-blob-b {
@@ -194,7 +195,7 @@ onUnmounted(() => {
   height: 40vmax;
   bottom: -22%;
   right: -16%;
-  background: radial-gradient(circle at 60% 40%, color-mix(in srgb, #818cf8 34%, transparent), transparent 62%);
+  background: radial-gradient(circle at 60% 40%, color-mix(in srgb, #818cf8 34%, transparent) 2%, transparent 72%);
   opacity: 0.5;
 }
 .art-blob-c {
@@ -202,7 +203,7 @@ onUnmounted(() => {
   height: 30vmax;
   top: 34%;
   left: 38%;
-  background: radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--accent-color, #f59e0b) 22%, transparent), transparent 64%);
+  background: radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--accent-color, #f59e0b) 22%, transparent) 2%, transparent 74%);
   opacity: 0.32;
 }
 
