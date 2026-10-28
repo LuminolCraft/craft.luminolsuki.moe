@@ -25,6 +25,12 @@
             </svg>
             {{ formattedDate }}
           </span>
+          <span v-if="readCount !== undefined" class="meta-reads">
+            <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+              <path fill="currentColor" d="M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9M12,17A5,5 0 0,1 7,12A5,5 0 0,1 12,7A5,5 0 0,1 17,12A5,5 0 0,1 12,17M12,2C17,2 21.78,5.61 23.36,10.27C23.5,10.72 23.5,11.28 23.36,11.73C21.78,16.39 17,20 12,20C7,20 2.22,16.39 0.64,11.73C0.5,11.28 0.5,10.72 0.64,10.27C2.22,5.61 7,2 12,2Z" />
+            </svg>
+            {{ readCount.toLocaleString('zh-CN') }}
+          </span>
         </div>
   
         <p class="news-item-desc">{{ excerpt }}</p>
@@ -67,6 +73,8 @@
     item: NewsItem;
     maxCardTags?: number;
     layout?: 'list' | 'grid';
+    /** 阅读次数表（key = 新闻 id）；条目缺失时该卡片不显示次数。 */
+    readCounts?: Record<number, number>;
   }>();
   
   const emit = defineEmits<{
@@ -75,6 +83,7 @@
   }>();
   
   const maxCardTags = computed(() => props.maxCardTags ?? 3);
+  const readCount = computed(() => props.readCounts?.[props.item.id]);
   const hasImage = computed(() => !!props.item.image && /\.(jpe?g|png|gif|webp|avif|bmp|svg|ico|heic|heif|apng|jfif)(?:$|[?#])/i.test(props.item.image));
   
   const formattedDate = computed(() =>
@@ -183,7 +192,8 @@
   }
   
   .pinned-badge,
-  .meta-date {
+  .meta-date,
+  .meta-reads {
     display: inline-flex;
     align-items: center;
     gap: 0.3rem;

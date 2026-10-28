@@ -32,14 +32,19 @@
       </template>
 
       <template v-else>
-        <NewsCard
-          v-for="item in paginatedNews"
+        <RevealCard
+          v-for="(item, index) in paginatedNews"
           :key="item.id"
-          :item="item"
-          :layout="layoutMode"
-          @click="goToDetail"
-          @tag-click="handleTagToggle"
-        />
+          :delay="Math.min(index, 8) * 0.06"
+        >
+          <NewsCard
+            :item="item"
+            :layout="layoutMode"
+            :read-counts="readCounts"
+            @click="goToDetail"
+            @tag-click="handleTagToggle"
+          />
+        </RevealCard>
         <div v-if="loadError" class="error-message">
           <h3>{{ t('news.list.error.title') }}</h3>
           <p>{{ t('news.list.error.description') }}</p>
@@ -68,6 +73,7 @@ import { useNewsFilter } from '@/composables/useNewsFilter';
 import { useNewsPagination } from '@/composables/useNewsPagination';
 import NewsSearch from '@/components/news/NewsSearch.vue';
 import NewsCard from '@/components/news/NewsCard.vue';
+import RevealCard from '@/components/common/RevealCard.vue';
 import NewsPagination from '@/components/news/NewsPagination.vue';
 import NewsSkeleton from '@/components/news/NewsSkeleton.vue';
 import LayoutToggle from '@/components/news/LayoutToggle.vue';
@@ -100,6 +106,12 @@ const coverPosition = ref<'left' | 'right'>('right');
 // ========== 数据层 ==========
 const { newsManager, isLoading, loadError, initialize, animateCards } = useNewsData();
 const newsSectionRef = ref<HTMLElement | null>(null);
+
+// ========== 阅读次数（卡片 meta 展示） ==========
+const readCounts = ref<Record<number, number>>({});
+const loadReadCounts = async (force = false) => {
+  readCounts.value = await newsManager.fetchReadCounts(force);
+};
 
 // ========== 筛选层 ==========
 const { searchQuery, selectedTags, uniqueTags, filterNews, toggleTag, parseTagsFromQuery } =
@@ -154,8 +166,13 @@ onMounted(async () => {
   const stopChangeListener = newsManager.onChange(() => {
     filterNews();
     refresh();
+    // 阅读次数独立于 manifest 同步：落地后强制刷新一次
+    void loadReadCounts(true);
   });
   onUnmounted(stopChangeListener);
+
+  // 阅读次数：失败静默（卡片不显示次数），不阻塞首屏
+  void loadReadCounts();
 
   await animateCards(newsSectionRef.value);
 });
