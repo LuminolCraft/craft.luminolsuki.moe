@@ -69,7 +69,7 @@ create((g) => {
   gap: 2.5rem;
   max-width: 66rem;
   margin: 0 auto;
-  padding: clamp(2rem, 6vh, 4rem) 1.5rem 4rem;
+  padding: clamp(3rem, 9vh, 6rem) 1.5rem 4rem;
   align-items: start;
   min-height: 60vh;
 }
