@@ -1,64 +1,53 @@
 <!--
   StatusSection —— 实时状态带
 
-  在线人数与运行状态来自 mcstatus.io（见 composables/useServerStatus.ts），
-  进入视口时做一次计数动画；数据晚到则等数据到了再补跑，不重播。
+  在线人数与运行状态来自 mcstatus.io（见 composables/useServerStatus.ts）。
+  在线人数用 Bits 的 CountUp 做计数（进入视口时播放，数值变化时按 key 重播）。
+
+  无障碍：外层**不能**带 aria-live —— CountUp 每帧改写 textContent，
+  读屏会把「1…2…3…」连播成噪音。改为一个独立的 sr-only 区域，
+  只在数值真正变化时播报一句完整的话。
 -->
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import MagneticCornerFrame from '@/components/common/MagneticCornerFrame.vue'
+import CountUp from '@/components/bits/CountUp.vue'
 import { useGsap } from '@/composables/useGsap'
 import { useServerStatus } from '@/composables/useServerStatus'
+import { DURATIONS } from '@/gsap/config/durations'
+import { EASINGS } from '@/gsap/config/easings'
 
 gsap.registerPlugin(ScrollTrigger)
 
 const rootRef = ref<HTMLElement | null>(null)
-const playerNumEl = ref<HTMLElement | null>(null)
 const fadeEls = ref<HTMLElement[]>([])
 
 const { online, playersOnline, playersMax, playersLabel, statusLabel, start: startPoll } =
   useServerStatus()
 
-const { create, reduceMotion } = useGsap({ scope: rootRef })
+/** 与 composable 内部的 hasPlayers 同口径：三个值都到齐才算有数 */
+const hasPlayers = computed(
+  () => playersOnline.value !== null && playersMax.value !== null && online.value,
+)
 
-let played = false
+/** 供读屏播报的一句话（只在数据变化时更新，不跟 CountUp 的帧） */
+const srStatus = ref('')
+watch(
+  [playersOnline, online],
+  ([current, isOnline]) => {
+    if (!isOnline) {
+      srStatus.value = '服务器当前离线'
+      return
+    }
+    srStatus.value =
+      typeof current === 'number' ? `当前在线 ${current} 人，服务器运行中` : '服务器运行中，在线人数暂不可用'
+  },
+  { immediate: true },
+)
 
-/** 计数动画：数据没到不动画，数据到了从 0 计到真实值，之后只写文案 */
-function runCounter(target: number, max: number): void {
-  if (!playerNumEl.value) return
-  if (reduceMotion()) {
-    playerNumEl.value.textContent = `${target}/${max}`
-    return
-  }
-  const counter = { v: 0 }
-  gsap.to(counter, {
-    v: target,
-    duration: 1.1,
-    ease: 'power2.out',
-    onUpdate: () => {
-      if (playerNumEl.value) playerNumEl.value.textContent = `${Math.round(counter.v)}/${max}`
-    },
-    onComplete: () => {
-      if (playerNumEl.value) playerNumEl.value.textContent = `${target}/${max}`
-    },
-  })
-}
-
-function setFadeText(): void {
-  if (playerNumEl.value) playerNumEl.value.textContent = playersLabel.value
-}
-
-const stopWatch = watch([playersOnline, playersMax], ([value, max]) => {
-  if (value === null || max === null) return
-  if (!played) {
-    played = true
-    runCounter(value, max)
-    return
-  }
-  setFadeText()
-})
+const { create } = useGsap({ scope: rootRef })
 
 onMounted(() => {
   create(() => {
@@ -66,8 +55,8 @@ onMounted(() => {
     if (fades.length) {
       gsap.from(fades, {
         autoAlpha: 0,
-        duration: 0.5,
-        ease: 'power2.out',
+        duration: DURATIONS.pageIn,
+        ease: EASINGS.entrance,
         stagger: 0.06,
         scrollTrigger: { trigger: rootRef.value, start: 'top 80%', once: true },
       })
@@ -78,19 +67,29 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
-  stopWatch()
-  setFadeText()
+  // 卸载时把播报区清空，避免读屏残留上一页的状态
+  srStatus.value = ''
 })
 </script>
 
 <template>
-  <section ref="rootRef" class="status" aria-live="polite">
+  <section ref="rootRef" class="status">
     <div class="wrap">
       <div class="status__grid">
         <MagneticCornerFrame>
           <div class="status__cell">
             <div class="status__value">
-              <span ref="playerNumEl" class="status__num">{{ playersLabel }}</span>
+              <!-- 计数与 /max 必须在同一个 .status__num 里：
+                   外层是 flex + gap，拆成两个 span 会被 10px 间隙撑开 -->
+              <span v-if="hasPlayers" class="status__num">
+                <CountUp
+                  :key="playersOnline ?? 0"
+                  :to="playersOnline ?? 0"
+                  separator=""
+                  :duration="DURATIONS.slow"
+                />/{{ playersMax }}
+              </span>
+              <span v-else class="status__num">{{ playersLabel }}</span>
             </div>
             <div class="status__label">在线玩家</div>
           </div>
@@ -128,5 +127,8 @@ onUnmounted(() => {
         </MagneticCornerFrame>
       </div>
     </div>
+
+    <!-- 读屏播报区：与视觉上的计数完全解耦 -->
+    <p class="vercel-sr-only" aria-live="polite" aria-atomic="true">{{ srStatus }}</p>
   </section>
 </template>
