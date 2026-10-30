@@ -27,6 +27,7 @@ export async function launchBrowser({
     [
       '--headless=new',
       '--no-sandbox',
+      '--no-proxy-server',
       '--disable-gpu',
       '--enable-unsafe-swiftshader',
       '--hide-scrollbars',
