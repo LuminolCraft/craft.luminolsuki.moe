@@ -910,7 +910,6 @@ export default {
       "editExpires": "Expires at",
       "clearExpires": "Make permanent",
       "revoke": "Revoke ban",
-      "revokeConfirm": "Revoke this ban?",
       "revoked": "Revoked",
       "errAlreadyRevoked": "This ban has already been revoked",
       "errNotFound": "Ban not found",

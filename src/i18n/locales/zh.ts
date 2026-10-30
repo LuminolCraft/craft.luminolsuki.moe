@@ -910,7 +910,6 @@ export default {
       "editExpires": "到期时间",
       "clearExpires": "改为永久",
       "revoke": "撤销封禁",
-      "revokeConfirm": "确定撤销这条封禁吗？",
       "revoked": "已撤销",
       "errAlreadyRevoked": "该封禁已被撤销",
       "errNotFound": "封禁记录不存在",

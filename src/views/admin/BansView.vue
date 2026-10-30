@@ -44,9 +44,19 @@
               <td class="td-actions">
                 <template v-if="banStatus(ban) === 'active'">
                   <button type="button" class="row-btn" @click="openEdit(ban)">{{ t('admin.bans.edit') }}</button>
-                  <button type="button" class="row-btn warn" :disabled="revokingId === ban.id" @click="onRevoke(ban)">
-                    {{ revokingId === ban.id ? t('admin.bans.revoked') : t('admin.bans.revoke') }}
-                  </button>
+                  <HoldButton
+                    class="hb-revoke"
+                    size="sm"
+                    :label="t('admin.bans.revoke')"
+                    :done-label="t('admin.bans.revoked')"
+                    :duration="1000"
+                    :done="revokeDone && revokingId === ban.id"
+                    :disabled="!!revokingId && revokingId !== ban.id"
+                    :fill-color="REVOKE_FILL"
+                    :accent-color="REVOKE_ACCENT"
+                    :done-color="REVOKE_DONE"
+                    @hold="onRevoke(ban)"
+                  />
                 </template>
                 <button type="button" class="row-btn" @click="openEvidence(ban)">{{ t('admin.bans.evidence') }}</button>
               </td>
@@ -237,6 +247,7 @@
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ProgressIndicator, ProgressRoot, SwitchRoot, SwitchThumb } from 'reka-ui'
+import HoldButton from '@/components/bits/HoldButton.vue'
 import { api, isAppError } from '@/lib/api'
 import { normalizePaged } from '@/lib/paged'
 import { API_BASE_URL } from '@/lib/api-base'
@@ -361,18 +372,29 @@ function formatSize(bytes?: number): string {
 
 // ---------- 撤销 ----------
 const revokingId = ref('')
+const revokeDone = ref(false)
+
+/** 撤销是危险动作，进度条走错误色而不是主色 */
+const REVOKE_FILL = 'color-mix(in srgb, var(--error-color, #e5484d) 18%, transparent)'
+const REVOKE_ACCENT = 'var(--error-color, #e5484d)'
+const REVOKE_DONE = 'color-mix(in srgb, var(--error-color, #e5484d) 26%, transparent)'
 
 async function onRevoke(ban: Ban) {
-  if (!window.confirm(t('admin.bans.revokeConfirm'))) return
+  if (revokingId.value) return
   pageError.value = ''
+  revokeDone.value = false
   revokingId.value = ban.id
   try {
     await api.post<unknown>(`/admin/bans/${ban.id}/revoke`)
+    revokeDone.value = true
+    // 让按钮里的「已撤销」亮一下，再把整行翻成已撤销状态
+    await new Promise((resolve) => window.setTimeout(resolve, 760))
     ban.revokedAt = Date.now()
   } catch (e) {
     pageError.value = errorText(e)
   } finally {
     revokingId.value = ''
+    revokeDone.value = false
   }
 }
 
@@ -807,6 +829,17 @@ onMounted(async () => {
 
 .evidence-modal {
   width: min(34rem, 100%);
+}
+
+/* HoldButton 与同排 .row-btn 保持同样的间距节奏；idle 态沿用 .row-btn.warn 的危险样式 */
+.hb-revoke {
+  margin-left: 0.35rem;
+  vertical-align: middle;
+}
+
+.hb-revoke:not([data-phase='holding']):not([data-phase='done']) {
+  color: var(--error-color, #e5484d);
+  border-color: color-mix(in srgb, var(--error-color, #e5484d) 35%, transparent);
 }
 
 /* ---------- 证据上传队列 ---------- */
