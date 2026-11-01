@@ -64,28 +64,58 @@
     <section class="mc-section">
       <h2 class="mc-section-title">{{ t('minecraft.bindTitle') }}</h2>
 
-      <!-- 两步流程验证引导态：提交成功后前置显示；单 pending 强制（取消后才能重新发起） -->
-      <div v-if="pendingCode" class="mc-pending" role="status">
-        <span class="mc-pending-code">{{ pendingCode }}</span>
-        <p class="mc-pending-desc">{{ t('minecraft.pendingDesc', { name: pendingName }) }}</p>
-        <span class="mc-pending-command">{{ t('minecraft.pendingCommand', { code: pendingCode }) }}</span>
-        <p v-if="!pollExpired" class="mc-pending-expires">
-          {{ t('minecraft.pendingExpires', { n: remainSeconds }) }}
-        </p>
-        <template v-else>
-          <p class="mc-pending-expired" role="alert">{{ t('minecraft.pendingExpired') }}</p>
-          <button type="button" class="mc-resolve" @click="onPendingResubmit">
-            {{ t('minecraft.pendingResubmit') }}
+      <!-- 两步流程验证引导态：提交成功后前置显示；单 pending 强制（撕票取消后才能重新发起） -->
+      <TearTicket
+        v-if="pendingCode"
+        class="mc-ticket"
+        role="status"
+        orientation="horizontal"
+        :width="500"
+        :height="230"
+        :stub-size="118"
+        :radius="10"
+        :rotate="0"
+        :tilt-max="3"
+        :holes="9"
+        :hole-size="5"
+        :torn="pollExpired"
+        :disabled="cancelling"
+        :background="'var(--white)'"
+        :stub-background="'var(--mc-ticket-stub)'"
+        :border-color="'var(--border-color)'"
+        :color="'var(--black)'"
+        :aria-label="t('minecraft.tearAria')"
+        @tear="onCancelPending"
+      >
+        <div class="mc-ticket-body">
+          <p class="mc-ticket-label">{{ t('minecraft.pendingCodeLabel') }}</p>
+          <p class="mc-ticket-code">{{ pendingCode }}</p>
+          <button
+            type="button"
+            class="mc-ticket-cmd"
+            :class="{ 'is-copied': commandCopied }"
+            :title="commandCopied ? t('minecraft.copied') : t('minecraft.copyHint')"
+            @click="copyCommand"
+          >
+            <span v-if="commandCopied">{{ t('minecraft.copied') }} ✓</span>
+            <span v-else>{{ t('minecraft.pendingCommand', { code: pendingCode }) }}</span>
           </button>
+          <p v-if="pollExpired" class="mc-ticket-expired" role="alert">{{ t('minecraft.pendingExpired') }}</p>
+          <template v-else>
+            <p class="mc-ticket-meta">{{ t('minecraft.pendingDesc', { name: pendingName }) }}</p>
+            <p class="mc-ticket-meta">{{ t('minecraft.pendingExpires', { n: remainSeconds }) }}</p>
+          </template>
+        </div>
+        <template #stub>
+          <div class="mc-ticket-stub">
+            <span class="mc-ticket-stub-title">{{ t('minecraft.cancelBind') }}</span>
+            <span class="mc-ticket-stub-hint">{{ t('minecraft.tearHint') }}</span>
+          </div>
         </template>
-        <button
-          v-if="!pollExpired"
-          type="button"
-          class="mc-resolve"
-          :disabled="cancelling"
-          @click="onCancelPending"
-        >
-          {{ cancelling ? t('minecraft.cancelling') : t('minecraft.cancelBind') }}
+      </TearTicket>
+      <div v-if="pendingCode && pollExpired" class="mc-ticket-after">
+        <button type="button" class="mc-resolve" @click="onPendingResubmit">
+          {{ t('minecraft.pendingResubmit') }}
         </button>
       </div>
 
@@ -239,6 +269,7 @@ import { useNexusStore } from '@/stores/nexus'
 import { useGsap } from '@/composables/useGsap'
 import { errorToResetAt, isAppError } from '@/lib/api'
 import { mcAvatarUrl } from '@/lib/minecraft'
+import TearTicket from '@/components/bits/TearTicket.vue'
 import type { AccountLink, MinecraftAccount, MinecraftBindPending } from '@/types/nexus'
 
 const { t } = useI18n()
@@ -267,6 +298,21 @@ const expiresTotal = ref(0)
 const remainSeconds = ref(0)
 const pollExpired = ref(false)
 const cancelling = ref(false)
+
+/** 验证命令点击复制（chip 短暂显示已复制） */
+const commandCopied = ref(false)
+let copyTimer: ReturnType<typeof setTimeout> | undefined
+async function copyCommand() {
+  try {
+    await navigator.clipboard.writeText(t('minecraft.pendingCommand', { code: pendingCode.value }))
+  } catch {
+    return
+  }
+  commandCopied.value = true
+  if (copyTimer) clearTimeout(copyTimer)
+  copyTimer = setTimeout(() => (commandCopied.value = false), 1600)
+}
+
 let pollTimer: ReturnType<typeof setInterval> | null = null
 let tickTimer: ReturnType<typeof setInterval> | null = null
 let polling = false
@@ -463,6 +509,7 @@ function stopPendingWatch() {
 
 onUnmounted(() => {
   stopPendingWatch()
+  if (copyTimer) clearTimeout(copyTimer)
   window.removeEventListener('storage', onStorageSync)
 })
 
@@ -918,56 +965,110 @@ onMounted(async () => {
   color: var(--primary-color);
 }
 
-/* ---------- 两步绑定引导态 ---------- */
-.mc-pending {
+/* ---------- 两步绑定引导态（撕票） ---------- */
+/* 票面取色走语义层：--white/--black 深浅自动反转（DESIGN.md §3 Layer 3） */
+.mc-ticket {
+  --mc-ticket-stub: color-mix(in srgb, var(--black) 5%, var(--white));
+  margin-bottom: 1.1rem;
+}
+
+.mc-ticket-body {
   display: flex;
   flex-direction: column;
-  gap: 0.55rem;
-  margin-bottom: 1.1rem;
-  padding: 1rem 1.1rem;
-  border-left: 3px solid var(--primary-color);
-  background: color-mix(in srgb, var(--primary-color) 6%, transparent);
-  border-radius: 0 8px 8px 0;
+  gap: 0.45rem;
+  padding: 1.25rem 1.4rem;
 }
 
-.mc-pending-code {
-  font-family: ui-monospace, monospace;
-  font-size: 2rem;
-  font-weight: 700;
-  letter-spacing: 0.4em;
-  line-height: 1.1;
-  color: var(--primary-color);
-}
-
-.mc-pending-desc {
+.mc-ticket-label {
   margin: 0;
-  font-size: 0.86rem;
-  line-height: 1.6;
-  color: var(--text-color);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-caption);
+  font-weight: var(--font-weight-medium);
+  line-height: 1;
+  text-transform: uppercase;
+  color: var(--text-secondary);
 }
 
-.mc-pending-command {
+.mc-ticket-code {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--font-size-subheading);
+  font-weight: var(--font-weight-medium);
+  letter-spacing: 0.08em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+  color: var(--black);
+}
+
+.mc-ticket-cmd {
+  display: inline-flex;
+  align-items: center;
   align-self: flex-start;
   padding: 0.25rem 0.7rem;
+  border: 1px solid color-mix(in srgb, var(--primary-color) 35%, transparent);
   border-radius: 5px;
-  font-family: ui-monospace, monospace;
-  font-size: 0.85rem;
-  font-weight: 600;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  font-weight: var(--font-weight-medium);
   color: var(--primary-color);
   background: color-mix(in srgb, var(--primary-color) 10%, transparent);
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
-.mc-pending-expires {
+.mc-ticket-cmd:hover {
+  background: color-mix(in srgb, var(--primary-color) 16%, transparent);
+  border-color: color-mix(in srgb, var(--primary-color) 55%, transparent);
+}
+
+.mc-ticket-cmd:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--primary-color) 55%, transparent);
+  outline-offset: 2px;
+}
+
+.mc-ticket-cmd.is-copied {
+  color: var(--success-color);
+  border-color: color-mix(in srgb, var(--success-color) 40%, transparent);
+  background: color-mix(in srgb, var(--success-color) 12%, transparent);
+}
+
+.mc-ticket-meta {
   margin: 0;
-  font-size: 0.8rem;
+  font-size: 0.78rem;
+  line-height: 1.5;
   color: var(--text-secondary);
   font-variant-numeric: tabular-nums;
 }
 
-.mc-pending-expired {
+.mc-ticket-expired {
   margin: 0;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
+  font-weight: var(--font-weight-semibold);
   color: var(--error-color, #e5484d);
+}
+
+.mc-ticket-stub {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  height: 100%;
+}
+
+.mc-ticket-stub-title {
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-medium);
+  color: var(--error-color, #e5484d);
+}
+
+.mc-ticket-stub-hint {
+  font-size: 0.68rem;
+  color: var(--text-secondary);
+}
+
+.mc-ticket-after {
+  margin: -0.35rem 0 1.1rem;
 }
 
 /* ---------- 409 冲突处置指引 ---------- */
@@ -1237,12 +1338,7 @@ onMounted(async () => {
     /* flex 居中 + overflow-y:auto 会裁掉高于视口的弹层顶部且滚不回去（标题/关闭按钮丢失） */
     align-items: flex-start;
   }
-  /* 绑定码放大后 8 位码在 320-400px 会溢出卡片 */
-  .mc-pending-code {
-    font-size: 1.7rem;
-    letter-spacing: 0.28em;
-    overflow-wrap: anywhere;
-  }
+  /* 绑定票整张随容器缩放（TearTicket 自带 fit），无需单独缩字 */
   .mc-dialog-actions {
     flex-direction: column-reverse;
   }
