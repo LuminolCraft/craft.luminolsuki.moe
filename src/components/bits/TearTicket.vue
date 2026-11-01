@@ -770,6 +770,43 @@ const onStubKey = (e: KeyboardEvent) => {
   if (!e.repeat) tearNow()
 }
 
+/**
+ * 程序化撕票（绑定成功等场景的自动撕落）：直接驱动 onStubDown/Move/Up，
+ * 走与手拖完全相同的物理路径（铰链、纸桥逐根绷断、重力坠落淡出）。
+ * reduced-motion 下由 onStubMove 的 28px 阈值落到 tearNow()，瞬时完成。
+ */
+const STAGE_POINTER_ID = -7
+async function tearOff(): Promise<void> {
+  if (props.disabled || used.value || s.id !== null || s.phase !== 'idle') return
+  const stage = stageRef.value
+  if (!stage) return
+  const r = stage.getBoundingClientRect()
+  const k = r.width / props.width || 1
+  const at = (p: Point): PointerEvent =>
+    new PointerEvent('pointerdown', {
+      pointerId: STAGE_POINTER_ID,
+      button: 0,
+      bubbles: true,
+      clientX: r.left + p.x * k,
+      clientY: r.top + p.y * k,
+    })  // 抓票根上半段（far 判定 → 铰链落在撕线下端），向右下角外拉
+  const start: Point = { x: props.width - props.stubSize * 0.45, y: props.height * 0.3 }
+  const pull: Point = { x: props.width + 60, y: props.height * 1.15 }
+  onStubDown(at(start))
+  if (s.phase !== 'held') return
+  await new Promise((resolve) => setTimeout(resolve, 16))
+  onStubMove(at(pull))
+  // 等纸桥逐根绷断进入 free（未断则超时兜底瞬时撕掉）
+  const t0 = performance.now()
+  while (s.phase === 'held' && performance.now() - t0 < 1500) {
+    await new Promise((resolve) => setTimeout(resolve, 40))
+  }
+  if (s.phase === 'free') onStubUp(at(pull))
+  else tearNow()
+}
+
+defineExpose({ tearOff })
+
 watch(
   [() => props.tilt, reduce, () => props.disabled, () => props.tiltMax, () => props.tiltReach],
   (_v, _o, onCleanup) => {
