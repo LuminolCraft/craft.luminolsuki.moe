@@ -673,6 +673,7 @@ export default {
     "pendingExpired": "The verification code has expired. Please submit the link again.",
     "pendingResubmit": "Resubmit",
     "pendingCodeLabel": "Binding code",
+    "bindResolved": "Linked — ticket redeemed",
     "cancelBind": "Cancel linking",
     "tearHint": "Drag to tear",
     "tearAria": "Tear off the stub to cancel linking",

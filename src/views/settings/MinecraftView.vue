@@ -67,6 +67,7 @@
       <!-- 两步流程验证引导态：提交成功后前置显示；单 pending 强制（撕票取消后才能重新发起） -->
       <TearTicket
         v-if="pendingCode"
+        ref="ticketRef"
         class="mc-ticket"
         role="status"
         orientation="horizontal"
@@ -85,7 +86,7 @@
         :border-color="'var(--border-color)'"
         :color="'var(--black)'"
         :aria-label="t('minecraft.tearAria')"
-        @tear="onCancelPending"
+        @tear="onTicketTear"
       >
         <div class="mc-ticket-body">
           <p class="mc-ticket-label">{{ t('minecraft.pendingCodeLabel') }}</p>
@@ -101,6 +102,7 @@
             <span v-else>{{ t('minecraft.pendingCommand', { code: pendingCode }) }}</span>
           </button>
           <p v-if="pollExpired" class="mc-ticket-expired" role="alert">{{ t('minecraft.pendingExpired') }}</p>
+          <p v-else-if="ticketSuccess" class="mc-ticket-resolved">✓ {{ t('minecraft.bindResolved') }}</p>
           <template v-else>
             <p class="mc-ticket-meta">{{ t('minecraft.pendingDesc', { name: pendingName }) }}</p>
             <p class="mc-ticket-meta">{{ t('minecraft.pendingExpires', { n: remainSeconds }) }}</p>
@@ -263,7 +265,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useNexusStore } from '@/stores/nexus'
 import { useGsap } from '@/composables/useGsap'
@@ -298,6 +300,12 @@ const expiresTotal = ref(0)
 const remainSeconds = ref(0)
 const pollExpired = ref(false)
 const cancelling = ref(false)
+
+/** 绑定票据：成功时票根自动撕落（先亮「已核销」再退出引导态） */
+const ticketRef = ref<InstanceType<typeof TearTicket> | null>(null)
+const ticketSuccess = ref(false)
+const successTearing = ref(false)
+let successTimer: ReturnType<typeof setTimeout> | undefined
 
 /** 验证命令点击复制（chip 短暂显示已复制） */
 const commandCopied = ref(false)
@@ -468,11 +476,26 @@ async function pollPendingBound() {
   }
 }
 
+function onTicketTear() {
+  // 撕票 = 取消；但绑定成功的自动撕落不走取消接口
+  if (successTearing.value) return
+  void onCancelPending()
+}
+
 function onPendingResolved() {
   stopPendingWatch()
-  exitPending()
-  bindSuccess.value = true
-  playerName.value = ''
+  clearPendingBind()
+  // 票根自动撕落：亮「已核销」→ tearOff 物理动画 → 结束后再退出引导态
+  ticketSuccess.value = true
+  successTearing.value = true
+  void nextTick(() => ticketRef.value?.tearOff())
+  successTimer = setTimeout(() => {
+    successTearing.value = false
+    ticketSuccess.value = false
+    exitPending()
+    bindSuccess.value = true
+    playerName.value = ''
+  }, 1100)
 }
 
 function onPendingExpired() {
@@ -510,6 +533,7 @@ function stopPendingWatch() {
 onUnmounted(() => {
   stopPendingWatch()
   if (copyTimer) clearTimeout(copyTimer)
+  if (successTimer) clearTimeout(successTimer)
   window.removeEventListener('storage', onStorageSync)
 })
 
@@ -1045,6 +1069,13 @@ onMounted(async () => {
   font-size: 0.8rem;
   font-weight: var(--font-weight-semibold);
   color: var(--error-color, #e5484d);
+}
+
+.mc-ticket-resolved {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: var(--font-weight-semibold);
+  color: var(--success-color, #22c55e);
 }
 
 .mc-ticket-stub {

@@ -673,6 +673,7 @@ export default {
     "pendingExpired": "验证码已过期，请重新提交绑定",
     "pendingResubmit": "重新提交绑定",
     "pendingCodeLabel": "绑定票据",
+    "bindResolved": "绑定成功，票据已核销",
     "cancelBind": "取消本次绑定",
     "tearHint": "拖我撕票",
     "tearAria": "拖拽撕下票根，取消本次绑定",
