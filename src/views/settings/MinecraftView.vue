@@ -1011,6 +1011,16 @@ onMounted(async () => {
     0 1px 2px rgb(0 0 0 / 24%);
 }
 
+/* 深色主题：#151515 和页面底色（dark 下 --white = #1a1a1a）糊在一起，
+   机器会整个消失。改成比页面更深的凹槽，再补一道边框把机身轮廓勾出来。 */
+:root[data-theme='dark'] .mc-shredder {
+  background: #0a0a0a;
+  box-shadow:
+    inset 0 0 0 1px var(--border-color),
+    inset 0 1px 0 rgb(255 255 255 / 4%),
+    0 1px 2px rgb(0 0 0 / 40%);
+}
+
 /* 过期 = 机器停电：只留一道暗红描边，票也已被 disabled */
 .mc-shredder.is-expired {
   box-shadow:
