@@ -143,7 +143,7 @@ interface Bridge extends Point {
   y0: number
   y1: number
   mid: number
-  pts: number[][]
+  pts: [number, number][]
 }
 
 interface End extends Point {
@@ -291,7 +291,7 @@ const buildGeometry = (
     const y0 = notch + i * (bridge + hole)
     const y1 = y0 + bridge
     const steps = Math.max(2, Math.round(bridge / 2.2))
-    const pts: number[][] = []
+    const pts: [number, number][] = []
     for (let k = 1; k < steps; k += 1) pts.push([x + (random() - 0.5) * 2 * rough, y0 + (bridge * k) / steps])
     bridges.push({ y0, y1, mid: (y0 + y1) / 2, pts, ...at(x, (y0 + y1) / 2) })
   }
@@ -306,8 +306,11 @@ const buildGeometry = (
   body += `${arc(notch, 0, x - notch, cross)}L${pt(R, cross)}${arc(R, 1, 0, cross - R)}L${pt(0, R)}${arc(R, 1, R, 0)}Z`
   let stub = `M${pt(x + notch, 0)}L${pt(main - R, 0)}${arc(R, 1, main, R)}L${pt(main, cross - R)}${arc(R, 1, main - R, cross)}L${pt(x + notch, cross)}${arc(notch, 0, x, cross - notch)}`
   for (let i = n; i >= 0; i -= 1) {
-    const b = bridges[i]
-    for (let k = b.pts.length - 1; k >= 0; k -= 1) stub += `L${pt(b.pts[k][0], b.pts[k][1])}`
+    const b = bridges[i]!
+    for (let k = b.pts.length - 1; k >= 0; k -= 1) {
+      const q = b.pts[k]!
+      stub += `L${pt(q[0], q[1])}`
+    }
     stub += `L${pt(x, b.y0)}`
     if (i > 0) stub += arc(hr, 0, x, b.y0 - hole)
   }
@@ -504,8 +507,9 @@ const paint = (now: number): boolean => {
       s.span[i] = gap
       return
     }
-    const t = (now - s.snapAt[i]) / 1000 / RETRACT
-    if (!live || t >= 1 || !s.snapAt[i]) {
+    const snap = s.snapAt[i] ?? 0
+    const t = (now - snap) / 1000 / RETRACT
+    if (!live || !snap || t >= 1) {
       near.style.opacity = '0'
       far.style.opacity = '0'
       return
@@ -708,7 +712,7 @@ const onStubDown = (e: PointerEvent) => {
   s.pvy = 0
   if (s.theta < 0.01) {
     const far = (g.vertical ? p.x : p.y) < g.cross / 2
-    const end = g.ends[far ? 1 : 0]
+    const end = g.ends[far ? 1 : 0]!
     s.sign = (far ? 1 : -1) * (g.vertical ? -1 : 1)
     s.hinge = { x: end.x, y: end.y }
     s.hingeV = end.v
@@ -776,8 +780,11 @@ const onStubKey = (e: KeyboardEvent) => {
  * reduced-motion 下由 onStubMove 的 28px 阈值落到 tearNow()，瞬时完成。
  */
 const STAGE_POINTER_ID = -7
+// onStubDown/Move 会同步改 s.phase，但 TS 看不到跨函数赋值会把它收窄成字面量，
+// 故经此读相位
+const phaseOf = (): Phase => s.phase
 async function tearOff(): Promise<void> {
-  if (props.disabled || used.value || s.id !== null || s.phase !== 'idle') return
+  if (props.disabled || used.value || s.id !== null || phaseOf() !== 'idle') return
   const stage = stageRef.value
   if (!stage) return
   const r = stage.getBoundingClientRect()
@@ -793,15 +800,15 @@ async function tearOff(): Promise<void> {
   const start: Point = { x: props.width - props.stubSize * 0.45, y: props.height * 0.3 }
   const pull: Point = { x: props.width + 60, y: props.height * 1.15 }
   onStubDown(at(start))
-  if (s.phase !== 'held') return
+  if (phaseOf() !== 'held') return
   await new Promise((resolve) => setTimeout(resolve, 16))
   onStubMove(at(pull))
   // 等纸桥逐根绷断进入 free（未断则超时兜底瞬时撕掉）
   const t0 = performance.now()
-  while (s.phase === 'held' && performance.now() - t0 < 1500) {
+  while (phaseOf() === 'held' && performance.now() - t0 < 1500) {
     await new Promise((resolve) => setTimeout(resolve, 40))
   }
-  if (s.phase === 'free') onStubUp(at(pull))
+  if (phaseOf() === 'free') onStubUp(at(pull))
   else tearNow()
 }
 
