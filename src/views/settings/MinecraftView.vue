@@ -64,57 +64,53 @@
     <section class="mc-section">
       <h2 class="mc-section-title">{{ t('minecraft.bindTitle') }}</h2>
 
-      <!-- 两步流程验证引导态：提交成功后前置显示；单 pending 强制（撕票取消后才能重新发起） -->
-      <TearTicket
-        v-if="pendingCode"
-        ref="ticketRef"
-        class="mc-ticket"
-        role="status"
-        orientation="horizontal"
-        :width="500"
-        :height="230"
-        :stub-size="118"
-        :radius="10"
-        :rotate="0"
-        :tilt-max="3"
-        :holes="9"
-        :hole-size="5"
-        :torn="pollExpired"
-        :disabled="cancelling"
-        :background="'var(--white)'"
-        :stub-background="'var(--mc-ticket-stub)'"
-        :border-color="'var(--border-color)'"
-        :color="'var(--black)'"
-        :aria-label="t('minecraft.tearAria')"
-        @tear="onTicketTear"
-      >
-        <div class="mc-ticket-body">
-          <p class="mc-ticket-label">{{ t('minecraft.pendingCodeLabel') }}</p>
-          <p class="mc-ticket-code">{{ pendingCode }}</p>
-          <button
-            type="button"
-            class="mc-ticket-cmd"
-            :class="{ 'is-copied': commandCopied }"
-            :title="commandCopied ? t('minecraft.copied') : t('minecraft.copyHint')"
-            @click="copyCommand"
-          >
-            <span v-if="commandCopied">{{ t('minecraft.copied') }} ✓</span>
-            <span v-else>{{ t('minecraft.pendingCommand', { code: pendingCode }) }}</span>
-          </button>
-          <p v-if="pollExpired" class="mc-ticket-expired" role="alert">{{ t('minecraft.pendingExpired') }}</p>
-          <p v-else-if="ticketSuccess" class="mc-ticket-resolved">✓ {{ t('minecraft.bindResolved') }}</p>
-          <template v-else>
-            <p class="mc-ticket-meta">{{ t('minecraft.pendingDesc', { name: pendingName }) }}</p>
-            <p class="mc-ticket-meta">{{ t('minecraft.pendingExpires', { n: remainSeconds }) }}</p>
-          </template>
-        </div>
-        <template #stub>
-          <div class="mc-ticket-stub">
-            <span class="mc-ticket-stub-title">{{ t('minecraft.cancelBind') }}</span>
-            <span class="mc-ticket-stub-hint">{{ t('minecraft.tearHint') }}</span>
+      <!-- 两步流程验证引导态：提交成功后前置显示；把票据拖进碎纸机 = 取消绑定 -->
+      <div v-if="pendingCode" class="mc-shredder" :class="{ 'is-expired': pollExpired }">
+        <p class="mc-sr" role="status">{{ t('minecraft.pendingCodeLabel') }} {{ pendingCode }}</p>
+        <Shredder
+          :items="pendingShredItems"
+          role="group"
+          :aria-label="t('minecraft.tearAria')"
+          :width="500"
+          :height="420"
+          :inset="6"
+          :fall-height="150"
+          :bite="20"
+          :strip-width="18"
+          :curl="0.45"
+          :feed-speed="170"
+          slit-color="color-mix(in srgb, #ffffff 30%, transparent)"
+          :auto-animate="successTearing"
+          :disabled="cancelling || pollExpired"
+          @shred="onTicketShred"
+        >
+          <div class="mc-ticket">
+            <p class="mc-ticket-label">{{ t('minecraft.pendingCodeLabel') }}</p>
+            <p class="mc-ticket-code">{{ pendingCode }}</p>
+            <button
+              type="button"
+              class="mc-ticket-cmd"
+              :class="{ 'is-copied': commandCopied }"
+              :title="commandCopied ? t('minecraft.copied') : t('minecraft.copyHint')"
+              @pointerdown.stop
+              @click.stop="copyCommand"
+            >
+              <span v-if="commandCopied">{{ t('minecraft.copied') }} ✓</span>
+              <span v-else>{{ t('minecraft.pendingCommand', { code: pendingCode }) }}</span>
+            </button>
+            <p v-if="pollExpired" class="mc-ticket-expired" role="alert">{{ t('minecraft.pendingExpired') }}</p>
+            <p v-else-if="successTearing" class="mc-ticket-resolved">✓ {{ t('minecraft.bindResolved') }}</p>
+            <template v-else>
+              <p class="mc-ticket-meta">{{ t('minecraft.pendingDesc', { name: pendingName }) }}</p>
+              <p class="mc-ticket-meta">{{ t('minecraft.pendingExpires', { n: remainSeconds }) }}</p>
+            </template>
+            <p v-if="!pollExpired && !successTearing" class="mc-ticket-action">
+              <span class="mc-ticket-action-title">{{ t('minecraft.cancelBind') }}</span>
+              <span class="mc-ticket-action-hint">{{ t('minecraft.tearHint') }}</span>
+            </p>
           </div>
-        </template>
-      </TearTicket>
+        </Shredder>
+      </div>
       <div v-if="pendingCode && pollExpired" class="mc-ticket-after">
         <button type="button" class="mc-resolve" @click="onPendingResubmit">
           {{ t('minecraft.pendingResubmit') }}
@@ -265,13 +261,13 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useNexusStore } from '@/stores/nexus'
 import { useGsap } from '@/composables/useGsap'
 import { errorToResetAt, isAppError } from '@/lib/api'
 import { mcAvatarUrl } from '@/lib/minecraft'
-import TearTicket from '@/components/bits/TearTicket.vue'
+import Shredder from '@/components/bits/Shredder.vue'
 import type { AccountLink, MinecraftAccount, MinecraftBindPending } from '@/types/nexus'
 
 const { t } = useI18n()
@@ -301,11 +297,12 @@ const remainSeconds = ref(0)
 const pollExpired = ref(false)
 const cancelling = ref(false)
 
-/** 绑定票据：成功时票根自动撕落（先亮「已核销」再退出引导态） */
-const ticketRef = ref<InstanceType<typeof TearTicket> | null>(null)
-const ticketSuccess = ref(false)
+/** 绑定票据：成功时自己「喂进碎纸机」碎掉（先亮「已核销」再退出引导态） */
 const successTearing = ref(false)
-let successTimer: ReturnType<typeof setTimeout> | undefined
+/** 碎纸机里始终只有这一行票据；id 带 code，避免换码后 Shredder 内部 order 映射错位 */
+const pendingShredItems = computed<{ id: string }[]>(() =>
+  pendingCode.value ? [{ id: `ticket:${pendingCode.value}` }] : [],
+)
 
 /** 验证命令点击复制（chip 短暂显示已复制） */
 const commandCopied = ref(false)
@@ -476,26 +473,33 @@ async function pollPendingBound() {
   }
 }
 
-function onTicketTear() {
-  // 撕票 = 取消；但绑定成功的自动撕落不走取消接口
-  if (successTearing.value) return
+/**
+ * 票据被碎掉（拖进缝隙 / 聚焦后按 Delete / 成功态 autoAnimate 自动喂入）：
+ * 成功路径只负责收尾（关 autoAnimate + 退出引导态），其余路径一律走取消绑定。
+ */
+function onTicketShred() {
+  if (successTearing.value) {
+    successTearing.value = false
+    exitPending()
+    bindSuccess.value = true
+    playerName.value = ''
+    return
+  }
   void onCancelPending()
 }
 
 function onPendingResolved() {
   stopPendingWatch()
   clearPendingBind()
-  // 票根自动撕落：亮「已核销」→ tearOff 物理动画 → 结束后再退出引导态
-  ticketSuccess.value = true
-  successTearing.value = true
-  void nextTick(() => ticketRef.value?.tearOff())
-  successTimer = setTimeout(() => {
-    successTearing.value = false
-    ticketSuccess.value = false
+  // 已过期就没什么可碎的：直接收尾，避免 autoAnimate 在 disabled 下空转
+  if (pollExpired.value) {
     exitPending()
     bindSuccess.value = true
     playerName.value = ''
-  }, 1100)
+    return
+  }
+  // 亮「已核销」→ 打开 autoAnimate，Shredder 自己把这张票喂进机器 → @shred 里收尾
+  successTearing.value = true
 }
 
 function onPendingExpired() {
@@ -512,6 +516,7 @@ function onPendingResubmit() {
 
 function exitPending() {
   clearPendingBind()
+  successTearing.value = false
   pendingCode.value = ''
   pendingName.value = ''
   expiresTotal.value = 0
@@ -533,7 +538,6 @@ function stopPendingWatch() {
 onUnmounted(() => {
   stopPendingWatch()
   if (copyTimer) clearTimeout(copyTimer)
-  if (successTimer) clearTimeout(successTimer)
   window.removeEventListener('storage', onStorageSync)
 })
 
@@ -989,18 +993,46 @@ onMounted(async () => {
   color: var(--primary-color);
 }
 
-/* ---------- 两步绑定引导态（撕票） ---------- */
-/* 票面取色走语义层：--white/--black 深浅自动反转（DESIGN.md §3 Layer 3） */
-.mc-ticket {
-  --mc-ticket-stub: color-mix(in srgb, var(--black) 5%, var(--white));
+/* ---------- 两步绑定引导态（碎票机） ---------- */
+/* 机身固定深色：本站是白底，白纸碎在白背景上纸条几乎全隐形（实测），
+   所以机器必须自带深色底，纸才是纸。 */
+.mc-shredder {
+  display: flex;
+  justify-content: center;
   margin-bottom: 1.1rem;
+  padding: 1rem 1rem 0.5rem;
+  border-radius: 12px;
+  background: #151515;
+  /* 纸条物理会横向甩出落纸区（canvas 左右各留 40px 余量），
+     机身必须裁掉，否则纸条会飞到白色页面上 */
+  overflow: hidden;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 6%),
+    0 1px 2px rgb(0 0 0 / 24%);
 }
 
-.mc-ticket-body {
-  display: flex;
-  flex-direction: column;
-  gap: 0.45rem;
-  padding: 1.25rem 1.4rem;
+/* 过期 = 机器停电：只留一道暗红描边，票也已被 disabled */
+.mc-shredder.is-expired {
+  box-shadow:
+    inset 0 0 0 1px rgb(180 35 24 / 45%),
+    inset 0 1px 0 rgb(255 255 255 / 6%);
+}
+
+/* 键盘可达性：Shredder 的行是 tabindex=0 的可聚焦元素，但组件内没有焦点样式，
+   否则键盘用户 Tab 到票据上完全看不出焦点（Delete 可碎票，但得先知道焦点在哪）。 */
+.mc-shredder :deep(.shr-row:focus-visible) {
+  outline: 2px solid color-mix(in srgb, var(--primary-color) 70%, #ffffff);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+/* 纸色/字色写死浅色：dark 主题下 --white/--black 会反转，纸会变成黑纸黑字 */
+.mc-ticket {
+  padding: 1.05rem 1.2rem 0.95rem;
+  border-radius: 8px;
+  background: #fdfdfd;
+  color: #1a1a1a;
+  box-shadow: 0 10px 26px rgb(0 0 0 / 28%);
 }
 
 .mc-ticket-label {
@@ -1010,96 +1042,111 @@ onMounted(async () => {
   font-weight: var(--font-weight-medium);
   line-height: 1;
   text-transform: uppercase;
-  color: var(--text-secondary);
+  color: rgb(0 0 0 / 55%);
 }
 
 .mc-ticket-code {
-  margin: 0;
+  margin: 0.35rem 0 0;
   font-family: var(--font-mono);
   font-size: var(--font-size-subheading);
   font-weight: var(--font-weight-medium);
   letter-spacing: 0.08em;
   font-variant-numeric: tabular-nums;
   line-height: 1.2;
-  color: var(--black);
+  color: #1a1a1a;
 }
 
 .mc-ticket-cmd {
   display: inline-flex;
   align-items: center;
   align-self: flex-start;
+  margin-top: 0.5rem;
   padding: 0.25rem 0.7rem;
-  border: 1px solid color-mix(in srgb, var(--primary-color) 35%, transparent);
+  border: 1px solid rgb(0 0 0 / 14%);
   border-radius: 5px;
   font-family: var(--font-mono);
   font-size: 0.8125rem;
   font-weight: var(--font-weight-medium);
-  color: var(--primary-color);
-  background: color-mix(in srgb, var(--primary-color) 10%, transparent);
+  /* 纸面不跟主题底色，但强调色仍从主题派生（与 #1a1a1a 混合保证白底 4.5:1 以上） */
+  color: color-mix(in srgb, var(--primary-color) 55%, #1a1a1a);
+  background: rgb(0 0 0 / 4%);
   cursor: pointer;
   transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
 .mc-ticket-cmd:hover {
-  background: color-mix(in srgb, var(--primary-color) 16%, transparent);
-  border-color: color-mix(in srgb, var(--primary-color) 55%, transparent);
+  background: rgb(0 0 0 / 7%);
+  border-color: rgb(0 0 0 / 24%);
 }
 
 .mc-ticket-cmd:focus-visible {
-  outline: 2px solid color-mix(in srgb, var(--primary-color) 55%, transparent);
+  outline: 2px solid color-mix(in srgb, var(--primary-color) 70%, #1a1a1a);
   outline-offset: 2px;
 }
 
 .mc-ticket-cmd.is-copied {
-  color: var(--success-color);
-  border-color: color-mix(in srgb, var(--success-color) 40%, transparent);
-  background: color-mix(in srgb, var(--success-color) 12%, transparent);
+  color: #067647;
+  border-color: rgb(6 118 71 / 35%);
+  background: rgb(6 118 71 / 8%);
 }
 
 .mc-ticket-meta {
-  margin: 0;
+  margin: 0.45rem 0 0;
   font-size: 0.78rem;
   line-height: 1.5;
-  color: var(--text-secondary);
+  color: rgb(0 0 0 / 60%);
   font-variant-numeric: tabular-nums;
 }
 
 .mc-ticket-expired {
-  margin: 0;
+  margin: 0.5rem 0 0;
   font-size: 0.8rem;
   font-weight: var(--font-weight-semibold);
-  color: var(--error-color, #e5484d);
+  color: #b42318;
 }
 
 .mc-ticket-resolved {
-  margin: 0;
+  margin: 0.5rem 0 0;
   font-size: 0.8rem;
   font-weight: var(--font-weight-semibold);
-  color: var(--success-color, #22c55e);
+  color: #067647;
 }
 
-.mc-ticket-stub {
+/* 票面底部的动作提示：取消本次绑定 = 把这张票拖进下面的机器 */
+.mc-ticket-action {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 0.4rem;
-  height: 100%;
+  gap: 0.5rem;
+  margin: 0.75rem 0 0;
+  padding-top: 0.6rem;
+  border-top: 1px dashed rgb(0 0 0 / 14%);
+  font-size: 0.72rem;
+  color: rgb(0 0 0 / 55%);
 }
 
-.mc-ticket-stub-title {
-  font-size: var(--font-size-small);
-  font-weight: var(--font-weight-medium);
-  color: var(--error-color, #e5484d);
+.mc-ticket-action-title {
+  font-weight: var(--font-weight-semibold);
+  color: #b42318;
 }
 
-.mc-ticket-stub-hint {
-  font-size: 0.68rem;
-  color: var(--text-secondary);
+.mc-ticket-action-hint {
+  color: rgb(0 0 0 / 45%);
 }
 
 .mc-ticket-after {
   margin: -0.35rem 0 1.1rem;
+}
+
+.mc-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
 }
 
 /* ---------- 409 冲突处置指引 ---------- */
@@ -1369,7 +1416,7 @@ onMounted(async () => {
     /* flex 居中 + overflow-y:auto 会裁掉高于视口的弹层顶部且滚不回去（标题/关闭按钮丢失） */
     align-items: flex-start;
   }
-  /* 绑定票整张随容器缩放（TearTicket 自带 fit），无需单独缩字 */
+  /* 绑定票整张随容器缩放（Shredder 宽度取 min(设定宽, 100%)），无需单独缩字 */
   .mc-dialog-actions {
     flex-direction: column-reverse;
   }
