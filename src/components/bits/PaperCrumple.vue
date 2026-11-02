@@ -40,6 +40,7 @@
     只额外加了两处（都向后兼容，默认值就是上游行为）：
     `throwMomentum`：松手惯性系数，上游写死 0.06，这里抽成 prop，调大才「甩得出去」
     `dblclick`：双击展平并归位（reset），配合 releaseBehavior='stay' 做「丢在哪就去哪捡」
+    `@release`：松手时上报落点（视口坐标 + 是否已成团），给外部做「扔进垃圾桶」这类落区判定
 -->
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue';
@@ -369,7 +370,12 @@ const props = withDefaults(defineProps<PaperCrumpleProps>(), {
   className: ''
 });
 
-const emit = defineEmits<{ stateChange: [state: PaperCrumpleState]; error: [error: Error] }>();
+const emit = defineEmits<{
+  stateChange: [state: PaperCrumpleState];
+  error: [error: Error];
+  /** 松手落点（视口坐标 = 命中框中心）与当时是否已是纸团，供外部做垃圾桶之类的地面判定 */
+  release: [payload: { x: number; y: number; crumpled: boolean }];
+}>();
 
 const pathCache: { current: { key: string; value: ReturnType<typeof createPaperPath> } | null } = { current: null };
 const rootRef = ref<HTMLDivElement | null>(null);
@@ -894,9 +900,12 @@ const mountPaper = (): (() => void) | undefined => {
     }
     if (instant || keyboard || reduceMotion) for (const s of springs) advance(s, 0, 0, true);
     keyboard = false;
-    publish(
-      opts.releaseBehavior === 'stay' && amount.target > 0.001 ? 'crumpled' : memory.target > 0.001 ? 'creased' : 'flat'
-    );
+    const crumpled = opts.releaseBehavior === 'stay' && amount.target > 0.001;
+    publish(crumpled ? 'crumpled' : memory.target > 0.001 ? 'creased' : 'flat');
+    if (!keyboard) {
+      const box = hit!.getBoundingClientRect();
+      emit('release', { x: box.left + box.width / 2, y: box.top + box.height / 2, crumpled });
+    }
     wake();
   }
 
