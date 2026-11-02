@@ -56,7 +56,7 @@
             </div>
 
             <!-- 右列：揉纸主视觉（跨两行） -->
-            <div class="nf-paper">
+            <div class="nf-paper" :class="{ 'nf-paper--dark': tokens.isDark }">
                 <PaperCrumple
                     v-if="paperSrc"
                     class="nf-paper__stage"
@@ -72,7 +72,8 @@
                     :detail="56"
                     :seed="7"
                     :shadow="true"
-                    :shadow-opacity="0.12"
+                    :shadow-opacity="tokens.isDark ? 0.34 : 0.12"
+                    :paper-color="tokens.isDark ? '#e2dfe9' : '#fdfdfd'"
                     :drag-radius="120"
                     @state-change="onPaperState"
                 />
@@ -207,6 +208,35 @@
 
 .nf-paper__stage {
     width: 100%;
+}
+
+/* 深色主题：黑投影压在黑底上等于没有，纸会像一张贴纸糊在页面上。
+   做法是①用一圈极淡冷光把纸从黑底里托起来 ②把纸面亮度压到 0.92 免得刺眼
+   ③提示文案提高对比度。纸本身仍是纸（不改成深色纸），只是光影跟着主题走。 */
+.nf-paper--dark {
+    position: relative;
+    isolation: isolate;
+}
+
+.nf-paper--dark::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background: radial-gradient(52% 46% at 50% 47%, rgb(255 255 255 / 10%), transparent 72%);
+}
+
+.nf-paper--dark .nf-paper__stage {
+    /* 滤镜放在容器上：组件内部会给 canvas 写 inline filter（投影），直接改 canvas 会被盖掉。
+       顺序有意义：先压亮度，再沿纸的剪影镀一圈极淡的轮廓光（黑底上这是唯一能让纸
+       脱离背景的手段，矩形 box-shadow 对不规则的纸形无效），最后补一层地面接触阴影。 */
+    filter: brightness(0.92) saturate(0.95) drop-shadow(0 0 1.5px rgb(255 255 255 / 30%))
+        drop-shadow(0 16px 34px rgb(0 0 0 / 55%));
+}
+
+.nf-paper--dark .nf-paper__hint {
+    color: color-mix(in srgb, var(--text-color) 66%, transparent);
 }
 
 .nf-paper__placeholder {
