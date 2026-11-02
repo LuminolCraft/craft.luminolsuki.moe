@@ -57,6 +57,7 @@
 
             <!-- 右列：揉纸主视觉（跨两行） -->
             <div class="nf-paper" :class="{ 'nf-paper--dark': tokens.isDark }">
+                <div class="nf-paper__field" :class="{ 'is-discarding': discarding }">
                 <PaperCrumple
                     v-if="paperSrc"
                     class="nf-paper__stage"
@@ -76,13 +77,21 @@
                     :paper-color="tokens.isDark ? '#e2dfe9' : '#fdfdfd'"
                     :drag-radius="9999"
                     :throw-momentum="0.22"
+                    :reset-key="paperResetKey"
                     @state-change="onPaperState"
+                    @release="onPaperRelease"
                 />
                 <!-- 快照未就绪时的低调占位：不铺白底，只留虚线框 -->
                 <div v-else class="nf-paper__placeholder" aria-hidden="true">
                     <span>正在准备纸条…</span>
                 </div>
-                <p v-if="paperSrc" class="nf-paper__hint">{{ paperHint }}</p>
+                <!-- 垃圾桶：把纸团拖进来松手 = 丢掉这张，换一张新的 -->
+                <div ref="trashRef" class="nf-trash" aria-hidden="true">
+                    <span class="nf-trash__lid" />
+                    <span class="nf-trash__body" />
+                </div>
+                </div>
+                <p v-if="paperSrc" class="nf-paper__hint">{{ trashNote || paperHint }}</p>
             </div>
 
             <!-- 左列（row 2）：动作区 -->
@@ -207,8 +216,79 @@
 
 /* ---------- 揉纸主视觉 ---------- */
 
+.nf-paper__field {
+    position: relative;
+    width: 100%;
+}
+
 .nf-paper__stage {
     width: 100%;
+    transition: opacity 220ms ease, transform 220ms ease;
+}
+
+/* 丢进垃圾桶：纸先被收走（淡出 + 轻微缩），随后 resetKey 触发展平归位 */
+.nf-paper__field.is-discarding .nf-paper__stage {
+    opacity: 0;
+    transform: scale(0.9);
+    transition: opacity 180ms ease, transform 180ms ease;
+}
+
+/* 垃圾桶：线稿，跟站点同一套中性描边；不吃指针，免得压住纸的命中区 */
+.nf-trash {
+    position: absolute;
+    right: 10px;
+    bottom: 10px;
+    width: 62px;
+    height: 78px;
+    pointer-events: none;
+    opacity: 0.58;
+    transition: opacity 180ms ease, transform 180ms ease;
+}
+
+.nf-trash__lid {
+    position: absolute;
+    top: 8px;
+    left: 0;
+    right: 0;
+    height: 2.5px;
+    border-radius: 2px;
+    background: color-mix(in srgb, var(--text-color) 62%, transparent);
+}
+
+/* 提手 */
+.nf-trash__lid::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: -5px;
+    width: 16px;
+    height: 5px;
+    transform: translateX(-50%);
+    border: 1.5px solid color-mix(in srgb, var(--text-color) 48%, transparent);
+    border-bottom: 0;
+    border-radius: 3px 3px 0 0;
+}
+
+.nf-trash__body {
+    position: absolute;
+    top: 14px;
+    left: 7px;
+    right: 7px;
+    bottom: 0;
+    border: 1.5px solid color-mix(in srgb, var(--text-color) 48%, transparent);
+    border-top: 0;
+    border-radius: 0 0 9px 9px;
+    background: repeating-linear-gradient(
+        90deg,
+        transparent 0 10px,
+        color-mix(in srgb, var(--text-color) 20%, transparent) 10px 11.5px
+    );
+}
+
+/* 收纸那一下，桶跟着沉一下，反馈「进去了」 */
+.nf-paper__field.is-discarding .nf-trash {
+    opacity: 0.7;
+    transform: translateY(2px) scale(1.04);
 }
 
 /* 深色主题：黑投影压在黑底上等于没有，纸会像一张贴纸糊在页面上。
@@ -520,6 +600,39 @@ const NOTE_H = 260
 const noteRef = ref<HTMLElement | null>(null)
 const paperSrc = ref('')
 const paperState = ref<PaperCrumpleState>('flat')
+const trashRef = ref<HTMLDivElement | null>(null)
+const discarding = ref(false)
+const paperResetKey = ref(0)
+const trashNote = ref('')
+let discardTimer: ReturnType<typeof setTimeout> | undefined
+let trashNoteTimer: ReturnType<typeof setTimeout> | undefined
+
+/**
+ * 松手落区判定：纸团落在垃圾桶口附近就算丢掉——
+ * 播一个 200ms 的收走动画，再 bump resetKey 让组件展平归位（相当于换一张新纸）。
+ * 判定用命中框中心（组件 @release 上报的视口坐标），向外放 24px 容差，别让人对不准。
+ */
+function onPaperRelease(payload: { x: number; y: number; crumpled: boolean }): void {
+    const can = trashRef.value
+    if (!payload.crumpled || !can) return
+    const r = can.getBoundingClientRect()
+    const pad = 24
+    const inside =
+        payload.x > r.left - pad &&
+        payload.x < r.right + pad &&
+        payload.y > r.top - pad &&
+        payload.y < r.bottom + pad
+    if (!inside) return
+    clearTimeout(discardTimer)
+    clearTimeout(trashNoteTimer)
+    discarding.value = true
+    trashNote.value = '丢进垃圾桶了，换一张新的'
+    discardTimer = setTimeout(() => {
+        paperResetKey.value += 1
+        discarding.value = false
+        trashNoteTimer = setTimeout(() => (trashNote.value = ''), 2200)
+    }, 200)
+}
 
 const paperAlt = '一张写着 404 的「已作废」纸条，可以按住揉皱'
 
@@ -605,6 +718,8 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+    clearTimeout(discardTimer)
+    clearTimeout(trashNoteTimer)
   narrowQuery?.removeEventListener('change', onNarrowChange)
 })
 </script>
