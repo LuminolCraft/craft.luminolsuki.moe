@@ -1,6 +1,16 @@
 <template>
   <!-- 进站加载画面：接管 index.html 的静态 #boot，就绪后像素解体揭开网站（只播一次） -->
   <PixelLoadingScreen />
+  <!-- 全站点点击火花：固定画布 + window 级监听，display:contents 不参与布局；
+       颜色走 --primary-color，深浅主题下自动解析成对应紫 -->
+  <ClickSpark
+    fixed
+    spark-color="var(--primary-color)"
+    :spark-size="10"
+    :spark-radius="16"
+    :spark-count="8"
+    :duration="420"
+  />
   <!-- 认证页（meta.hideChrome）隐藏全局导航/页脚，保证分屏布局全屏沉浸 -->
   <Navbar v-if="!route.meta.hideChrome" />
   <router-view />
@@ -20,6 +30,7 @@ import { useI18n } from 'vue-i18n'
 import Navbar from './components/Navbar.vue'
 import Footer from './components/Footer.vue'
 import PixelLoadingScreen from './components/common/PixelLoadingScreen.vue'
+import ClickSpark from './components/bits/ClickSpark.vue'
 import BirthdayGreeting from './components/birthday/BirthdayGreeting.vue'
 import AiChatPopover from './components/ai/AiChatPopover.vue'
 import { useAuthStore, AUTH_SYNC_KEY } from './stores/auth'
