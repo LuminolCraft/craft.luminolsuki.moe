@@ -65,16 +65,17 @@
                     :width="paperW"
                     :height="paperH"
                     :scene-height="paperSceneHeight"
-                    release-behavior="creased"
+                    release-behavior="stay"
                     :crumple-amount="0.84"
                     :fold-count="7"
                     :wrinkle-depth="0.55"
                     :detail="56"
                     :seed="7"
                     :shadow="true"
-                    :shadow-opacity="tokens.isDark ? 0.34 : 0.12"
+                    :shadow-opacity="tokens.isDark ? 0.34 : 0.2"
                     :paper-color="tokens.isDark ? '#e2dfe9' : '#fdfdfd'"
-                    :drag-radius="120"
+                    :drag-radius="9999"
+                    :throw-momentum="0.22"
                     @state-change="onPaperState"
                 />
                 <!-- 快照未就绪时的低调占位：不铺白底，只留虚线框 -->
@@ -538,11 +539,11 @@ const paperHint = computed(() => {
     case 'holding':
       return '继续按住…'
     case 'crumpled':
-      return '好了，它现在是一团废纸了'
+      return '扔到哪儿就停在哪儿 · 双击展平归位'
     case 'creased':
       return '揉过痕的纸，展不平了'
     default:
-      return '按住揉皱这张废纸 · 空格键也可以'
+      return '按住揉皱 · 拖起来甩出去 · 双击展平归位'
   }
 })
 
