@@ -900,12 +900,14 @@ const mountPaper = (): (() => void) | undefined => {
     }
     if (instant || keyboard || reduceMotion) for (const s of springs) advance(s, 0, 0, true);
     keyboard = false;
-    const crumpled = opts.releaseBehavior === 'stay' && amount.target > 0.001;
-    publish(crumpled ? 'crumpled' : memory.target > 0.001 ? 'creased' : 'flat');
-    if (!keyboard) {
-      const box = hit!.getBoundingClientRect();
-      emit('release', { x: box.left + box.width / 2, y: box.top + box.height / 2, crumpled });
-    }
+    // 状态上报保持上游语义（stay 才进 crumpled）；
+    // 但「松手时纸到底皱没皱」要看实际揉皱量，restore 模式下 amount.target 已经被清零了
+    const wasCrumpled = Math.max(amount.value, peak) > 0.05;
+    publish(
+      opts.releaseBehavior === 'stay' && amount.target > 0.001 ? 'crumpled' : memory.target > 0.001 ? 'creased' : 'flat'
+    );
+    const box = hit!.getBoundingClientRect();
+    emit('release', { x: box.left + box.width / 2, y: box.top + box.height / 2, crumpled: wasCrumpled });
     wake();
   }
 
