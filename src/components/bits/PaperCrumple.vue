@@ -1317,10 +1317,16 @@ const shadowFilter = () =>
 }
 
 /* 焦点环只在键盘路径出现：pointerdown 会先写 data-pointer='true' 再 focus()，
-   不排除它的话鼠标揉完松手会留一个紫色方框挂在纸面上 */
+   不排除它的话鼠标揉完松手会留一个方框挂在纸面上。
+   颜色用中性色而不是 --focus-ring-color 的紫色：这一圈始终压在纸面上，而纸在
+   深浅两个主题下都是浅色，所以环必须在两个主题下都偏深才看得见——用主题色的话
+   深色主题下会变成浅紫压在白纸上，等于没有。外圈那道极淡的白是给环伸出纸外、
+   落在深色页面上的那一小段留的分离，浅色主题下它落在白纸/浅底上不可见，不干扰。 */
 .pc-hit:focus-visible:not([data-pointer='true']) {
   outline: none !important;
-  box-shadow: 0 0 0 2px var(--focus-ring-color, #8b5cf6);
+  box-shadow:
+    0 0 0 2px rgb(23 23 23 / 88%),
+    0 0 0 3.5px rgb(255 255 255 / 16%);
 }
 
 /* 键盘提示点：只在键盘聚焦时出现；用指针操作过就永久隐藏 */
