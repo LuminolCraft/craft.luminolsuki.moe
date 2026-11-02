@@ -36,7 +36,10 @@
     校验方式：把补进去的 `!` 全部去掉后与上游源码逐行比对，**差异 0 行** —— 即除断言外脚本零改动。
     `THREE.Triangle.getBarycoord` 在 @types/three 0.187 下与上游调用一致（本来就要传 target），
     无需改签名。
-  - props / emits / `PaperCrumpleState` / `PaperCrumpleRelease` 签名与上游一致。
+  - props / emits / `PaperCrumpleState` / `PaperCrumpleRelease` 签名与上游一致，
+    只额外加了两处（都向后兼容，默认值就是上游行为）：
+    `throwMomentum`：松手惯性系数，上游写死 0.06，这里抽成 prop，调大才「甩得出去」
+    `dblclick`：双击展平并归位（reset），配合 releaseBehavior='stay' 做「丢在哪就去哪捡」
 -->
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue';
@@ -72,6 +75,8 @@ interface PaperCrumpleProps {
   dragRotation?: number;
   dragRadius?: number;
   returnToOrigin?: boolean;
+  /** 松手时的抛出惯性系数（0.06 = 上游原值，越大越像被甩出去） */
+  throwMomentum?: number;
   rotation?: number;
   seed?: number;
   detail?: number;
@@ -355,6 +360,7 @@ const props = withDefaults(defineProps<PaperCrumpleProps>(), {
   dragRotation: 10,
   dragRadius: 180,
   returnToOrigin: true,
+  throwMomentum: 0.06,
   rotation: 0,
   seed: 7,
   detail: 64,
@@ -386,6 +392,7 @@ const options = {
       dragRotation: props.dragRotation,
       dragRadius: props.dragRadius,
       returnToOrigin: props.returnToOrigin,
+      throwMomentum: props.throwMomentum,
       disabled: props.disabled,
       onStateChange: (next: PaperCrumpleState) => emit('stateChange', next),
       onError: (error: Error) => emit('error', error)
@@ -878,7 +885,10 @@ const mountPaper = (): (() => void) | undefined => {
         Math.max(0, finite(opts.dragRadius, 180)),
         Math.max(0, viewportHeight / 2 - halfHeight - 16)
       );
-      const coast = !reduceMotion && !keyboard && performance.now() - lastMove < 90 ? 0.06 : 0;
+      const coast =
+        !reduceMotion && !keyboard && performance.now() - lastMove < 90
+          ? Math.max(0, finite(opts.throwMomentum, 0.06))
+          : 0;
       posX.target = clamp(posX.value + speedX * coast, -limitX, limitX);
       posY.target = clamp(posY.value - speedY * coast, -limitY, limitY);
     }
@@ -966,6 +976,11 @@ const mountPaper = (): (() => void) | undefined => {
   function cancel() {
     finish(true);
   }
+  /** 双击 = 展平并归位（像把纸团捡回来抚平） */
+  function doubleClick() {
+    if (options.current.disabled || !ready) return;
+    reset();
+  }
   function blur() {
     hit!.dataset.pointer = 'false';
     cancel();
@@ -1048,6 +1063,7 @@ const mountPaper = (): (() => void) | undefined => {
   hit.addEventListener('keydown', keyDown);
   hit.addEventListener('keyup', keyUp);
   hit.addEventListener('blur', blur);
+  hit.addEventListener('dblclick', doubleClick);
   window.addEventListener('blur', cancel);
   document.addEventListener('visibilitychange', visibility);
   media.addEventListener('change', motionChange);
@@ -1143,6 +1159,7 @@ const mountPaper = (): (() => void) | undefined => {
     hit.removeEventListener('keydown', keyDown);
     hit.removeEventListener('keyup', keyUp);
     hit.removeEventListener('blur', blur);
+    hit.removeEventListener('dblclick', doubleClick);
     window.removeEventListener('blur', cancel);
     document.removeEventListener('visibilitychange', visibility);
     media.removeEventListener('change', motionChange);
