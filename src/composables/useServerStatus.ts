@@ -9,7 +9,7 @@
  * - online        data.online === true
  * - playersOnline / playersMax  来自 data.players
  * - playersLabel  "9/50"，数据不可用时为 "N/A"
- * - statusLabel   在线 / 服务器离线
+ * - statusLabel   检测中 / 在线 / 服务器离线
  */
 import { computed, onUnmounted, ref } from 'vue'
 
@@ -23,6 +23,7 @@ const REQUEST_TIMEOUT = 8_000
 
 /** 数据不可用时展示的占位文案 */
 const PLAYERS_UNAVAILABLE = 'N/A'
+const STATUS_CHECKING = '检测中'
 const STATUS_OFFLINE = '服务器离线'
 const STATUS_ONLINE = '在线'
 
@@ -51,7 +52,11 @@ export function useServerStatus() {
     hasPlayers.value ? `${playersOnline.value}/${playersMax.value}` : PLAYERS_UNAVAILABLE,
   )
 
-  const statusLabel = computed(() => (online.value ? STATUS_ONLINE : STATUS_OFFLINE))
+  /** 首次请求未返回前不算离线：既不是在线，也不该谎称离线 */
+const statusLabel = computed(() => {
+  if (loading.value) return STATUS_CHECKING
+  return online.value ? STATUS_ONLINE : STATUS_OFFLINE
+})
 
   async function fetchStatus(): Promise<void> {
     try {

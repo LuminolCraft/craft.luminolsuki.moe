@@ -24,7 +24,7 @@ gsap.registerPlugin(ScrollTrigger)
 const rootRef = ref<HTMLElement | null>(null)
 const fadeEls = ref<HTMLElement[]>([])
 
-const { online, playersOnline, playersMax, playersLabel, statusLabel, start: startPoll } =
+const { online, loading, playersOnline, playersMax, playersLabel, statusLabel, start: startPoll } =
   useServerStatus()
 
 /** 与 composable 内部的 hasPlayers 同口径：三个值都到齐才算有数 */
@@ -35,8 +35,12 @@ const hasPlayers = computed(
 /** 供读屏播报的一句话（只在数据变化时更新，不跟 CountUp 的帧） */
 const srStatus = ref('')
 watch(
-  [playersOnline, online],
-  ([current, isOnline]) => {
+  [playersOnline, online, loading],
+  ([current, isOnline, isLoading]) => {
+    if (isLoading) {
+      srStatus.value = '正在检测服务器状态'
+      return
+    }
     if (!isOnline) {
       srStatus.value = '服务器当前离线'
       return
@@ -116,7 +120,7 @@ onUnmounted(() => {
         <MagneticCornerFrame>
           <div class="status__cell">
             <div class="status__value">
-              <span class="status__dot" :class="{ 'is-offline': !online }" aria-hidden="true" />
+              <span class="status__dot" :class="{ 'is-offline': !loading && !online }" aria-hidden="true" />
               <span
                 :ref="(el) => { if (el) fadeEls.push(el as HTMLElement) }"
                 class="status__num"
