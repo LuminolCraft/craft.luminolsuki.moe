@@ -532,7 +532,7 @@ const rootStyle = computed(
   () =>
     ({
       '--sl-size': `${props.size}px`,
-      '--sl-radius': props.shape === 'pill' ? '14px' : '9999px',
+      '--sl-radius': props.shape === 'pill' ? '8px' : '9999px',
       '--sl-svg': `${2 * H.value}px`,
       '--sl-pad': props.padColor,
       '--sl-icon': props.iconColor,
@@ -681,8 +681,9 @@ const rootStyle = computed(
   transition: transform 160ms cubic-bezier(0.23, 1, 0.32, 1);
 }
 
+/* pill：与同排 .btn 对齐（20px 内边距 / 15px 字号 / 8px 圆角） */
 .sling-btn.is-pill .sling-btn__face {
-  padding: 0 30px;
+  padding: 0 20px;
   font-size: 0.9375rem;
   font-weight: 500;
   letter-spacing: 0;

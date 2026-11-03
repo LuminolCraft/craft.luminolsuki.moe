@@ -194,7 +194,7 @@ onUnmounted(() => {
             <!-- 加入交流群：SlingButton 弹弓按钮，点按或拖拽发射都打开群链接 -->
             <SlingButton
               shape="pill"
-              :size="52"
+              :size="40"
               aria-label="加入交流群"
               :pad-color="tokens.primary"
               icon-color="#ffffff"
