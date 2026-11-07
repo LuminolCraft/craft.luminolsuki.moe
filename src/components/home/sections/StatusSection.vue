@@ -98,7 +98,7 @@ onUnmounted(() => {
         <MagneticCornerFrame>
           <div class="status__cell">
             <div class="status__value">
-              <span class="status__num">26.2</span>
+              <span class="status__num">26.3</span>
             </div>
             <div class="status__label">纯净生存服务器版本</div>
           </div>
