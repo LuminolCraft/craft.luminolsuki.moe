@@ -296,7 +296,7 @@ The following plugins are registered in `src/gsap/plugin-setup.ts`:
 
 ```bash
 # 1. Clone the repository
-git clone <repository-url>
+git clone https://github.com/LuminolCraft/craft.luminolsuki.moe.git
 cd craft.luminolsuki.moe
 
 # 2. Install dependencies (pnpm recommended)
