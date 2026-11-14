@@ -15,7 +15,9 @@ export default {
   },
   "auth": {
     "field": {
-      "holdToReveal": "Hold to reveal password"
+      "holdToReveal": "Hold to reveal password",
+      "showPassword": "Show password",
+      "hidePassword": "Hide password"
     },
     "nav": {
       "login": "Sign in",

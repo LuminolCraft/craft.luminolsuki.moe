@@ -15,7 +15,9 @@ export default {
   },
   "auth": {
     "field": {
-      "holdToReveal": "按住显示密码"
+      "holdToReveal": "按住显示密码",
+      "showPassword": "显示密码",
+      "hidePassword": "隐藏密码"
     },
     "nav": {
       "login": "登录",

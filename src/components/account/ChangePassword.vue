@@ -8,41 +8,32 @@
     <p class="cp-desc">{{ t('auth.security.changePassword.sectionDesc') }}</p>
 
     <form class="cp-form" novalidate @submit.prevent="onSubmit">
-      <div class="cp-field">
-        <label class="cp-label" for="cp-current">{{ t('auth.security.changePassword.currentLabel') }}</label>
-        <input
-          id="cp-current"
-          v-model="currentPassword"
-          class="cp-input"
-          type="password"
-          autocomplete="current-password"
-          :placeholder="t('auth.security.changePassword.currentPlaceholder')"
-        />
-      </div>
+      <PasswordField
+        id="cp-current"
+        v-model="currentPassword"
+        :label="t('auth.security.changePassword.currentLabel')"
+        :placeholder="t('auth.security.changePassword.currentPlaceholder')"
+        autocomplete="current-password"
+        :disabled="submitting"
+      />
 
-      <div class="cp-field">
-        <label class="cp-label" for="cp-new">{{ t('auth.security.changePassword.newLabel') }}</label>
-        <input
-          id="cp-new"
-          v-model="newPassword"
-          class="cp-input"
-          type="password"
-          autocomplete="new-password"
-          :placeholder="t('auth.security.changePassword.newPlaceholder')"
-        />
-      </div>
+      <PasswordField
+        id="cp-new"
+        v-model="newPassword"
+        :label="t('auth.security.changePassword.newLabel')"
+        :placeholder="t('auth.security.changePassword.newPlaceholder')"
+        autocomplete="new-password"
+        :disabled="submitting"
+      />
 
-      <div class="cp-field">
-        <label class="cp-label" for="cp-confirm">{{ t('auth.security.changePassword.confirmLabel') }}</label>
-        <input
-          id="cp-confirm"
-          v-model="confirmPassword"
-          class="cp-input"
-          type="password"
-          autocomplete="new-password"
-          :placeholder="t('auth.security.changePassword.newPlaceholder')"
-        />
-      </div>
+      <PasswordField
+        id="cp-confirm"
+        v-model="confirmPassword"
+        :label="t('auth.security.changePassword.confirmLabel')"
+        :placeholder="t('auth.security.changePassword.newPlaceholder')"
+        autocomplete="new-password"
+        :disabled="submitting"
+      />
 
       <button type="submit" class="cp-submit" :disabled="submitting">
         {{ submitting ? t('auth.security.changePassword.submitting') : t('auth.security.changePassword.submit') }}
@@ -60,6 +51,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import PasswordField from '@/components/account/PasswordField.vue'
 import { useAuthStore } from '@/stores/auth'
 import { errorToResetAt, isAppError } from '@/lib/api'
 
@@ -151,37 +143,6 @@ async function onSubmit() {
   flex-direction: column;
   gap: 1rem;
   max-width: 26rem;
-}
-
-.cp-field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-}
-
-.cp-label {
-  font-size: 0.85rem;
-  font-weight: 500;
-  color: var(--text-color);
-}
-
-.cp-input {
-  width: 100%;
-  padding: 0.6rem 0.8rem;
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  background: transparent;
-  color: var(--text-color);
-  font-size: 0.92rem;
-  transition: border-color 0.15s ease;
-}
-.cp-input:focus {
-  outline: none;
-  border-color: var(--primary-color);
-}
-.cp-input:focus-visible {
-  outline: 2px solid var(--focus-ring-color, var(--vercel-focus-blue));
-  outline-offset: 2px;
 }
 
 .cp-submit {
