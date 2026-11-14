@@ -623,7 +623,10 @@ const rootStyle = computed(
   }
 }
 
-.cs-slot-fill {
+/* CodeSlot 用 h() 渲染：只有子组件根（.cs-slot）会拿到父 scope 标记，
+   内部的填充/数字节点拿不到，故这两层必须用 :deep 穿透，否则填充不显示、
+   数字退化成文档流文本并掉出格子。 */
+.cs-row :deep(.cs-slot-fill) {
   position: absolute;
   inset: 0;
   transform-origin: center;
@@ -631,11 +634,11 @@ const rootStyle = computed(
   background: var(--cs-accent);
   transition: background-color 200ms ease;
 }
-.cs-row[data-status='error'] .cs-slot-fill {
+.cs-row[data-status='error'] :deep(.cs-slot-fill) {
   background: var(--cs-danger);
 }
 
-.cs-slot-digit {
+.cs-row :deep(.cs-slot-digit) {
   position: absolute;
   inset: 0;
   z-index: 2;
@@ -713,7 +716,7 @@ const rootStyle = computed(
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .cs-slot-digit,
+  .cs-root :deep(.cs-slot-digit),
   .cs-check {
     transform: none !important;
     transition: opacity 150ms ease;
