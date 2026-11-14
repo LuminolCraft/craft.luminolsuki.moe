@@ -196,7 +196,7 @@ const panels = computed<Panel[]>(() => [
     metrics: [
       { value: props.serverOnline ? '在线' : '离线', label: t('home.serverStatus.statusLabel') },
       { value: playersLabel.value, label: t('home.serverStatus.playersLabel') },
-      { value: '26.2', label: t('home.serverStatus.versionLabel') },
+      { value: '26.3', label: t('home.serverStatus.versionLabel') },
     ],
     cta: { label: t('common.joinGroup'), href: JOIN_LINK },
   },
