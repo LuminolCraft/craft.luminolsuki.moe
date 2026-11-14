@@ -116,10 +116,6 @@
       <button type="submit" class="btn" :disabled="!canSubmit">
         {{ sending ? t('admin.notificationCompose.sending') : t('admin.notificationCompose.send') }}
       </button>
-      <p v-if="successCount !== null" class="form-success" role="status">
-        {{ t('admin.notificationCompose.success', { count: successCount }) }}
-      </p>
-      <p v-if="sendError" class="form-error" role="alert">{{ sendError }}</p>
     </form>
   </div>
 </template>
@@ -130,6 +126,7 @@ import { useI18n } from 'vue-i18n'
 import { api, isAppError } from '@/lib/api'
 import { normalizePaged } from '@/lib/paged'
 import { useNotificationsStore } from '@/stores/notifications'
+import { useToastStore } from '@/stores/toast'
 import { isInternalPath } from '@/utils/internalPath'
 import type { AdminUserListItem } from '@/types/nexus'
 import { useGsap } from '@/composables/useGsap'
@@ -142,6 +139,7 @@ import SegmentedControl, { type SegmentedOption } from '@/components/SegmentedCo
  * title 1-120、body ≤2000、link 以 / 开头的站内路径。
  */
 const { t, te } = useI18n()
+const toast = useToastStore()
 const notifications = useNotificationsStore()
 const { create, reduceMotion } = useGsap()
 
@@ -167,8 +165,6 @@ const title = ref('')
 const body = ref('')
 const link = ref('')
 const sending = ref(false)
-const successCount = ref<number | null>(null)
-const sendError = ref('')
 
 // ---------- 用户选择 ----------
 const users = ref<AdminUserListItem[]>([])
@@ -235,8 +231,6 @@ function errorText(e: unknown): string {
 
 async function onSubmit() {
   if (!canSubmit.value) return
-  successCount.value = null
-  sendError.value = ''
   sending.value = true
   try {
     const target =
@@ -252,13 +246,13 @@ async function onSubmit() {
       ...(body.value ? { body: body.value } : {}),
       ...(link.value ? { link: link.value } : {}),
     })
-    successCount.value = count
+    toast.success(t('admin.notificationCompose.success', { count }))
     // 成功后清空内容（保留目标与类型便于连续发布）
     title.value = ''
     body.value = ''
     link.value = ''
   } catch (e) {
-    sendError.value = errorText(e)
+    toast.error(errorText(e))
   } finally {
     sending.value = false
   }

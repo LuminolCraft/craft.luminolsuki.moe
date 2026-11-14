@@ -37,8 +37,6 @@
 
       <DangerZone />
     </template>
-
-    <div v-if="actionError" class="security-error" role="alert">{{ actionError }}</div>
   </div>
 </template>
 
@@ -51,17 +49,18 @@ import SessionListItem from '@/components/auth/SessionListItem.vue'
 import ChangePassword from '@/components/account/ChangePassword.vue'
 import DangerZone from '@/components/account/DangerZone.vue'
 import { useAuthStore } from '@/stores/auth'
+import { useToastStore } from '@/stores/toast'
 import { useGsap } from '@/composables/useGsap'
 
 const { t } = useI18n()
 const router = useRouter()
 const auth = useAuthStore()
+const toast = useToastStore()
 const { create, reduceMotion } = useGsap()
 
 const loading = ref(true)
 const revokingId = ref('')
 const revokingAll = ref(false)
-const actionError = ref('')
 
 const currentSessions = computed(() => auth.sessions.filter((s) => s.current))
 const otherSessions = computed(() => auth.sessions.filter((s) => !s.current))
@@ -72,13 +71,12 @@ const hasCredential = computed(() =>
 
 async function onRevoke(id: string) {
   revokingId.value = id
-  actionError.value = ''
   try {
     await auth.revokeSession(id)
     // 撤销的是当前会话 → 登录态已失效，回登录页
     if (!auth.isAuthenticated) router.replace('/login')
   } catch {
-    actionError.value = t('auth.security.revokeFailed')
+    toast.error(t('auth.security.revokeFailed'))
   } finally {
     revokingId.value = ''
   }
@@ -86,13 +84,12 @@ async function onRevoke(id: string) {
 
 async function onRevokeAll() {
   revokingAll.value = true
-  actionError.value = ''
   try {
     // 退出所有设备（含当前）：登录态随之失效，回登录页
     await auth.revokeAllSessions()
     router.replace('/login')
   } catch {
-    actionError.value = t('auth.security.revokeFailed')
+    toast.error(t('auth.security.revokeFailed'))
   } finally {
     revokingAll.value = false
   }
@@ -114,7 +111,7 @@ onMounted(async () => {
   try {
     await auth.fetchSessions()
   } catch {
-    actionError.value = t('auth.security.revokeFailed')
+    toast.error(t('auth.security.revokeFailed'))
   } finally {
     loading.value = false
   }
@@ -174,14 +171,5 @@ onMounted(async () => {
 .security-revoke-all:focus-visible {
   outline: 2px solid var(--focus-ring-color, var(--vercel-focus-blue));
   outline-offset: 2px;
-}
-
-.security-error {
-  margin-top: 1.6rem;
-  padding: 0.85rem 1rem;
-  border-left: 2px solid var(--error-color, #e5484d);
-  background: color-mix(in srgb, var(--error-color, #e5484d) 6%, transparent);
-  font-size: 0.85rem;
-  color: var(--error-color, #e5484d);
 }
 </style>

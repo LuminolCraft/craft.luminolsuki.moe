@@ -93,7 +93,6 @@
           <button type="submit" class="profile-save" :disabled="saving || !dirty">
             {{ saving ? t('settings.profile.saving') : t('settings.profile.save') }}
           </button>
-          <span v-if="savedMessage" class="profile-saved" role="status">{{ savedMessage }}</span>
         </div>
         <p v-if="formError" class="profile-error" role="alert">{{ formError }}</p>
       </form>
@@ -107,6 +106,7 @@ import { useI18n } from 'vue-i18n'
 import UserAvatar from '@/components/UserAvatar.vue'
 import { useAuthStore } from '@/stores/auth'
 import { useNexusStore } from '@/stores/nexus'
+import { useToastStore } from '@/stores/toast'
 import { useGsap } from '@/composables/useGsap'
 import { isAppError } from '@/lib/api'
 import { normalizeBirthday, toDateInputValue } from '@/lib/birthday'
@@ -116,6 +116,7 @@ import { cleanUsernameInput, validateUsername } from '@/lib/username'
 const { t, te } = useI18n()
 const auth = useAuthStore()
 const nexus = useNexusStore()
+const toast = useToastStore()
 const { create, reduceMotion } = useGsap()
 
 // ---------- 封禁记录（会话级缓存，变更后才会重拉） ----------
@@ -127,7 +128,6 @@ const email = ref(auth.me?.email ?? '')
 const birthday = ref(toDateInputValue(auth.me?.birthday))
 const saving = ref(false)
 const formError = ref('')
-const savedMessage = ref('')
 
 /** 生日自助修改机会是否已用掉（用掉后输入框锁定，只能找管理员改） */
 const birthdayLocked = computed(() => !!auth.me?.birthdaySelfEdited)
@@ -169,7 +169,6 @@ function errorText(code: string): string {
 
 async function onSave() {
   formError.value = ''
-  savedMessage.value = ''
 
   // 先做粘贴清洗（零宽/双向控制字符）再校验：复制粘贴残留不该变成恒 400 的死循环
   const nextUsername = cleanUsernameInput(username.value)
@@ -209,17 +208,22 @@ async function onSave() {
     const updated = await nexus.updateMe(payload)
     const emailChanged = payload.email !== undefined
     const birthdayChanged = payload.birthday !== undefined
-    savedMessage.value = emailChanged
-      ? t('settings.profile.savedReverify')
-      : birthdayChanged
-        ? t('settings.profile.savedBirthday')
-        : t('settings.profile.saved')
+    // 保存结果走全局 toast（字段级格式校验仍留在表单内联提示里）
+    toast.success(
+      t('settings.profile.savedTitle'),
+      emailChanged
+        ? t('settings.profile.savedReverify')
+        : birthdayChanged
+          ? t('settings.profile.savedBirthday')
+          : t('settings.profile.saved'),
+    )
     // 邮箱变更后端会重置验证状态；生日变更后端会把自改机会置位（输入框随即锁定）
     if (emailChanged || birthdayChanged) auth.me = updated
     if (birthdayChanged) birthday.value = toDateInputValue(updated.birthday)
   } catch (e) {
-    if (isAppError(e)) formError.value = errorText(e.code)
-    else formError.value = t('settings.profile.errGeneric')
+    const msg = isAppError(e) ? errorText(e.code) : t('settings.profile.errGeneric')
+    formError.value = msg
+    toast.error(t('settings.profile.saveFailedTitle'), msg)
   } finally {
     saving.value = false
   }
@@ -462,11 +466,6 @@ onMounted(async () => {
 .profile-save:focus-visible {
   outline: 2px solid var(--focus-ring-color, var(--vercel-focus-blue));
   outline-offset: 2px;
-}
-
-.profile-saved {
-  font-size: 0.85rem;
-  color: var(--primary-color);
 }
 
 .profile-error {

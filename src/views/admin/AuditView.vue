@@ -180,8 +180,6 @@
       >
         {{ archiving ? t('admin.audit.archiving') : t('admin.audit.triggerArchive') }}
       </button>
-      <p v-if="archiveError" class="form-error" role="alert">{{ archiveError }}</p>
-      <p v-if="archiveSuccess" class="form-success" role="status">{{ t('admin.audit.archiveTriggered') }}</p>
     </section>
   </div>
 </template>
@@ -200,10 +198,12 @@ import {
 } from '@/lib/audit'
 import { normalizePaged } from '@/lib/paged'
 import { useAuthorizationStore } from '@/stores/authorization'
+import { useToastStore } from '@/stores/toast'
 import type { AuditActionOption, AuditArchive, AuditLog } from '@/types/nexus'
 import { useGsap } from '@/composables/useGsap'
 
 const { t, te, locale } = useI18n()
+const toast = useToastStore()
 const authz = useAuthorizationStore()
 const { create, reduceMotion } = useGsap()
 
@@ -451,8 +451,6 @@ function onReset() {
 // ---------- 归档 ----------
 const archives = ref<AuditArchive[]>([])
 const archiving = ref(false)
-const archiveError = ref('')
-const archiveSuccess = ref(false)
 
 async function loadArchives() {
   try {
@@ -464,15 +462,13 @@ async function loadArchives() {
 }
 
 async function onTriggerArchive() {
-  archiveError.value = ''
-  archiveSuccess.value = false
   archiving.value = true
   try {
     await api.post<unknown>('/admin/audit/archive')
-    archiveSuccess.value = true
+    toast.success(t('admin.audit.archiveTriggered'))
     await loadArchives()
   } catch (e) {
-    archiveError.value = errorText(e)
+    toast.error(errorText(e))
   } finally {
     archiving.value = false
   }

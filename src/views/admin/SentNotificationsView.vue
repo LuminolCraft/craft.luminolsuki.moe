@@ -53,8 +53,6 @@
     </template>
 
     <p v-if="loadError" class="page-error" role="alert">{{ loadError }}</p>
-    <p v-if="successText" class="form-success" role="status">{{ successText }}</p>
-    <p v-if="deleteError" class="form-error" role="alert">{{ deleteError }}</p>
 
     <!-- 删除两步确认弹窗（风格对齐 MinecraftView 解绑 / DangerZone 注销：后果说明 → 确认执行） -->
     <Teleport to="body">
@@ -133,6 +131,7 @@ import { onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { isAppError } from '@/lib/api'
 import { useNotificationsStore } from '@/stores/notifications'
+import { useToastStore } from '@/stores/toast'
 import type { SentNotificationBatch } from '@/types/notification'
 import { useGsap } from '@/composables/useGsap'
 
@@ -144,12 +143,12 @@ import { useGsap } from '@/composables/useGsap'
  */
 const { t, te } = useI18n()
 const notifications = useNotificationsStore()
+const toast = useToastStore()
 const { create, reduceMotion } = useGsap()
 
 const loading = ref(true)
 const loadError = ref('')
 const deleteError = ref('')
-const successText = ref('')
 const deletingId = ref('')
 const batches = ref<SentNotificationBatch[]>([])
 /** 两步确认弹窗状态（替代原生 confirm，风格对齐 MinecraftView 解绑 / DangerZone 注销） */
@@ -191,7 +190,6 @@ function errorText(e: unknown, fallback: 'loadError' | 'deleteError'): string {
 async function load() {
   loading.value = true
   loadError.value = ''
-  successText.value = ''
   try {
     batches.value = await notifications.adminListSent()
   } catch (e) {
@@ -218,7 +216,6 @@ async function confirmDelete() {
   const target = deleteTarget.value
   if (!target || deletingId.value) return
   deleteError.value = ''
-  successText.value = ''
   const key = batchKey(target)
   deletingId.value = key
   try {
@@ -230,7 +227,7 @@ async function confirmDelete() {
     })
     // 删除成功即从本地列表移除该行；幂等空删 deleted=0（已被删/并发删）也按成功提示
     batches.value = batches.value.filter((b) => batchKey(b) !== key)
-    successText.value = t('admin.sentNotifications.deleteSuccess', { count: deleted })
+    toast.success(t('admin.sentNotifications.deleteSuccess', { count: deleted }))
     closeDeleteDialog()
   } catch (e) {
     deleteError.value = errorText(e, 'deleteError')

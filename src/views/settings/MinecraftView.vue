@@ -139,8 +139,6 @@
           <p class="mc-conflict-title">{{ t('minecraft.errBindPending') }}</p>
           <p>{{ t('minecraft.pendingConflictGuide') }}</p>
         </div>
-        <p v-else-if="bindError" class="mc-error" role="alert">{{ bindError }}</p>
-        <p v-if="bindSuccess" class="mc-success" role="status">{{ t('minecraft.bindSuccess') }}</p>
       </form>
     </section>
 
@@ -192,8 +190,6 @@
           <button type="submit" class="mc-submit" :disabled="creatingLink || linkMainId === linkAltId">
             {{ creatingLink ? t('minecraft.linkSubmitting') : t('minecraft.linkSubmit') }}
           </button>
-          <p v-if="linkError" class="mc-error" role="alert">{{ linkError }}</p>
-          <p v-if="linkSuccess" class="mc-success" role="status">{{ t('minecraft.linkCreated') }}</p>
         </form>
       </template>
     </section>
@@ -264,6 +260,7 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useNexusStore } from '@/stores/nexus'
+import { useToastStore } from '@/stores/toast'
 import { useGsap } from '@/composables/useGsap'
 import { errorToResetAt, isAppError } from '@/lib/api'
 import { mcAvatarUrl } from '@/lib/minecraft'
@@ -272,6 +269,7 @@ import type { AccountLink, MinecraftAccount, MinecraftBindPending } from '@/type
 
 const { t } = useI18n()
 const nexus = useNexusStore()
+const toast = useToastStore()
 const { create, reduceMotion } = useGsap()
 
 // ---------- 列表（会话级缓存） ----------
@@ -284,7 +282,6 @@ const accounts = computed(() => nexus.minecraftAccounts)
 const MC_NAME_RE = /^[A-Za-z0-9_]{3,16}$/
 const playerName = ref('')
 const binding = ref(false)
-const bindError = ref('')
 const bindSuccess = ref(false)
 // 单 pending 强制：pending 存活时再次提交 → 409 MINECRAFT_BIND_PENDING
 const bindPendingConflict = ref(false)
@@ -368,13 +365,12 @@ function loadPendingBind(): StoredPendingBind | null {
 }
 
 async function onBind() {
-  bindError.value = ''
   bindSuccess.value = false
   bindPendingConflict.value = false
   // 名字区分大小写原样提交（核验时与插件上报的游戏内玩家名精确比对）；
   // 不做存在性预校验（用户拍板）——输错名字在核验时必然 player_mismatch
   if (!MC_NAME_RE.test(playerName.value)) {
-    bindError.value = t('minecraft.errInvalidName')
+    toast.error(t('minecraft.errInvalidName'))
     return
   }
   binding.value = true
@@ -389,12 +385,14 @@ async function onBind() {
     } else if (isAppError(e) && e.code === 'RATE_LIMITED') {
       // 429：预绑定限流，后端携带 details.resetAt（epoch 毫秒）→ 展示可重试时间点（手册 §5/§10.7）
       const resetAt = errorToResetAt(e)
-      bindError.value = resetAt
-        ? t('minecraft.errRateLimitedUntil', { time: new Date(resetAt).toLocaleString() })
-        : t('minecraft.errRateLimited')
+      toast.error(
+        resetAt
+          ? t('minecraft.errRateLimitedUntil', { time: new Date(resetAt).toLocaleString() })
+          : t('minecraft.errRateLimited'),
+      )
     } else {
       // VALIDATION_ERROR（名字格式兜底，前端已预校验）与其他错误
-      bindError.value = t('minecraft.errInvalidForm')
+      toast.error(t('minecraft.errInvalidForm'))
     }
   } finally {
     binding.value = false
@@ -482,6 +480,7 @@ function onTicketShred() {
     successTearing.value = false
     exitPending()
     bindSuccess.value = true
+    toast.success(t('minecraft.bindSuccess'))
     playerName.value = ''
     return
   }
@@ -495,6 +494,7 @@ function onPendingResolved() {
   if (pollExpired.value) {
     exitPending()
     bindSuccess.value = true
+    toast.success(t('minecraft.bindSuccess'))
     playerName.value = ''
     return
   }
@@ -585,8 +585,6 @@ const removingLinkId = ref('')
 const creatingLink = ref(false)
 const linkMainId = ref('')
 const linkAltId = ref('')
-const linkError = ref('')
-const linkSuccess = ref(false)
 
 const selectedAccount = computed(() => accounts.value.find((a) => a.id === selectedId.value) ?? null)
 const selectedLinks = computed(() => nexus.linksByAccount[selectedId.value] ?? [])
@@ -594,8 +592,6 @@ const selectedLinks = computed(() => nexus.linksByAccount[selectedId.value] ?? [
 async function selectAccount(id: string) {
   if (selectedId.value === id) return
   selectedId.value = id
-  linkError.value = ''
-  linkSuccess.value = false
   linksLoading.value = true
   try {
     await nexus.fetchLinksForAccount(id)
@@ -614,24 +610,22 @@ function peerName(link: AccountLink): string {
 }
 
 async function onCreateLink() {
-  linkError.value = ''
-  linkSuccess.value = false
   if (!linkMainId.value || !linkAltId.value) return
   if (linkMainId.value === linkAltId.value) {
-    linkError.value = t('minecraft.sameAccount')
+    toast.error(t('minecraft.sameAccount'))
     return
   }
   creatingLink.value = true
   try {
     await nexus.createAccountLink({ ownerId: linkMainId.value, linkedId: linkAltId.value, relation: 'main_alt' })
-    linkSuccess.value = true
+    toast.success(t('minecraft.linkCreated'))
     await nexus.fetchLinksForAccount(selectedId.value, true)
   } catch (e) {
     const code = isAppError(e) ? e.code : ''
-    if (code === 'ACCOUNT_LINK_DUPLICATE') linkError.value = t('minecraft.errLinkDuplicate')
-    else if (code === 'ACCOUNT_LINK_RATE_LIMITED') linkError.value = t('minecraft.errLinkRateLimited')
-    else if (code === 'RATE_LIMITED') linkError.value = t('admin.common.errRateLimited')
-    else linkError.value = t('admin.common.errGeneric')
+    if (code === 'ACCOUNT_LINK_DUPLICATE') toast.error(t('minecraft.errLinkDuplicate'))
+    else if (code === 'ACCOUNT_LINK_RATE_LIMITED') toast.error(t('minecraft.errLinkRateLimited'))
+    else if (code === 'RATE_LIMITED') toast.error(t('admin.common.errRateLimited'))
+    else toast.error(t('admin.common.errGeneric'))
   } finally {
     creatingLink.value = false
   }
@@ -639,13 +633,12 @@ async function onCreateLink() {
 
 async function onRemoveLink(link: AccountLink) {
   if (!window.confirm(t('minecraft.linkRemoveConfirm'))) return
-  linkError.value = ''
   removingLinkId.value = link.id
   try {
     await nexus.removeAccountLink(link)
     await nexus.fetchLinksForAccount(selectedId.value, true)
   } catch {
-    linkError.value = t('minecraft.linkRemoveFailed')
+    toast.error(t('minecraft.linkRemoveFailed'))
   } finally {
     removingLinkId.value = ''
   }
