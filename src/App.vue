@@ -19,6 +19,8 @@
   <BirthdayGreeting />
   <!-- AI 悬浮助手：全站可用，认证页（分屏沉浸）不显示 -->
   <AiChatPopover v-if="!route.meta.hideChrome" />
+  <!-- 全站消息提示宿主（SwipeToast）：认证页也要能提示，故不随 hideChrome 隐藏 -->
+  <ToastHost />
 </template>
 
 
@@ -33,6 +35,7 @@ import PixelLoadingScreen from './components/common/PixelLoadingScreen.vue'
 import ClickSpark from './components/bits/ClickSpark.vue'
 import BirthdayGreeting from './components/birthday/BirthdayGreeting.vue'
 import AiChatPopover from './components/ai/AiChatPopover.vue'
+import ToastHost from './components/common/ToastHost.vue'
 import { useAuthStore, AUTH_SYNC_KEY } from './stores/auth'
 
 const route = useRoute()
