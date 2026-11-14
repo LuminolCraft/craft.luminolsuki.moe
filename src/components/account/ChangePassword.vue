@@ -254,6 +254,8 @@ function resolveSubmitError(e: unknown): string {
   switch (e.code) {
     case 'INVALID_PASSWORD':
       return t('auth.security.changePassword.invalidCurrent')
+    case 'PASSWORD_WEAK':
+      return t('auth.passwordWeak')
     case 'PASSWORD_CHANGE_OTP_INVALID':
       return t('auth.security.changePassword.codeInvalid')
     case 'PASSWORD_CHANGE_OTP_EXPIRED':

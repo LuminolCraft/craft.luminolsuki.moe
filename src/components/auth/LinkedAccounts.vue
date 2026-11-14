@@ -377,6 +377,7 @@ async function onSetPassword() {
   } catch (e) {
     const code = isAppError(e) ? e.code : ''
     if (code === 'PASSWORD_ALREADY_SET') passwordError.value = t('auth.security.emailLinking.passwordAlreadySet')
+    else if (code === 'PASSWORD_WEAK') passwordError.value = t('auth.passwordWeak')
     // 后端自定义接口 404（未部署/未开放）归一化为 NOT_FOUND / AUTH_ERROR
     else if (code === 'NOT_FOUND' || code === 'AUTH_ERROR') passwordError.value = t('auth.security.emailLinking.notAvailable')
     else passwordError.value = t('auth.security.emailLinking.passwordFailed')

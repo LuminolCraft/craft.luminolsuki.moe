@@ -201,7 +201,8 @@ function handleAuthError(e: unknown) {
       formInvalid.value = true
       break
     case 'INVALID_PASSWORD':
-      errorMsg.value = t('auth.register.weakPassword')
+    case 'PASSWORD_WEAK':
+      errorMsg.value = t('auth.passwordWeak')
       formInvalid.value = true
       break
     case 'RATE_LIMITED':

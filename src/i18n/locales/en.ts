@@ -14,6 +14,7 @@ export default {
     "close": "Accept wishes"
   },
   "auth": {
+    "passwordWeak": "This password is too common or has appeared in leaked data. Please choose a stronger one.",
     "field": {
       "holdToReveal": "Hold to reveal password",
       "showPassword": "Show password",

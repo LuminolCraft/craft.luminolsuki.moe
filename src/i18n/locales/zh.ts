@@ -14,6 +14,7 @@ export default {
     "close": "收下祝福"
   },
   "auth": {
+    "passwordWeak": "密码过于简单或已出现在泄露数据中，请换一个更强的密码",
     "field": {
       "holdToReveal": "按住显示密码",
       "showPassword": "显示密码",
