@@ -70,4 +70,14 @@ describe('PasswordField', () => {
     expect(inputOf(wrapper).attributes('disabled')).toBeDefined()
     expect(buttonOf(wrapper).attributes('disabled')).toBeDefined()
   })
+
+  it('revealable=false 时不渲染眼睛按钮，密码恒为密文', () => {
+    const wrapper = mount(PasswordField, {
+      props: { id: 'pw-current', label: '当前密码', modelValue: '', revealable: false },
+      global: { plugins: [i18n] },
+    })
+    expect(wrapper.find('button').exists()).toBe(false)
+    expect(inputOf(wrapper).attributes('type')).toBe('password')
+    expect(inputOf(wrapper).classes()).not.toContain('has-reveal')
+  })
 })

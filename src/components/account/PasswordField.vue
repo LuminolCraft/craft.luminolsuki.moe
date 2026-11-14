@@ -5,6 +5,7 @@
       <input
         :id="id"
         class="pw-input"
+        :class="{ 'has-reveal': revealable }"
         :type="revealed ? 'text' : 'password'"
         :value="modelValue"
         :autocomplete="autocomplete"
@@ -15,6 +16,7 @@
       />
       <!-- 点击锁定切换（非登录页的按住式）：改密码需对照两个输入框，按住式松手即遮回 -->
       <button
+        v-if="revealable"
         type="button"
         class="pw-reveal"
         :aria-label="t(revealed ? 'auth.field.hidePassword' : 'auth.field.showPassword')"
@@ -60,6 +62,9 @@ import { useI18n } from 'vue-i18n'
  * 设置页通用密码输入框：沿用 cp-* / 安全页表单范式（小写 label、0.6rem 内距），
  * 右侧眼睛按钮点击切换明文。AuthField 服务于登录/注册（uppercase label + 按住式），
  * 两者范式不同，不合并。
+ *
+ * `revealable = false` 用于「当前密码」这类**旧密码**输入：旧密码不允许被明文回看，
+ * 该框不渲染眼睛按钮（新密码/确认密码是两个需要互相比对的输入，才给切换）。
  */
 withDefaults(
   defineProps<{
@@ -69,8 +74,9 @@ withDefaults(
     placeholder?: string
     autocomplete?: string
     disabled?: boolean
+    revealable?: boolean
   }>(),
-  { placeholder: '', autocomplete: 'current-password', disabled: false },
+  { placeholder: '', autocomplete: 'current-password', disabled: false, revealable: true },
 )
 
 const emit = defineEmits<{ 'update:modelValue': [value: string] }>()
@@ -103,8 +109,7 @@ function onInput(event: Event) {
 
 .pw-input {
   width: 100%;
-  /* 右侧常驻 42px 给眼睛按钮，避免显示/隐藏时文字宽度跳动 */
-  padding: 0.6rem 2.6rem 0.6rem 0.8rem;
+  padding: 0.6rem 0.8rem;
   border: 1px solid var(--border-color);
   border-radius: 6px;
   background: transparent;
@@ -112,6 +117,10 @@ function onInput(event: Event) {
   font-size: 0.92rem;
   font-family: inherit;
   transition: border-color 0.15s ease;
+}
+/* 有眼睛按钮时右侧常驻 42px，避免显示/隐藏切换时文字宽度跳动 */
+.pw-input.has-reveal {
+  padding-right: 2.6rem;
 }
 .pw-input:focus {
   outline: none;

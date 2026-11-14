@@ -8,6 +8,7 @@
     <p class="cp-desc">{{ t('auth.security.changePassword.sectionDesc') }}</p>
 
     <form class="cp-form" novalidate @submit.prevent="onSubmit">
+      <!-- 当前密码是旧密码：不给眼睛按钮，明文不允许回看 -->
       <PasswordField
         id="cp-current"
         v-model="currentPassword"
@@ -15,6 +16,7 @@
         :placeholder="t('auth.security.changePassword.currentPlaceholder')"
         autocomplete="current-password"
         :disabled="submitting"
+        :revealable="false"
       />
 
       <PasswordField

@@ -54,6 +54,13 @@ describe('ChangePassword（设置 → 安全：修改密码）', () => {
     expect(wrapper.find('.cp-submit').text()).toBe('修改密码')
   })
 
+  it('当前密码框不给显示切换（旧密码不允许明文回看），仅新密码 / 确认密码可切换', () => {
+    const { wrapper } = mountSection(ok)
+    expect(wrapper.findAll('button.pw-reveal')).toHaveLength(2)
+    const currentField = wrapper.find('#cp-current').element.closest('.pw-field')
+    expect(currentField?.querySelector('button')).toBeNull()
+  })
+
   it('新密码少于 8 位 → 内联提示，不调用 store', async () => {
     const { wrapper, spy } = mountSection(ok)
     await submit(wrapper, { current: 'old-password', next: 'short', confirm: 'short' })
