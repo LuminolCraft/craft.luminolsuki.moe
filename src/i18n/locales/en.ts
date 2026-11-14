@@ -222,7 +222,7 @@ export default {
       },
       "changePassword": {
         "sectionTitle": "Change password",
-        "sectionDesc": "Other devices are signed out immediately; this device stays signed in.",
+        "sectionDesc": "An email verification code is required. Other devices are signed out immediately; this device stays signed in.",
         "currentLabel": "Current password",
         "currentPlaceholder": "Enter your current password",
         "newLabel": "New password",
@@ -239,7 +239,20 @@ export default {
         "notAvailable": "This account has no password sign-in — use \u201CSet a password\u201D instead",
         "rateLimited": "Too many attempts, please retry later",
         "rateLimitedUntil": "Too many attempts. Please retry after {time}",
-        "failed": "Failed to change password, please retry later"
+        "failed": "Failed to change password, please retry later",
+        "sendCode": "Send email code",
+        "sendingCode": "Sending…",
+        "resendCode": "Resend code",
+        "resendIn": "Resend in {seconds}s",
+        "codeSentTo": "Code sent to {email}",
+        "codeLabel": "Email verification code",
+        "codeWarning": "The code is valid for 10 minutes and can be used once. If this wasn't you, reset your password from the forgot-password page immediately.",
+        "codeRequired": "Please enter the 6-digit code",
+        "codeInvalid": "Incorrect code, please try again",
+        "codeExpired": "The code has expired, please request a new one",
+        "codeTooManyAttempts": "Too many incorrect attempts, please request a new code",
+        "emailNotVerified": "Email is not verified yet — verify it first",
+        "sendCodeFailed": "Failed to send the code, please retry later"
       },
       "mergeBanner": {
         "title": "You are in a newly created QQ account",

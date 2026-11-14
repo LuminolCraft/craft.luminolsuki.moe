@@ -222,7 +222,7 @@ export default {
       },
       "changePassword": {
         "sectionTitle": "修改密码",
-        "sectionDesc": "修改后其他设备的登录会话会立即失效，当前设备保持登录。",
+        "sectionDesc": "修改前需要邮箱验证码确认。修改后其他设备的登录会话会立即失效，当前设备保持登录。",
         "currentLabel": "当前密码",
         "currentPlaceholder": "请输入当前密码",
         "newLabel": "新密码",
@@ -239,7 +239,20 @@ export default {
         "notAvailable": "当前账号没有密码登录方式，请使用「设置密码」",
         "rateLimited": "操作过于频繁，请稍后重试",
         "rateLimitedUntil": "操作过于频繁，请于 {time} 后再试",
-        "failed": "修改密码失败，请稍后重试"
+        "failed": "修改密码失败，请稍后重试",
+        "sendCode": "发送邮箱验证码",
+        "sendingCode": "发送中…",
+        "resendCode": "重新发送验证码",
+        "resendIn": "{seconds} 秒后可重发",
+        "codeSentTo": "验证码已发送至 {email}",
+        "codeLabel": "邮箱验证码",
+        "codeWarning": "验证码 10 分钟内有效、仅可使用一次。若不是你本人操作，请立即到「忘记密码」重置密码。",
+        "codeRequired": "请输入 6 位邮箱验证码",
+        "codeInvalid": "验证码不正确，请重新输入",
+        "codeExpired": "验证码已过期，请重新获取",
+        "codeTooManyAttempts": "验证码错误次数过多，请重新获取",
+        "emailNotVerified": "邮箱尚未验证，请先完成邮箱验证",
+        "sendCodeFailed": "验证码发送失败，请稍后重试"
       },
       "mergeBanner": {
         "title": "你当前在一个新建的 QQ 账号中",

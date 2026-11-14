@@ -6,7 +6,13 @@ import { resolveInternalPath } from '@/utils/internalPath'
 import { useAuthorizationStore } from '@/stores/authorization'
 import { useNexusStore } from '@/stores/nexus'
 import { useNotificationsStore } from '@/stores/notifications'
-import type { AppError, SessionInfo, SessionRevokeResult, User } from '@/types/auth'
+import type {
+  AppError,
+  PasswordChangeOtpInfo,
+  SessionInfo,
+  SessionRevokeResult,
+  User,
+} from '@/types/auth'
 
 /** 这些 401 code 一律视为"未登录"并清空本地用户态（v1 文档 §19/§20） */
 export const UNAUTH_CODES: ReadonlySet<string> = new Set([
@@ -396,19 +402,28 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   /**
-   * 修改登录密码（POST /api/auth/change-password，Better Auth 原生端点）。
-   * 需原密码校验；服务端 `hooks.before` 强制 `revokeOtherSessions`——其他设备
-   * 会话全部撤销、当前设备重签会话 Cookie（当前设备保持登录），故成功后重拉
-   * 设备列表让安全页同步。错误经 toAppError 归一（INVALID_PASSWORD = 原密码
-   * 错误；429 RATE_LIMITED 带 resetAt）。
+   * 发送改密验证码（POST /api/v1/me/password-change/otp）。
+   *
+   * 改密事前门禁第一步：服务端向账号邮箱投递 6 位验证码（10 分钟有效、
+   * 仅可用一次），响应只回打码邮箱与有效期。同一封邮件同时是安全预警——
+   * 正文写明「不是你本人操作请立即重置密码」并附链接，故即使攻击者持有
+   * 会话与原密码，账号所有者也会在改密成功前收到提醒。
    */
-  async function changePassword(currentPassword: string, newPassword: string) {
-    const { error } = await authClient.changePassword({
-      currentPassword,
-      newPassword,
-      revokeOtherSessions: true,
-    })
-    if (error) throw toAppError(error)
+  async function requestPasswordChangeOtp(): Promise<PasswordChangeOtpInfo> {
+    return await api.post<PasswordChangeOtpInfo>('/me/password-change/otp')
+  }
+
+  /**
+   * 修改登录密码（POST /api/v1/me/password，需邮箱验证码）。
+   *
+   * 链路：验证码校验 → 服务端带内部票据调 Better Auth 改密 → 撤销其他设备
+   * 会话、当前设备重签 Cookie（响应透传 Set-Cookie，当前设备保持登录），
+   * 故成功后重拉设备列表让安全页同步。
+   * 错误按 code 分支：INVALID_PASSWORD（原密码错）/ PASSWORD_CHANGE_OTP_*
+   * （验证码错/过期/超限）/ RATE_LIMITED（带 resetAt）。
+   */
+  async function changePassword(currentPassword: string, newPassword: string, otp: string) {
+    await api.post<{ ok: true }>('/me/password', { currentPassword, newPassword, otp })
     await fetchSessions()
   }
 
@@ -473,6 +488,7 @@ export const useAuthStore = defineStore('auth', () => {
     unlinkLinkedAccount,
     changeEmail,
     setPassword,
+    requestPasswordChangeOtp,
     changePassword,
     deleteMyAccount,
     fetchSessions,

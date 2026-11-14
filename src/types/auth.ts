@@ -35,6 +35,17 @@ export interface SessionInfo {
   userAgent?: string | null
 }
 
+/**
+ * 改密验证码发送结果（POST /api/v1/me/password-change/otp）。
+ * `maskedEmail` 只用于提示验证码去向，不回传完整邮箱。
+ */
+export interface PasswordChangeOtpInfo {
+  /** 验证码有效期（秒） */
+  expiresIn: number
+  /** 打码后的收件邮箱，如 `ab****@qq.com` */
+  maskedEmail: string
+}
+
 /** DELETE /me/sessions/:id 返回体 */
 export interface SessionRevokeResult {
   ok: boolean
@@ -55,6 +66,13 @@ export type ApiErrorCode =
   | 'USER_ALREADY_EXISTS'
   | 'INVALID_PASSWORD'
   | 'USER_NOT_FOUND'
+  /** 改密邮箱验证码门禁：未取码 / 码错 / 码过期 / 尝试超限（POST /me/password） */
+  | 'PASSWORD_CHANGE_OTP_REQUIRED'
+  | 'PASSWORD_CHANGE_OTP_INVALID'
+  | 'PASSWORD_CHANGE_OTP_EXPIRED'
+  | 'PASSWORD_CHANGE_OTP_TOO_MANY_ATTEMPTS'
+  /** 账号没有邮箱密码登录方式（需先「设置密码」） */
+  | 'CREDENTIAL_ACCOUNT_NOT_FOUND'
   /** 生日只能自行修改一次，之后再改需联系管理员（PATCH /me 403） */
   | 'BIRTHDAY_LOCKED'
   // OAuth
