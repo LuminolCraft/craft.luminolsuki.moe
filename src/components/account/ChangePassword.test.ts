@@ -28,7 +28,7 @@ const lastOf = <T>(arr: T[]): T | undefined => arr[arr.length - 1]
 /** 挂载区块并注入两个 store 方法的行为（默认发码成功） */
 function mountSection(
   opts: {
-    request?: () => Promise<PasswordChangeOtpInfo>
+    request?: (currentPassword: string) => Promise<PasswordChangeOtpInfo>
     change?: (current: string, next: string, otp: string) => Promise<void>
   } = {},
 ) {
@@ -124,6 +124,8 @@ describe('ChangePassword（设置 → 安全：修改密码）', () => {
     const { wrapper, requestSpy, toast } = mountSection()
     await fillAndSubmit(wrapper)
     expect(requestSpy).toHaveBeenCalledTimes(1)
+    // 发码必须带上当前密码：服务端先验密码再发信（否则等于开放邮件轰炸入口）
+    expect(requestSpy).toHaveBeenCalledWith('old-password')
     expect(wrapper.find('.cs-input').exists()).toBe(true)
     expect(wrapper.findAll('.cs-slot')).toHaveLength(6)
     expect(wrapper.find('.cp-badge').text()).toBe('待输入验证码')
@@ -142,6 +144,19 @@ describe('ChangePassword（设置 → 安全：修改密码）', () => {
     await fillAndSubmit(wrapper)
     expect(wrapper.find('.cp-error').text()).toBe('邮箱尚未验证，请先完成邮箱验证')
     expect(wrapper.find('.cs-input').exists()).toBe(false)
+    expect(lastOf(toast.items)?.variant).toBe('error')
+  })
+
+  it('发码失败（原密码错误）→ 提示当前密码错误，不投递邮件、码区不展开', async () => {
+    const { wrapper, toast } = mountSection({
+      request: async () => {
+        throw { code: 'INVALID_PASSWORD' } as AppError
+      },
+    })
+    await fillAndSubmit(wrapper, { current: 'wrong-password' })
+    expect(wrapper.find('.cp-error').text()).toBe('当前密码错误，请重试')
+    expect(wrapper.find('.cs-input').exists()).toBe(false)
+    expect(wrapper.find('.cp-badge').text()).toBe('待发送验证码')
     expect(lastOf(toast.items)?.variant).toBe('error')
   })
 

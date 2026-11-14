@@ -203,7 +203,7 @@ async function sendCode() {
 
   sending.value = true
   try {
-    const info = await auth.requestPasswordChangeOtp()
+    const info = await auth.requestPasswordChangeOtp(currentPassword.value)
     codeSent.value = info
     otp.value = ''
     codeStatus.value = 'idle'
@@ -230,6 +230,8 @@ function onCodeChange(code: string) {
 /** 发码错误文案分发（只依赖 code） */
 function resolveSendError(e: unknown): string {
   if (isAppError(e)) {
+    // 服务端发码前先验当前密码：密码错就不发信，提示与提交阶段一致
+    if (e.code === 'INVALID_PASSWORD') return t('auth.security.changePassword.invalidCurrent')
     if (e.code === 'EMAIL_NOT_VERIFIED') return t('auth.security.changePassword.emailNotVerified')
     if (e.code === 'CREDENTIAL_ACCOUNT_NOT_FOUND') {
       return t('auth.security.changePassword.notAvailable')

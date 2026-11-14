@@ -402,15 +402,20 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   /**
-   * 发送改密验证码（POST /api/v1/me/password-change/otp）。
+   * 发送改密验证码（POST /api/v1/me/password-change/otp，需当前密码）。
    *
-   * 改密事前门禁第一步：服务端向账号邮箱投递 6 位验证码（10 分钟有效、
-   * 仅可用一次），响应只回打码邮箱与有效期。同一封邮件同时是安全预警——
-   * 正文写明「不是你本人操作请立即重置密码」并附链接，故即使攻击者持有
-   * 会话与原密码，账号所有者也会在改密成功前收到提醒。
+   * 改密事前门禁第一步：服务端**先校验当前密码**再投递 6 位验证码
+   * （10 分钟有效、仅可用一次），响应只回打码邮箱与有效期。
+   * 带密码是刻意的——否则只要持有会话就能反复触发验证码邮件，对被
+   * 盗号者的邮箱轰炸，并把其每日邮件配额刷掉（之后本人收不到重置邮件）。
+   *
+   * 同一封邮件同时是安全预警：正文写明「不是你本人操作请立即重置密码」
+   * 并附链接，故即使攻击者持有会话与原密码，所有者也会在改密成功前收到提醒。
    */
-  async function requestPasswordChangeOtp(): Promise<PasswordChangeOtpInfo> {
-    return await api.post<PasswordChangeOtpInfo>('/me/password-change/otp')
+  async function requestPasswordChangeOtp(
+    currentPassword: string,
+  ): Promise<PasswordChangeOtpInfo> {
+    return await api.post<PasswordChangeOtpInfo>('/me/password-change/otp', { currentPassword })
   }
 
   /**
