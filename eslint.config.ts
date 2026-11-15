@@ -18,6 +18,14 @@ export default defineConfigWithVueTs(
   globalIgnores(['**/dist/**', '**/dist-ssr/**', '**/coverage/**']),
 
   pluginVue.configs['flat/essential'],
+
+  {
+    // 页面组件按路由命名（Home / Login / News…），单词名是项目既有惯例：
+    // 该规则针对「可复用组件易与 HTML 标签冲突」，对路由页面无意义。
+    name: 'app/vue-page-names',
+    files: ['src/views/**/*.vue'],
+    rules: { 'vue/multi-word-component-names': 'off' },
+  },
   vueTsConfigs.recommended,
   
   {

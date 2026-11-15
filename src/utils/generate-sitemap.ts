@@ -2,6 +2,12 @@ import { SitemapStream, streamToPromise } from 'sitemap'
 import fs from 'fs'
 import path from 'path'
 
+/** 静态路由表项（只用到这两列，不做宽泛 any）。 */
+interface SitemapRoute {
+  path?: string
+  meta?: { noSitemap?: boolean }
+}
+
 const hostname = 'https://craft.luminolsuki.moe/'
 
 const routes = [
@@ -24,7 +30,13 @@ const routes = [
     }
   },
   {
-    path: '/News',
+    path: '/news',
+    meta: {
+      noSitemap: false
+    }
+  },
+  {
+    path: '/news/archive',
     meta: {
       noSitemap: false
     }
@@ -46,7 +58,7 @@ const routes = [
 async function generate() {
   const sitemap = new SitemapStream({ hostname })
 
-  routes.forEach((route: any) => {
+  routes.forEach((route: SitemapRoute) => {
     if (!route.meta?.noSitemap && route.path) {
       const priority = route.path === '/' ? 1.0 : 0.7
       const changefreq = route.path === '/' ? 'daily' : 'weekly'

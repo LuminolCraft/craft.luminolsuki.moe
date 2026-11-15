@@ -54,6 +54,14 @@
   status = 200
   force = true
 
+# 新闻 sitemap：内容型 URL 由 Worker 按 D1 实时生成，构建期静态表无法覆盖
+# （详情页 slug 随时新增）。放在 /api/* 之后、SPA 兜底之前。
+[[redirects]]
+  from = "/sitemap-news.xml"
+  to = "https://luminolcraft-nexus.narcssu.top/api/v1/news/sitemap.xml"
+  status = 200
+  force = true
+
 [[redirects]]
   from = "/*"
   to = "/index.html"

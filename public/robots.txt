@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /settings
+
+# 静态路由（构建期生成）
+Sitemap: https://craft.luminolsuki.moe/sitemap.xml
+# 新闻详情（Worker 按 D1 实时生成）
+Sitemap: https://craft.luminolsuki.moe/sitemap-news.xml
