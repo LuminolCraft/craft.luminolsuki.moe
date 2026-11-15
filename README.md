@@ -67,7 +67,7 @@ The LuminolCraft Minecraft server needed a modern, high-performance web platform
 This project is a modern SPA that provides the following capabilities:
 
 - Real-time server status monitoring (online players, running status)
-- Dynamic news system (unified/remark/rehype rendering + KaTeX + syntax highlighting + IndexedDB offline cache)
+- Dynamic news system (server-side paging / filtering / search + unified/remark/rehype rendering + KaTeX + syntax highlighting)
 - Account system: email/OAuth sign-in, email verification, password reset, session management, account linking
 - User center: profile editing, Minecraft binding with in-game verification, personal ban records
 - Admin console: user/role management, ban management with evidence, audit logs
@@ -86,7 +86,7 @@ This project is a modern SPA that provides the following capabilities:
 
 ### 1.5 Technical Goals
 
-- **High Performance**: Code splitting, terser minification, CSS code splitting, IndexedDB-backed news cache (first paint never waits on the network when a cache exists)
+- **High Performance**: Code splitting, terser minification, CSS code splitting, HTTP-level news caching (ETag + stale-while-revalidate) instead of a hand-rolled client cache
 - **Type Safety**: Complete TypeScript coverage with `vue-tsc` type checking
 - **Responsive Design**: Separate CSS for desktop and mobile
 - **Internationalization**: Built-in Chinese and English, `localStorage` persistence
@@ -111,7 +111,7 @@ Real-time server online status and player count via the mcstatus.io API, display
 
 ### 2.2 News System
 
-Dynamic news list and detail pages with a full unified/remark/rehype rendering pipeline, KaTeX math formulas, syntax highlighting, an IndexedDB offline-first cache, tag filtering, full-text search, and a GSAP Flip image lightbox. Details in [§7.7](#77-news-system) and [§7.8](#78-markdown-rendering-pipeline).
+Dynamic news list and detail pages with a full unified/remark/rehype rendering pipeline, KaTeX math formulas, syntax highlighting, server-side pagination, category and tag filtering, full-text search, and a GSAP Flip image lightbox. Details in [§7.7](#77-news-system) and [§7.8](#78-markdown-rendering-pipeline).
 
 ### 2.3 Homepage Layout
 
@@ -454,7 +454,7 @@ craft.luminolsuki.moe/
 │   │   ├── generate-sitemap.ts · internalPath.ts · lenisInstances.ts
 │   │   ├── news-helpers.ts · utils.ts
 │   │   ├── markdown/            # renderer.ts (unified pipeline) · toc.ts (max 3 levels)
-│   │   └── news/                # news-manager.ts · news-cache.ts (IndexedDB) · news-markdown.ts
+│   │   └── news/                # news-api.ts (HTTP) · news-query.ts (URL ↔ typed query)
 │   ├── views/
 │   │   ├── Home.vue             # Homepage (Hero + LayoutCSections)
 │   │   ├── News.vue · NewsDetail.vue
@@ -511,7 +511,7 @@ graph TB
     end
 
     subgraph Data["Data Sources"]
-        IDB[("IndexedDB<br/>luminolcraft-news v1")]
+        HttpCache[("HTTP cache<br/>ETag / max-age")]
         NewsCDN["Nexus proxy /api/v1/news<br/>(manifest + article markdown)"]
         McSrv["mcstatus.io API"]
         ApiSvc["API service<br/>(via same-origin proxy)"]
@@ -529,7 +529,7 @@ graph TB
     Home --> McSrv
     News --> NewsUI --> Composables
     Composables --> NexusStore
-    Composables --> IDB
+    Composables --> HttpCache
     Composables --> NewsCDN
     NewsDetail --> Renderer
     Settings --> NexusStore
@@ -559,7 +559,7 @@ graph TB
 | `src/config/`            | Centralized config: team style, team data, app config                            |
 | `src/gsap/`              | GSAP module: plugin registration, defaults, matchMedia                           |
 | `src/utils/markdown/`    | The unified rendering pipeline and TOC builder                                   |
-| `src/utils/news/`        | News manager (sync/filter/paginate) + IndexedDB cache layer                      |
+| `src/utils/news/`        | News HTTP layer + URL query ↔ typed query conversion (no client-side cache)       |
 | `src/styles/desktop/` & `mobile/` | Desktop/mobile separated styles                                         |
 | `src/i18n/locales/`      | Chinese/English translation files (21 top-level modules)                         |
 
@@ -952,47 +952,48 @@ Status data is passed to the layout component via props:
 
 ### 7.7 News System
 
-#### 7.7.1 News List (`/News`)
+#### 7.7.1 News List (`/news`)
 
-- **Pagination**: 6 items/page on desktop and mobile (configured in `app-config.ts`), max 5 displayed page buttons
+- **URL is the single source of truth** for pagination, category, tag, search and `important` — every filtered view is shareable and survives refresh / back-forward
+- Server-side pagination (6 items/page), six fixed categories, tag filter, full-text search (`?q=`), plus an "important only" toggle
 - **List/grid layout toggle**, persisted in `localStorage` (`news_layout_mode`); desktop defaults to list, mobile to grid
-- **Tag filtering**: multi-tag OR semantics; active tags sync to/from the URL query (`?tags=`), so filtered views are shareable
-- **Full-text search**: case-insensitive substring match over title, summary, markdown content, tags, and localized date
-- **Sorting**: pinned items first, then by date descending
-- **Skeleton loading** while the cache/network resolves; page transitions scroll back to top smoothly
+- Sorting (pinned → published desc) happens in SQL, so paging never repeats or skips items
+- Cards show the category pill, important badge, word count and reading time, plus the read count when available
+- Skeleton, empty and error states are distinct: empty tells you to clear filters, error offers a retry
 
-#### 7.7.2 Offline-First Caching (IndexedDB)
+#### 7.7.2 Caching Strategy (HTTP, no IndexedDB)
 
-The news manager (`src/utils/news/news-manager.ts`) + cache layer (`news-cache.ts`) implement a stale-while-revalidate strategy:
+The previous IndexedDB layer (`news-manager.ts` / `news-cache.ts` / `news-sync.ts`) is gone. Both read endpoints carry `ETag`, so the browser performs revalidation:
 
-| Aspect            | Behavior                                                                                                     |
-| ----------------- | ------------------------------------------------------------------------------------------------------------ |
-| Storage           | IndexedDB database **`luminolcraft-news` v1** — `articles` (one record per article) + `meta` stores           |
-| First paint       | Restores the cached snapshot immediately — never waits on the network when a cache exists                     |
-| Revalidation      | Syncs when stale; triggers: initial load, `visibilitychange`, `online`, `focus`, 10-minute background timer   |
-| Rate limiting     | Minimum **10-minute** interval between normal syncs (`force` skips the check, never runs concurrently)        |
-| Incremental sync  | Manifest diff detects added/updated/deleted articles; only changed articles re-fetched (concurrency 6)        |
-| Content versioning| Re-fetch decision uses a 3-tier fallback: `contentVersion` → `updatedAt` → the content URL itself             |
-| Failure handling  | **Network failures never clear the cache**; the error banner only appears when no usable cache exists         |
-| Legacy migration  | Old `localStorage`/`sessionStorage` caches are auto-migrated into IndexedDB on first run                      |
+| Aspect | Behavior |
+| --- | --- |
+| List | `public, max-age=0, must-revalidate` + ETag keyed by the query — unchanged filters cost one 304 |
+| Detail | `public, max-age=60, stale-while-revalidate=600` + ETag keyed by `id` / `updatedAt` |
+| Read counts | `private, no-cache`; fetched separately so a read never invalidates the article cache |
 
-#### 7.7.3 News Detail (`/NewsDetail`)
+#### 7.7.3 News Detail (`/news/:slug`)
 
-- Takes `id` from the query string (supports three legacy aliases)
+- Permanent slug URL; the legacy `/NewsDetail?id=N` still works and is `replace()`d to the slug after load
+- Three distinct states: loading, **not found** (`NEWS_NOT_FOUND`) and **load failure** (retryable)
 - Renders Markdown through the unified pipeline (§7.8); the `v-html` target receives **only the sanitized output**
-- Sidebar TOC (max 3 levels, `SidebarToc.vue`) with smooth anchor scrolling (120px offset)
-- Reading progress bar, entrance animations
-- Additional-image gallery with a **GSAP Flip lightbox** (prev/next/close)
-- Tag chips navigate back to the filtered list
-- Recently-viewed record written to the `last_viewed_news` cookie (30 days) — **only after cookie consent is accepted**
+- Sidebar TOC (max 3 levels), reading progress bar, entrance animations
+- Shows word count / reading time, and an "updated at" line only when the article was actually revised
+- Tag chips link to `/news?tag=…`; the recently-viewed record is written to the `last_viewed_news` cookie (30 days)
 
-#### 7.7.4 Data Source
+#### 7.7.4 Archive (`/news/archive`)
 
-- Manifest + bodies: fetched **same-origin** from the Nexus proxy `GET /api/v1/news` (one request returns the manifest fingerprint `version` plus every article, with bodies inlined); the browser never talks to `luminolcraft-news.pages.dev` / `raw.githubusercontent.com` directly. When the proxy degrades (`bodiesOmitted`), bodies are lazily fetched one by one from `GET /api/v1/news/:id`. All requests carry a 15-second timeout via `AbortController`
+Month-grouped timeline of every published item, reusing the category badge and word count. Data comes from `GET /api/v1/news?limit=50`.
 
-#### 7.7.5 Netlify Functions (legacy)
+#### 7.7.5 Data Source
 
-`version`/`contentVersion` from the Nexus news proxy drive incremental sync (`src/utils/news/news-sync.ts`, unit-tested): an unchanged `version` skips the whole round (zero body requests). `.netlify/functions/version.js` is consumed by `Footer.vue` and falls back to the GitHub API (`commits/main`) when deploy env vars are missing.
+- All content comes from the Nexus API: `GET /api/v1/news` (list), `/news/:slug` (detail), `/news/tags`, `/news/categories`, `/news/archive`, `/news/read-counts`, `POST /news/:id/read`
+- `src/utils/news/news-api.ts` is the only HTTP layer (reuses `src/lib/api.ts`); `news-query.ts` converts URL query ↔ typed query and is unit-testable
+- Drafts and scheduled items (future `publishedAt`) are filtered in SQL — they never reach any client
+- RSS (`/api/v1/news/rss`) and the news sitemap (`/sitemap-news.xml`, proxied by Netlify to the Worker) are generated from the same query
+
+#### 7.7.6 Announcements in the Notification Bell
+
+Publishing a news item makes it an announcement for at most **72 hours** (important ones can be given a longer `noticeExpiresAt`). The bell pins up to 3 important announcements (2 on narrow screens); reading one moves it into the regular list until it expires. There is no separate KV list or webhook — the bell reads the news table.
 
 ---
 
