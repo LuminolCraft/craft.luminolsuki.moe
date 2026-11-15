@@ -18,6 +18,18 @@ const routes = [
     }
   },
   {
+    path: '/Luminol',
+    meta: {
+      noSitemap: false
+    }
+  },
+  {
+    path: '/Archive',
+    meta: {
+      noSitemap: false
+    }
+  },
+  {
     path: '/SimpleRules',
     meta: {
       noSitemap: false
@@ -37,12 +49,6 @@ const routes = [
   },
   {
     path: '/news/archive',
-    meta: {
-      noSitemap: false
-    }
-  },
-  {
-    path: '/Monitoring',
     meta: {
       noSitemap: false
     }

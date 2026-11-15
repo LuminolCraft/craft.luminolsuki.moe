@@ -40,9 +40,6 @@
         <router-link to="/Luminol">
           {{ t('common.assistant') }}
         </router-link>
-        <!-- <router-link to="/Monitoring">
-          {{ t('common.monitoring') }}
-        </router-link> -->
         <!-- 登录态账号入口：≤896px 顶栏只留铃铛+头像，其余入口收进抽屉（顶栏宽度放不下） -->
         <div v-if="auth.isAuthenticated" class="side-nav-auth">
           <router-link to="/notifications">
@@ -101,9 +98,6 @@
           <router-link to="/Luminol" class="nav-link">
             {{ t('common.assistant') }}
           </router-link>
-          <!-- <router-link to="/Monitoring" class="nav-link">
-            {{ t('common.monitoring') }}
-          </router-link> -->
         </div>
 
       </div>

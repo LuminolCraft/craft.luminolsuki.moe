@@ -310,7 +310,6 @@ export default {
     "support": "Support Us",
     "news": "News",
     "assistant": "Assistant",
-    "monitoring": "Monitoring",
     "joinGroup": "Join Group",
     "copyright": "© {year} LuminolMC. All rights reserved.",
     "madeWith": "Built with {tech}",

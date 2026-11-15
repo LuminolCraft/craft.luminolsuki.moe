@@ -34,6 +34,14 @@ const PAGE_META: Record<string, PageMeta> = {
     title: `${SITE_NAME} 服务器 - 加入我们的冒险`,
     description: '由热情的管理员和玩家社区共建的 Minecraft 公益服：纯净生存与综合生存双服，无付费特权，长期稳定运行。',
   },
+  '/Luminol': {
+    title: `社区助手 - ${SITE_NAME}`,
+    description: 'LuminolCraft 社区助手：服务器问题、规则咨询与游玩指引，AI 在线解答。',
+  },
+  '/Archive': {
+    title: `服务器归档 - ${SITE_NAME}`,
+    description: 'LuminolCraft 的历史记录归档。',
+  },
   '/SimpleRules': {
     title: `服务器规则（简洁版） - ${SITE_NAME}`,
     description: 'LuminolCraft 服务器规则速览：保护他人、禁止偷窃与破坏、作弊封禁。进入服务器前请先阅读。',
@@ -49,10 +57,6 @@ const PAGE_META: Record<string, PageMeta> = {
   '/news/archive': {
     title: `新闻归档 - ${SITE_NAME}`,
     description: '按月份浏览 LuminolCraft 的全部新闻与公告。',
-  },
-  '/Monitoring': {
-    title: `服务器监控 - ${SITE_NAME}`,
-    description: '实时查看 LuminolCraft 各服务器的在线状态与玩家数。',
   },
 }
 

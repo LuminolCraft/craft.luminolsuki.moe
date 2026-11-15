@@ -310,7 +310,6 @@ export default {
     "support": "支持我们",
     "news": "新闻",
     "assistant": "社区助手",
-    "monitoring": "监控",
     "joinGroup": "加入交流群",
     "copyright": "© 2025-{year} LuminolMC. 保留所有权利.",
     "madeWith": "使用 {tech} 构建",
