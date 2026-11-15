@@ -66,7 +66,7 @@
 # raw.githubusercontent.com 在部分网络不可达，走自家域名保持图片稳定加载。
 [[redirects]]
   from = "/img/*"
-  to = "https://raw.githubusercontent.com/LuminolCraft/imagehosting/master/:splat"
+  to = "https://raw.githubusercontent.com/LuminolCraft/imagehosting/main/:splat"
   status = 200
   force = true
 
