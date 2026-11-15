@@ -8,7 +8,7 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "run-p type-check \"build-only {@}\" -- && tsx src/utils/generate-sitemap.ts",
+    "build": "run-p type-check \"build-only {@}\" -- && tsx src/utils/generate-sitemap.ts && tsx src/utils/generate-meta-pages.ts",
     "preview": "vite preview",
     "test:unit": "vitest",
     "build-only": "vite build",
