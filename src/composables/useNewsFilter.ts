@@ -40,10 +40,6 @@ export function useNewsFilter() {
     apply({ q: trimmed.length > 0 ? trimmed : undefined })
   }
 
-  function setImportantOnly(value: boolean): void {
-    apply({ important: value ? true : undefined })
-  }
-
   /** 清空全部筛选（保留每页条数）。 */
   function reset(): void {
     void router.push({
@@ -56,7 +52,6 @@ export function useNewsFilter() {
     setCategory,
     setTag,
     setSearch,
-    setImportantOnly,
     reset,
   }
 }

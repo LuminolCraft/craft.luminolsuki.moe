@@ -29,15 +29,6 @@
                 </option>
               </select>
             </label>
-
-            <label class="important-filter">
-              <input
-                type="checkbox"
-                :checked="query.important === true"
-                @change="onImportantChange"
-              />
-              <span>{{ t('news.filter.importantOnly') }}</span>
-            </label>
           </div>
         </template>
       </NewsSearch>
@@ -152,7 +143,7 @@ const coverPosition = ref<'left' | 'right'>('right')
 
 // ========== 数据 / 筛选 / 分页 ==========
 const { query, items, total, totalPages, loading, error, readCounts, reload } = useNewsData()
-const { setCategory, setTag, setSearch, setImportantOnly, reset } = useNewsFilter()
+const { setCategory, setTag, setSearch, reset } = useNewsFilter()
 const { currentPage, goTo, prevPage, nextPage } = useNewsPagination(totalPages)
 
 const categories = ref<NewsCategoryCount[]>([])
@@ -185,10 +176,6 @@ function onTagToggle(tag: string): void {
 function onCategoryChange(event: Event): void {
   const value = (event.target as HTMLSelectElement).value
   setCategory(value ? (value as NewsCategory) : undefined)
-}
-
-function onImportantChange(event: Event): void {
-  setImportantOnly((event.target as HTMLInputElement).checked)
 }
 
 function resetFilters(): void {
@@ -486,8 +473,7 @@ onMounted(async () => {
   flex-wrap: wrap;
 }
 
-.category-filter,
-.important-filter {
+.category-filter {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -522,28 +508,6 @@ onMounted(async () => {
   border-color: var(--primary-color);
   outline: none;
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary-color) 18%, transparent);
-}
-
-.important-filter {
-  height: 38px;
-  padding: 0 12px;
-  border: 1px solid var(--divider-color, rgba(158, 148, 216, 0.3));
-  border-radius: 10px;
-  background: var(--card-bg);
-  cursor: pointer;
-  user-select: none;
-  transition: border-color 0.2s ease;
-}
-
-.important-filter:hover {
-  border-color: var(--primary-color);
-}
-
-.important-filter input {
-  width: 16px;
-  height: 16px;
-  accent-color: var(--primary-color);
-  cursor: pointer;
 }
 
 /* ===== 当前筛选概览 ===== */
@@ -636,8 +600,5 @@ onMounted(async () => {
     height: 42px;
   }
 
-  .important-filter {
-    height: 42px;
-  }
 }
 </style>
