@@ -58,6 +58,12 @@ export default defineConfig({
   },
   // 开发服务器配置
   server: {
+    // 显式绑 IPv4 loopback。省略时 vite 监听 'localhost'，Node 按 hosts 解析顺序
+    // 只绑到 ::1（netstat 可见仅 [::1]:51640）——走 IPv4 的连接全部被拒。
+    // 另外代理开 TUN 模式时，`localhost` 的 DNS 解析可能被 fake-ip 劫持
+    // （Firefox 自带 DoH 更容易命中），解析成假 IP 后连接根本到不了本机。
+    // IP 字面量不经过 DNS，两层问题都绕开。访问地址固定用 http://127.0.0.1:51640
+    host: '127.0.0.1',
     port: 51640,
     open: true,
   },
