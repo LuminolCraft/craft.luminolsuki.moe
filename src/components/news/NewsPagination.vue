@@ -4,7 +4,7 @@
       <div class="mobile-pagination">
         <button
           class="pagination-btn-nav"
-          :disabled="currentPage === 0"
+          :disabled="currentPage <= 1"
           @click="$emit('prev')"
           aria-label="上一页"
         >
@@ -14,14 +14,14 @@
         </button>
   
         <div class="page-indicator">
-          <span class="page-current">{{ currentPage + 1 }}</span>
+          <span class="page-current">{{ currentPage }}</span>
           <span class="page-separator">/</span>
           <span class="page-total">{{ pageCount }}</span>
         </div>
   
         <button
           class="pagination-btn-nav"
-          :disabled="currentPage >= pageCount - 1"
+          :disabled="currentPage >= pageCount"
           @click="$emit('next')"
           aria-label="下一页"
         >
@@ -35,7 +35,7 @@
       <div class="desktop-pagination">
         <button
           class="pagination-btn-nav"
-          :disabled="currentPage === 0"
+          :disabled="currentPage <= 1"
           @click="$emit('prev')"
           aria-label="上一页"
         >
@@ -48,10 +48,10 @@
           <button
             v-if="typeof item === 'number'"
             class="pagination-btn-page"
-            :class="{ active: currentPage === item - 1 }"
-            @click="$emit('go', item - 1)"
+            :class="{ active: currentPage === item }"
+            @click="$emit('go', item)"
             :aria-label="`第 ${item} 页`"
-            :aria-current="currentPage === item - 1 ? 'page' : undefined"
+            :aria-current="currentPage === item ? 'page' : undefined"
           >
             {{ item }}
           </button>
@@ -60,7 +60,7 @@
   
         <button
           class="pagination-btn-nav"
-          :disabled="currentPage >= pageCount - 1"
+          :disabled="currentPage >= pageCount"
           @click="$emit('next')"
           aria-label="下一页"
         >
@@ -89,7 +89,7 @@
   
   const displayedPages = computed(() => {
     const total = props.pageCount;
-    const current = props.currentPage + 1;
+    const current = props.currentPage;
     const maxPages = appConfig.newsPagination.maxDisplayedPages || 5;
     const pages: (number | string)[] = [];
   
