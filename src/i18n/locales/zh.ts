@@ -547,20 +547,6 @@ export default {
       "viewAllImportant": "查看全部重要公告"
     }
   },
-  "monitoring": {
-    "title": "服务器监控",
-    "subtitle": "实时监控服务器状态",
-    "cpuUsage": "CPU 使用率",
-    "memoryUsage": "内存使用率",
-    "diskUsage": "磁盘使用率",
-    "network": "网络流量",
-    "serverStatus": "服务器状态",
-    "development": {
-      "title": "正在开发中",
-      "description": "监控功能正在开发中，敬请期待...",
-      "backHome": "返回首页"
-    }
-  },
   "cookieConsent": {
     "message": "本网站使用 Cookie 来记住您的浏览偏好（如最近查看的新闻）。我们不会将 Cookie 用于广告或追踪目的。",
     "accept": "同意",

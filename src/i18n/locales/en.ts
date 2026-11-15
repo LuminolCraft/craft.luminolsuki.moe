@@ -547,20 +547,6 @@ export default {
       "viewAllImportant": "View all important"
     }
   },
-  "monitoring": {
-    "title": "Server Monitoring",
-    "subtitle": "Real-time monitoring of server status",
-    "cpuUsage": "CPU Usage",
-    "memoryUsage": "Memory Usage",
-    "diskUsage": "Disk Usage",
-    "network": "Network Traffic",
-    "serverStatus": "Server Status",
-    "development": {
-      "title": "Under Development",
-      "description": "Monitoring features are under development, please stay tuned...",
-      "backHome": "Back to Home"
-    }
-  },
   "cookieConsent": {
     "message": "This website uses cookies to remember your browsing preferences (such as recently viewed news). We do not use cookies for advertising or tracking purposes.",
     "accept": "Accept",
