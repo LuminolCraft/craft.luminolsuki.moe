@@ -44,6 +44,16 @@ const RECONNECT_MAX_MS = 30000
 /** 拉取通知列表的页大小（铃铛取前 10 条展示，与中心页共用 20） */
 const LIST_PAGE_SIZE = 20
 
+/**
+ * 列表响应：第 1 页额外带 `pinned`（未读 + 重要 + 未过期的新闻公告）。
+ *
+ * 置顶区由服务端单独返回而不是混在 items 里：前端铃铛要把它渲染成独立分块，
+ * 混排后再按「是否重要」二次过滤会与分页结果不一致。
+ */
+interface NotificationPage extends Paged<NotificationItem> {
+  pinned?: NotificationItem[]
+}
+
 /** WS 推送消息体（服务端 → 客户端） */
 /** 服务端推送消息体（SSE `data:` 行内容） */
 interface PushMessage {
@@ -68,6 +78,8 @@ export const useNotificationsStore = defineStore('notifications', () => {
   // ---------- 对外状态 ----------
   /** 当前列表：铃铛下拉（前 10 条）与通知中心分页共用（REST 分页整体替换，权威） */
   const list = ref<NotificationItem[]>([])
+  /** 铃铛置顶区：未读重要公告（服务端最多给 3 条，移动端取前 2）。 */
+  const pinned = ref<NotificationItem[]>([])
   const unreadCount = ref(0)
   const total = ref(0)
   /** 连接状态：connecting/open/closed/reconnecting（实时通道 = SSE） */
@@ -247,11 +259,12 @@ export const useNotificationsStore = defineStore('notifications', () => {
     try {
       const [count, page1] = await Promise.all([
         api.get<UnreadCountResult>('/notifications/unread-count'),
-        api.get<Paged<NotificationItem>>(`/notifications?page=1&limit=${LIST_PAGE_SIZE}`),
+        api.get<NotificationPage>(`/notifications?page=1&limit=${LIST_PAGE_SIZE}`),
       ])
       unreadCount.value = typeof count?.count === 'number' ? count.count : 0
       const paged = normalizePaged<NotificationItem>(page1)
       list.value = dedupe(paged.items)
+      pinned.value = page1.pinned ?? []
       total.value = paged.total ?? paged.items.length
     } catch {
       listError.value = true // 静默失败：UI 展示错误态，可由 fetchList 重试
@@ -265,11 +278,13 @@ export const useNotificationsStore = defineStore('notifications', () => {
     listLoading.value = true
     listError.value = false
     try {
-      const data = await api.get<Paged<NotificationItem>>(
+      const data = await api.get<NotificationPage>(
         `/notifications?page=${page}&limit=${limit}`,
       )
       const paged = normalizePaged<NotificationItem>(data)
       list.value = paged.items
+      // 置顶区只在第 1 页存在；翻到后面页时清空，避免旧置顶残留在顶部
+      pinned.value = page === 1 ? (data.pinned ?? []) : []
       total.value = paged.total ?? paged.items.length
     } catch (e) {
       listError.value = true
@@ -288,6 +303,8 @@ export const useNotificationsStore = defineStore('notifications', () => {
     list.value = list.value.map((n) =>
       n.id === id && !n.readAt ? { ...n, readAt: Date.now() } : n,
     )
+    // 已读即退出置顶区（服务端规则一致：置顶只收未读），列表里仍保留该条
+    pinned.value = pinned.value.filter((n) => n.id !== id)
     broadcast({ kind: 'read', id, unreadCount: unreadCount.value })
   }
 
@@ -297,6 +314,7 @@ export const useNotificationsStore = defineStore('notifications', () => {
     if (typeof res?.unreadCount === 'number') unreadCount.value = res.unreadCount
     const now = Date.now()
     list.value = list.value.map((n) => (n.readAt ? n : { ...n, readAt: now }))
+    pinned.value = []
     broadcast({ kind: 'read-all', unreadCount: unreadCount.value })
   }
 
@@ -335,6 +353,7 @@ export const useNotificationsStore = defineStore('notifications', () => {
 
   return {
     list,
+    pinned,
     unreadCount,
     total,
     connectionState,

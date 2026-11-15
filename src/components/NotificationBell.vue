@@ -29,6 +29,29 @@
           </button>
         </div>
 
+        <!-- 重要公告置顶区：未读 + 重要 + 未过期；移动端只取前 2 条 -->
+        <section v-if="pinnedVisible.length > 0" class="bell-pinned">
+          <div class="bell-pinned-head">
+            <span class="bell-pinned-title">{{ t('news.bell.pinned') }}</span>
+            <span class="bell-pinned-count">{{ pinnedVisible.length }}</span>
+          </div>
+          <ul class="bell-list">
+            <li v-for="n in pinnedVisible" :key="`pinned-${n.id}`" class="bell-row">
+              <button type="button" class="bell-item unread bell-item-important" @click="onItemClick(n)">
+                <span class="bell-item-meta">
+                  <span class="bell-type" data-type="announcement">{{ typeLabel(n.type) }}</span>
+                  <span class="bell-time">{{ formatTime(n.createdAt) }}</span>
+                  <span class="unread-dot" :title="t('notification.center.markRead')" />
+                </span>
+                <span class="bell-item-title">{{ n.title }}</span>
+              </button>
+            </li>
+          </ul>
+          <RouterLink to="/news?important=1" class="bell-pinned-more" @click="close">
+            {{ t('news.bell.viewAllImportant') }}
+          </RouterLink>
+        </section>
+
         <!-- 加载 / 错误 / 空态 -->
         <div v-if="store.listLoading && !recent.length" class="bell-state">{{ t('notification.bell.loading') }}</div>
         <button v-else-if="store.listError && !recent.length" type="button" class="bell-state bell-retry" @click="retry">
@@ -63,6 +86,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useMediaQuery } from '@vueuse/core'
 import { useRoute, useRouter } from 'vue-router'
 import { useNotificationsStore } from '@/stores/notifications'
 import { isInternalPath } from '@/utils/internalPath'
@@ -83,6 +107,10 @@ const markingAll = ref(false)
 
 /** 下拉仅展示最近 10 条 */
 const recent = computed(() => store.list.slice(0, 10))
+
+/** 微调点：置顶区条数——桌面 3 条、窄屏 2 条（铃铛总名额 10，不能全被公告占满）。 */
+const isNarrow = useMediaQuery('(max-width: 640px)')
+const pinnedVisible = computed(() => store.pinned.slice(0, isNarrow.value ? 2 : 3))
 
 /** 红点文案：0 无、1-99 数字、99+ 显示 99+ */
 const badgeText = computed(() => {
@@ -425,5 +453,56 @@ onUnmounted(() => {
   .bell-list {
     max-height: none;
   }
+}
+
+/* ===== 重要公告置顶区 ===== */
+.bell-pinned {
+  margin: 4px 8px 0;
+  padding: 8px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--accent-color, #f59e0b) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent-color, #f59e0b) 28%, transparent);
+}
+
+.bell-pinned-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 6px 6px;
+}
+
+.bell-pinned-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--accent-color, #f59e0b);
+  letter-spacing: 0.02em;
+}
+
+.bell-pinned-count {
+  min-width: 16px;
+  height: 16px;
+  padding: 0 5px;
+  border-radius: 9999px;
+  background: var(--accent-color, #f59e0b);
+  color: #fff;
+  font-size: 0.6875rem;
+  line-height: 16px;
+  text-align: center;
+}
+
+.bell-item-important .bell-item-title {
+  font-weight: var(--font-weight-semibold, 600);
+}
+
+.bell-pinned-more {
+  display: block;
+  padding: 6px 6px 2px;
+  font-size: 0.75rem;
+  color: var(--accent-color, #f59e0b);
+  text-decoration: none;
+}
+
+.bell-pinned-more:hover {
+  text-decoration: underline;
 }
 </style>
