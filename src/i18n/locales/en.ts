@@ -314,6 +314,7 @@ export default {
     "joinGroup": "Join Group",
     "copyright": "© {year} LuminolMC. All rights reserved.",
     "madeWith": "Built with {tech}",
+    "switchLanguage": "Switch language",
     "switchToChinese": "Switch to Chinese",
     "switchToEnglish": "Switch to English"
   },

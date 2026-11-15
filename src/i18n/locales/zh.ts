@@ -314,6 +314,7 @@ export default {
     "joinGroup": "加入交流群",
     "copyright": "© 2025-{year} LuminolMC. 保留所有权利.",
     "madeWith": "使用 {tech} 构建",
+    "switchLanguage": "切换语言",
     "switchToChinese": "切换到中文",
     "switchToEnglish": "切换到英文"
   },
