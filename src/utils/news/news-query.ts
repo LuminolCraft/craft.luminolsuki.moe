@@ -38,7 +38,14 @@ export function parseNewsQuery(
   defaultLimit: number = NEWS_DEFAULT_LIMIT,
 ): NewsQuery {
   const category = parseCategory(firstValue(query.category))
-  const tag = firstValue(query.tag)
+  // 标签支持逗号分隔多选：?tag=纯净服,公告。向后兼容旧的单值形式。
+  const tagRaw = firstValue(query.tag)
+  const tag = tagRaw
+    ? tagRaw
+        .split(',')
+        .map((part) => part.trim())
+        .filter((part) => part.length > 0)
+    : undefined
   const q = firstValue(query.q)
   const important = firstValue(query.important) === '1'
 
@@ -46,7 +53,7 @@ export function parseNewsQuery(
     page: positiveInt(firstValue(query.page), 1, 10_000),
     limit: positiveInt(firstValue(query.limit), defaultLimit, NEWS_MAX_LIMIT),
     ...(category ? { category } : {}),
-    ...(tag ? { tag } : {}),
+    ...(tag && tag.length > 0 ? { tag } : {}),
     ...(q ? { q } : {}),
     ...(important ? { important } : {}),
   }
@@ -66,7 +73,7 @@ export function toLocationQuery(
   if (newsQuery.page > 1) result.page = String(newsQuery.page)
   if (newsQuery.limit !== defaultLimit) result.limit = String(newsQuery.limit)
   if (newsQuery.category) result.category = newsQuery.category
-  if (newsQuery.tag) result.tag = newsQuery.tag
+  if (newsQuery.tag && newsQuery.tag.length > 0) result.tag = newsQuery.tag.join(',')
   if (newsQuery.q) result.q = newsQuery.q
   if (newsQuery.important) result.important = '1'
   return result

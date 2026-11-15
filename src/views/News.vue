@@ -40,7 +40,7 @@
       <span class="active-filter-text">
         {{ t('news.filter.active', { count: total }) }}
         <template v-if="query.category">· {{ categoryLabel(query.category) }}</template>
-        <template v-if="query.tag">· #{{ query.tag }}</template>
+        <template v-if="query.tag?.length">· {{ query.tag.map((t) => '#' + t).join('　') }}</template>
         <template v-if="query.q">· “{{ query.q }}”</template>
         <template v-if="query.important">· {{ t('news.filter.importantOnly') }}</template>
       </span>
@@ -143,7 +143,7 @@ const coverPosition = ref<'left' | 'right'>('right')
 
 // ========== 数据 / 筛选 / 分页 ==========
 const { query, items, total, totalPages, loading, error, readCounts, reload } = useNewsData()
-const { setCategory, setTag, setSearch, reset } = useNewsFilter()
+const { setCategory, toggleTag, setSearch, reset } = useNewsFilter()
 const { currentPage, goTo, prevPage, nextPage } = useNewsPagination(totalPages)
 
 const categories = ref<NewsCategoryCount[]>([])
@@ -151,9 +151,9 @@ const allTags = ref<string[]>([])
 const newsSectionRef = ref<HTMLElement | null>(null)
 
 /** 标签选择状态来自 URL（单选）。 */
-const selectedTags = computed(() => (query.value.tag ? [query.value.tag] : []))
+const selectedTags = computed(() => query.value.tag ?? [])
 const hasActiveFilter = computed(
-  () => Boolean(query.value.category || query.value.tag || query.value.q || query.value.important),
+  () => Boolean(query.value.category || query.value.tag?.length || query.value.q || query.value.important),
 )
 
 /** 分类显示名（未知分类回落原值）。 */
@@ -170,7 +170,7 @@ function onSearch(value: string): void {
 }
 
 function onTagToggle(tag: string): void {
-  setTag(tag)
+  toggleTag(tag)
 }
 
 function onCategoryChange(event: Event): void {

@@ -30,9 +30,11 @@ export function useNewsFilter() {
     apply({ category })
   }
 
-  /** 标签单选：再次点击同一个标签即取消（URL 里不留空值）。 */
-  function setTag(tag: string | undefined): void {
-    apply({ tag: tag === query.value.tag ? undefined : tag })
+  /** 标签多选 toggle：点已选中的移除，点未选中的追加。 */
+  function toggleTag(tag: string): void {
+    const current = query.value.tag ?? []
+    const next = current.includes(tag) ? current.filter((item) => item !== tag) : [...current, tag]
+    apply({ tag: next.length > 0 ? next : undefined })
   }
 
   function setSearch(q: string): void {
@@ -50,7 +52,7 @@ export function useNewsFilter() {
   return {
     query,
     setCategory,
-    setTag,
+    toggleTag,
     setSearch,
     reset,
   }

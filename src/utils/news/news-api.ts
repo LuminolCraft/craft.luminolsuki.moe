@@ -25,7 +25,7 @@ function toSearchParams(query: NewsQuery): string {
   params.set('page', String(query.page))
   params.set('limit', String(query.limit))
   if (query.category) params.set('category', query.category)
-  if (query.tag) params.set('tag', query.tag)
+  if (query.tag && query.tag.length > 0) params.set('tag', query.tag.join(','))
   if (query.q) params.set('q', query.q)
   if (query.important) params.set('important', '1')
   return params.toString()

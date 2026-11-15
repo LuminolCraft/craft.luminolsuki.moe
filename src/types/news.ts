@@ -54,7 +54,8 @@ export interface NewsQuery {
   page: number
   limit: number
   category?: NewsCategory
-  tag?: string
+  /** 标签筛选（多选，URL 里逗号分隔）；语义为「含任一标签」。 */
+  tag?: string[]
   q?: string
   important?: boolean
 }
