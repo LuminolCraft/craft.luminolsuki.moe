@@ -74,21 +74,18 @@
   
   <script setup lang="ts">
   import { computed } from 'vue';
-  import { useI18n } from 'vue-i18n';
-  import { appConfig } from '@/config/app-config';
+    import { appConfig } from '@/config/app-config';
   
   const props = defineProps<{
     currentPage: number;
     pageCount: number;
   }>();
   
-  const emit = defineEmits<{
+  defineEmits<{
     prev: [];
     next: [];
     go: [page: number];
   }>();
-  
-  const { t } = useI18n();
   
   const displayedPages = computed(() => {
     const total = props.pageCount;

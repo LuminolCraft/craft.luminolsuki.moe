@@ -2,23 +2,30 @@
     <article
       class="news-item"
       :class="{
-        pinned: !!item.pinned,
+        pinned: item.pinned,
         'has-cover': hasImage,
         'no-cover': !hasImage,
         'list-item': layout === 'list',
+        important: item.isImportant,
       }"
+      role="button"
+      tabindex="0"
       @click="$emit('click', item)"
+      @keydown.enter="$emit('click', item)"
+      @keydown.space.prevent="$emit('click', item)"
     >
       <div class="news-item-body">
         <h3 class="news-item-title">{{ item.title }}</h3>
-  
+
         <div class="news-item-meta">
           <span v-if="item.pinned" class="pinned-badge">
             <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
               <path fill="currentColor" d="m16 12l2 2v2h-5v6l-1 1l-1-1v-6H6v-2l2-2V5H7V3h10v2h-1zm-7.15 2h6.3L14 12.85V5h-4v7.85z" />
             </svg>
-            置顶
+            {{ t('news.card.pinned') }}
           </span>
+          <span v-if="item.isImportant" class="important-badge">{{ t('news.card.important') }}</span>
+          <span class="meta-category">{{ categoryLabel }}</span>
           <span class="meta-date">
             <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
               <path fill="currentColor" d="M5 22q-.825 0-1.412-.587T3 20V6q0-.825.588-1.412T5 4h1V3q0-.425.288-.712T7 2t.713.288T8 3v1h8V3q0-.425.288-.712T17 2t.713.288T18 3v1h1q.825 0 1.413.588T21 6v14q0 .825-.587 1.413T19 22zm0-2h14V10H5zM5 8h14V6H5z" />
@@ -31,10 +38,11 @@
             </svg>
             {{ readCount.toLocaleString('zh-CN') }}
           </span>
+          <span class="meta-stats">{{ statsLabel }}</span>
         </div>
-  
+
         <p class="news-item-desc">{{ excerpt }}</p>
-  
+
         <div v-if="item.tags?.length" class="news-item-tags">
           <span
             v-for="tag in visibleTags"
@@ -49,11 +57,11 @@
           >+{{ item.tags.length - maxCardTags }}</span>
         </div>
       </div>
-  
+
       <div
         v-if="hasImage"
         class="news-item-cover"
-        :style="{ backgroundImage: `url('${cleanImageUrl(item.image)}')` }"
+        :style="{ backgroundImage: `url('${cleanImageUrl(item.coverUrl)}')` }"
       >
         <div class="news-item-cover-mask"></div>
         <div class="news-item-cover-icon" aria-hidden="true">
@@ -64,61 +72,57 @@
       </div>
     </article>
   </template>
-  
-  <script setup lang="ts">
-  import { computed } from 'vue';
-  import type { NewsItem } from '@/types/news';
-  
-  const props = defineProps<{
-    item: NewsItem;
-    maxCardTags?: number;
-    layout?: 'list' | 'grid';
-    /** 阅读次数表（key = 新闻 id）；条目缺失时该卡片不显示次数。 */
-    readCounts?: Record<number, number>;
-  }>();
-  
-  const emit = defineEmits<{
-    click: [item: NewsItem];
-    'tag-click': [tag: string];
-  }>();
-  
-  const maxCardTags = computed(() => props.maxCardTags ?? 3);
-  const readCount = computed(() => props.readCounts?.[props.item.id]);
-  const hasImage = computed(() => !!props.item.image && /\.(jpe?g|png|gif|webp|avif|bmp|svg|ico|heic|heif|apng|jfif)(?:$|[?#])/i.test(props.item.image));
-  
-  const formattedDate = computed(() =>
-    new Date(props.item.date).toLocaleDateString('zh-CN')
-  );
-  
-  const isWideNoCover = computed(() => props.layout === 'list' && !hasImage.value);
 
-  const excerpt = computed(() => {
-    const raw = (props.item.summary || props.item.markdownContent || '').toString();
-    const plain = raw
-      .replace(/```[\s\S]*?```/g, ' ')
-      .replace(/`[^`\n]*`/g, ' ')
-      .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ')
-      .replace(/!\[[^\]]*\]\[[^\]]*\]/g, ' ')
-      .replace(/<img\b[^>]*>/gi, ' ')
-      .replace(/<video\b[\s\S]*?<\/video>/gi, ' ')
-      .replace(/<iframe\b[\s\S]*?<\/iframe>/gi, ' ')
-      .replace(/<\/?[^>]+>/g, ' ')
-      .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
-      .replace(/https?:\/\/\S+/gi, ' ')
-      .replace(/^#{1,6}\s+/gm, ' ')
-      .replace(/^\s*[-*+>\d.]+\s+/gm, ' ')
-      .replace(/[*_~|]+/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim();
-    if (!plain) return '暂无内容';
-    // 列表模式且无封面：没有配图占位，正文可以多留一些
-    const maxLen = isWideNoCover.value ? 260 : 120;
-    return plain.length > maxLen ? `${plain.slice(0, maxLen)}…` : plain;
-  });
-  
-  const visibleTags = computed(() => props.item.tags?.slice(0, maxCardTags.value) ?? []);
-  
-  const cleanImageUrl = (url: string | undefined) => (url ? url.replace(/["']/g, '') : '');
+  <script setup lang="ts">
+  import { computed } from 'vue'
+  import { useI18n } from 'vue-i18n'
+  import type { NewsListItem } from '@/types/news'
+
+  const props = defineProps<{
+    item: NewsListItem
+    maxCardTags?: number
+    layout?: 'list' | 'grid'
+    /** 阅读次数表（key = 新闻 id）；条目缺失时该卡片不显示次数。 */
+    readCounts?: Record<number, number>
+  }>()
+
+  defineEmits<{
+    click: [item: NewsListItem]
+    'tag-click': [tag: string]
+  }>()
+
+  const { t } = useI18n()
+
+  const maxCardTags = computed(() => props.maxCardTags ?? 3)
+  const readCount = computed(() => props.readCounts?.[props.item.id])
+  const hasImage = computed(
+    () =>
+      !!props.item.coverUrl &&
+      /\.(jpe?g|png|gif|webp|avif|bmp|svg|ico|heic|heif|apng|jfif)(?:$|[?#])/i.test(props.item.coverUrl),
+  )
+
+  const formattedDate = computed(() =>
+    props.item.publishedAt ? new Date(props.item.publishedAt).toLocaleDateString('zh-CN') : '',
+  )
+
+  /** 分类显示名走 i18n；未知分类直接显示原值，不吞掉。 */
+  const categoryLabel = computed(() => {
+    const key = `news.category.${props.item.category}`
+    const label = t(key)
+    return label === key ? props.item.category : label
+  })
+
+  /** 字数与阅读时长（服务端已算好，卡片只做格式化）。 */
+  const statsLabel = computed(() =>
+    t('news.card.stats', { words: props.item.wordCount, minutes: props.item.readingMinutes }),
+  )
+
+  /** 摘要：服务端在 description 为空时已用正文首段兜底，这里只做空值处理。 */
+  const excerpt = computed(() => props.item.description || t('news.list.empty.excerpt'))
+
+  const visibleTags = computed(() => props.item.tags?.slice(0, maxCardTags.value) ?? [])
+
+  const cleanImageUrl = (url: string | null | undefined) => (url ? url.replace(/["']/g, '') : '')
   </script>
   
   <style scoped>
@@ -192,11 +196,44 @@
   }
   
   .pinned-badge,
+  .important-badge,
+  .meta-category,
   .meta-date,
-  .meta-reads {
+  .meta-reads,
+  .meta-stats {
     display: inline-flex;
     align-items: center;
     gap: 0.3rem;
+  }
+
+  /* 分类：与标签区分开——分类是「内容性质」，用描边胶囊；标签用实底 */
+  .meta-category {
+    padding: 0.15rem 0.5rem;
+    border-radius: 9999px;
+    border: 1px solid var(--divider-color, rgba(158, 148, 216, 0.35));
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+  }
+
+  /* 重要公告：用 accent 色而非 primary，避免与置顶徽标撞色 */
+  .important-badge {
+    padding: 0.25rem 0.5rem;
+    border-radius: 6px;
+    background: color-mix(in srgb, var(--accent-color, #f59e0b) 18%, transparent);
+    color: var(--accent-color, #f59e0b);
+    font-weight: 700;
+    font-size: 0.75rem;
+  }
+
+  /* 字数 / 阅读时长：弱化到第三层级，不与日期抢注意力 */
+  .meta-stats {
+    color: var(--text-secondary);
+    opacity: 0.85;
+  }
+
+  .news-item.important {
+    box-shadow: var(--vercel-shadow-card, 0 4px 16px rgba(0, 0, 0, 0.06)),
+      inset 3px 0 0 var(--accent-color, #f59e0b);
   }
   
   .pinned-badge {

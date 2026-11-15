@@ -1,61 +1,31 @@
-import { computed, ref, watch } from 'vue';
-import { NewsManager } from '@/utils/news/news-manager';
+/**
+ * 新闻分页（URL 驱动）
+ *
+ * 页码同样只存在 URL 里：`goTo(3)` 就是改 query 的 `page`，由 `useNewsData`
+ * 的 watch 触发重新拉取。这里只负责边界判断与相邻页计算。
+ */
+import { computed } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import type { Ref } from 'vue'
+import { NEWS_DEFAULT_LIMIT, parseNewsQuery } from '@/utils/news/news-query'
 
-export function useNewsPagination(newsManager: NewsManager) {
-  const currentPage = ref(0);
-  const refreshTrigger = ref(0);
+export function useNewsPagination(totalPages: Ref<number>) {
+  const route = useRoute()
+  const router = useRouter()
 
-  // 同步 manager 的 page
-  watch(
-    () => newsManager.currentPage,
-    (newPage) => { currentPage.value = newPage; }
-  );
+  const currentPage = computed(() => parseNewsQuery(route.query, NEWS_DEFAULT_LIMIT).page)
+  const canPrev = computed(() => currentPage.value > 1)
+  const canNext = computed(() => currentPage.value < totalPages.value)
 
-  const paginatedNews = computed(() => {
-    refreshTrigger.value;
-    return newsManager.getPaginatedNews();
-  });
+  /** 跳到指定页（越界不跳，避免把用户停在空页）。 */
+  function goTo(page: number): void {
+    if (!Number.isInteger(page) || page < 1 || page > totalPages.value) return
+    if (page === currentPage.value) return
+    void router.push({ query: { ...route.query, page: String(page) } })
+  }
 
-  const pageCount = computed(() => {
-    refreshTrigger.value;
-    return newsManager.getPageCount();
-  });
+  const prevPage = (): void => goTo(currentPage.value - 1)
+  const nextPage = (): void => goTo(currentPage.value + 1)
 
-  const prevPage = () => {
-    if (currentPage.value > 0) {
-      currentPage.value--;
-      newsManager.currentPage = currentPage.value;
-      refreshTrigger.value++;
-    }
-  };
-
-  const nextPage = () => {
-    if (currentPage.value < pageCount.value - 1) {
-      currentPage.value++;
-      newsManager.currentPage = currentPage.value;
-      refreshTrigger.value++;
-    }
-  };
-
-  const goToPage = (page: number) => {
-    currentPage.value = page;
-    newsManager.currentPage = page;
-    refreshTrigger.value++;
-  };
-
-  // 新增：强制刷新分页数据（不改变页码）
-  const refresh = () => {
-    refreshTrigger.value++;
-  };
-
-  return {
-    currentPage,
-    refreshTrigger,
-    paginatedNews,
-    pageCount,
-    prevPage,
-    nextPage,
-    goToPage,
-    refresh, // 暴露出去
-  };
+  return { currentPage, totalPages, canPrev, canNext, goTo, prevPage, nextPage }
 }

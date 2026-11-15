@@ -471,10 +471,26 @@ export default {
     }
   },
   "news": {
-    "title": "最新新闻",
-    "subtitle": "了解服务器的最新动态",
-    "readMore": "阅读更多",
-    "published": "发布于 {date}",
+    "category": {
+      "announcement": "公告",
+      "update": "更新",
+      "event": "活动",
+      "guide": "指南",
+      "devlog": "开发日志",
+      "moderation": "处罚公示"
+    },
+    "card": {
+      "pinned": "置顶",
+      "important": "重要",
+      "stats": "{words} 字 · 约 {minutes} 分钟"
+    },
+    "filter": {
+      "category": "分类",
+      "categoryAll": "全部分类",
+      "importantOnly": "仅看重要",
+      "active": "筛选后共 {count} 条",
+      "reset": "清除筛选"
+    },
     "list": {
       "title": "服务器新闻",
       "subtitle": "发现 LuminolCraft 的最新动态与社区精彩故事",
@@ -484,38 +500,51 @@ export default {
       "layoutGrid": "网格",
       "tagFilter": "筛选标签:",
       "allTags": "所有标签",
-      "cacheStatus": {
-        "loading": "数据加载中...",
-        "stale": "⚠️ 数据可能不是最新",
-        "updated": "✅ 数据已更新 {minutes}分钟前",
-        "error": "❌ 数据加载失败"
+      "empty": {
+        "title": "没有找到新闻",
+        "description": "换个关键词或清除筛选条件再试试。",
+        "excerpt": "暂无摘要"
       },
       "pagination": {
         "prev": "上一页",
         "next": "下一页"
       },
       "error": {
-        "title": "❌ 无法加载新闻数据",
-        "description": "请检查网络连接，然后点击上方的\"重试\"按钮",
-        "retry": "重试",
-        "forceRefresh": "立即刷新"
+        "title": "无法加载新闻",
+        "description": "请检查网络连接后重试。",
+        "retry": "重试"
       }
     },
     "detail": {
       "loading": "加载中...",
       "error": {
-        "title": "❌ 加载失败",
-        "retry": "重试",
-        "notFound": "该新闻可能已被删除，或链接有误",
-        "notFoundTitle": "新闻不存在",
-        "invalidId": "无效的新闻ID",
-        "fetchFailed": "新闻加载失败: {error}"
+        "title": "加载失败",
+        "description": "服务暂时不可用，请稍后重试。",
+        "retry": "重试"
       },
-      "additionalImages": "附加图片",
-      "noImages": "暂无附加图片",
+      "notFound": {
+        "title": "新闻不存在",
+        "description": "该新闻可能已被下架或删除，也可能是链接有误。",
+        "back": "返回新闻列表"
+      },
       "backToList": "返回新闻列表",
       "tocTitle": "文章目录",
-      "readCountUnit": "次阅读"
+      "readCountUnit": "次阅读",
+      "readingMinutes": "{words} 字 · 约 {minutes} 分钟",
+      "updatedAt": "更新于 {date}"
+    },
+    "archive": {
+      "title": "新闻归档",
+      "subtitle": "按月份浏览全部新闻与公告。",
+      "loading": "加载中...",
+      "error": "归档加载失败",
+      "retry": "重试",
+      "empty": "暂无归档内容",
+      "count": "{count} 条"
+    },
+    "bell": {
+      "pinned": "重要公告",
+      "viewAllImportant": "查看全部重要公告"
     }
   },
   "monitoring": {

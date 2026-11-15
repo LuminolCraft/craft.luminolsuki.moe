@@ -5,33 +5,41 @@
       <span ref="progressBarRef" class="reading-progress-bar"></span>
     </div>
 
-    <!-- 加载状态 -->
+    <!-- 加载态 -->
     <div v-if="loading" class="loading-message">{{ t('news.detail.loading') }}</div>
 
-    <!-- 错误状态 -->
+    <!-- 网络 / 服务异常：可重试 -->
     <div v-else-if="error" class="error-message">
       <h3>{{ t('news.detail.error.title') }}</h3>
-      <p>{{ error }}</p>
-      <button @click="retryLoad" class="retry-btn">{{ t('news.detail.error.retry') }}</button>
+      <p>{{ t('news.detail.error.description') }}</p>
+      <button type="button" class="retry-btn" @click="reload">
+        {{ t('news.detail.error.retry') }}
+      </button>
     </div>
 
-    <!-- 主内容区：文章 + 侧边 TOC -->
-    <div v-else-if="newsItem" class="news-detail-layout">
-      <!-- 文章主体 -->
+    <!-- 不存在（草稿 / 已删除 / 链接错误）：不给重试，给回列表 -->
+    <div v-else-if="notFound" class="error-message">
+      <h3>{{ t('news.detail.notFound.title') }}</h3>
+      <p>{{ t('news.detail.notFound.description') }}</p>
+      <router-link to="/news" class="back-to-news">{{ t('news.detail.notFound.back') }}</router-link>
+    </div>
+
+    <!-- 正文 -->
+    <div v-else-if="item" class="news-detail-layout">
       <article ref="articleRef" id="news-detail" class="news-article">
-        <!-- 标题 -->
         <h2 class="article-title">
-          <template v-if="newsItem.pinned">
+          <template v-if="item.pinned">
             <svg class="pinned-icon" xmlns="http://www.w3.org/2000/svg" width="25" height="25" viewBox="0 0 384 512">
               <path d="M32 32C32 14.3 46.3 0 64 0L320 0c17.7 0 32 14.3 32 32s-14.3 32-32 32l-29.5 0 10.3 134.1c37.1 21.2 65.8 56.4 78.2 99.7l3.8 13.4c2.8 9.7 .8 20-5.2 28.1S362 352 352 352L32 352c-10 0-19.5-4.7-25.5-12.7s-8-18.4-5.2-28.1L5 297.8c12.4-43.3 41-78.5 78.2-99.7L93.5 64 64 64C46.3 64 32 49.7 32 32zM160 400l64 0 0 112c0 17.7-14.3 32-32 32s-32-14.3-32-32l0-112z" fill="#bfb4f3" stroke="#f2eefc" stroke-width="2.5"/>
             </svg>
           </template>
-          {{ newsItem.title }}
+          {{ item.title }}
         </h2>
 
-        <!-- 元信息：日期 + 阅读次数 + 标签 -->
+        <!-- 元信息：日期 + 字数/阅读时长 + 阅读次数 + 标签 -->
         <div class="article-meta">
-          <span class="article-date">{{ formatDate(newsItem.date, locale) }}</span>
+          <span class="article-date">{{ formattedDate }}</span>
+          <span class="article-stats">{{ statsLabel }}</span>
           <span v-if="readCount !== null" class="article-reads">
             <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
               <path fill="currentColor" d="M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9M12,17A5,5 0 0,1 7,12A5,5 0 0,1 12,7A5,5 0 0,1 17,12A5,5 0 0,1 12,17M12,2C17,2 21.78,5.61 23.36,10.27C23.5,10.72 23.5,11.28 23.36,11.73C21.78,16.39 17,20 12,20C7,20 2.22,16.39 0.64,11.73C0.5,11.28 0.5,10.72 0.64,10.27C2.22,5.61 7,2 12,2Z" />
@@ -41,7 +49,7 @@
           </span>
           <div class="article-tags">
             <span
-              v-for="tag in newsItem.tags"
+              v-for="tag in item.tags"
               :key="tag"
               class="tag"
               role="button"
@@ -54,39 +62,17 @@
           </div>
         </div>
 
-        <!-- 封面图：骨架占位 + 加载完成渐显（原 backgroundImage 版无 load 事件，无法做骨架） -->
-        <div v-if="hasImage(newsItem)" class="article-cover">
-          <ImageSkeleton
-            :src="cleanImageUrl(newsItem.image)"
-            :alt="newsItem.title ?? ''"
-            eager
-          />
+        <!-- 封面：骨架占位 + 加载完成渐显 -->
+        <div v-if="hasCover" class="article-cover">
+          <ImageSkeleton :src="item.coverUrl ?? ''" :alt="item.title" eager />
         </div>
 
-        <!-- 文章正文（unified 渲染） -->
+        <!-- 正文（unified 渲染） -->
         <div class="article-content markdown-body" v-html="renderedHtml"></div>
 
-        <!-- 附加图片画廊 -->
-        <div v-if="newsItem.additionalImages && newsItem.additionalImages.length > 0" class="gallery-section">
-          <h3 class="gallery-title">{{ t('news.detail.additionalImages') }}</h3>
-          <div class="gallery-grid">
-            <div
-              v-for="(imgUrl, index) in newsItem.additionalImages"
-              :key="index"
-              class="gallery-item"
-              @click="lightbox.open(index, $event)"
-            >
-              <ImageSkeleton
-                :src="imgUrl"
-                :alt="t('news.detail.additionalImages') + ' ' + (index + 1)"
-                @error="handleImageError"
-              />
-            </div>
-          </div>
-        </div>
+        <p v-if="showUpdated" class="article-updated">{{ updatedLabel }}</p>
 
-        <!-- 返回按钮 -->
-        <router-link to="/News" class="back-to-news">
+        <router-link to="/news" class="back-to-news">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M19 12H5M12 19l-7-7 7-7"/>
           </svg>
@@ -94,7 +80,6 @@
         </router-link>
       </article>
 
-      <!-- 侧边栏：文章目录 -->
       <aside class="news-sidebar">
         <SidebarToc
           :toc-items="tocItems"
@@ -104,156 +89,100 @@
         />
       </aside>
     </div>
-
-    <!-- 未找到 -->
-    <div v-else class="error-message">
-      <h3>{{ t('news.detail.error.notFoundTitle') }}</h3>
-      <p>{{ t('news.detail.error.notFound') }}</p>
-      <router-link to="/News" class="back-to-news">{{ t('news.detail.backToList') }}</router-link>
-    </div>
-
-    <!-- Lightbox  🔧 修改点1：增加安全条件 -->
-    <div v-if="lightbox.visible && newsItem?.additionalImages?.length" class="lightbox" @click="lightbox.close">
-      <span class="lightbox-close" @click.stop="lightbox.close">×</span>
-      <span v-if="lightbox.hasPrevious" class="lightbox-prev" @click.stop="lightbox.prev">‹</span>
-      <span v-if="lightbox.hasNext" class="lightbox-next" @click.stop="lightbox.next">›</span>
-      <img
-        ref="lightbox.lightboxImageRef"
-        class="lightbox-image"
-        data-flip-id="news-lightbox-img"
-        :src="lightbox.currentImage.value || ''"
-        @error="handleLightboxImageError"
-      />
-    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch, nextTick } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
-import { useI18n } from 'vue-i18n';
-import SidebarToc from '@/components/SidebarToc.vue';
-import ImageSkeleton from '@/components/common/ImageSkeleton.vue';
-import CountUp from '@/bits/CountUp.vue';
-import { useNewsDetail } from '@/composables/useNewsDetail';
-import { useLightbox } from '@/composables/useLightbox';
-import { useReadingProgress } from '@/composables/useReadingProgress';
-import { useArticleAnimations } from '@/composables/useArticleAnimations';
-import { formatDate, hasImage, cleanImageUrl, handleImageError } from '@/utils/news-helpers';
-import '@/styles/desktop/markdown-body.css';
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
+import SidebarToc from '@/components/SidebarToc.vue'
+import ImageSkeleton from '@/components/common/ImageSkeleton.vue'
+import CountUp from '@/bits/CountUp.vue'
+import { useNewsDetail } from '@/composables/useNewsDetail'
+import { useReadingProgress } from '@/composables/useReadingProgress'
+import { useArticleAnimations } from '@/composables/useArticleAnimations'
+import '@/styles/desktop/markdown-body.css'
 
-const route = useRoute();
-const router = useRouter();
-const { t, locale } = useI18n();
+const route = useRoute()
+const router = useRouter()
+const { t } = useI18n()
 
-// 1. 数据加载
-const newsId = computed(() => {
-  const id = route.query.id;
-  if (!id) return null;
-  const idStr = Array.isArray(id) ? id[0] : id;
-  if (!idStr) return null;
-  const parsed = parseInt(idStr, 10);
-  return isNaN(parsed) ? null : parsed;
-});
+const { item, loading, notFound, error, renderedHtml, tocItems, readCount, load, loadLegacyId } =
+  useNewsDetail()
 
-const {
-  loading,
-  error,
-  newsItem,
-  renderedHtml,
-  tocItems,
-  readCount,
-  loadNews,
-  retryLoad: retry
-} = useNewsDetail();
+const articleRef = ref<HTMLElement | null>(null)
+const progressBarRef = ref<HTMLElement | null>(null)
 
-// 2. 文章元素引用
-const articleRef = ref<HTMLElement | null>(null);
-const progressBarRef = ref<HTMLElement | null>(null);
-// 🔧 修改点2：删除多余的 lightboxImageRef
-// const lightboxImageRef = ref<HTMLImageElement | null>(null);
+useReadingProgress(articleRef, progressBarRef, { useScrollTrigger: true })
 
-// 3. 阅读进度条
-useReadingProgress(articleRef, progressBarRef, { useScrollTrigger: true });
-
-// 4. 入场动画
-const { initAnimations } = useArticleAnimations(articleRef);
+const { initAnimations } = useArticleAnimations(articleRef)
 watch(
   [loading, articleRef],
   ([isLoading, el]) => {
-    if (!isLoading && el) {
-      nextTick(() => initAnimations());
-    }
+    if (!isLoading && el) nextTick(() => initAnimations())
   },
-  { immediate: true }
-);
+  { immediate: true },
+)
 
-// 5. Lightbox
-const additionalImages = computed(() => newsItem.value?.additionalImages || []);
-const lightbox = useLightbox(additionalImages);
+/** 发布日期（epoch ms → 本地日期串）；草稿没有发布时间时留空。 */
+const formattedDate = computed(() =>
+  item.value?.publishedAt ? new Date(item.value.publishedAt).toLocaleDateString('zh-CN') : '',
+)
 
-// Lightbox 图片错误处理器
-const handleLightboxImageError = (event: Event) => {
-  handleImageError(event, 'https://via.placeholder.com/300x200/9e94d8/ffffff?text=图片不可用');
-};
+const statsLabel = computed(() =>
+  item.value
+    ? t('news.detail.readingMinutes', {
+        words: item.value.wordCount,
+        minutes: item.value.readingMinutes,
+      })
+    : '',
+)
 
-// 6. 工具函数
-const goToTag = (tag: string) => {
-  router.push({ name: 'News', query: { tags: tag } });
-};
+const hasCover = computed(() => Boolean(item.value?.coverUrl))
 
-const retryLoad = () => {
-  if (newsId.value !== null) retry(newsId.value);
-};
+/**
+ * 更新时间只在「确有修订」时展示：与服务端 updated_at 相差超过 1 分钟才算，
+ * 避免首次发布时把同一时间显示成两遍。
+ */
+const showUpdated = computed(() => {
+  const current = item.value
+  if (!current?.publishedAt) return false
+  return current.updatedAt - current.publishedAt > 60_000
+})
 
-// 7. 加载数据
-onMounted(() => {
-  if (newsId.value !== null) loadNews(newsId.value);
-});
+const updatedLabel = computed(() =>
+  item.value ? t('news.detail.updatedAt', { date: new Date(item.value.updatedAt).toLocaleDateString('zh-CN') }) : '',
+)
 
-// 8. 正文（v-html）图片骨架：markdown 渲染出的 img 无法用 Vue 组件，
-//    渲染后逐张打状态类（.img-skel-pending → .img-skel-ready，样式见 markdown-body.css），
-//    缓存命中（img.complete）的图不打扰。
-function decorateArticleImages(): void {
-  const root = articleRef.value;
-  if (!root) return;
-  root.querySelectorAll<HTMLImageElement>('.markdown-body img').forEach((img) => {
-    if (img.dataset.skelBound === '1') return;
-    img.dataset.skelBound = '1';
-    if (img.complete && img.naturalWidth > 0) {
-      img.classList.add('img-skel-ready');
-      return;
-    }
-    img.classList.add('img-skel-pending');
-    const settle = (): void => {
-      img.classList.remove('img-skel-pending');
-      img.classList.add('img-skel-ready');
-    };
-    img.addEventListener('load', settle, { once: true });
-    img.addEventListener('error', () => img.classList.remove('img-skel-pending'), { once: true });
-  });
+function goToTag(tag: string): void {
+  void router.push({ name: 'news', query: { tag } })
 }
 
-watch(
-  renderedHtml,
-  () => {
-    nextTick(decorateArticleImages);
-  },
-  { immediate: true }
-);
-
-watch(
-  () => route.query.id,
-  async (newId) => {
-    if (newId) {
-      const idStr = Array.isArray(newId) ? newId[0] : newId;
-      if (idStr) {
-        const id = parseInt(idStr, 10);
-        if (!isNaN(id)) await loadNews(id);
-      }
-    }
+/** 解析路由：优先 slug；旧链接走 `?id=` 并自动 replace 到 slug URL。 */
+async function resolveRoute(): Promise<void> {
+  const slug = route.params.slug
+  if (typeof slug === 'string' && slug.length > 0) {
+    await load(slug)
+    return
   }
-);
+  const rawId = Array.isArray(route.query.id) ? route.query.id[0] : route.query.id
+  const id = Number(rawId)
+  if (Number.isInteger(id) && id > 0) {
+    await loadLegacyId(id)
+    return
+  }
+  // 既没有 slug 也没有合法 id：按「不存在」处理，不浪费一次 404 请求
+  notFound.value = true
+  loading.value = false
+}
+
+async function reload(): Promise<void> {
+  await resolveRoute()
+}
+
+onMounted(resolveRoute)
+watch(() => [route.params.slug, route.query.id], resolveRoute)
 </script>
 
 <style scoped>

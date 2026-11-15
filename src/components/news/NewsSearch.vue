@@ -72,7 +72,7 @@
     searchQuery?: string;
   }>();
   
-  const emit = defineEmits<{
+  defineEmits<{
     (e: 'search', query: string): void;
     (e: 'tag-toggle', tag: string): void;
   }>();

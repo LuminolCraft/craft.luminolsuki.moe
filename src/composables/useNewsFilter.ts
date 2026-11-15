@@ -1,89 +1,62 @@
-import { ref, watch, computed } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
-import type { LocationQueryRaw } from 'vue-router';
-import { NewsManager } from '@/utils/news/news-manager';
+/**
+ * 新闻筛选的 URL 写入层
+ *
+ * 筛选值只有一份真相：URL query。组件调用这里的 `setCategory` / `setTag` /
+ * `setSearch`，由 router 驱动 `useNewsData` 重新拉取——不在内存里维护第二份
+ * 筛选状态，也就不存在「界面选中的标签和实际请求不一致」。
+ */
+import { computed } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import type { NewsCategory, NewsQuery } from '@/types/news'
+import {
+  NEWS_DEFAULT_LIMIT,
+  parseNewsQuery,
+  patchNewsQuery,
+  toLocationQuery,
+} from '@/utils/news/news-query'
 
-export function useNewsFilter(newsManager: NewsManager) {
-  const route = useRoute();
-  const router = useRouter();
+export function useNewsFilter() {
+  const route = useRoute()
+  const router = useRouter()
 
-  const searchQuery = ref('');
-  const selectedTags = ref<string[]>([]);
-  const refreshTrigger = ref(0);
+  const query = computed<NewsQuery>(() => parseNewsQuery(route.query, NEWS_DEFAULT_LIMIT))
 
-  // 从 URL 解析标签
-  const parseTagsFromQuery = (): string[] => {
-    const q = route.query.tags;
-    if (q == null || q === '') return [];
-    const raw = Array.isArray(q) ? q.join(',') : String(q);
-    return raw.split(',').map((t) => t.trim()).filter(Boolean);
-  };
+  /** 覆盖式跳转（保留当前每页条数，筛选一律回到第 1 页）。 */
+  function apply(patch: Partial<Omit<NewsQuery, 'page'>>): void {
+    void router.push({ query: patchNewsQuery(query.value, patch, NEWS_DEFAULT_LIMIT) })
+  }
 
-  // 同步标签到 URL
-  const syncTagsToUrl = (tags: string[]) => {
-    const nextQuery: LocationQueryRaw = { ...route.query };
-    if (tags.length > 0) {
-      nextQuery.tags = tags.join(',');
-    } else {
-      delete nextQuery.tags;
-    }
-    const current = typeof route.query.tags === 'string'
-      ? route.query.tags
-      : Array.isArray(route.query.tags)
-        ? route.query.tags.filter(Boolean).join(',')
-        : '';
-    if (current === tags.join(',')) return;
-    router.replace({ query: nextQuery });
-  };
+  function setCategory(category: NewsCategory | undefined): void {
+    apply({ category })
+  }
 
-  const filterNews = () => {
-    newsManager.filterNews(selectedTags.value, searchQuery.value);
-    refreshTrigger.value++;
-    syncTagsToUrl(selectedTags.value);
-  };
+  /** 标签单选：再次点击同一个标签即取消（URL 里不留空值）。 */
+  function setTag(tag: string | undefined): void {
+    apply({ tag: tag === query.value.tag ? undefined : tag })
+  }
 
-  const toggleTag = (tag: string) => {
-    const set = new Set(selectedTags.value);
-    if (set.has(tag)) set.delete(tag);
-    else set.add(tag);
-    selectedTags.value = Array.from(set);
-    filterNews();
-  };
+  function setSearch(q: string): void {
+    const trimmed = q.trim()
+    apply({ q: trimmed.length > 0 ? trimmed : undefined })
+  }
 
-  const clearTags = () => {
-    selectedTags.value = [];
-    filterNews();
-  };
+  function setImportantOnly(value: boolean): void {
+    apply({ important: value ? true : undefined })
+  }
 
-  // 监听 URL 变化恢复筛选状态
-  watch(
-    () => route.query.tags,
-    () => {
-      const fromUrl = parseTagsFromQuery();
-      const same = fromUrl.length === selectedTags.value.length &&
-        fromUrl.every((t) => selectedTags.value.includes(t));
-      if (same) return;
-      selectedTags.value = fromUrl;
-      newsManager.filterNews(selectedTags.value, searchQuery.value);
-      refreshTrigger.value++;
-    }
-  );
-
-  // 唯一标签列表
-  const uniqueTags = computed(() => {
-    refreshTrigger.value;
-    return newsManager.getUniqueTags(newsManager.allNewsWithContent);
-  });
+  /** 清空全部筛选（保留每页条数）。 */
+  function reset(): void {
+    void router.push({
+      query: toLocationQuery({ page: 1, limit: query.value.limit }, NEWS_DEFAULT_LIMIT),
+    })
+  }
 
   return {
-    searchQuery,
-    selectedTags,
-    refreshTrigger,
-    uniqueTags,
-    filterNews,
-    toggleTag,
-    clearTags,
-    parseTagsFromQuery,
-    syncTagsToUrl,
-  };
+    query,
+    setCategory,
+    setTag,
+    setSearch,
+    setImportantOnly,
+    reset,
+  }
 }

@@ -81,8 +81,9 @@ const routes = [
     }
   },
   {
-    path: '/News',
+    path: '/news',
     name: 'news',
+    alias: ['/News'],
     component: () => import('../views/News.vue'),
     meta: {
       og: {
@@ -115,6 +116,42 @@ const routes = [
     },
     props: (route: RouteLocationNormalizedLoaded) => ({ id: route.query.id }),
     alias: ['/news-detail', '/news-detail.html', '/NewsDetail.html']
+  },
+  {
+    // 归档时间线：静态段必须排在 /news/:slug 之前，否则 archive 会被当成 slug
+    path: '/news/archive',
+    name: 'news-archive',
+    component: () => import('../views/NewsArchive.vue'),
+    meta: {
+      og: {
+        title: 'LuminolCraft 服务器 - 新闻归档',
+        description: '按月份浏览 LuminolCraft 的全部新闻与公告。',
+        image: {
+          url: 'https://imagehosting-ez2.pages.dev/images/c25a955166388e1257c23d01c78a62e6.webp',
+          width: 1200,
+          height: 630,
+          alt: 'LuminolCraft 新闻归档'
+        }
+      }
+    }
+  },
+  {
+    // 详情页永久链接：slug 由服务端生成，发布后只读
+    path: '/news/:slug',
+    name: 'news-detail',
+    component: () => import('../views/NewsDetail.vue'),
+    meta: {
+      og: {
+        title: 'LuminolCraft 服务器 - 最新新闻与公告',
+        description: '了解 LuminolCraft 服务器的最新动态、活动和更新，第一时间获取游戏内重要信息。',
+        image: {
+          url: 'https://imagehosting-ez2.pages.dev/images/c25a955166388e1257c23d01c78a62e6.webp',
+          width: 1200,
+          height: 630,
+          alt: 'LuminolCraft 服务器新闻公告'
+        }
+      }
+    }
   },
   {
     path: '/Archive',

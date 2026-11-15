@@ -5,20 +5,57 @@
       <p>{{ t('news.list.subtitle') }}</p>
     </div>
 
-    <!-- 工具栏：使用 NewsSearch 的插槽放置布局切换 -->
+    <!-- 工具栏：搜索 / 分类 / 仅看重要 / 布局切换 -->
     <div class="toolbar-row">
       <NewsSearch
         :selected-tags="selectedTags"
-        :all-tags="uniqueTags"
-        :search-query="searchQuery"
+        :all-tags="allTags"
+        :search-query="query.q ?? ''"
         @search="onSearch"
-        @tag-toggle="handleTagToggle"
+        @tag-toggle="onTagToggle"
       >
-        <!-- 通过插槽将布局切换按钮放入 NewsSearch 内部 -->
         <template #extra-controls>
-          <LayoutToggle v-model="layoutMode" />
+          <div class="extra-controls">
+            <label class="category-filter">
+              <span class="filter-label">{{ t('news.filter.category') }}</span>
+              <select
+                class="category-select"
+                :value="query.category ?? ''"
+                @change="onCategoryChange"
+              >
+                <option value="">{{ t('news.filter.categoryAll') }}</option>
+                <option v-for="item in categories" :key="item.category" :value="item.category">
+                  {{ categoryLabel(item.category) }}（{{ item.count }}）
+                </option>
+              </select>
+            </label>
+
+            <label class="important-filter">
+              <input
+                type="checkbox"
+                :checked="query.important === true"
+                @change="onImportantChange"
+              />
+              <span>{{ t('news.filter.importantOnly') }}</span>
+            </label>
+          </div>
         </template>
       </NewsSearch>
+      <LayoutToggle v-model="layoutMode" />
+    </div>
+
+    <!-- 当前筛选概览：让「为什么只剩这几条」可见，并给一键清除 -->
+    <div v-if="hasActiveFilter" class="active-filter">
+      <span class="active-filter-text">
+        {{ t('news.filter.active', { count: total }) }}
+        <template v-if="query.category">· {{ categoryLabel(query.category) }}</template>
+        <template v-if="query.tag">· #{{ query.tag }}</template>
+        <template v-if="query.q">· “{{ query.q }}”</template>
+        <template v-if="query.important">· {{ t('news.filter.importantOnly') }}</template>
+      </span>
+      <button type="button" class="active-filter-reset" @click="resetFilters">
+        {{ t('news.filter.reset') }}
+      </button>
     </div>
 
     <div
@@ -27,13 +64,31 @@
       :class="[layoutMode === 'list' ? 'list-mode' : 'grid-mode', { 'cover-left': coverPosition === 'left' }]"
       v-lenis-scroll
     >
-      <template v-if="isLoading">
-        <NewsSkeleton :count="newsManager.itemsPerPage" />
+      <template v-if="loading">
+        <NewsSkeleton :count="query.limit" />
+      </template>
+
+      <template v-else-if="error">
+        <div class="error-message">
+          <h3>{{ t('news.list.error.title') }}</h3>
+          <p>{{ t('news.list.error.description') }}</p>
+          <button type="button" class="retry-btn" @click="reload">{{ t('news.list.error.retry') }}</button>
+        </div>
+      </template>
+
+      <template v-else-if="items.length === 0">
+        <div class="empty-message">
+          <h3>{{ t('news.list.empty.title') }}</h3>
+          <p>{{ t('news.list.empty.description') }}</p>
+          <button v-if="hasActiveFilter" type="button" class="retry-btn" @click="resetFilters">
+            {{ t('news.filter.reset') }}
+          </button>
+        </div>
       </template>
 
       <template v-else>
         <RevealCard
-          v-for="(item, index) in paginatedNews"
+          v-for="(item, index) in items"
           :key="item.id"
           :delay="Math.min(index, 8) * 0.06"
         >
@@ -43,148 +98,119 @@
               :layout="layoutMode"
               :read-counts="readCounts"
               @click="goToDetail"
-              @tag-click="handleTagToggle"
+              @tag-click="onTagToggle"
             />
           </GlareHover>
         </RevealCard>
-        <div v-if="loadError" class="error-message">
-          <h3>{{ t('news.list.error.title') }}</h3>
-          <p>{{ t('news.list.error.description') }}</p>
-        </div>
       </template>
     </div>
 
     <NewsPagination
+      v-if="!loading && !error && items.length > 0"
       :current-page="currentPage"
-      :page-count="pageCount"
+      :page-count="totalPages"
       @prev="prevPage"
       @next="nextPage"
-      @go="goToPage"
+      @go="goTo"
     />
   </section>
 </template>
 
 <script setup lang="ts">
-import GlareHover from "@/components/bits/GlareHover.vue"
-import { ref, onMounted, onUnmounted, watch, nextTick, computed } from 'vue';
-import { useRouter } from 'vue-router';
-import { useI18n } from 'vue-i18n';
-import { useMediaQuery } from '@vueuse/core';
-import { useLastViewedCookie } from '@/composables/useLastViewedCookie';
-import { useNewsData } from '@/composables/useNewsData';
-import { useNewsFilter } from '@/composables/useNewsFilter';
-import { useNewsPagination } from '@/composables/useNewsPagination';
-import NewsSearch from '@/components/news/NewsSearch.vue';
-import NewsCard from '@/components/news/NewsCard.vue';
-import RevealCard from '@/components/common/RevealCard.vue';
-import NewsPagination from '@/components/news/NewsPagination.vue';
-import NewsSkeleton from '@/components/news/NewsSkeleton.vue';
-import LayoutToggle from '@/components/news/LayoutToggle.vue';
-import type { NewsItem } from '@/types/news';
+import { computed, onMounted, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
+import { useMediaQuery } from '@vueuse/core'
+import { useLastViewedCookie } from '@/composables/useLastViewedCookie'
+import { useNewsData } from '@/composables/useNewsData'
+import { useNewsFilter } from '@/composables/useNewsFilter'
+import { useNewsPagination } from '@/composables/useNewsPagination'
+import NewsSearch from '@/components/news/NewsSearch.vue'
+import NewsCard from '@/components/news/NewsCard.vue'
+import RevealCard from '@/components/common/RevealCard.vue'
+import NewsPagination from '@/components/news/NewsPagination.vue'
+import NewsSkeleton from '@/components/news/NewsSkeleton.vue'
+import LayoutToggle from '@/components/news/LayoutToggle.vue'
+import GlareHover from '@/components/bits/GlareHover.vue'
+import { fetchNewsCategories, fetchNewsTags } from '@/utils/news/news-api'
+import type { NewsCategory, NewsCategoryCount, NewsListItem } from '@/types/news'
 
-const { t } = useI18n();
-const router = useRouter();
-const { setLastViewedNews } = useLastViewedCookie();
+const { t } = useI18n()
+const router = useRouter()
+const { setLastViewedNews } = useLastViewedCookie()
 
-// ========== 布局模式 ==========
-const STORAGE_KEY = 'news_layout_mode';
-const isMobile = useMediaQuery('(max-width: 768px)');
-
-// 默认模式：桌面 list，移动端 grid
-const defaultMode = computed(() => (isMobile.value ? 'grid' : 'list'));
-
-// 用户偏好（从 localStorage 读取，若无则用默认）
+// ========== 布局模式（纯展示偏好，存 localStorage 即可，不进 URL） ==========
+const STORAGE_KEY = 'news_layout_mode'
+const isMobile = useMediaQuery('(max-width: 768px)')
+const defaultMode = computed<'list' | 'grid'>(() => (isMobile.value ? 'grid' : 'list'))
 const layoutMode = ref<'list' | 'grid'>(
-  (localStorage.getItem(STORAGE_KEY) as 'list' | 'grid') || defaultMode.value
-);
+  (localStorage.getItem(STORAGE_KEY) as 'list' | 'grid' | null) ?? defaultMode.value,
+)
+watch(layoutMode, (value) => localStorage.setItem(STORAGE_KEY, value))
+/** 微调点：封面位置（列表模式）。当前固定右侧，需要切左侧改这里。 */
+const coverPosition = ref<'left' | 'right'>('right')
 
-// 监听模式变化，存 localStorage
-watch(layoutMode, (newVal) => {
-  localStorage.setItem(STORAGE_KEY, newVal);
-});
+// ========== 数据 / 筛选 / 分页 ==========
+const { query, items, total, totalPages, loading, error, readCounts, reload } = useNewsData()
+const { setCategory, setTag, setSearch, setImportantOnly, reset } = useNewsFilter()
+const { currentPage, goTo, prevPage, nextPage } = useNewsPagination(totalPages)
 
-// 封面位置（可由配置控制，这里暂时写死为 'right'，参考 Astro 的 coverPosition）
-const coverPosition = ref<'left' | 'right'>('right');
+const categories = ref<NewsCategoryCount[]>([])
+const allTags = ref<string[]>([])
+const newsSectionRef = ref<HTMLElement | null>(null)
 
-// ========== 数据层 ==========
-const { newsManager, isLoading, loadError, initialize, animateCards } = useNewsData();
-const newsSectionRef = ref<HTMLElement | null>(null);
+/** 标签选择状态来自 URL（单选）。 */
+const selectedTags = computed(() => (query.value.tag ? [query.value.tag] : []))
+const hasActiveFilter = computed(
+  () => Boolean(query.value.category || query.value.tag || query.value.q || query.value.important),
+)
 
-// ========== 阅读次数（卡片 meta 展示） ==========
-const readCounts = ref<Record<number, number>>({});
-const loadReadCounts = async (force = false) => {
-  readCounts.value = await newsManager.fetchReadCounts(force);
-};
+/** 分类显示名（未知分类回落原值）。 */
+function categoryLabel(category: NewsCategory): string {
+  const key = `news.category.${category}`
+  const label = t(key)
+  return label === key ? category : label
+}
 
-// ========== 筛选层 ==========
-const { searchQuery, selectedTags, uniqueTags, filterNews, toggleTag, parseTagsFromQuery } =
-  useNewsFilter(newsManager);
+// ========== 交互 ==========
+/** 微调点：搜索防抖交给 NewsSearch 内部，这里只接收最终值。 */
+function onSearch(value: string): void {
+  setSearch(value)
+}
 
-// ========== 分页层 ==========
-const {
-  currentPage,
-  paginatedNews,
-  pageCount,
-  prevPage: _prevPage,
-  nextPage: _nextPage,
-  goToPage: _goToPage,
-  refresh,
-} = useNewsPagination(newsManager);
+function onTagToggle(tag: string): void {
+  setTag(tag)
+}
 
-const prevPage = () => { _prevPage(); window.scrollTo({ top: 0, behavior: 'smooth' }); };
-const nextPage = () => { _nextPage(); window.scrollTo({ top: 0, behavior: 'smooth' }); };
-const goToPage = (page: number) => { _goToPage(page); window.scrollTo({ top: 0, behavior: 'smooth' }); };
+function onCategoryChange(event: Event): void {
+  const value = (event.target as HTMLSelectElement).value
+  setCategory(value ? (value as NewsCategory) : undefined)
+}
 
-// ========== 搜索与标签 ==========
-const onSearch = (query: string) => {
-  searchQuery.value = query;
-  filterNews();
-  refresh();
-};
-const handleTagToggle = (tag: string) => {
-  toggleTag(tag);
-  refresh();
-};
+function onImportantChange(event: Event): void {
+  setImportantOnly((event.target as HTMLInputElement).checked)
+}
+
+function resetFilters(): void {
+  reset()
+}
 
 // ========== 跳转详情 ==========
-const goToDetail = (item: NewsItem) => {
-  setLastViewedNews(item.id, item.title);
-  router.push({ name: 'newsdetail', query: { id: item.id.toString() } });
-};
+function goToDetail(item: NewsListItem): void {
+  setLastViewedNews(item.id, item.title)
+  void router.push({ name: 'news-detail', params: { slug: item.slug } })
+}
 
 // ========== 生命周期 ==========
 onMounted(async () => {
-  await initialize();
-  await nextTick();
-
-  const urlTags = parseTagsFromQuery();
-  if (urlTags.length) {
-    selectedTags.value = urlTags;
-  }
-  filterNews();
-  refresh();
-
-  // 后台同步落地后 manager 的字段不会触发重算，必须据此重新筛选 + 重取分页，
-  // 否则"刚发布的新闻"要等用户翻页/再刷一次才出现。
-  const stopChangeListener = newsManager.onChange(() => {
-    filterNews();
-    refresh();
-    // 阅读次数独立于 manifest 同步：落地后强制刷新一次
-    void loadReadCounts(true);
-  });
-  onUnmounted(stopChangeListener);
-
-  // 阅读次数：失败静默（卡片不显示次数），不阻塞首屏
-  void loadReadCounts();
-
-  await animateCards(newsSectionRef.value);
-});
-
-watch(isLoading, async (newVal, oldVal) => {
-  if (oldVal && !newVal && !loadError.value) {
-    await animateCards(newsSectionRef.value);
-  }
-});
+  // 分类与标签是筛选选项，失败不影响列表主流程（选项为空即可）
+  const [categoryList, tagList] = await Promise.all([
+    fetchNewsCategories().catch(() => []),
+    fetchNewsTags().catch(() => []),
+  ])
+  categories.value = categoryList
+  allTags.value = tagList.map((item) => item.tag)
+})
 </script>
 
 <style scoped>
@@ -449,6 +475,169 @@ watch(isLoading, async (newVal, oldVal) => {
     width: 100% !important;
     max-width: 100% !important;
     padding: 1rem !important;
+  }
+}
+
+/* ===== 筛选控件（分类 / 仅看重要） ===== */
+.extra-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.category-filter,
+.important-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.filter-label {
+  white-space: nowrap;
+}
+
+.category-select {
+  height: 38px;
+  padding: 0 32px 0 12px;
+  border: 1px solid var(--divider-color, rgba(158, 148, 216, 0.3));
+  border-radius: 10px;
+  background: var(--card-bg);
+  color: var(--text-color);
+  font-size: 0.875rem;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  appearance: none;
+  /* 微调点：下拉箭头用内联 SVG，避免额外图标依赖 */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2.5' stroke-linecap='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+}
+
+.category-select:hover,
+.category-select:focus-visible {
+  border-color: var(--primary-color);
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary-color) 18%, transparent);
+}
+
+.important-filter {
+  height: 38px;
+  padding: 0 12px;
+  border: 1px solid var(--divider-color, rgba(158, 148, 216, 0.3));
+  border-radius: 10px;
+  background: var(--card-bg);
+  cursor: pointer;
+  user-select: none;
+  transition: border-color 0.2s ease;
+}
+
+.important-filter:hover {
+  border-color: var(--primary-color);
+}
+
+.important-filter input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--primary-color);
+  cursor: pointer;
+}
+
+/* ===== 当前筛选概览 ===== */
+.active-filter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  max-width: 1200px;
+  margin: 0 auto 16px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--primary-color) 8%, transparent);
+  border: 1px solid var(--divider-color, rgba(158, 148, 216, 0.25));
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.active-filter-reset {
+  border: none;
+  background: transparent;
+  color: var(--primary-color);
+  font-size: 0.875rem;
+  font-family: inherit;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 8px;
+}
+
+.active-filter-reset:hover {
+  background: color-mix(in srgb, var(--primary-color) 14%, transparent);
+}
+
+/* ===== 空态 / 错误态 ===== */
+.empty-message,
+.error-message {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 64px 24px;
+  border-radius: 16px;
+  background: var(--card-bg);
+  border: 1px solid var(--divider-color, rgba(158, 148, 216, 0.25));
+}
+
+.empty-message h3,
+.error-message h3 {
+  margin: 0 0 8px;
+  font-size: 1.125rem;
+  color: var(--text-color);
+}
+
+.empty-message p,
+.error-message p {
+  margin: 0 0 16px;
+  color: var(--text-secondary);
+  font-size: 0.9375rem;
+}
+
+.retry-btn {
+  min-height: 40px;
+  padding: 0 20px;
+  border: none;
+  border-radius: 10px;
+  background: var(--primary-color);
+  color: #fff;
+  font-size: 0.875rem;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.retry-btn:hover {
+  background: var(--button-hover);
+}
+
+@media (max-width: 768px) {
+  .extra-controls {
+    width: 100%;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .category-filter {
+    flex: 1 1 auto;
+  }
+
+  .category-select {
+    flex: 1 1 auto;
+    height: 42px;
+  }
+
+  .important-filter {
+    height: 42px;
   }
 }
 </style>

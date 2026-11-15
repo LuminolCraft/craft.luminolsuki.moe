@@ -471,10 +471,26 @@ export default {
     }
   },
   "news": {
-    "title": "Latest News",
-    "subtitle": "Learn about the latest developments of the server",
-    "readMore": "Read More",
-    "published": "Published on {date}",
+    "category": {
+      "announcement": "Announcement",
+      "update": "Update",
+      "event": "Event",
+      "guide": "Guide",
+      "devlog": "Devlog",
+      "moderation": "Moderation"
+    },
+    "card": {
+      "pinned": "Pinned",
+      "important": "Important",
+      "stats": "{words} words · {minutes} min"
+    },
+    "filter": {
+      "category": "Category",
+      "categoryAll": "All categories",
+      "importantOnly": "Important only",
+      "active": "{count} result(s) after filtering",
+      "reset": "Clear filters"
+    },
     "list": {
       "title": "Server News",
       "subtitle": "Discover the latest updates and community stories of LuminolCraft",
@@ -484,38 +500,51 @@ export default {
       "layoutGrid": "Grid",
       "tagFilter": "Filter by tag:",
       "allTags": "All tags",
-      "cacheStatus": {
-        "loading": "Loading data...",
-        "stale": "⚠️ Data may not be up to date",
-        "updated": "✅ Data updated {minutes} minutes ago",
-        "error": "❌ Failed to load data"
+      "empty": {
+        "title": "No news found",
+        "description": "Try another keyword or clear the filters.",
+        "excerpt": "No summary"
       },
       "pagination": {
         "prev": "Previous",
         "next": "Next"
       },
       "error": {
-        "title": "❌ Failed to load news data",
-        "description": "Please check your network connection and click the \"Retry\" button above",
-        "retry": "Retry",
-        "forceRefresh": "Refresh Now"
+        "title": "Failed to load news",
+        "description": "Check your connection and try again.",
+        "retry": "Retry"
       }
     },
     "detail": {
       "loading": "Loading...",
       "error": {
-        "title": "❌ Failed to load",
-        "retry": "Retry",
-        "notFound": "This item may have been deleted, or the link is incorrect.",
-        "notFoundTitle": "News not found",
-        "invalidId": "Invalid news ID",
-        "fetchFailed": "Failed to load news: {error}"
+        "title": "Failed to load",
+        "description": "The service is temporarily unavailable. Please retry later.",
+        "retry": "Retry"
       },
-      "additionalImages": "Additional Images",
-      "noImages": "No additional images",
+      "notFound": {
+        "title": "News not found",
+        "description": "This item may have been unpublished or deleted, or the link is incorrect.",
+        "back": "Back to news list"
+      },
       "backToList": "Back to news list",
       "tocTitle": "Table of Contents",
-      "readCountUnit": "reads"
+      "readCountUnit": "reads",
+      "readingMinutes": "{words} words · {minutes} min read",
+      "updatedAt": "Updated {date}"
+    },
+    "archive": {
+      "title": "News Archive",
+      "subtitle": "Browse every news item and announcement by month.",
+      "loading": "Loading...",
+      "error": "Failed to load archive",
+      "retry": "Retry",
+      "empty": "No archived news yet",
+      "count": "{count} item(s)"
+    },
+    "bell": {
+      "pinned": "Important announcements",
+      "viewAllImportant": "View all important"
     }
   },
   "monitoring": {
