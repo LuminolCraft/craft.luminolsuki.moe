@@ -62,6 +62,14 @@
   status = 200
   force = true
 
+# 图床反代：GitHub 仓 LuminolCraft/imagehosting（公开）经本域访问。
+# raw.githubusercontent.com 在部分网络不可达，走自家域名保持图片稳定加载。
+[[redirects]]
+  from = "/img/*"
+  to = "https://raw.githubusercontent.com/LuminolCraft/imagehosting/master/:splat"
+  status = 200
+  force = true
+
 [[redirects]]
   from = "/*"
   to = "/index.html"
