@@ -37,13 +37,15 @@
           :key="item.id"
           :delay="Math.min(index, 8) * 0.06"
         >
-          <NewsCard
-            :item="item"
-            :layout="layoutMode"
-            :read-counts="readCounts"
-            @click="goToDetail"
-            @tag-click="handleTagToggle"
-          />
+          <GlareHover bare width="100%" height="100%" :glare-opacity="0.3" :transition-duration="700">
+            <NewsCard
+              :item="item"
+              :layout="layoutMode"
+              :read-counts="readCounts"
+              @click="goToDetail"
+              @tag-click="handleTagToggle"
+            />
+          </GlareHover>
         </RevealCard>
         <div v-if="loadError" class="error-message">
           <h3>{{ t('news.list.error.title') }}</h3>
@@ -63,6 +65,7 @@
 </template>
 
 <script setup lang="ts">
+import GlareHover from "@/components/bits/GlareHover.vue"
 import { ref, onMounted, onUnmounted, watch, nextTick, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';

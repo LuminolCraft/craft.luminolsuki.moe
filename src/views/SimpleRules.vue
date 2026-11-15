@@ -3,7 +3,12 @@
         <section class="rules-section">
             <div class="container">
                 <div class="rules-content">
-                    <h1 class="vercel-display-hero">{{ t('rules.simple.title') }}</h1>
+                    <ScrollFloat
+                        as="h1"
+                        class="vercel-display-hero rules-float-title"
+                        font-size="clamp(2rem, 5.5vw, 3.4rem)"
+                        :stagger="0.04"
+                    >{{ t('rules.simple.title') }}</ScrollFloat>
                     <p class="rules-date vercel-caption"><em>{{ t('rules.simple.date') }}</em></p>
 
                     <ol class="rules-list">
@@ -153,6 +158,7 @@ text-decoration: none;
 </style>
 
 <script setup lang="ts">
+import ScrollFloat from "@/components/bits/ScrollFloat.vue"
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
