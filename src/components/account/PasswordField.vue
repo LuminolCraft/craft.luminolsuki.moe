@@ -25,30 +25,20 @@
         :disabled="disabled"
         @click="revealed = !revealed"
       >
-        <svg
-          v-if="revealed"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          aria-hidden="true"
-        >
-          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z" />
+        <template v-if="revealed">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0" />
           <circle cx="12" cy="12" r="3" />
         </svg>
-        <svg
-          v-else
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          aria-hidden="true"
-        >
-          <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" />
-          <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 11 8 11 8a13.16 13.16 0 0 1-1.67 2.68" />
-          <path d="M6.61 6.61A13.526 13.526 0 0 0 1 12s4 8 11 8a9.74 9.74 0 0 0 5.39-1.61" />
-          <line x1="2" x2="22" y1="2" y2="22" />
+        </template>
+        <template v-else>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.8 10.8 0 0 1-1.444 2.49" />
+          <path d="M14.084 14.158a3 3 0 0 1-4.242-4.242" />
+          <path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143" />
+          <path d="m2 2 20 20" />
         </svg>
+        </template>
       </button>
     </div>
   </div>
@@ -148,10 +138,13 @@ function onInput(event: Event) {
   padding: 0;
   background: transparent;
   border: none;
-  border-radius: 6px;
+  border-radius: 7px;
+  /* 跟随主题的次级色；显式显示明文时转品牌色，深浅两套都能区分状态 */
   color: var(--text-secondary);
   cursor: pointer;
-  transition: color 0.15s ease;
+  transition:
+    color 0.15s ease,
+    background-color 0.15s ease;
 }
 .pw-reveal svg {
   width: 18px;
@@ -159,6 +152,12 @@ function onInput(event: Event) {
 }
 .pw-reveal:hover:not(:disabled) {
   color: var(--text-color);
+  background: color-mix(in srgb, var(--text-color) 8%, transparent);
+}
+/* 已切到明文：图标亮成品牌色，一眼看出当前状态 */
+.pw-reveal[aria-pressed='true'] {
+  color: var(--primary-color);
+  background: color-mix(in srgb, var(--primary-color) 12%, transparent);
 }
 .pw-reveal:disabled {
   opacity: 0.5;
