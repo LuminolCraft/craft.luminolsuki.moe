@@ -27,14 +27,18 @@
           <span v-if="item.isImportant" class="important-badge">{{ t('news.card.important') }}</span>
           <span class="meta-category">{{ categoryLabel }}</span>
           <span class="meta-date">
-            <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
-              <path fill="currentColor" d="M5 22q-.825 0-1.412-.587T3 20V6q0-.825.588-1.412T5 4h1V3q0-.425.288-.712T7 2t.713.288T8 3v1h8V3q0-.425.288-.712T17 2t.713.288T18 3v1h1q.825 0 1.413.588T21 6v14q0 .825-.587 1.413T19 22zm0-2h14V10H5zM5 8h14V6H5z" />
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M8 2v4" />
+              <path d="M16 2v4" />
+              <rect width="18" height="18" x="3" y="4" rx="2" />
+              <path d="M3 10h18" />
             </svg>
             {{ formattedDate }}
           </span>
           <span v-if="readCount !== undefined" class="meta-reads">
-            <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
-              <path fill="currentColor" d="M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9M12,17A5,5 0 0,1 7,12A5,5 0 0,1 12,7A5,5 0 0,1 17,12A5,5 0 0,1 12,17M12,2C17,2 21.78,5.61 23.36,10.27C23.5,10.72 23.5,11.28 23.36,11.73C21.78,16.39 17,20 12,20C7,20 2.22,16.39 0.64,11.73C0.5,11.28 0.5,10.72 0.64,10.27C2.22,5.61 7,2 12,2Z" />
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0" />
+              <circle cx="12" cy="12" r="3" />
             </svg>
             {{ readCount.toLocaleString('zh-CN') }}
           </span>
@@ -204,6 +208,11 @@
     display: inline-flex;
     align-items: center;
     gap: 0.3rem;
+  }
+
+  /* 阅读数图标与数字同一层次，显式吃主题次级色，深浅主题都不会漂成白色 */
+  .meta-reads {
+    color: var(--text-secondary, rgba(60, 60, 60, 0.66));
   }
 
   /* 分类：与标签区分开——分类是「内容性质」，用描边胶囊；标签用实底 */

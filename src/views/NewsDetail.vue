@@ -41,8 +41,9 @@
           <span class="article-date">{{ formattedDate }}</span>
           <span class="article-stats">{{ statsLabel }}</span>
           <span v-if="readCount !== null" class="article-reads">
-            <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
-              <path fill="currentColor" d="M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9M12,17A5,5 0 0,1 7,12A5,5 0 0,1 12,7A5,5 0 0,1 17,12A5,5 0 0,1 12,17M12,2C17,2 21.78,5.61 23.36,10.27C23.5,10.72 23.5,11.28 23.36,11.73C21.78,16.39 17,20 12,20C7,20 2.22,16.39 0.64,11.73C0.5,11.28 0.5,10.72 0.64,10.27C2.22,5.61 7,2 12,2Z" />
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0" />
+              <circle cx="12" cy="12" r="3" />
             </svg>
             <CountUp :to="readCount" separator="," :duration="1" class="article-reads-number" />
             <span class="article-reads-unit">{{ t('news.detail.readCountUnit') }}</span>
