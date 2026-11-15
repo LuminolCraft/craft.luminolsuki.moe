@@ -466,14 +466,18 @@ const cssVars = computed<CSSProperties>(
     role="group"
     aria-label="服务器截图墙"
     @pointermove="handlePointerMove"
-    @pointerenter="handlePointerEnter"
-    @pointerleave="handlePointerLeaveWall"
     @pointerdown="onPointerDown"
     @pointerup="onPointerUp"
     @pointercancel="onPointerUp"
     @focusout="onWallFocusOut"
   >
-    <div ref="planeRef" class="drift-wall__plane">
+    <!-- 悬停暂停只认 plane 内部：进入外层留白/标题区不再停滚 -->
+    <div
+      ref="planeRef"
+      class="drift-wall__plane"
+      @pointerenter="handlePointerEnter"
+      @pointerleave="handlePointerLeaveWall"
+    >
       <div v-for="colData in renderColumns" :key="`col-${colData.column}`" class="drift-wall__col">
         <div
           :ref="(el: Element | ComponentPublicInstance | null) => setTrackRef(el, colData.column)"
