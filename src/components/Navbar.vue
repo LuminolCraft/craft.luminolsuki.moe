@@ -34,7 +34,7 @@
         <router-link to="/Support">
           {{ t('common.support') }}
         </router-link>
-        <router-link to="/News">
+        <router-link to="/news">
           {{ t('common.news') }}
         </router-link>
         <router-link to="/Luminol">
@@ -95,7 +95,7 @@
           <router-link to="/Support" class="nav-link">
             {{ t('common.support') }}
           </router-link>
-          <router-link to="/News" class="nav-link">
+          <router-link to="/news" class="nav-link">
             {{ t('common.news') }}
           </router-link>
           <router-link to="/Luminol" class="nav-link">
