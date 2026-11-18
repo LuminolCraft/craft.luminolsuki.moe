@@ -109,45 +109,12 @@ export interface Ban {
   revokedBy?: string | null
 }
 
-/** 创建封禁入参（POST /admin/bans）；expiresAt 省略 = 永久。
- *  目标二选一：已绑定账号传 minecraftAccountId，未绑定玩家直接传 minecraftUuid。 */
+/** 创建封禁入参（POST /admin/bans）；expiresAt 省略 = 永久 */
 export interface CreateBanInput {
-  minecraftAccountId?: string
-  minecraftUuid?: string
+  minecraftAccountId: string
   type: BanType
   reason: string
   expiresAt?: number | null
-}
-
-/** 封禁目标候选（GET /admin/minecraft?q=）：按角色名模糊 / uuid 精确命中 */
-export interface BanTargetCandidate {
-  id: string
-  uuid: string
-  name: string
-  platform: string
-  verifiedAt?: number | null
-  /** 所属网站账号；未绑定为 null */
-  userId: string | null
-  username: string | null
-  /** 该 uuid 当前的有效封禁摘要（已在封禁中时非空） */
-  activeBan?: { id: string; reason: string; expiresAt: number | null; createdAt: number } | null
-}
-
-/** 封禁影响面预览（GET /admin/bans/preview）：本次封禁会覆盖的全部 MC 账号 */
-export interface BanScopePreview {
-  target: { accountId: string | null; uuid: string; name: string | null }
-  /** 目标 uuid 是否已绑定本站账号；false 时无连带，仅封该 uuid */
-  bound: boolean
-  items: Array<{
-    id: string
-    uuid: string
-    name: string
-    userId: string
-    username: string | null
-    /** 已在封禁中：提交时幂等跳过，不新建行 */
-    alreadyBanned: boolean
-  }>
-  total: number
 }
 
 /** 修改封禁入参（PATCH /admin/bans/:id）；expiresAt 显式 null = 改为永久 */
