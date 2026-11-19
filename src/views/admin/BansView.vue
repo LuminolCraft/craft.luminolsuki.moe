@@ -78,60 +78,14 @@
         {{ filtered ? t('admin.bans.filteredEmpty') : t('admin.common.empty') }}
       </p>
 
-      <div v-else class="table-wrap">
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th>{{ t('admin.bans.type') }}</th>
-              <th>{{ t('admin.bans.target') }}</th>
-              <th>{{ t('admin.bans.reason') }}</th>
-              <th>{{ t('admin.bans.status') }}</th>
-              <th>{{ t('admin.bans.expires') }}</th>
-              <th>{{ t('admin.bans.createdBy') }}</th>
-              <th class="th-actions"><span class="sr-only">{{ t('admin.common.actions') }}</span></th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="ban in bans" :key="ban.id" :class="{ 'row-revoked': ban.revokedAt }">
-              <td><span class="type-badge" :data-type="ban.type">{{ typeLabel(ban.type) }}</span></td>
-              <td class="td-target">
-                <template v-if="ban.minecraftUsername || ban.minecraftUuid">
-                  <span class="target-name">{{ ban.minecraftUsername || ban.minecraftUuid }}</span>
-                  <span v-if="ban.minecraftUsername && ban.minecraftUuid" class="target-uuid">{{
-                    ban.minecraftUuid
-                  }}</span>
-                </template>
-                <span v-else class="td-dim">{{ ban.minecraftAccountId || t('admin.bans.targetUnknown') }}</span>
-              </td>
-              <td class="td-reason">{{ ban.reason }}</td>
-              <td>
-                <span class="status-badge" :data-status="banStatus(ban)">{{ statusLabel(ban) }}</span>
-              </td>
-              <td class="td-dim">{{ ban.expiresAt ? formatDate(ban.expiresAt) : t('admin.bans.permanent') }}</td>
-              <td class="td-dim" :title="ban.createdBy || ''">{{ creatorLabel(ban) }}</td>
-              <td class="td-actions">
-                <template v-if="banStatus(ban) === 'active'">
-                  <button type="button" class="row-btn" @click="openEdit(ban)">{{ t('admin.bans.edit') }}</button>
-                  <HoldButton
-                    class="hb-revoke"
-                    size="sm"
-                    :label="t('admin.bans.revoke')"
-                    :done-label="t('admin.bans.revoked')"
-                    :duration="1000"
-                    :done="revokeDone && revokingId === ban.id"
-                    :disabled="!!revokingId && revokingId !== ban.id"
-                    :fill-color="REVOKE_FILL"
-                    :accent-color="REVOKE_ACCENT"
-                    :done-color="REVOKE_DONE"
-                    @hold="onRevoke(ban)"
-                  />
-                </template>
-                <button type="button" class="row-btn" @click="openEvidence(ban)">{{ t('admin.bans.evidence') }}</button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+      <BanListTable
+        v-else
+        mode="admin"
+        :bans="bans"
+        @edit="openEdit"
+        @revoke="onRevoke"
+        @evidence="openEvidence"
+      />
 
       <div v-if="!filtered && (hasMore || page > 1)" class="pager">
         <button type="button" class="pager-btn" :disabled="page <= 1 || loadingPage" @click="go(page - 1)">
@@ -383,7 +337,7 @@
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ProgressIndicator, ProgressRoot, SwitchRoot, SwitchThumb } from 'reka-ui'
-import HoldButton from '@/components/bits/HoldButton.vue'
+import BanListTable from '@/components/admin/BanListTable.vue'
 import { api, isAppError } from '@/lib/api'
 import { normalizePaged } from '@/lib/paged'
 import { API_BASE_URL } from '@/lib/api-base'
@@ -478,37 +432,6 @@ async function go(nextPage: number) {
   } finally {
     loadingPage.value = false
   }
-}
-
-/** 有效性后端动态计算；前端仅复刻同一规则用于展示（真实裁决仍以服务端为准） */
-function banStatus(ban: Ban): 'active' | 'expired' | 'revoked' {
-  if (ban.revokedAt) return 'revoked'
-  if (ban.expiresAt && ban.expiresAt <= Date.now()) return 'expired'
-  return 'active'
-}
-
-function statusLabel(ban: Ban): string {
-  const s = banStatus(ban)
-  return s === 'active' ? t('admin.bans.statusActive') : s === 'expired' ? t('admin.bans.statusExpired') : t('admin.bans.statusRevoked')
-}
-
-function typeLabel(type: string): string {
-  const key = `settings.ban.type${type.charAt(0).toUpperCase()}${type.slice(1)}`
-  return te(key) ? t(key) : type
-}
-
-/**
- * 创建者展示：后端把 created_by 里的 user_xxx 解析成用户名（createdByName）。
- * 解析不到（用户已删除）或非用户命名空间（插件侧的 mc:<uuid> / system:*）时
- * 回落原始值，悬停 title 保留原文便于追溯。
- */
-function creatorLabel(ban: Ban): string {
-  return ban.createdByName || ban.createdBy || '—'
-}
-
-function formatDate(ts?: number | null): string {
-  if (!ts) return '—'
-  return new Date(ts).toLocaleString()
 }
 
 function formatSize(bytes?: number): string {
@@ -744,11 +667,6 @@ function onDocMousedown(e: MouseEvent) {
 // ---------- 撤销 ----------
 const revokingId = ref('')
 const revokeDone = ref(false)
-
-/** 撤销是危险动作，进度条走错误色而不是主色 */
-const REVOKE_FILL = 'color-mix(in srgb, var(--error-color, #e5484d) 18%, transparent)'
-const REVOKE_ACCENT = 'var(--error-color, #e5484d)'
-const REVOKE_DONE = 'color-mix(in srgb, var(--error-color, #e5484d) 26%, transparent)'
 
 async function onRevoke(ban: Ban) {
   if (revokingId.value) return

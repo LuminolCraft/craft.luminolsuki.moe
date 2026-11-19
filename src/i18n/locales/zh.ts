@@ -972,6 +972,8 @@ export default {
       "statusExpired": "已过期",
       "statusRevoked": "已撤销",
       "permanent": "永久",
+      "filterAll": "全部",
+      "filterTemporary": "临时",
       "edit": "修改",
       "editTitle": "修改封禁",
       "editReason": "原因",

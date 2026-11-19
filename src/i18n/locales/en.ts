@@ -972,6 +972,8 @@ export default {
       "statusExpired": "Expired",
       "statusRevoked": "Revoked",
       "permanent": "Permanent",
+      "filterAll": "All",
+      "filterTemporary": "Temporary",
       "edit": "Edit",
       "editTitle": "Edit ban",
       "editReason": "Reason",
