@@ -39,7 +39,7 @@
       <div v-if="dropOpen" class="search-drop">
         <button
           v-for="c in candidates"
-          :key="c.id"
+          :key="c.id ?? c.uuid"
           type="button"
           class="candidate"
           @click="selectCandidate(c)"
@@ -531,6 +531,8 @@ const candidates = ref<BanTargetCandidate[]>([])
 
 const selected = ref<BanTargetCandidate | null>(null)
 const directUuid = ref('')
+/** 按 uuid 封时的展示名：Mojang 兜底候选带官方大小写玩家名，手输 uuid 时为空 */
+const directName = ref('')
 const preview = ref<BanScopePreview | null>(null)
 const previewing = ref(false)
 const drawerOpen = ref(false)
@@ -548,7 +550,7 @@ const uuidInput = computed(() => {
   return UUID_RE.test(q) ? q.toLowerCase() : ''
 })
 
-const targetName = computed(() => selected.value?.name ?? directUuid.value)
+const targetName = computed(() => (selected.value?.name ?? directName.value) || directUuid.value)
 
 const targetSub = computed(() => {
   if (!selected.value) return t('admin.bans.drawerSubUnbound')
@@ -595,6 +597,7 @@ watch(query, () => {
   if (searchTimer) window.clearTimeout(searchTimer)
   selected.value = null
   directUuid.value = ''
+  directName.value = ''
   preview.value = null
   notice.value = ''
   createError.value = ''
@@ -651,12 +654,22 @@ function resetForm() {
 }
 
 function selectCandidate(c: BanTargetCandidate) {
-  selected.value = c
-  directUuid.value = ''
   dropOpen.value = false
   drawerOpen.value = true
   resetForm()
-  void loadPreview(`minecraftAccountId=${encodeURIComponent(c.id)}`)
+  if (c.id) {
+    // 本库账号：连带范围按账号算
+    selected.value = c
+    directUuid.value = ''
+    directName.value = ''
+    void loadPreview(`minecraftAccountId=${encodeURIComponent(c.id)}`)
+  } else {
+    // 未绑定玩家（Mojang 代查兜底）：没有账号 id，走「按 uuid 封」，无法连坐
+    selected.value = null
+    directUuid.value = c.uuid
+    directName.value = c.name
+    void loadPreview(`minecraftUuid=${encodeURIComponent(c.uuid)}`)
+  }
 }
 
 function selectDirectUuid() {
@@ -674,6 +687,7 @@ function closeDrawer() {
   drawerOpen.value = false
   selected.value = null
   directUuid.value = ''
+  directName.value = ''
   preview.value = null
   createError.value = ''
 }
@@ -689,14 +703,15 @@ async function onCreate() {
       expiresAt: newExpiresLocal.value ? new Date(newExpiresLocal.value).getTime() : null,
     }
     // 目标二选一：已绑定账号优先，否则按 uuid 封未绑定玩家
-    if (selected.value) payload.minecraftAccountId = selected.value.id
-    else payload.minecraftUuid = directUuid.value
+    if (selected.value?.id) payload.minecraftAccountId = selected.value.id
+    else payload.minecraftUuid = selected.value?.uuid ?? directUuid.value
 
     const created = await api.post<Ban & { deduped?: boolean }>('/admin/bans', payload)
     notice.value = created.deduped ? t('admin.bans.createdDeduped') : t('admin.bans.created')
     drawerOpen.value = false
     selected.value = null
     directUuid.value = ''
+    directName.value = ''
     preview.value = null
     resetForm()
     await go(1)

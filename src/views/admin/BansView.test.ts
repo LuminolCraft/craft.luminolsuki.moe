@@ -198,4 +198,66 @@ describe('BansView 搜索框新建封禁', () => {
     expect(payload.minecraftUuid).toBe(UNBOUND_UUID)
     expect(payload.minecraftAccountId).toBeUndefined()
   })
+
+  it('未绑定玩家候选（id 为 null，Mojang 兜底）：按 uuid 封，标题显示玩家名', async () => {
+    vi.useFakeTimers()
+    postMock.mockResolvedValue({ id: 'ban_ghost', deduped: false })
+    getMock.mockImplementation(async (url: string) => {
+      if (url.startsWith('/admin/bans?')) return EMPTY_PAGE
+      if (url.startsWith('/admin/minecraft')) {
+        return {
+          items: [
+            {
+              id: null,
+              uuid: UNBOUND_UUID,
+              name: 'GhostPlayer',
+              platform: null,
+              userId: null,
+              username: null,
+              activeBan: null,
+            },
+          ],
+        }
+      }
+      if (url.startsWith('/admin/bans/preview')) {
+        return {
+          target: { accountId: null, uuid: UNBOUND_UUID, name: 'GhostPlayer' },
+          bound: false,
+          items: [],
+          total: 0,
+        }
+      }
+      throw new Error(`未预期的请求：${url}`)
+    })
+
+    const wrapper = await mountView()
+
+    await wrapper.find('.search-input').setValue('GhostPlayer')
+    vi.advanceTimersByTime(300)
+    await flushPromises()
+
+    // 候选卡显示玩家名与「未绑定」标记，不显示所属网站账号
+    const item = wrapper.find('.candidate')
+    expect(item.exists()).toBe(true)
+    expect(item.text()).toContain('GhostPlayer')
+    expect(item.text()).toContain('未绑定')
+
+    await item.trigger('click')
+    await flushPromises()
+
+    // 没有账号 id：预览与提交都走 minecraftUuid
+    const previewUrls = urlsWhere(/\/admin\/bans\/preview/)
+    expect(previewUrls).toHaveLength(1)
+    expect(previewUrls[0]).toContain(`minecraftUuid=${UNBOUND_UUID}`)
+    // 抽屉标题用代查到的玩家名而不是裸 uuid
+    expect(wrapper.find('.ban-drawer').text()).toContain('GhostPlayer')
+
+    await wrapper.find('.ban-drawer textarea').setValue('外挂行为')
+    await buttonByText(wrapper, '确认封禁').trigger('click')
+    await flushPromises()
+
+    const [, payload] = postMock.mock.calls[0] as [string, Record<string, unknown>]
+    expect(payload.minecraftUuid).toBe(UNBOUND_UUID)
+    expect(payload.minecraftAccountId).toBeUndefined()
+  })
 })

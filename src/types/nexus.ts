@@ -121,10 +121,11 @@ export interface CreateBanInput {
 
 /** 封禁目标候选（GET /admin/minecraft?q=）：按角色名模糊 / uuid 精确命中 */
 export interface BanTargetCandidate {
-  id: string
+  /** 本库账号 id；null = 未绑定玩家（搜索经 Mojang 代查兜底命中），只能按 uuid 封 */
+  id: string | null
   uuid: string
   name: string
-  platform: string
+  platform: string | null
   verifiedAt?: number | null
   /** 所属网站账号；未绑定为 null */
   userId: string | null
