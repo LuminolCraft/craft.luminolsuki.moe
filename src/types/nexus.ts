@@ -214,6 +214,8 @@ export interface AdminMinecraftAccount extends MinecraftAccount {
 export interface AdminUserDetail extends AdminUserListItem {
   updatedAt?: number
   minecraftAccounts?: AdminMinecraftAccount[]
+  /** 名下全部类型的有效封禁（只读展示 + 撤销；创建统一走封禁页） */
+  bans?: Ban[]
 }
 
 /** 分页信封宽容类型：items 必有，total/page/limit 以后端实际为准 */

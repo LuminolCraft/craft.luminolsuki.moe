@@ -89,52 +89,36 @@
         <p v-if="mcUnbindError" class="form-error" role="alert">{{ mcUnbindError }}</p>
       </section>
 
-      <!-- 创建封禁（仅从用户详情发起） -->
+      <!-- 封禁状态（只读）：创建统一走封禁页，这里只展示名下有效封禁并可直接撤销 -->
       <section class="detail-section">
-        <h2 class="section-title">{{ t('admin.users.banSectionTitle') }}</h2>
-        <p v-if="!user.minecraftAccounts?.length" class="dim">{{ t('admin.users.mcAccountsEmpty') }}</p>
-        <form v-else class="ban-form" @submit.prevent="onCreateBan">
-          <label class="field">
-            <span class="label">{{ t('admin.users.banTarget') }}</span>
-            <select v-model="banAccountId" class="input" :disabled="creatingBan">
-              <option v-for="acc in user.minecraftAccounts" :key="acc.id" :value="acc.id">
-                {{ acc.name }} ({{ acc.uuid }})
-              </option>
-            </select>
-          </label>
-
-          <label class="field">
-            <span class="label">{{ t('admin.users.banType') }}</span>
-            <select v-model="banType" class="input" :disabled="creatingBan">
-              <option value="minecraft">Minecraft</option>
-              <option value="website">Website</option>
-              <option value="chat">Chat</option>
-            </select>
-          </label>
-
-          <label class="field">
-            <span class="label">{{ t('admin.users.banReason') }}</span>
-            <textarea
-              v-model.trim="banReason"
-              class="input textarea"
-              rows="3"
-              :placeholder="t('admin.users.banReasonPlaceholder')"
-              :disabled="creatingBan"
-            />
-          </label>
-
-          <label class="field">
-            <span class="label">{{ t('admin.users.banExpires') }}</span>
-            <input v-model="banExpiresLocal" class="input" type="datetime-local" :disabled="creatingBan" />
-            <span class="hint">{{ t('admin.users.banExpiresHint') }}</span>
-          </label>
-
-          <button type="submit" class="btn danger" :disabled="creatingBan || !banReason">
-            {{ creatingBan ? t('admin.users.banSubmitting') : t('admin.users.banSubmit') }}
-          </button>
-          <p v-if="banSuccess" class="form-success" role="status">{{ t('admin.users.banCreated') }}</p>
-          <p v-if="banError" class="form-error" role="alert">{{ banError }}</p>
-        </form>
+        <div class="section-head">
+          <h2 class="section-title">{{ t('admin.users.banSectionTitle') }}</h2>
+          <RouterLink to="/admin/bans" class="section-link">{{ t('admin.users.banGoManage') }}</RouterLink>
+        </div>
+        <p v-if="!user.bans?.length" class="dim">{{ t('admin.users.banEmpty') }}</p>
+        <ul v-else class="ban-list">
+          <li v-for="b in user.bans" :key="b.id" class="ban-item">
+            <span class="type-badge" :data-type="b.type">{{ typeLabel(b.type) }}</span>
+            <span class="ban-target">{{ b.minecraftUsername || b.minecraftUuid || '—' }}</span>
+            <span class="ban-reason" :title="b.reason">{{ b.reason }}</span>
+            <span class="ban-expires">
+              {{
+                b.expiresAt
+                  ? t('admin.users.banExpiresOn', { date: formatBanDate(b.expiresAt) })
+                  : t('admin.users.banPermanent')
+              }}
+            </span>
+            <button
+              type="button"
+              class="mc-mini-unbind ban-revoke"
+              :disabled="revokingBanId === b.id"
+              @click="onRevokeBan(b)"
+            >
+              {{ revokingBanId === b.id ? t('admin.users.banRevoking') : t('admin.users.banRevoke') }}
+            </button>
+          </li>
+        </ul>
+        <p v-if="banError" class="form-error" role="alert">{{ banError }}</p>
       </section>
 
       <!-- 用户名治理：修改用户名 / 发送邮件 / 站内提醒 / 删除账号 -->
@@ -392,7 +376,7 @@ import { mcAvatarUrl } from '@/lib/minecraft'
 import { useAuthorizationStore } from '@/stores/authorization'
 import { useNexusStore } from '@/stores/nexus'
 import { useNotificationsStore } from '@/stores/notifications'
-import type { AdminUserDetail, BanType, MinecraftAccount, NexusRoleName } from '@/types/nexus'
+import type { AdminUserDetail, Ban, MinecraftAccount, NexusRoleName } from '@/types/nexus'
 import { useGsap } from '@/composables/useGsap'
 
 const { t, te } = useI18n()
@@ -517,35 +501,34 @@ async function onForceUnbind(acc: MinecraftAccount) {
   }
 }
 
-// ---------- 创建封禁 ----------
-const banAccountId = ref('')
-const banType = ref<BanType>('minecraft')
-const banReason = ref('')
-const banExpiresLocal = ref('')
-const creatingBan = ref(false)
-const banSuccess = ref(false)
+// ---------- 有效封禁（只读展示 + 撤销；创建统一走封禁页） ----------
+const revokingBanId = ref('')
 const banError = ref('')
 
-async function onCreateBan() {
+/** 类型标签与封禁页同源（settings.ban.typeMinecraft 等），未命中回退原始值 */
+function typeLabel(type: string): string {
+  const key = `settings.ban.type${type.charAt(0).toUpperCase()}${type.slice(1)}`
+  return te(key) ? t(key) : type
+}
+
+function formatBanDate(ts: number): string {
+  return new Date(ts).toLocaleString()
+}
+
+/** 撤销按后端连坐口径整批生效（封 10 个不会只撤 1 个），成功后重拉详情 */
+async function onRevokeBan(ban: Ban) {
   if (!user.value) return
+  const name = ban.minecraftUsername || ban.minecraftUuid || ''
+  if (!window.confirm(t('admin.users.banRevokeConfirm', { name }))) return
   banError.value = ''
-  banSuccess.value = false
-  const expiresMs = banExpiresLocal.value ? new Date(banExpiresLocal.value).getTime() : undefined
-  creatingBan.value = true
+  revokingBanId.value = ban.id
   try {
-    await api.post<unknown>('/admin/bans', {
-      minecraftAccountId: banAccountId.value,
-      type: banType.value,
-      reason: banReason.value,
-      ...(expiresMs != null && Number.isFinite(expiresMs) ? { expiresAt: expiresMs } : {}),
-    })
-    banSuccess.value = true
-    banReason.value = ''
-    banExpiresLocal.value = ''
+    await api.post<unknown>(`/admin/bans/${ban.id}/revoke`)
+    await refreshUser()
   } catch (e) {
     banError.value = errorText(e)
   } finally {
-    creatingBan.value = false
+    revokingBanId.value = ''
   }
 }
 
@@ -809,10 +792,6 @@ onMounted(async () => {
   })
   try {
     await refreshUser()
-    const firstAccount = user.value?.minecraftAccounts?.[0]
-    if (firstAccount) {
-      banAccountId.value = firstAccount.id
-    }
   } catch (e) {
     loadError.value = errorText(e)
   } finally {
@@ -1150,11 +1129,99 @@ onMounted(async () => {
   cursor: not-allowed;
 }
 
-.ban-form {
+/* 封禁状态：只读清单（标题行右侧放跨页链接） */
+.section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.9rem;
+}
+
+.section-head .section-title {
+  margin: 0;
+}
+
+.section-link {
+  font-size: 0.78rem;
+  color: var(--link-color);
+  text-decoration: none;
+}
+
+.section-link:hover {
+  text-decoration: underline;
+}
+
+.ban-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-  max-width: 30rem;
+  gap: 0.5rem;
+}
+
+.ban-item {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--text-color) 2%, transparent);
+}
+
+/* 类型徽标：mirror admin-shared.css 的 type-badge（本页未 @import 共享样式） */
+.type-badge {
+  flex-shrink: 0;
+  display: inline-block;
+  padding: 0.15rem 0.55rem;
+  border-radius: 5px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+}
+
+.type-badge[data-type='website'] {
+  color: var(--error-color, #e5484d);
+  border-color: color-mix(in srgb, var(--error-color, #e5484d) 35%, transparent);
+}
+
+.type-badge[data-type='minecraft'] {
+  color: var(--primary-color);
+  border-color: color-mix(in srgb, var(--primary-color) 35%, transparent);
+}
+
+.ban-target {
+  flex-shrink: 0;
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--text-color);
+  max-width: 12rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ban-reason {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ban-expires {
+  flex-shrink: 0;
+  font-size: 0.76rem;
+  color: var(--text-secondary);
+}
+
+.ban-revoke {
+  margin-left: 0;
 }
 
 .field {

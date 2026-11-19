@@ -27,6 +27,7 @@ interface RawAdminUser {
   updated_at?: number
   roles?: string[]
   minecraftAccounts?: AdminUserDetail['minecraftAccounts']
+  bans?: AdminUserDetail['bans']
 }
 
 function asRecord(raw: unknown): RawAdminUser {
@@ -49,12 +50,13 @@ export function normalizeAdminUser(raw: unknown): AdminUserListItem {
   }
 }
 
-/** 详情归一：列表项字段 + `updatedAt` + MC 账号（后端已按 `MinecraftAccount` 下发）。 */
+/** 详情归一：列表项字段 + `updatedAt` + MC 账号（后端已按 `MinecraftAccount` 下发）+ 有效封禁清单。 */
 export function normalizeAdminUserDetail(raw: unknown): AdminUserDetail {
   const r = asRecord(raw)
   return {
     ...normalizeAdminUser(r),
     updatedAt: r.updatedAt ?? r.updated_at,
     minecraftAccounts: r.minecraftAccounts ?? [],
+    bans: r.bans ?? [],
   }
 }
