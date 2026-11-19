@@ -29,6 +29,15 @@ const FALLBACK: PublicBanRaw[] = [
   { username: 'Soade900', type: 'minecraft', reason: '偷盗他人物品', status: 'active', expiresAt: null },
   { username: 'Tents', type: 'minecraft', reason: '破坏他人建筑', status: 'active', expiresAt: null },
   {
+    username: 'tfuxutftutuxd',
+    type: 'minecraft',
+    reason: '未经他人允许击败他人，破坏他人建筑',
+    status: 'active',
+    expiresAt: null,
+  },
+  { username: 'configscript', type: 'minecraft', reason: '偷盗他人物品', status: 'active', expiresAt: null },
+  { username: '917878', type: 'minecraft', reason: '破坏他人建筑', status: 'active', expiresAt: null },
+  {
     username: 'GmorYF',
     type: 'minecraft',
     reason: '破坏出生点美观',
@@ -104,7 +113,7 @@ onMounted(async () => {
       </header>
 
       <div class="lp-card bans-public__panel" data-reveal>
-        <BanListTable :bans="bans" mode="public" :loading="loading" />
+        <BanListTable :bans="bans" mode="public" :loading="loading" :page-size="6" />
       </div>
     </div>
   </section>

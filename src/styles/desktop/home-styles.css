@@ -200,8 +200,9 @@ html[data-theme='dark'] {
 }
 
 /* 首屏底部过渡：照片直接切到下一段会像「贴了一张图」，
-   这里让图片在最后 220px 内溶进页面底色，与下方网格背景自然衔接。 */
-.home-page .hero::after {
+   这里让图片在最后 220px 内溶进页面底色，与下方网格背景自然衔接。
+   只做深色：浅色主题下 hero 与下面的浅紫底本来就接近，再加渐变会糊成一片。 */
+[data-theme='dark'] .home-page .hero::after {
   content: '';
   position: absolute;
   left: 0;

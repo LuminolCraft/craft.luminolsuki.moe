@@ -10,7 +10,7 @@
  * 字体：正文与徽标统一走 MiSans（--font-primary），只有筛选 Tab 的计数与
  * kicker 用等宽（--font-mono）——避免表格里混进第三种字形。
  */
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import HoldButton from '@/components/bits/HoldButton.vue'
 import type { Ban } from '@/types/nexus'
@@ -24,8 +24,10 @@ const props = withDefaults(
     bans: Ban[]
     mode?: Mode
     loading?: boolean
+    /** 每页条数；0 = 不分页（管理后台整表滚动）。公示页固定 6 条并翻页。 */
+    pageSize?: number
   }>(),
-  { mode: 'admin', loading: false },
+  { mode: 'admin', loading: false, pageSize: 0 },
 )
 
 const emit = defineEmits<{
@@ -73,6 +75,26 @@ function matchesFilter(ban: Ban, key: FilterKey): boolean {
 }
 
 const rows = computed(() => props.bans.filter((b) => matchesFilter(b, filter.value)))
+
+/** 分页：pageSize > 0 时只渲染当前页，切筛选回到第 1 页 */
+const page = ref(1)
+
+watch(
+  () => filter.value,
+  () => {
+    page.value = 1
+  },
+)
+
+const totalPages = computed(() =>
+  props.pageSize > 0 ? Math.max(1, Math.ceil(rows.value.length / props.pageSize)) : 1,
+)
+
+const pagedRows = computed(() => {
+  if (props.pageSize <= 0) return rows.value
+  const start = (page.value - 1) * props.pageSize
+  return rows.value.slice(start, start + props.pageSize)
+})
 
 const counts = computed<Record<FilterKey, number>>(() => ({
   all: props.bans.length,
@@ -181,7 +203,7 @@ function creatorLabel(ban: Ban): string {
         </thead>
 
         <tbody v-if="mode === 'public'">
-          <tr v-for="ban in rows" :key="ban.id">
+          <tr v-for="ban in pagedRows" :key="ban.id">
             <td class="td-player">
               <span class="avatar">{{ initialsOf(ban.minecraftUsername) }}</span>
               <span class="player-name">{{ ban.minecraftUsername || t('admin.bans.targetUnknown') }}</span>
@@ -200,7 +222,7 @@ function creatorLabel(ban: Ban): string {
         </tbody>
 
         <tbody v-else>
-          <tr v-for="ban in rows" :key="ban.id" :class="{ 'row-revoked': ban.revokedAt }">
+          <tr v-for="ban in pagedRows" :key="ban.id" :class="{ 'row-revoked': ban.revokedAt }">
             <td><span class="type-badge" :data-type="ban.type">{{ typeLabel(ban.type) }}</span></td>
             <td class="td-target">
               <template v-if="ban.minecraftUsername || ban.minecraftUuid">
@@ -233,6 +255,16 @@ function creatorLabel(ban: Ban): string {
         </tbody>
       </table>
     </div>
+
+    <div v-if="pageSize > 0 && totalPages > 1" class="pager">
+      <button type="button" class="pager-btn" :disabled="page <= 1" @click="page -= 1">
+        {{ t('admin.common.prev') }}
+      </button>
+      <span class="pager-label">{{ page }} / {{ totalPages }}</span>
+      <button type="button" class="pager-btn" :disabled="page >= totalPages" @click="page += 1">
+        {{ t('admin.common.next') }}
+      </button>
+    </div>
   </div>
 </template>
 
@@ -259,21 +291,24 @@ function creatorLabel(ban: Ban): string {
   border-radius: 8px;
   border: 1px solid var(--border-color);
   background: transparent;
-  /* 别依赖 --text-secondary：该变量在首页作用域可能未定义，会退回黑色导致不可见 */
-  color: var(--text-color);
-  opacity: 0.72;
+  /* 硬写两套色值：--text-secondary / --text-color 在首页作用域曾解析成深色，
+     深底上直接看不见，不赌变量 */
+  color: #3c3c43;
   cursor: pointer;
   transition:
     border-color 0.15s,
     color 0.15s,
-    background-color 0.15s,
-    opacity 0.15s;
+    background-color 0.15s;
 }
+
+[data-theme='dark'] .tab {
+  color: #ddd8ef;
+}
+
 .tab[aria-selected='true'] {
-  background: color-mix(in srgb, var(--primary-color) 12%, transparent);
+  background: color-mix(in srgb, var(--primary-color) 16%, transparent);
   border-color: var(--primary-color);
   color: var(--primary-color);
-  opacity: 1;
   font-weight: 550;
 }
 .tab-count {
@@ -483,5 +518,43 @@ function creatorLabel(ban: Ban): string {
   overflow: hidden;
   clip: rect(0 0 0 0);
   white-space: nowrap;
+}
+
+/* —— 分页（公示页每页 6 条，避免一次把整表倒出来）—— */
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding-top: 14px;
+}
+.pager-btn {
+  font-family: var(--font-primary);
+  font-size: 12.5px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  background: transparent;
+  color: var(--text-color);
+  cursor: pointer;
+  transition:
+    border-color 0.15s,
+    color 0.15s;
+}
+.pager-btn:disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+}
+@media (hover: hover) {
+  .pager-btn:hover:not(:disabled) {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+  }
+}
+.pager-label {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
 }
 </style>

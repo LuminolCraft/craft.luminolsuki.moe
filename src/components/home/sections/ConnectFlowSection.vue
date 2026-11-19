@@ -2,37 +2,37 @@
   ConnectFlowSection —— 三步进服
 
   玩家看完在线状态后第一个问题就是「我怎么才能进来」，所以紧跟 StatusSection。
-  三步卡：绑定账号 → 进群拿地址 → 进服。服务器地址不在页面出现（白名单 + 群内发放）。
+  布局对齐参考页：**一个外层面板包住三步卡**，卡内紧凑（编号 + 标题 + 一句说明 + 按钮），
+  而不是三张各自独立的大卡。
 
-  视觉：玻璃卡 + 项目自有 MagneticCornerFrame（四角 L 形角标，hover 展开）+
-  主色染色投影；第 2 步是渐变实卡，因为它是唯一需要玩家跳出去做的动作。
-  皮肤来自 styles/desktop/home-sections.css 的 .lp-*，此处只写布局。
+  服务器地址不在页面出现（白名单 + 群内发放）。
+  皮肤：home-sections.css 的 .lp-card / .lp-btn / .lp-chip。
 -->
 <script setup lang="ts">
 import { QQ_GROUP } from '@/config/home-content'
 
 const STEPS = [
   {
-    no: '01',
+    no: '1',
     key: 'bind',
     title: '绑定账号',
-    desc: '网站账号与 Minecraft 账号绑定，成功后系统自动写入白名单，通常 1 分钟内生效。',
+    desc: '网站账号与 Minecraft 账号绑定，成功后自动写入白名单。',
     action: { label: '去绑定', to: '/settings/minecraft', external: false },
     highlight: false,
   },
   {
-    no: '02',
-    key: 'join',
+    no: '2',
+    key: 'join group',
     title: '进群拿地址',
-    desc: '服务器地址只在群内发放，不在网站公开。进群后在群公告自取。',
+    desc: '服务器地址只在群内发放（群号 993953379），群公告自取。',
     action: { label: '进 QQ 群', to: QQ_GROUP, external: true },
     highlight: true,
   },
   {
-    no: '03',
+    no: '3',
     key: 'connect',
     title: '进服',
-    desc: '把群公告里的地址填进客户端「多人游戏」，用已绑定的角色名进入。',
+    desc: '把群里的地址粘进客户端「多人游戏」，用已绑定的角色名进入。',
     action: null,
     highlight: false,
   },
@@ -48,12 +48,14 @@ const STEPS = [
         <p class="lp-lead">纯净生存是白名单服，没绑定账号会被防火墙直接拒绝。三步走完就能进。</p>
       </header>
 
-      <ol class="connect__steps">
-        <li v-for="step in STEPS" :key="step.key" class="connect__step" data-reveal>
-          <div class="lp-card lp-card--ticks connect__card" :class="{ 'connect__card--hl': step.highlight }">
+      <div class="lp-card lp-card--ticks connect__panel" data-reveal>
+        <ol class="connect__steps">
+          <li v-for="step in STEPS" :key="step.key" class="connect__step">
+            <div class="connect__card" :class="{ 'connect__card--hl': step.highlight }">
               <div class="connect__top">
                 <span class="connect__no">{{ step.no }}</span>
-                <span class="lp-chip lp-chip--plain connect__key">{{ step.key }}</span>
+                <span class="connect__sep">/</span>
+                <span class="connect__key">{{ step.key }}</span>
               </div>
               <h3 class="connect__card-title">{{ step.title }}</h3>
               <p class="connect__card-desc">{{ step.desc }}</p>
@@ -69,86 +71,104 @@ const STEPS = [
                 {{ step.action.label }}
               </a>
               <span v-else class="lp-chip lp-chip--plain connect__tag">地址自取 · 无需等待</span>
-          </div>
-        </li>
-      </ol>
+            </div>
+          </li>
+        </ol>
+
+        <p class="connect__note">
+          没绑定账号会被防火墙直接拒绝。纯净生存只对白名单开放；地址不在网站公开，进 QQ 群自取。
+          想玩粘液科技 / 领地 / RPG 副本请走「综合生存」。
+        </p>
+      </div>
     </div>
   </section>
 </template>
 
 <style scoped>
+.connect__panel {
+  padding: 22px;
+}
+
 .connect__steps {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 18px;
+  gap: 12px;
   list-style: none;
   padding: 0;
   margin: 0;
 }
 
+/* typography.css 给 ol li 设了 decimal，继承关不掉，必须在 li 上直接清 */
 .connect__step {
-  height: 100%;
+  list-style: none;
 }
 
+/* 内层卡：比外层面板低一档的表面，紧凑而不是「大卡片」 */
 .connect__card {
   height: 100%;
-  padding: 26px 26px 24px;
+  padding: 18px 18px 16px;
+  border-radius: 14px;
+  border: 1px solid var(--border-color);
+  background: color-mix(in srgb, var(--primary-color) 4%, transparent);
   display: flex;
   flex-direction: column;
   transition:
-    border-color 0.25s,
-    transform 0.25s,
-    box-shadow 0.25s;
+    border-color 0.2s,
+    background-color 0.2s;
 }
 
 @media (hover: hover) {
   .connect__step:hover .connect__card {
-    transform: translateY(-3px);
-    border-color: color-mix(in srgb, var(--primary-color) 48%, var(--glass-border));
-    box-shadow:
-      0 26px 54px -26px color-mix(in srgb, var(--primary-color) 50%, transparent),
-      0 10px 26px -18px color-mix(in srgb, var(--text-color) 26%, transparent);
+    border-color: color-mix(in srgb, var(--primary-color) 45%, var(--border-color));
+    background: color-mix(in srgb, var(--primary-color) 8%, transparent);
   }
 }
 
 .connect__top {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 16px;
+  align-items: baseline;
+  gap: 6px;
+  margin-bottom: 10px;
 }
 .connect__no {
   font-family: var(--font-mono);
   font-size: 11px;
-  letter-spacing: 0.14em;
   color: var(--primary-color);
 }
-.connect__key {
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  font-size: 10px;
+.connect__sep {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  opacity: 0.4;
 }
+.connect__key {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  opacity: 0.75;
+}
+
 .connect__card-title {
-  font-size: 1.2rem;
+  font-size: 15px;
   font-weight: 600;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.01em;
   color: var(--text-color);
-  margin: 0 0 8px;
+  margin: 0 0 6px;
 }
 .connect__card-desc {
-  font-size: 0.9rem;
-  line-height: 1.7;
+  font-size: 12.5px;
+  line-height: 1.65;
   color: var(--text-secondary);
-  margin: 0 0 20px;
+  margin: 0 0 14px;
   flex: 1;
 }
-.connect__action {
+.connect__action,
+.connect__tag {
   align-self: flex-start;
 }
 
-/* 第 2 步：唯一需要玩家离开站点的动作，做成渐变实卡。
-   选择器带上 .connect 前缀，特异性高于全局 .home-page .lp-card，
-   否则卡片底色会把渐变盖掉、白字全看不见。 */
+/* 第 2 步：唯一需要玩家离开站点的动作，做成渐变实卡 */
 .connect .connect__card--hl {
   background-color: transparent;
   background-image: linear-gradient(
@@ -157,36 +177,35 @@ const STEPS = [
     color-mix(in srgb, var(--primary-color) 52%, #2a1b4d)
   );
   border-color: transparent;
-  box-shadow:
-    0 26px 60px -26px color-mix(in srgb, var(--primary-color) 85%, transparent),
-    0 8px 24px -18px color-mix(in srgb, var(--text-color) 30%, transparent);
+  box-shadow: 0 16px 38px -20px color-mix(in srgb, var(--primary-color) 70%, transparent);
 }
-.connect .connect__card--hl .connect__no {
-  color: rgba(255, 255, 255, 0.85);
-}
-.connect .connect__card--hl .connect__key {
-  color: rgba(255, 255, 255, 0.9);
-  border-color: rgba(255, 255, 255, 0.35);
-  background-color: rgba(255, 255, 255, 0.14);
-}
+.connect .connect__card--hl .connect__no,
+.connect .connect__card--hl .connect__sep,
+.connect .connect__card--hl .connect__key,
 .connect .connect__card--hl .connect__card-title,
 .connect .connect__card--hl .connect__card-desc {
   color: #fff;
 }
-.connect__tag {
-  align-self: flex-start;
+.connect .connect__card--hl .connect__key,
+.connect .connect__card--hl .connect__sep {
+  opacity: 0.8;
 }
 
-/* 渐变卡上的角标要反过来用白，否则紫底 + 紫色角标看不见 */
-.connect .connect__card--hl::before,
-.connect .connect__card--hl::after {
-  border-color: rgba(255, 255, 255, 0.55);
+.connect__note {
+  margin: 16px 2px 0;
+  font-size: 12.5px;
+  line-height: 1.65;
+  color: var(--text-secondary);
+  opacity: 0.85;
 }
 
 @media (max-width: 900px) {
+  .connect__panel {
+    padding: 16px;
+  }
   .connect__steps {
     grid-template-columns: 1fr;
-    gap: 14px;
+    gap: 10px;
   }
 }
 
