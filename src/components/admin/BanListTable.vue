@@ -99,6 +99,12 @@ function formatDate(ms: number | null | undefined): string {
   return new Date(ms).toLocaleString('zh-CN', { hour12: false })
 }
 
+/** 公示用的到期文案：只到日，永久封禁显示「永久」 */
+function formatExpires(ban: Ban): string {
+  if (ban.expiresAt == null) return t('admin.bans.permanent')
+  return new Date(ban.expiresAt).toLocaleDateString('zh-CN')
+}
+
 function creatorLabel(ban: Ban): string {
   return ban.createdByName || ban.createdBy || '—'
 }
@@ -129,12 +135,13 @@ function creatorLabel(ban: Ban): string {
 
     <div v-else class="table-wrap">
       <table class="data-table">
-        <!-- 公开视图：只出 玩家 / 类型 / 理由 / 状态（脱敏口径） -->
+        <!-- 公开视图：玩家 / 类型 / 理由 / 到期 / 状态（脱敏口径：不含 uuid 与内部操作） -->
         <thead v-if="mode === 'public'">
           <tr>
             <th>{{ t('admin.bans.target') }}</th>
             <th>{{ t('admin.bans.type') }}</th>
             <th>{{ t('admin.bans.reason') }}</th>
+            <th>{{ t('admin.bans.expires') }}</th>
             <th>{{ t('admin.bans.status') }}</th>
           </tr>
         </thead>
@@ -159,6 +166,7 @@ function creatorLabel(ban: Ban): string {
             </td>
             <td><span class="type-badge" :data-type="ban.type">{{ typeLabel(ban.type) }}</span></td>
             <td class="td-reason">{{ ban.reason }}</td>
+            <td class="td-expires">{{ formatExpires(ban) }}</td>
             <td>
               <span class="status-badge" :data-status="statusOf(ban)">{{ statusLabel(ban) }}</span>
             </td>
@@ -324,6 +332,12 @@ function creatorLabel(ban: Ban): string {
 }
 .td-reason {
   max-width: 34ch;
+}
+.td-expires {
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  opacity: 0.8;
 }
 .td-dim {
   color: var(--text-secondary);

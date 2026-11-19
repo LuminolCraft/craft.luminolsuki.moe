@@ -18,20 +18,37 @@ type PublicBanRaw = {
   type: string
   reason: string
   status: 'active' | 'expired' | 'revoked'
+  /** 到期时间（epoch ms）；null/缺省 = 永久。公示页要显示这一列 */
+  expiresAt?: number | null
 }
+
+const day = (s: string) => new Date(`${s}T00:00:00+08:00`).getTime()
 
 /** 兜底示例：取自 2026-09-14 封禁公告（已在库中，仅用于接口未就绪时占位） */
 const FALLBACK: PublicBanRaw[] = [
-  { username: 'Soade900', type: 'minecraft', reason: '偷盗他人物品', status: 'active' },
-  { username: 'Tents', type: 'minecraft', reason: '破坏他人建筑', status: 'active' },
-  { username: 'GmorYF', type: 'minecraft', reason: '破坏出生点美观', status: 'expired' },
+  { username: 'Soade900', type: 'minecraft', reason: '偷盗他人物品', status: 'active', expiresAt: null },
+  { username: 'Tents', type: 'minecraft', reason: '破坏他人建筑', status: 'active', expiresAt: null },
+  {
+    username: 'GmorYF',
+    type: 'minecraft',
+    reason: '破坏出生点美观',
+    status: 'expired',
+    expiresAt: day('2026-09-28'),
+  },
   {
     username: 'lisy',
     type: 'minecraft',
     reason: '影响其他玩家正常游玩，且蓄意破坏玩家建筑',
     status: 'revoked',
+    expiresAt: day('2026-09-20'),
   },
-  { username: 'Bot_TnT123', type: 'minecraft', reason: '破坏服务器建筑', status: 'expired' },
+  {
+    username: 'Bot_TnT123',
+    type: 'minecraft',
+    reason: '破坏服务器建筑',
+    status: 'expired',
+    expiresAt: day('2026-09-11'),
+  },
 ]
 
 const bans = ref<Ban[]>([])
@@ -46,7 +63,8 @@ function toBanRow(raw: PublicBanRaw, i: number): Ban {
     minecraftUuid: null,
     type: raw.type,
     reason: raw.reason,
-    expiresAt: raw.status === 'active' ? null : 1,
+    // 有真实到期时间就用真实值；接口未就绪时的兜底数据按状态推断
+    expiresAt: raw.expiresAt !== undefined ? raw.expiresAt : raw.status === 'active' ? null : 1,
     revokedAt: raw.status === 'revoked' ? 1 : null,
   }
 }
