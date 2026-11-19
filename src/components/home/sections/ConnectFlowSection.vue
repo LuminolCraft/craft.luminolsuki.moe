@@ -49,11 +49,14 @@ const STEPS = [
       </header>
 
       <div class="lp-card lp-card--ticks connect__panel" data-reveal>
-        <div class="connect__pills">
-          <span class="lp-chip lp-chip--plain">v 26.3</span>
-          <span class="lp-chip lp-chip--plain">Folia hard-fork</span>
-          <span class="lp-chip lp-chip--ok">ONLINE</span>
-          <span class="lp-chip lp-chip--brand">白名单 · 需账号绑定</span>
+        <div class="connect__meta">
+          <span>v 26.3</span>
+          <span class="connect__dot">·</span>
+          <span>Folia hard-fork</span>
+          <span class="connect__dot">·</span>
+          <span>白名单准入</span>
+          <span class="connect__dot">·</span>
+          <span class="connect__live"><i aria-hidden="true" />ONLINE</span>
         </div>
 
         <ol class="connect__steps">
@@ -77,7 +80,7 @@ const STEPS = [
               >
                 {{ step.action.label }}
               </a>
-              <span v-else class="lp-chip lp-chip--plain connect__tag">地址自取 · 无需等待</span>
+              <span v-else class="connect__tag">地址自取 · 无需等待</span>
             </div>
           </li>
         </ol>
@@ -96,12 +99,36 @@ const STEPS = [
   padding: 22px;
 }
 
-/* 面板顶部胶囊行：版本 / 分支 / 状态 / 准入，一眼交代服务器规格 */
-.connect__pills {
+/* 面板顶部规格行：一行等宽小字 + 分隔点，不用胶囊标签 */
+.connect__meta {
   display: flex;
+  align-items: center;
   flex-wrap: wrap;
   gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  letter-spacing: 0.02em;
+  color: var(--text-secondary);
   margin-bottom: 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border-color);
+}
+.connect__dot {
+  opacity: 0.35;
+}
+.connect__live {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #12a150;
+  letter-spacing: 0.06em;
+}
+.connect__live i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  display: inline-block;
 }
 
 .connect__steps {
@@ -178,9 +205,17 @@ const STEPS = [
   margin: 0 0 14px;
   flex: 1;
 }
-.connect__action,
+.connect__action {
+  align-self: flex-start;
+}
+
 .connect__tag {
   align-self: flex-start;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--text-secondary);
+  opacity: 0.85;
 }
 
 /* 第 2 步：唯一需要玩家离开站点的动作，做成渐变实卡 */

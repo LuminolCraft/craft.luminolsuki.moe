@@ -275,51 +275,49 @@ function creatorLabel(ban: Ban): string {
   gap: 14px;
 }
 
-/* —— 筛选 Tab —— */
+/* —— 筛选：下划线式 tab（项目 Vercel 风，不用药丸）—— */
 .tabs {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 22px;
+  border-bottom: 1px solid var(--border-color);
 }
 .tab {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   font-family: var(--font-primary);
-  font-size: 12.5px;
-  padding: 7px 12px;
-  border-radius: 8px;
-  border: 1px solid var(--border-color);
-  background: transparent;
-  /* 硬写两套色值：--text-secondary / --text-color 在首页作用域曾解析成深色，
-     深底上直接看不见，不赌变量 */
-  color: #3c3c43;
+  font-size: 13px;
+  padding: 0 0 10px;
+  margin-bottom: -1px;
+  border: 0;
+  border-bottom: 1.5px solid transparent;
+  border-radius: 0;
+  background: none;
+  color: #6b6b76;
   cursor: pointer;
   transition:
-    border-color 0.15s,
     color 0.15s,
-    background-color 0.15s;
+    border-bottom-color 0.15s;
 }
 
 [data-theme='dark'] .tab {
-  color: #ddd8ef;
+  color: #8d89a0;
 }
 
 .tab[aria-selected='true'] {
-  background: color-mix(in srgb, var(--primary-color) 16%, transparent);
-  border-color: var(--primary-color);
-  color: var(--primary-color);
-  font-weight: 550;
+  color: var(--text-color);
+  border-bottom-color: var(--primary-color);
+  font-weight: 500;
 }
 .tab-count {
   font-family: var(--font-mono);
   font-size: 11px;
   font-variant-numeric: tabular-nums;
-  opacity: 0.75;
+  opacity: 0.8;
 }
 @media (hover: hover) {
   .tab:hover {
-    border-color: var(--primary-color);
     color: var(--text-color);
   }
 }
@@ -455,60 +453,49 @@ function creatorLabel(ban: Ban): string {
   font-size: 14.5px;
 }
 
-/* —— 徽标：统一 MiSans，颜色对齐公示口径 —— */
+/* —— 徽标：小圆点 + 文字，无底色无边框（项目 Vercel 风，不用胶囊） —— */
 .kind-badge,
 .type-badge,
 .status-badge {
   display: inline-flex;
   align-items: center;
+  gap: 7px;
   font-family: var(--font-primary);
-  font-size: 11.5px;
-  font-weight: 500;
+  font-size: 13px;
+  font-weight: 450;
   line-height: 1.4;
-  padding: 4px 9px;
-  border-radius: 6px;
-  border: 1px solid var(--border-color);
   white-space: nowrap;
+  color: var(--text-color, #e8e4f5);
 }
 
-/* 封禁类型：永久=红，临时=琥珀 */
-.kind-badge[data-kind='permanent'] {
+.kind-badge::before,
+.type-badge::before,
+.status-badge::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  flex: 0 0 auto;
+}
+
+/* 颜色只落在文字/圆点上 */
+.kind-badge[data-kind='permanent'],
+.status-badge[data-status='active'] {
   color: #e5484d;
-  border-color: color-mix(in srgb, #e5484d 35%, transparent);
-  background: color-mix(in srgb, #e5484d 12%, transparent);
 }
 .kind-badge[data-kind='temporary'] {
   color: #d97706;
-  border-color: color-mix(in srgb, #d97706 35%, transparent);
-  background: color-mix(in srgb, #d97706 12%, transparent);
-}
-
-/* 管理视图的类型徽标 */
-.type-badge {
-  color: var(--text-secondary);
-}
-.type-badge[data-type='minecraft'] {
-  color: var(--primary-color);
-  border-color: color-mix(in srgb, var(--primary-color) 35%, transparent);
-  background: color-mix(in srgb, var(--primary-color) 9%, transparent);
-}
-.type-badge[data-type='website'] {
-  color: var(--link-color);
-  border-color: color-mix(in srgb, var(--link-color) 35%, transparent);
-  background: color-mix(in srgb, var(--link-color) 9%, transparent);
-}
-
-/* 状态：生效中=红，已解除=绿（与公示口径一致） */
-.status-badge[data-status='active'] {
-  color: #e5484d;
-  border-color: color-mix(in srgb, #e5484d 35%, transparent);
-  background: color-mix(in srgb, #e5484d 12%, transparent);
 }
 .status-badge[data-status='expired'],
 .status-badge[data-status='revoked'] {
   color: #12a150;
-  border-color: color-mix(in srgb, #12a150 35%, transparent);
-  background: color-mix(in srgb, #12a150 10%, transparent);
+}
+.type-badge[data-type='minecraft'] {
+  color: var(--primary-color);
+}
+.type-badge[data-type='website'] {
+  color: var(--link-color);
 }
 
 .sr-only {
