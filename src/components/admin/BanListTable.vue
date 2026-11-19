@@ -1,11 +1,14 @@
 <script setup lang="ts">
 /**
- * 封禁列表组件（筛选 Tab + 状态/类型过滤 + 表格）。
+ * 封禁列表组件（筛选 Tab + 表格）。
  *
  * mode：
- * - `admin`  —— 管理后台：完整字段（uuid / 到期 / 创建者 / 操作），事件回抛给父页面；
- * - `public` —— 对外公示：**只显示 玩家（头像+用户名）/ 类型 / 理由 / 状态**，
- *   uuid、到期、创建者、内部操作一律不渲染。安全口径见 nexus `listPublicBans`。
+ * - `admin`  —— 管理后台：类型（Minecraft/Website/Chat）/ 目标（名 + uuid）/ 理由 / 状态 / 到期 / 创建者 / 操作；
+ * - `public` —— 对外公示：玩家（头像 + 名）/ 封禁类型（永久 · 临时）/ 理由 / 到期 / 状态。
+ *   uuid、账号 id、处罚人、内部操作一律不渲染（安全口径同 nexus `listPublicBans`）。
+ *
+ * 字体：正文与徽标统一走 MiSans（--font-primary），只有筛选 Tab 的计数与
+ * kicker 用等宽（--font-mono）——避免表格里混进第三种字形。
  */
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -35,13 +38,14 @@ const { t } = useI18n()
 
 const filter = ref<FilterKey>('all')
 
-const TABS: { key: FilterKey; label: () => string }[] = [
-  { key: 'all', label: () => t('admin.bans.filterAll') },
-  { key: 'active', label: () => t('admin.bans.statusActive') },
-  { key: 'revoked', label: () => t('admin.bans.statusRevoked') },
-  { key: 'permanent', label: () => t('admin.bans.permanent') },
-  { key: 'temporary', label: () => t('admin.bans.filterTemporary') },
-]
+/** 用 computed 而不是静态数组：语言切换时会跟着重算，label 也直接是字符串 */
+const tabs = computed<{ key: FilterKey; label: string }[]>(() => [
+  { key: 'all', label: t('admin.bans.filterAll') },
+  { key: 'active', label: t('admin.bans.statusActive') },
+  { key: 'revoked', label: t('admin.bans.statusRevoked') },
+  { key: 'permanent', label: t('admin.bans.permanent') },
+  { key: 'temporary', label: t('admin.bans.filterTemporary') },
+])
 
 function statusOf(ban: Ban): BanStatus {
   if (ban.revokedAt) return 'revoked'
@@ -81,10 +85,15 @@ const counts = computed<Record<FilterKey, number>>(() => ({
 function statusLabel(ban: Ban): string {
   const s = statusOf(ban)
   if (s === 'active') return t('admin.bans.statusActive')
-  if (s === 'expired') return t('admin.bans.statusExpired')
   return t('admin.bans.statusRevoked')
 }
 
+/** 公开视图的「封禁类型」：只看永久 / 临时，与原公告口径一致 */
+function banKindLabel(ban: Ban): string {
+  return isPermanent(ban) ? t('admin.bans.permanentBan') : t('admin.bans.temporaryBan')
+}
+
+/** 管理视图的类型：Minecraft / Website / Chat */
 function typeLabel(type: string): string {
   return type === 'minecraft' ? 'Minecraft' : type === 'website' ? 'Website' : type === 'chat' ? 'Chat' : type
 }
@@ -94,15 +103,29 @@ function initialsOf(name: string | null | undefined): string {
   return n.slice(0, 1).toUpperCase() || '?'
 }
 
-function formatDate(ms: number | null | undefined): string {
-  if (ms == null) return t('admin.bans.permanent')
-  return new Date(ms).toLocaleString('zh-CN', { hour12: false })
+/**
+ * 有效时间戳判定。接口没给到期时间时，数据侧会用 `1` 作「已过期」哨兵
+ * （让状态判断正确），但渲染时必须当无效处理，否则列表里全是 1970/1/1。
+ * 阈值取 2000-01-01：真实封禁不可能早于这个时间。
+ */
+const MIN_VALID_TS = 946684800000
+
+function validTs(ms: number | null | undefined): number | null {
+  return typeof ms === 'number' && Number.isFinite(ms) && ms > MIN_VALID_TS ? ms : null
 }
 
-/** 公示用的到期文案：只到日，永久封禁显示「永久」 */
 function formatExpires(ban: Ban): string {
-  if (ban.expiresAt == null) return t('admin.bans.permanent')
-  return new Date(ban.expiresAt).toLocaleDateString('zh-CN')
+  if (isPermanent(ban)) return t('admin.bans.permanent')
+  const ts = validTs(ban.expiresAt)
+  if (ts === null) return '—'
+  return new Date(ts).toLocaleDateString('zh-CN')
+}
+
+function formatDate(ms: number | null | undefined): string {
+  if (ms == null) return t('admin.bans.permanent')
+  const ts = validTs(ms)
+  if (ts === null) return '—'
+  return new Date(ts).toLocaleString('zh-CN', { hour12: false })
 }
 
 function creatorLabel(ban: Ban): string {
@@ -114,7 +137,7 @@ function creatorLabel(ban: Ban): string {
   <div class="ban-list">
     <div class="tabs" role="tablist" :aria-label="t('admin.bans.title')">
       <button
-        v-for="tab in TABS"
+        v-for="tab in tabs"
         :key="tab.key"
         type="button"
         class="tab"
@@ -122,7 +145,7 @@ function creatorLabel(ban: Ban): string {
         :aria-selected="filter === tab.key"
         @click="filter = tab.key"
       >
-        {{ tab.label() }}
+        {{ tab.label }}
         <span class="tab-count">{{ counts[tab.key] }}</span>
       </button>
     </div>
@@ -135,7 +158,7 @@ function creatorLabel(ban: Ban): string {
 
     <div v-else class="table-wrap">
       <table class="data-table">
-        <!-- 公开视图：玩家 / 类型 / 理由 / 到期 / 状态（脱敏口径：不含 uuid 与内部操作） -->
+        <!-- 公开视图：玩家 / 封禁类型 / 理由 / 到期 / 状态 -->
         <thead v-if="mode === 'public'">
           <tr>
             <th>{{ t('admin.bans.target') }}</th>
@@ -145,7 +168,6 @@ function creatorLabel(ban: Ban): string {
             <th>{{ t('admin.bans.status') }}</th>
           </tr>
         </thead>
-        <!-- 管理视图：完整字段 -->
         <thead v-else>
           <tr>
             <th>{{ t('admin.bans.type') }}</th>
@@ -164,7 +186,11 @@ function creatorLabel(ban: Ban): string {
               <span class="avatar">{{ initialsOf(ban.minecraftUsername) }}</span>
               <span class="player-name">{{ ban.minecraftUsername || t('admin.bans.targetUnknown') }}</span>
             </td>
-            <td><span class="type-badge" :data-type="ban.type">{{ typeLabel(ban.type) }}</span></td>
+            <td>
+              <span class="kind-badge" :data-kind="isPermanent(ban) ? 'permanent' : 'temporary'">
+                {{ banKindLabel(ban) }}
+              </span>
+            </td>
             <td class="td-reason">{{ ban.reason }}</td>
             <td class="td-expires">{{ formatExpires(ban) }}</td>
             <td>
@@ -217,7 +243,7 @@ function creatorLabel(ban: Ban): string {
   gap: 14px;
 }
 
-/* —— 筛选 Tab：chip 组（抄自 lophine 的方块筛选，不做下拉）—— */
+/* —— 筛选 Tab —— */
 .tabs {
   display: flex;
   flex-wrap: wrap;
@@ -227,26 +253,32 @@ function creatorLabel(ban: Ban): string {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 12px;
-  font-family: var(--font-mono);
+  font-family: var(--font-primary);
+  font-size: 12.5px;
   padding: 7px 12px;
   border-radius: 8px;
   border: 1px solid var(--border-color);
   background: transparent;
-  color: var(--text-secondary);
+  /* 别依赖 --text-secondary：该变量在首页作用域可能未定义，会退回黑色导致不可见 */
+  color: var(--text-color);
+  opacity: 0.72;
   cursor: pointer;
   transition:
     border-color 0.15s,
     color 0.15s,
-    background-color 0.15s;
+    background-color 0.15s,
+    opacity 0.15s;
 }
 .tab[aria-selected='true'] {
   background: color-mix(in srgb, var(--primary-color) 12%, transparent);
   border-color: var(--primary-color);
   color: var(--primary-color);
+  opacity: 1;
   font-weight: 550;
 }
 .tab-count {
+  font-family: var(--font-mono);
+  font-size: 11px;
   font-variant-numeric: tabular-nums;
   opacity: 0.75;
 }
@@ -264,9 +296,35 @@ function creatorLabel(ban: Ban): string {
   padding: 18px 0;
 }
 
-/* —— 表格行 hover：3px 内阴影左条，不推布局 —— */
 .table-wrap {
   overflow-x: auto;
+}
+
+/* —— 表格（正文全部 MiSans） —— */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-primary);
+  font-size: 14px;
+}
+.data-table th {
+  text-align: left;
+  font-family: var(--font-primary);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  padding: 13px 18px;
+  border-bottom: 1px solid var(--border-color);
+  white-space: nowrap;
+}
+.data-table td {
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  vertical-align: middle;
+}
+.data-table tbody tr:last-child td {
+  border-bottom: 0;
 }
 .data-table tbody tr {
   transition:
@@ -280,56 +338,6 @@ function creatorLabel(ban: Ban): string {
   }
 }
 
-/* —— 公开视图的玩家列：头像 + 用户名（无 uuid）—— */
-.td-player {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.avatar {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  color: #fff;
-  font-size: 11px;
-  font-weight: 600;
-  flex: 0 0 auto;
-  background: linear-gradient(135deg, var(--primary-color), color-mix(in srgb, var(--primary-color) 60%, #000));
-}
-.player-name {
-  color: var(--text-color);
-  font-weight: 550;
-}
-
-/* 表格基线样式自包含：本组件在 admin 页与对外公示页都要能独立工作，
-   不依赖 admin-shared.css；与 admin-shared.css 同名类同值，视觉一致。 */
-.data-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 13.5px;
-}
-.data-table th {
-  text-align: left;
-  font-size: 11px;
-  font-family: var(--font-mono);
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--text-secondary);
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--border-color);
-  white-space: nowrap;
-}
-.data-table td {
-  padding: 13px 16px;
-  border-bottom: 1px solid var(--border-color);
-  color: var(--text-secondary);
-  vertical-align: middle;
-}
-.data-table tbody tr:last-child td {
-  border-bottom: 0;
-}
 .td-reason {
   max-width: 34ch;
 }
@@ -337,7 +345,7 @@ function creatorLabel(ban: Ban): string {
   color: var(--text-secondary);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
-  opacity: 0.8;
+  opacity: 0.85;
 }
 .td-dim {
   color: var(--text-secondary);
@@ -365,7 +373,8 @@ function creatorLabel(ban: Ban): string {
   vertical-align: middle;
 }
 .row-btn {
-  font-size: 12px;
+  font-family: var(--font-primary);
+  font-size: 12.5px;
   padding: 6px 10px;
   border-radius: 6px;
   border: 1px solid var(--border-color);
@@ -385,13 +394,62 @@ function creatorLabel(ban: Ban): string {
 .row-revoked {
   opacity: 0.65;
 }
-.type-badge {
-  display: inline-block;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  padding: 3px 8px;
-  border-radius: 5px;
+
+/* —— 玩家列 —— */
+.td-player {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font-family: var(--font-primary);
+  font-size: 12px;
+  font-weight: 600;
+  flex: 0 0 auto;
+  background: linear-gradient(135deg, var(--primary-color), color-mix(in srgb, var(--primary-color) 55%, #2a1b4d));
+}
+.player-name {
+  color: var(--text-color);
+  font-weight: 550;
+  font-size: 14.5px;
+}
+
+/* —— 徽标：统一 MiSans，颜色对齐公示口径 —— */
+.kind-badge,
+.type-badge,
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-primary);
+  font-size: 11.5px;
+  font-weight: 500;
+  line-height: 1.4;
+  padding: 4px 9px;
+  border-radius: 6px;
   border: 1px solid var(--border-color);
+  white-space: nowrap;
+}
+
+/* 封禁类型：永久=红，临时=琥珀 */
+.kind-badge[data-kind='permanent'] {
+  color: #e5484d;
+  border-color: color-mix(in srgb, #e5484d 35%, transparent);
+  background: color-mix(in srgb, #e5484d 12%, transparent);
+}
+.kind-badge[data-kind='temporary'] {
+  color: #d97706;
+  border-color: color-mix(in srgb, #d97706 35%, transparent);
+  background: color-mix(in srgb, #d97706 12%, transparent);
+}
+
+/* 管理视图的类型徽标 */
+.type-badge {
   color: var(--text-secondary);
 }
 .type-badge[data-type='minecraft'] {
@@ -404,23 +462,20 @@ function creatorLabel(ban: Ban): string {
   border-color: color-mix(in srgb, var(--link-color) 35%, transparent);
   background: color-mix(in srgb, var(--link-color) 9%, transparent);
 }
-.status-badge {
-  display: inline-block;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  padding: 3px 8px;
-  border-radius: 5px;
-  border: 1px solid var(--border-color);
-}
+
+/* 状态：生效中=红，已解除=绿（与公示口径一致） */
 .status-badge[data-status='active'] {
-  color: var(--bases-success, #00bfa6);
-  border-color: color-mix(in srgb, var(--bases-success, #00bfa6) 35%, transparent);
-  background: color-mix(in srgb, var(--bases-success, #00bfa6) 9%, transparent);
+  color: #e5484d;
+  border-color: color-mix(in srgb, #e5484d 35%, transparent);
+  background: color-mix(in srgb, #e5484d 12%, transparent);
 }
 .status-badge[data-status='expired'],
 .status-badge[data-status='revoked'] {
-  color: var(--text-secondary);
+  color: #12a150;
+  border-color: color-mix(in srgb, #12a150 35%, transparent);
+  background: color-mix(in srgb, #12a150 10%, transparent);
 }
+
 .sr-only {
   position: absolute;
   width: 1px;

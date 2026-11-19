@@ -75,7 +75,7 @@ function apply(list: PublicBanRaw[]) {
 
 onMounted(async () => {
   try {
-    const res = await fetch(`${API_BASE_URL}/api/v1/bans/public?limit=5`)
+    const res = await fetch(`${API_BASE_URL}/api/v1/bans/public?limit=20`)
     if (!res.ok) throw new Error(`http ${res.status}`)
     const json = (await res.json()) as { data?: { items?: PublicBanRaw[] } } | PublicBanRaw[]
     const data = Array.isArray(json) ? json : (json.data?.items ?? [])

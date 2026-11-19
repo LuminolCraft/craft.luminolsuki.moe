@@ -974,6 +974,8 @@ export default {
       "permanent": "永久",
       "filterAll": "全部",
       "filterTemporary": "临时",
+      "permanentBan": "永久封禁",
+      "temporaryBan": "临时封禁",
       "edit": "修改",
       "editTitle": "修改封禁",
       "editReason": "原因",

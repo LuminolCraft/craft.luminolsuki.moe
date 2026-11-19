@@ -974,6 +974,8 @@ export default {
       "permanent": "Permanent",
       "filterAll": "All",
       "filterTemporary": "Temporary",
+      "permanentBan": "Permanent ban",
+      "temporaryBan": "Temporary ban",
       "edit": "Edit",
       "editTitle": "Edit ban",
       "editReason": "Reason",
