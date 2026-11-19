@@ -5,10 +5,78 @@
       <p class="page-subtitle">{{ t('admin.bans.subtitle') }}</p>
     </header>
 
+    <!-- 目标搜索：输入角色名同时过滤下方列表并列出可封禁账号；选中后右侧抽屉确认。
+         完整 UUID 不搜名字，改走「按该 UUID 封禁」（未绑定玩家也能封，但不连坐）。 -->
+    <div ref="searchShell" class="search-shell">
+      <div class="search-bar">
+        <svg
+          class="search-icon"
+          width="14"
+          height="14"
+          viewBox="0 0 16 16"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.5"
+          aria-hidden="true"
+        >
+          <circle cx="7" cy="7" r="4.6" />
+          <path d="M10.6 10.6 14 14" />
+        </svg>
+        <input
+          ref="searchInputEl"
+          v-model="query"
+          type="search"
+          class="search-input"
+          :placeholder="t('admin.bans.searchPlaceholder')"
+          :aria-label="t('admin.bans.searchPlaceholder')"
+          autocomplete="off"
+          @focus="dropOpen = true"
+        />
+        <span v-if="searching" class="search-state">{{ t('admin.bans.searching') }}</span>
+        <kbd v-else class="search-kbd">Ctrl K</kbd>
+      </div>
+
+      <div v-if="dropOpen" class="search-drop">
+        <button
+          v-for="c in candidates"
+          :key="c.id"
+          type="button"
+          class="candidate"
+          @click="selectCandidate(c)"
+        >
+          <span class="cand-avatar">{{ initialsOf(c.name) }}</span>
+          <span class="cand-main">
+            <span class="cand-name">{{ c.name }}</span>
+            <span class="cand-uuid">{{ c.uuid }}</span>
+          </span>
+          <span class="cand-owner">{{ c.username || t('admin.bans.searchUnbound') }}</span>
+          <span v-if="c.activeBan" class="status-badge" data-status="active">
+            {{ t('admin.bans.searchBanned') }}
+          </span>
+        </button>
+
+        <button v-if="uuidInput" type="button" class="candidate" @click="selectDirectUuid">
+          <span class="cand-avatar dim">#</span>
+          <span class="cand-main">
+            <span class="cand-name">{{ t('admin.bans.directUuid') }}</span>
+            <span class="cand-uuid">{{ uuidInput }}</span>
+          </span>
+        </button>
+
+        <p v-if="!candidates.length && !uuidInput && !searching" class="drop-empty">
+          {{ t('admin.bans.searchEmpty') }}
+        </p>
+      </div>
+    </div>
+
+    <p v-if="notice" class="page-note" role="status">{{ notice }}</p>
+
     <div v-if="loading" class="page-loading">{{ t('admin.common.loading') }}</div>
 
     <template v-else>
-      <p v-if="bans.length === 0" class="page-empty">{{ t('admin.common.empty') }}</p>
+      <p v-if="bans.length === 0" class="page-empty">
+        {{ filtered ? t('admin.bans.filteredEmpty') : t('admin.common.empty') }}
+      </p>
 
       <div v-else class="table-wrap">
         <table class="data-table">
@@ -65,7 +133,7 @@
         </table>
       </div>
 
-      <div v-if="hasMore || page > 1" class="pager">
+      <div v-if="!filtered && (hasMore || page > 1)" class="pager">
         <button type="button" class="pager-btn" :disabled="page <= 1 || loadingPage" @click="go(page - 1)">
           {{ t('admin.common.prev') }}
         </button>
@@ -77,6 +145,74 @@
     </template>
 
     <p v-if="pageError" class="page-error" role="alert">{{ pageError }}</p>
+
+    <!-- 新建封禁抽屉：先摆连带范围再填表，提交按钮直接写明会封几个号 -->
+    <div v-if="drawerOpen" class="drawer-scrim" @click.self="closeDrawer">
+      <aside class="ban-drawer" role="dialog" aria-modal="true">
+        <header class="drawer-head">
+          <div>
+            <h2 class="drawer-title">{{ t('admin.bans.drawerTitle', { name: targetName }) }}</h2>
+            <p class="drawer-sub">{{ targetSub }}</p>
+          </div>
+          <button type="button" class="drawer-close" @click="closeDrawer">×</button>
+        </header>
+
+        <p class="drawer-label">{{ t('admin.bans.scopeLabel') }}</p>
+        <p v-if="previewing" class="dim">{{ t('admin.bans.scopeLoading') }}</p>
+        <div v-else class="scope-box">
+          <div v-if="!scopeRows.length" class="scope-line">
+            <span class="scope-name">{{ targetName }}</span>
+            <span class="scope-note">{{ t('admin.bans.scopeSolo') }}</span>
+          </div>
+          <div
+            v-for="row in scopeRows"
+            :key="row.id"
+            class="scope-line"
+            :class="{ skipped: row.skipped }"
+          >
+            <span class="scope-name">{{ row.name }}</span>
+            <span class="scope-note" :class="{ warn: row.skipped }">{{ row.note }}</span>
+          </div>
+        </div>
+
+        <label class="field">
+          <span class="label">{{ t('admin.bans.typeLabel') }}</span>
+          <select v-model="newType" class="input" :disabled="submitting">
+            <option value="minecraft">Minecraft</option>
+            <option value="website">Website</option>
+            <option value="chat">Chat</option>
+          </select>
+        </label>
+
+        <label class="field">
+          <span class="label">{{ t('admin.bans.reasonLabel') }}</span>
+          <textarea
+            v-model.trim="newReason"
+            class="input textarea"
+            rows="3"
+            :placeholder="t('admin.bans.reasonPlaceholder')"
+            :disabled="submitting"
+          />
+        </label>
+
+        <label class="field">
+          <span class="label">{{ t('admin.bans.expiresLabel') }}</span>
+          <input v-model="newExpiresLocal" class="input" type="datetime-local" :disabled="submitting" />
+          <span class="hint">{{ t('admin.bans.expiresHint') }}</span>
+        </label>
+
+        <p v-if="createError" class="form-error" role="alert">{{ createError }}</p>
+
+        <div class="drawer-actions">
+          <button type="button" class="btn ghost" :disabled="submitting" @click="closeDrawer">
+            {{ t('admin.common.cancel') }}
+          </button>
+          <button type="button" class="btn" :disabled="!canSubmit || submitting" @click="onCreate">
+            {{ submitting ? t('admin.bans.submitting') : submitLabel }}
+          </button>
+        </div>
+      </aside>
+    </div>
 
     <!-- 行内编辑：原因 / 到期时间（PATCH） -->
     <div v-if="editingBan" class="modal-scrim" @click.self="editingBan = null">
@@ -251,7 +387,14 @@ import HoldButton from '@/components/bits/HoldButton.vue'
 import { api, isAppError } from '@/lib/api'
 import { normalizePaged } from '@/lib/paged'
 import { API_BASE_URL } from '@/lib/api-base'
-import type { Ban, BanEvidence } from '@/types/nexus'
+import type {
+  Ban,
+  BanEvidence,
+  BanScopePreview,
+  BanTargetCandidate,
+  BanType,
+  CreateBanInput,
+} from '@/types/nexus'
 import { useGsap } from '@/composables/useGsap'
 import {
   canEncodeInBrowser,
@@ -312,8 +455,13 @@ function errorText(e: unknown): string {
 }
 
 // ---------- 列表 ----------
+/** 搜索框有内容时列表由后端按 q 过滤（不是前端过滤当前页） */
+const filtered = computed(() => query.value.trim() !== '')
+
 async function load(nextPage: number) {
-  const data = await api.get<unknown>(`/admin/bans?page=${nextPage}&limit=${LIMIT}`)
+  const q = query.value.trim()
+  const suffix = q ? `&q=${encodeURIComponent(q)}` : ''
+  const data = await api.get<unknown>(`/admin/bans?page=${nextPage}&limit=${LIMIT}${suffix}`)
   const paged = normalizePaged<Ban>(data)
   bans.value = paged.items
   total.value = paged.total
@@ -368,6 +516,214 @@ function formatSize(bytes?: number): string {
   if (bytes < 1024) return `${bytes} B`
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
   return `${(bytes / 1024 / 1024).toFixed(2)} MB`
+}
+
+// ---------- 目标搜索与新建封禁 ----------
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+const SEARCH_DEBOUNCE_MS = 300
+
+const query = ref('')
+const searchShell = ref<HTMLElement | null>(null)
+const searchInputEl = ref<HTMLInputElement | null>(null)
+const dropOpen = ref(false)
+const searching = ref(false)
+const candidates = ref<BanTargetCandidate[]>([])
+
+const selected = ref<BanTargetCandidate | null>(null)
+const directUuid = ref('')
+const preview = ref<BanScopePreview | null>(null)
+const previewing = ref(false)
+const drawerOpen = ref(false)
+
+const newType = ref<BanType>('minecraft')
+const newReason = ref('')
+const newExpiresLocal = ref('')
+const submitting = ref(false)
+const createError = ref('')
+const notice = ref('')
+
+/** 输入是完整 UUID 时走「按 uuid 封」，不拿 uuid 去做角色名模糊搜索 */
+const uuidInput = computed(() => {
+  const q = query.value.trim()
+  return UUID_RE.test(q) ? q.toLowerCase() : ''
+})
+
+const targetName = computed(() => selected.value?.name ?? directUuid.value)
+
+const targetSub = computed(() => {
+  if (!selected.value) return t('admin.bans.drawerSubUnbound')
+  return selected.value.username
+    ? t('admin.bans.drawerSubBound', { name: selected.value.username })
+    : t('admin.bans.drawerSubUnbound')
+})
+
+/** 连带清单：已封的项提交时幂等跳过，单独标出避免管理员以为会重复建行 */
+const scopeRows = computed(() =>
+  (preview.value?.items ?? []).map((i) => ({
+    id: i.id,
+    name: i.name,
+    skipped: i.alreadyBanned,
+    note: i.alreadyBanned ? t('admin.bans.scopeAlreadyBanned') : t('admin.bans.scopeAlt'),
+  })),
+)
+
+/** 本次真正会新建封禁的账号数（按 uuid 封单个未绑定玩家时恒为 1） */
+const submitCount = computed(() => {
+  if (!preview.value) return directUuid.value ? 1 : 0
+  const fresh = preview.value.items.filter((i) => !i.alreadyBanned).length
+  return fresh > 0 ? fresh : directUuid.value ? 1 : 0
+})
+
+const submitLabel = computed(() =>
+  submitCount.value > 1
+    ? t('admin.bans.submit', { count: submitCount.value })
+    : t('admin.bans.submitSolo'),
+)
+
+const canSubmit = computed(
+  () => !!preview.value && submitCount.value > 0 && newReason.value.trim() !== '',
+)
+
+function initialsOf(name: string): string {
+  return name.slice(0, 2).toUpperCase()
+}
+
+let searchTimer: number | undefined
+
+// 输入即搜（防抖）：同时刷新「候选账号浮层」与「下方封禁列表」
+watch(query, () => {
+  if (searchTimer) window.clearTimeout(searchTimer)
+  selected.value = null
+  directUuid.value = ''
+  preview.value = null
+  notice.value = ''
+  createError.value = ''
+  dropOpen.value = true
+
+  const q = query.value.trim()
+  const isUuid = UUID_RE.test(q)
+  if (q === '' || isUuid) {
+    candidates.value = []
+    searching.value = false
+    void go(1)
+    return
+  }
+  searching.value = true
+  searchTimer = window.setTimeout(() => {
+    void runSearch(q)
+    void go(1)
+  }, SEARCH_DEBOUNCE_MS)
+})
+
+async function runSearch(q: string) {
+  try {
+    const data = await api.get<{ items: BanTargetCandidate[] }>(
+      `/admin/minecraft?q=${encodeURIComponent(q)}`,
+    )
+    candidates.value = data.items ?? []
+  } catch (e) {
+    candidates.value = []
+    pageError.value = errorText(e)
+  } finally {
+    searching.value = false
+  }
+}
+
+/** 拉影响面（同账号全部 MC 号 + 建链闭包），提交前必须看清 */
+async function loadPreview(params: string) {
+  previewing.value = true
+  preview.value = null
+  createError.value = ''
+  try {
+    preview.value = await api.get<BanScopePreview>(`/admin/bans/preview?${params}`)
+  } catch (e) {
+    createError.value = errorText(e)
+  } finally {
+    previewing.value = false
+  }
+}
+
+function resetForm() {
+  newType.value = 'minecraft'
+  newReason.value = ''
+  newExpiresLocal.value = ''
+  createError.value = ''
+}
+
+function selectCandidate(c: BanTargetCandidate) {
+  selected.value = c
+  directUuid.value = ''
+  dropOpen.value = false
+  drawerOpen.value = true
+  resetForm()
+  void loadPreview(`minecraftAccountId=${encodeURIComponent(c.id)}`)
+}
+
+function selectDirectUuid() {
+  if (!uuidInput.value) return
+  selected.value = null
+  directUuid.value = uuidInput.value
+  dropOpen.value = false
+  drawerOpen.value = true
+  resetForm()
+  void loadPreview(`minecraftUuid=${encodeURIComponent(uuidInput.value)}`)
+}
+
+function closeDrawer() {
+  if (submitting.value) return
+  drawerOpen.value = false
+  selected.value = null
+  directUuid.value = ''
+  preview.value = null
+  createError.value = ''
+}
+
+async function onCreate() {
+  if (!canSubmit.value || submitting.value) return
+  createError.value = ''
+  submitting.value = true
+  try {
+    const payload: CreateBanInput = {
+      type: newType.value,
+      reason: newReason.value.trim(),
+      expiresAt: newExpiresLocal.value ? new Date(newExpiresLocal.value).getTime() : null,
+    }
+    // 目标二选一：已绑定账号优先，否则按 uuid 封未绑定玩家
+    if (selected.value) payload.minecraftAccountId = selected.value.id
+    else payload.minecraftUuid = directUuid.value
+
+    const created = await api.post<Ban & { deduped?: boolean }>('/admin/bans', payload)
+    notice.value = created.deduped ? t('admin.bans.createdDeduped') : t('admin.bans.created')
+    drawerOpen.value = false
+    selected.value = null
+    directUuid.value = ''
+    preview.value = null
+    resetForm()
+    await go(1)
+  } catch (e) {
+    createError.value = errorText(e)
+  } finally {
+    submitting.value = false
+  }
+}
+
+function onGlobalKeydown(e: KeyboardEvent) {
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+    e.preventDefault()
+    dropOpen.value = true
+    searchInputEl.value?.focus()
+    searchInputEl.value?.select()
+    return
+  }
+  if (e.key === 'Escape') {
+    if (drawerOpen.value) closeDrawer()
+    else dropOpen.value = false
+  }
+}
+
+function onDocMousedown(e: MouseEvent) {
+  if (searchShell.value?.contains(e.target as Node)) return
+  dropOpen.value = false
 }
 
 // ---------- 撤销 ----------
@@ -582,6 +938,9 @@ watch(evidenceBan, (ban) => {
 
 onUnmounted(() => {
   document.removeEventListener('paste', onPaste)
+  document.removeEventListener('keydown', onGlobalKeydown)
+  document.removeEventListener('mousedown', onDocMousedown)
+  if (searchTimer) window.clearTimeout(searchTimer)
 })
 
 // ---------- 入队与重编码 ----------
@@ -810,6 +1169,8 @@ async function onDownload(id: string, filename: string) {
 }
 
 onMounted(async () => {
+  document.addEventListener('keydown', onGlobalKeydown)
+  document.addEventListener('mousedown', onDocMousedown)
   create((g) => {
     if (reduceMotion()) return
     g.from('.bans-page > *', { autoAlpha: 0, y: 16, duration: 0.5, ease: 'power3.out', stagger: 0.06, clearProps: 'all' })
@@ -826,6 +1187,280 @@ onMounted(async () => {
 
 <style scoped>
 @import './admin-shared.css';
+
+/* ---------- 目标搜索 ---------- */
+.search-shell {
+  position: relative;
+  margin-bottom: 1.2rem;
+}
+
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem 0.85rem;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.search-bar:focus-within {
+  border-color: color-mix(in srgb, var(--primary-color) 55%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary-color) 14%, transparent);
+}
+
+.search-icon {
+  flex-shrink: 0;
+  color: var(--text-secondary);
+}
+
+.search-input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: 0;
+  outline: none;
+  color: var(--text-color);
+  font: inherit;
+  font-size: 0.88rem;
+}
+
+.search-input::placeholder {
+  color: color-mix(in srgb, var(--text-secondary) 75%, transparent);
+}
+
+.search-kbd {
+  flex-shrink: 0;
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 5px;
+  padding: 0.05rem 0.4rem;
+  font-family: var(--font-mono, ui-monospace, monospace);
+}
+
+.search-state {
+  flex-shrink: 0;
+  font-size: 0.74rem;
+  color: var(--text-secondary);
+}
+
+.search-drop {
+  position: absolute;
+  z-index: 20;
+  left: 0;
+  right: 0;
+  top: calc(100% + 6px);
+  max-height: 20rem;
+  overflow-y: auto;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background: var(--card-bg, #18181e);
+  box-shadow: 0 18px 40px color-mix(in srgb, #000 45%, transparent);
+}
+
+.candidate {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  padding: 0.55rem 0.8rem;
+  border: 0;
+  border-top: 1px solid color-mix(in srgb, var(--border-color) 60%, transparent);
+  background: transparent;
+  color: var(--text-color);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.candidate:first-child {
+  border-top: 0;
+}
+
+.candidate:hover {
+  background: color-mix(in srgb, var(--text-color) 6%, transparent);
+}
+
+.cand-avatar {
+  flex-shrink: 0;
+  width: 1.7rem;
+  height: 1.7rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  font-size: 0.66rem;
+  font-weight: 600;
+  color: var(--primary-color);
+  background: color-mix(in srgb, var(--primary-color) 16%, transparent);
+}
+
+.cand-avatar.dim {
+  color: var(--text-secondary);
+  background: color-mix(in srgb, var(--text-color) 8%, transparent);
+}
+
+.cand-main {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.cand-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.cand-uuid {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cand-owner {
+  flex-shrink: 0;
+  font-size: 0.74rem;
+  color: var(--text-secondary);
+}
+
+.drop-empty {
+  margin: 0;
+  padding: 0.85rem 0.8rem;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
+.page-note {
+  margin: -0.4rem 0 1rem;
+  font-size: 0.82rem;
+  color: var(--success-color, #009688);
+}
+
+/* ---------- 新建封禁抽屉 ---------- */
+.drawer-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  justify-content: flex-end;
+  padding: 1rem;
+  background: color-mix(in srgb, #000 55%, transparent);
+}
+
+/* 贴右边缘会显得像被裁掉：四周留 1rem 让它成为一张浮起的卡片 */
+.ban-drawer {
+  width: min(26rem, 100%);
+  height: 100%;
+  overflow-y: auto;
+  padding: 1.2rem 1.25rem;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  background: var(--card-bg, #18181e);
+  box-shadow: -12px 0 40px color-mix(in srgb, #000 40%, transparent);
+  animation: drawer-in 0.2s ease;
+}
+
+@keyframes drawer-in {
+  from {
+    transform: translateX(14px);
+    opacity: 0.7;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ban-drawer {
+    animation: none;
+  }
+}
+
+.drawer-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.8rem;
+  margin-bottom: 1.1rem;
+}
+
+.drawer-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.drawer-sub {
+  margin: 0.2rem 0 0;
+  font-size: 0.76rem;
+  color: var(--text-secondary);
+}
+
+.drawer-close {
+  padding: 0 0.2rem;
+  border: 0;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.drawer-close:hover {
+  color: var(--text-color);
+}
+
+.drawer-label {
+  margin: 0 0 0.5rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.scope-box {
+  margin-bottom: 1rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--text-color) 3%, transparent);
+}
+
+.scope-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  padding: 0.28rem 0;
+  font-size: 0.82rem;
+}
+
+.scope-line.skipped {
+  color: var(--text-secondary);
+}
+
+.scope-note {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+}
+
+.scope-note.warn {
+  color: var(--warning-color, #f57c00);
+}
+
+.drawer-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
 
 .evidence-modal {
   width: min(34rem, 100%);
