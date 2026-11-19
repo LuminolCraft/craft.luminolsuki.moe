@@ -145,13 +145,13 @@ const STEPS = [
   list-style: none;
 }
 
-/* 内层卡：比外层面板低一档的表面，紧凑而不是「大卡片」 */
+/* 内层卡：与外层面板同刻度的小圆角，透明底 + 1px 边框，不做彩色块 */
 .connect__card {
   height: 100%;
   padding: 18px 18px 16px;
-  border-radius: 14px;
+  border-radius: 6px;
   border: 1px solid var(--border-color);
-  background: color-mix(in srgb, var(--primary-color) 4%, transparent);
+  background: transparent;
   display: flex;
   flex-direction: column;
   transition:
@@ -161,8 +161,7 @@ const STEPS = [
 
 @media (hover: hover) {
   .connect__step:hover .connect__card {
-    border-color: color-mix(in srgb, var(--primary-color) 45%, var(--border-color));
-    background: color-mix(in srgb, var(--primary-color) 8%, transparent);
+    border-color: color-mix(in srgb, var(--primary-color) 55%, var(--border-color));
   }
 }
 
@@ -218,27 +217,19 @@ const STEPS = [
   opacity: 0.85;
 }
 
-/* 第 2 步：唯一需要玩家离开站点的动作，做成渐变实卡 */
+/* 第 2 步：唯一需要玩家离开站点的动作。用主色描边 + 极淡底强调，
+   不再整块渐变实心（那是「胶囊/色块」观感的主要来源）。 */
 .connect .connect__card--hl {
-  background-color: transparent;
-  background-image: linear-gradient(
-    135deg,
-    var(--primary-color),
-    color-mix(in srgb, var(--primary-color) 52%, #2a1b4d)
-  );
-  border-color: transparent;
-  box-shadow: 0 16px 38px -20px color-mix(in srgb, var(--primary-color) 70%, transparent);
+  border-color: var(--primary-color);
+  background-color: color-mix(in srgb, var(--primary-color) 7%, transparent);
 }
 .connect .connect__card--hl .connect__no,
-.connect .connect__card--hl .connect__sep,
-.connect .connect__card--hl .connect__key,
-.connect .connect__card--hl .connect__card-title,
-.connect .connect__card--hl .connect__card-desc {
-  color: #fff;
+.connect .connect__card--hl .connect__key {
+  color: var(--primary-color);
 }
-.connect .connect__card--hl .connect__key,
 .connect .connect__card--hl .connect__sep {
-  opacity: 0.8;
+  color: var(--primary-color);
+  opacity: 0.5;
 }
 
 .connect__note {

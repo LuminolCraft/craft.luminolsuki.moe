@@ -54,43 +54,33 @@
 /* —— 玻璃卡 + 对角角标 —— */
 .home-page .lp-card {
   position: relative;
-  border-radius: 20px;
-  border: 1px solid color-mix(in srgb, var(--primary-color) 28%, var(--glass-border));
-  /* 卡片带紫调：浅色下混向白会发灰，所以亮/暗分开取底色 */
-  background-color: color-mix(in srgb, var(--primary-color) 10%, #ffffff);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  box-shadow:
-    0 18px 44px -24px color-mix(in srgb, var(--primary-color) 42%, transparent),
-    0 8px 24px -18px color-mix(in srgb, var(--text-color) 22%, transparent);
-}
-
-[data-theme='dark'] .home-page .lp-card {
-  background-color: color-mix(in srgb, var(--primary-color) 13%, #18181e);
+  /* 圆角收在项目标准刻度（6px）：大圆角 + 彩色底就是「胶囊感」的来源 */
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  background-color: var(--card-bg);
+  box-shadow: none;
 }
 
 .home-page .lp-card--ticks::before,
 .home-page .lp-card--ticks::after {
   content: '';
   position: absolute;
-  width: 10px;
-  height: 10px;
-  border: 1.5px solid color-mix(in srgb, var(--primary-color) 62%, transparent);
+  width: 8px;
+  height: 8px;
+  border: 1.5px solid color-mix(in srgb, var(--primary-color) 55%, transparent);
   pointer-events: none;
 }
 .home-page .lp-card--ticks::before {
-  top: 7px;
-  left: 7px;
+  top: 4px;
+  left: 4px;
   border-right: 0;
   border-bottom: 0;
-  border-top-left-radius: 7px;
 }
 .home-page .lp-card--ticks::after {
-  right: 7px;
-  bottom: 7px;
+  right: 4px;
+  bottom: 4px;
   border-left: 0;
   border-top: 0;
-  border-bottom-right-radius: 7px;
 }
 
 /* —— 按钮 —— */
@@ -101,7 +91,7 @@
   font-size: 13px;
   font-weight: 550;
   padding: 9px 15px;
-  border-radius: 9px;
+  border-radius: 6px;
   border: 1px solid transparent;
   text-decoration: none;
   cursor: pointer;
@@ -112,11 +102,7 @@
     transform 0.15s;
 }
 .home-page .lp-btn--primary {
-  background: linear-gradient(
-    135deg,
-    var(--primary-color),
-    color-mix(in srgb, var(--primary-color) 55%, #2a1b4d)
-  );
+  background: var(--primary-color);
   color: #fff;
 }
 .home-page .lp-btn--ghost {
@@ -130,7 +116,7 @@
 
 @media (hover: hover) {
   .home-page .lp-btn--primary:hover {
-    box-shadow: 0 12px 28px -12px var(--primary-color);
+    background: color-mix(in srgb, var(--primary-color) 88%, #000);
   }
   .home-page .lp-btn--ghost:hover {
     border-color: var(--primary-color);
