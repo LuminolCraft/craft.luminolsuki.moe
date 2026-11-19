@@ -199,6 +199,26 @@ html[data-theme='dark'] {
   background: rgba(0, 0, 0, 0.4);
 }
 
+/* 首屏底部过渡：照片直接切到下一段会像「贴了一张图」，
+   这里让图片在最后 220px 内溶进页面底色，与下方网格背景自然衔接。 */
+.home-page .hero::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 220px;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    color-mix(in srgb, var(--background-color) 55%, transparent) 62%,
+    /* 终点留一点透明度：下方是 fixed 网格背景，纯色会把网格切断成一条硬边 */
+    color-mix(in srgb, var(--background-color) 88%, transparent) 100%
+  );
+}
+
 .home-page .hero__inner {
   position: relative;
   z-index: 2;

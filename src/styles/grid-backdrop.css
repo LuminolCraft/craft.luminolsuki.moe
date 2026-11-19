@@ -1,0 +1,64 @@
+/* =============================================================================
+   grid-backdrop.css —— 全站深色模式统一背景
+
+   一块 fixed 背景承担全部氛围：顶部两团紫罗兰光斑 + 32px 栅格（向下渐隐）。
+   这样每个区块不再各自铺一层背景，页面滚动时不会出现「一个组件一个背景」的
+   横向色带断层。
+
+   为什么用 fixed：背景与内容解耦，长页面滚动时网格不动，视觉是「一张底」而不是
+   「每屏一张」；同时比每个 section 各开一层伪元素省几十个合成层。
+
+   只作用于深色模式：浅色模式的紫白底已经够干净，铺网格会显脏。
+   ============================================================================= */
+
+/* 深色时把底色交给背景层，body 自身透明，否则伪元素会被 body 背景盖住 */
+[data-theme='dark'] html {
+  background-color: var(--bases-dark-background-color, #0f0f14);
+}
+
+[data-theme='dark'] body {
+  background-color: transparent;
+}
+
+[data-theme='dark'] body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-color: var(--bases-dark-background-color, #0f0f14);
+  background-image:
+    radial-gradient(
+      62% 46% at 12% -6%,
+      color-mix(in srgb, var(--bases-dark-primary, #9370db) 44%, transparent),
+      transparent 68%
+    ),
+    radial-gradient(
+      50% 42% at 92% 6%,
+      color-mix(in srgb, var(--bases-dark-primary, #9370db) 26%, transparent),
+      transparent 70%
+    ),
+    linear-gradient(color-mix(in srgb, #fff 9%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, #fff 9%, transparent) 1px, transparent 1px);
+  background-size:
+    auto,
+    auto,
+    32px 32px,
+    32px 32px;
+  /* 网格向下淡出：首屏清晰，长页阅读区不抢注意力 */
+  -webkit-mask-image: linear-gradient(#000 0%, #000 55%, rgba(0, 0, 0, 0.5) 100%);
+  mask-image: linear-gradient(#000 0%, #000 55%, rgba(0, 0, 0, 0.5) 100%);
+}
+
+/* 页面容器自带 background: var(--canvas) 会盖住这层fixed背景，深色下放开。
+   `[class$='-page']` 覆盖 .home-page / .news-page / .bans-page 等同构容器。 */
+[data-theme='dark'] .home-page,
+[data-theme='dark'] [class$='-page'] {
+  background-color: transparent;
+}
+
+/* 管理后台是密集表格区，网格会干扰扫读：只在那里关掉网格、保留底色 */
+[data-theme='dark'] body:has(.admin-shell)::before,
+[data-theme='dark'] body:has(.bans-page)::before {
+  background-image: none;
+}

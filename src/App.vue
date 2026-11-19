@@ -76,6 +76,7 @@ onMounted(() => {
 <style>
   @import './styles/fonts.css';
   @import './styles/theme-colors.css';
+  @import './styles/grid-backdrop.css';
   @import './styles/typography.css';
   @import './styles/vercel-design-system.css';  /* Vercel Design System */
   @import './styles/responsive.css';

@@ -1,0 +1,179 @@
+/* =============================================================================
+   home-sections.css —— 首页新增区块的共享皮肤
+
+   覆盖：进服流程 / 封禁公示 / 规则速览 / 界面元素。
+   视觉沿用 lophine 参考页那套：紫罗兰氛围底（栅格 + 双侧光斑）、玻璃卡、
+   对角 10px 角标、等宽 kicker、同色三档 chip。
+
+   约定：所有选择器挂在 .home-page 下，不外泄到其他页面（与 home-styles.css 一致）。
+   性能：氛围层是**静态**的（径向渐变 + 32px 栅格 + mask 渐隐），不跑无限动画，
+   不占用首页已给 GSAP / WebGL 的预算。
+   ============================================================================= */
+
+/* —— 区段外壳：氛围底 + 栅格 —— */
+.home-page .lp-sec {
+  position: relative;
+  padding: 110px 0 96px;
+  isolation: isolate;
+}
+
+.home-page .lp-wrap {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 32px;
+}
+
+/* —— 三级文字 —— */
+.home-page .lp-kicker {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.4;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--primary-color);
+  margin: 0 0 12px;
+}
+
+.home-page .lp-title {
+  font-size: clamp(1.9rem, 3.4vw, 2.5rem);
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+  font-weight: 700;
+  color: var(--text-color);
+  margin: 0 0 12px;
+}
+
+.home-page .lp-lead {
+  font-size: 1.05rem;
+  line-height: 1.75;
+  color: var(--text-secondary);
+  max-width: 58ch;
+  margin: 0 0 42px;
+}
+
+/* —— 玻璃卡 + 对角角标 —— */
+.home-page .lp-card {
+  position: relative;
+  border-radius: 20px;
+  border: 1px solid color-mix(in srgb, var(--primary-color) 28%, var(--glass-border));
+  /* 卡片带紫调：浅色下混向白会发灰，所以亮/暗分开取底色 */
+  background-color: color-mix(in srgb, var(--primary-color) 10%, #ffffff);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow:
+    0 18px 44px -24px color-mix(in srgb, var(--primary-color) 42%, transparent),
+    0 8px 24px -18px color-mix(in srgb, var(--text-color) 22%, transparent);
+}
+
+[data-theme='dark'] .home-page .lp-card {
+  background-color: color-mix(in srgb, var(--primary-color) 13%, #18181e);
+}
+
+.home-page .lp-card--ticks::before,
+.home-page .lp-card--ticks::after {
+  content: '';
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border: 1.5px solid color-mix(in srgb, var(--primary-color) 62%, transparent);
+  pointer-events: none;
+}
+.home-page .lp-card--ticks::before {
+  top: 7px;
+  left: 7px;
+  border-right: 0;
+  border-bottom: 0;
+  border-top-left-radius: 7px;
+}
+.home-page .lp-card--ticks::after {
+  right: 7px;
+  bottom: 7px;
+  border-left: 0;
+  border-top: 0;
+  border-bottom-right-radius: 7px;
+}
+
+/* —— 按钮 —— */
+.home-page .lp-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  font-weight: 550;
+  padding: 9px 15px;
+  border-radius: 9px;
+  border: 1px solid transparent;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background-color 0.15s,
+    border-color 0.15s,
+    box-shadow 0.2s,
+    transform 0.15s;
+}
+.home-page .lp-btn--primary {
+  background: linear-gradient(
+    135deg,
+    var(--primary-color),
+    color-mix(in srgb, var(--primary-color) 55%, #2a1b4d)
+  );
+  color: #fff;
+}
+.home-page .lp-btn--ghost {
+  background: transparent;
+  border-color: var(--border-color);
+  color: var(--text-color);
+}
+.home-page .lp-btn:active {
+  transform: translateY(1px);
+}
+
+@media (hover: hover) {
+  .home-page .lp-btn--primary:hover {
+    box-shadow: 0 12px 28px -12px var(--primary-color);
+  }
+  .home-page .lp-btn--ghost:hover {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+  }
+}
+
+/* —— chip 三档 —— */
+.home-page .lp-chip {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.4;
+  padding: 3px 9px;
+  border-radius: 5px;
+  border: 1px solid transparent;
+}
+.home-page .lp-chip--brand {
+  background: color-mix(in srgb, var(--primary-color) 12%, transparent);
+  color: var(--primary-color);
+  border-color: color-mix(in srgb, var(--primary-color) 38%, transparent);
+}
+.home-page .lp-chip--ok {
+  background: color-mix(in srgb, var(--bases-success, #00bfa6) 12%, transparent);
+  color: var(--bases-success, #00bfa6);
+  border-color: color-mix(in srgb, var(--bases-success, #00bfa6) 38%, transparent);
+}
+.home-page .lp-chip--plain {
+  background: transparent;
+  color: var(--text-secondary);
+  border-color: var(--border-color);
+}
+
+/* —— 窄屏 —— */
+@media (max-width: 900px) {
+  .home-page .lp-sec {
+    padding: 76px 0 64px;
+  }
+  .home-page .lp-wrap {
+    padding: 0 20px;
+  }
+  .home-page .lp-lead {
+    margin-bottom: 32px;
+  }
+}

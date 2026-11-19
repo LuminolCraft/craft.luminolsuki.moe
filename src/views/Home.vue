@@ -13,9 +13,11 @@ import { onMounted, ref } from 'vue'
 import { useHomeReveal } from '@/composables/useHomeAnimations'
 import HeroSection from '@/components/home/sections/HeroSection.vue'
 import StatusSection from '@/components/home/sections/StatusSection.vue'
+import ConnectFlowSection from '@/components/home/sections/ConnectFlowSection.vue'
 import ShowcaseSection from '@/components/home/sections/ShowcaseSection.vue'
 import GallerySection from '@/components/home/sections/GallerySection.vue'
 import CompareSection from '@/components/home/sections/CompareSection.vue'
+import BansPublicSection from '@/components/home/sections/BansPublicSection.vue'
 import TeamSection from '@/components/home/sections/TeamSection.vue'
 import CtaSection from '@/components/home/sections/CtaSection.vue'
 import ScrollExpand from '@/components/bits/ScrollExpand.vue'
@@ -35,6 +37,10 @@ onMounted(() => {
   <div ref="pageEl" class="home-page">
     <HeroSection />
     <StatusSection />
+    <!-- 看完在线状态，下一个问题就是「我怎么进」 -->
+    <ConnectFlowSection />
+    <!-- 进服流程之后立刻给透明度：违规怎么处理、结果公开可查（脱敏） -->
+    <BansPublicSection />
     <ShowcaseSection />
     <GallerySection />
     <CompareSection />
@@ -56,6 +62,7 @@ onMounted(() => {
         <p class="world-expand__line">这个世界，由每一位玩家共同建造。</p>
       </ScrollExpand>
     </section>
+    <!-- 决策收尾：直接落到行动（规则目录交给 /rules 页，首页不放） -->
     <CtaSection />
   </div>
 </template>
@@ -64,5 +71,6 @@ onMounted(() => {
 /* 首页样式：桌面与窄屏分别在两个共享样式文件里（与 News / Support 同一套约定）。
    每个选择器都挂在 .home-page 之下，保证不会外泄到其他页面。 */
 @import '@/styles/desktop/home-styles.css';
+@import '@/styles/desktop/home-sections.css';
 @import '@/styles/mobile/home-mobile.css';
 </style>
