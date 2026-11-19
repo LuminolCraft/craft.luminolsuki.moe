@@ -49,6 +49,13 @@ const STEPS = [
       </header>
 
       <div class="lp-card lp-card--ticks connect__panel" data-reveal>
+        <div class="connect__pills">
+          <span class="lp-chip lp-chip--plain">v 26.3</span>
+          <span class="lp-chip lp-chip--plain">Folia hard-fork</span>
+          <span class="lp-chip lp-chip--ok">ONLINE</span>
+          <span class="lp-chip lp-chip--brand">白名单 · 需账号绑定</span>
+        </div>
+
         <ol class="connect__steps">
           <li v-for="step in STEPS" :key="step.key" class="connect__step">
             <div class="connect__card" :class="{ 'connect__card--hl': step.highlight }">
@@ -87,6 +94,14 @@ const STEPS = [
 <style scoped>
 .connect__panel {
   padding: 22px;
+}
+
+/* 面板顶部胶囊行：版本 / 分支 / 状态 / 准入，一眼交代服务器规格 */
+.connect__pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
 }
 
 .connect__steps {
