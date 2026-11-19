@@ -14,25 +14,33 @@ import { QQ_GROUP } from '@/config/home-content'
 const STEPS = [
   {
     no: '1',
-    key: 'bind',
-    title: '绑定账号',
-    desc: '网站账号与 Minecraft 账号绑定，成功后自动写入白名单。',
-    action: { label: '去绑定', to: '/settings/minecraft', external: false },
-    highlight: false,
-  },
-  {
-    no: '2',
     key: 'join group',
-    title: '进群拿地址',
-    desc: '服务器地址只在群内发放（群号 993953379），群公告自取。',
+    title: '进 QQ 群',
+    desc: '群号 993953379。进群后在群公告里找服务器地址。',
     action: { label: '进 QQ 群', to: QQ_GROUP, external: true },
     highlight: true,
   },
   {
+    no: '2',
+    key: 'get ip',
+    title: '复制服务器地址',
+    desc: '群公告里有服务器 IP，先复制下来，进服时要用。',
+    action: null,
+    highlight: false,
+  },
+  {
     no: '3',
-    key: 'connect',
-    title: '进服',
-    desc: '把群里的地址粘进客户端「多人游戏」，用已绑定的角色名进入。',
+    key: 'register',
+    title: '注册网站账号',
+    desc: '用网站账号跟进服后的绑定、封禁查询都要靠它。',
+    action: { label: '去注册', to: '/register', external: false },
+    highlight: false,
+  },
+  {
+    no: '4',
+    key: 'bind in game',
+    title: '进服绑定游戏账号',
+    desc: '用群里的地址进服，按游戏内提示完成绑定，绑定后自动加白。',
     action: null,
     highlight: false,
   },
@@ -45,7 +53,7 @@ const STEPS = [
       <header data-reveal>
         <p class="lp-kicker">onboarding / 三步</p>
         <h2 id="connect-title" class="lp-title">怎么进来</h2>
-        <p class="lp-lead">纯净生存是白名单服，没绑定账号会被防火墙直接拒绝。三步走完就能进。</p>
+        <p class="lp-lead">纯净生存是白名单服，没绑定游戏账号会被防火墙直接拒绝。四步走完就能进。</p>
       </header>
 
       <div class="lp-card lp-card--ticks connect__panel" data-reveal>
@@ -86,8 +94,8 @@ const STEPS = [
         </ol>
 
         <p class="connect__note">
-          没绑定账号会被防火墙直接拒绝。纯净生存只对白名单开放；地址不在网站公开，进 QQ 群自取。
-          想玩粘液科技 / 领地 / RPG 副本请走「综合生存」。
+          没绑定游戏账号会被防火墙直接拒绝。顺序是：进群拿地址 → 注册网站账号 → 进服按提示绑定。
+          绑定成功后自动加白；想玩粘液科技 / 领地 / RPG 副本请走「综合生存」。
         </p>
       </div>
     </div>
@@ -133,7 +141,7 @@ const STEPS = [
 
 .connect__steps {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 12px;
   list-style: none;
   padding: 0;
@@ -238,6 +246,12 @@ const STEPS = [
   line-height: 1.65;
   color: var(--text-secondary);
   opacity: 0.85;
+}
+
+@media (max-width: 1080px) {
+  .connect__steps {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 @media (max-width: 900px) {
