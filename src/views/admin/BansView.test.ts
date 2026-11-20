@@ -83,6 +83,8 @@ function routeGet() {
     if (url.startsWith('/admin/bans?')) return EMPTY_PAGE
     if (url.startsWith('/admin/minecraft')) return { items: [CANDIDATE] }
     if (url.startsWith('/admin/bans/preview')) return PREVIEW
+    // 候选头像：按角色名查皮肤，返回角色名让前端套 mc-heads
+    if (url.startsWith('/skin/')) return 'NotchSkin'
     throw new Error(`未预期的请求：${url}`)
   })
 }
@@ -132,6 +134,10 @@ describe('BansView 搜索框新建封禁', () => {
     // 候选入浮层，点选后拉影响面
     const item = wrapper.find('.candidate')
     expect(item.exists()).toBe(true)
+    // 候选头像：按名查到的 skin 套 mc-heads（尺寸 2 倍）
+    expect(item.find('img').attributes('src')).toBe(
+      'https://mc-heads.net/avatar/NotchSkin/56',
+    )
     await item.trigger('click')
     await flushPromises()
 
@@ -178,8 +184,10 @@ describe('BansView 搜索框新建封禁', () => {
     vi.advanceTimersByTime(300)
     await flushPromises()
 
-    // UUID 形态不触发角色名搜索
-    expect(urlsWhere(/\/admin\/minecraft/)).toHaveLength(0)
+    // UUID 形态不做角色名搜索，只额外查一次 uuid 精确命中（拿角色名查皮肤）
+    const uuidLookups = urlsWhere(/\/admin\/minecraft/)
+    expect(uuidLookups).toHaveLength(1)
+    expect(uuidLookups[0]).toContain(`q=${UNBOUND_UUID}`)
 
     await wrapper.find('.candidate').trigger('click')
     await flushPromises()
@@ -227,6 +235,7 @@ describe('BansView 搜索框新建封禁', () => {
           total: 0,
         }
       }
+      if (url.startsWith('/skin/')) return 'GhostPlayer'
       throw new Error(`未预期的请求：${url}`)
     })
 

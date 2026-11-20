@@ -25,7 +25,7 @@
     <section class="profile-section">
       <h2 class="profile-section-title">{{ t('settings.profile.avatarTitle') }}</h2>
       <div class="profile-avatar-row">
-        <UserAvatar :user-id="auth.me?.id" :name="auth.me?.username" :size="72" />
+        <UserAvatar :mc-name="selfMcName" :name="auth.me?.username" :size="72" />
         <p class="profile-avatar-hint">{{ t('settings.profile.avatarHint') }}</p>
       </div>
     </section>
@@ -108,6 +108,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useNexusStore } from '@/stores/nexus'
 import { useToastStore } from '@/stores/toast'
 import { useGsap } from '@/composables/useGsap'
+import { useSelfMinecraftName } from '@/composables/useSelfMinecraftName'
 import { isAppError } from '@/lib/api'
 import { normalizeBirthday, toDateInputValue } from '@/lib/birthday'
 import { checkUsernameReserved } from '@/lib/reserved-username'
@@ -118,6 +119,8 @@ const auth = useAuthStore()
 const nexus = useNexusStore()
 const toast = useToastStore()
 const { create, reduceMotion } = useGsap()
+/** 主账号 MC 名：头像按名查皮肤 */
+const selfMcName = useSelfMinecraftName()
 
 // ---------- 封禁记录（会话级缓存，变更后才会重拉） ----------
 const myBans = computed(() => nexus.myBans)

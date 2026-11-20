@@ -19,40 +19,49 @@
 
         <ul v-else class="mc-list">
           <li
-            v-for="acc in accounts"
-            :key="acc.id"
+            v-for="row in rows"
+            :key="row.acc.id"
             class="mc-item"
-            :class="{ selected: acc.id === selectedId }"
+            :class="{ selected: row.acc.id === selectedId }"
           >
-            <button type="button" class="mc-item-main" @click="selectAccount(acc.id)">
+            <button type="button" class="mc-item-main" @click="selectAccount(row.acc.id)">
               <img
+                v-if="row.url && !row.texture"
                 class="mc-skin"
-                :src="mcAvatarUrl(acc, 48)"
-                :alt="acc.name"
+                :src="row.url"
+                :alt="row.acc.name"
                 loading="lazy"
                 width="48"
                 height="48"
               />
+              <span
+                v-else-if="row.url"
+                class="mc-skin mc-skin-head"
+                :style="skinHeadStyle(row.url, 48)"
+              />
+              <span v-else class="mc-skin mc-skin-letter">
+                {{ row.acc.name.charAt(0).toUpperCase() }}
+              </span>
               <span class="mc-item-info">
-                <span class="mc-item-name">{{ acc.name }}</span>
+                <span class="mc-item-name">{{ row.acc.name }}</span>
                 <span class="mc-item-meta">
-                  <span v-if="acc.isMain" class="mc-badge main">
+                  <span v-if="row.acc.isMain" class="mc-badge main">
                     {{ t('minecraft.mainBadge') }}
                   </span>
-                  <span class="mc-badge" :class="{ verified: acc.verifiedAt }">
-                    {{ acc.verifiedAt ? t('minecraft.verified') : t('minecraft.unverified') }}
+                  <span class="mc-badge" :class="{ verified: row.acc.verifiedAt }">
+                    {{ row.acc.verifiedAt ? t('minecraft.verified') : t('minecraft.unverified') }}
                   </span>
-                  <span v-if="acc.createdAt">{{ t('minecraft.boundAt', { date: formatDate(acc.createdAt) }) }}</span>
+                  <span v-if="row.acc.createdAt">{{ t('minecraft.boundAt', { date: formatDate(row.acc.createdAt) }) }}</span>
                 </span>
               </span>
             </button>
             <button
               type="button"
               class="mc-unbind"
-              :disabled="unbindingId === acc.id"
-              @click="openUnbindDialog(acc)"
+              :disabled="unbindingId === row.acc.id"
+              @click="openUnbindDialog(row.acc)"
             >
-              {{ unbindingId === acc.id ? t('minecraft.unbinding') : t('minecraft.unbind') }}
+              {{ unbindingId === row.acc.id ? t('minecraft.unbinding') : t('minecraft.unbind') }}
             </button>
           </li>
         </ul>
@@ -257,13 +266,14 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useNexusStore } from '@/stores/nexus'
 import { useToastStore } from '@/stores/toast'
 import { useGsap } from '@/composables/useGsap'
 import { errorToResetAt, isAppError } from '@/lib/api'
-import { mcAvatarUrl } from '@/lib/minecraft'
+import { skinAvatar, skinHeadStyle } from '@/lib/minecraft'
+import { fetchSkinByName } from '@/lib/skin'
 import Shredder from '@/components/bits/Shredder.vue'
 import type { AccountLink, MinecraftAccount, MinecraftBindPending } from '@/types/nexus'
 
@@ -276,6 +286,31 @@ const { create, reduceMotion } = useGsap()
 const loading = ref(true)
 const listError = ref('')
 const accounts = computed(() => nexus.minecraftAccounts)
+
+// ---------- 头像：按角色名查皮肤（/me/minecraft 不下发 skin） ----------
+/** 角色名 → skin 串；undefined = 还没查，null = 查不到 */
+const skins = ref<Record<string, string | null>>({})
+
+watch(
+  accounts,
+  (list) => {
+    for (const acc of list) {
+      if (acc.name in skins.value) continue
+      void fetchSkinByName(acc.name).then((skin) => {
+        skins.value = { ...skins.value, [acc.name]: skin }
+      })
+    }
+  },
+  { immediate: true },
+)
+
+/** 列表渲染行：拍平成模板直接可用的原始值（url 空 = 出首字母；texture = 皮肤纹理需裁头） */
+const rows = computed(() =>
+  accounts.value.map((acc) => {
+    const avatar = skinAvatar(skins.value[acc.name], 48)
+    return { acc, url: avatar?.url ?? '', texture: avatar?.texture ?? false }
+  }),
+)
 
 // ---------- 绑定（仅 Java；只输名字，uuid 由插件核验时上报） ----------
 /** Minecraft 正版玩家名规则：3-16 位字母/数字/下划线（区分大小写原样提交） */
@@ -805,6 +840,22 @@ onMounted(async () => {
   image-rendering: pixelated;
   flex-shrink: 0;
   background: color-mix(in srgb, var(--primary-color) 10%, transparent);
+}
+
+/* 皮肤纹理裁出的 2D 头像（帽檐 + 脸两层背景，样式由 skinHeadStyle 内联给出） */
+.mc-skin-head {
+  display: block;
+}
+
+/* 查不到皮肤时的首字母占位（同尺寸，避免行高与动效位移） */
+.mc-skin-letter {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--primary-color);
+  user-select: none;
 }
 
 .mc-item-info {
