@@ -11,44 +11,26 @@
 -->
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { contourLayers } from '@/lib/contour'
+import WorldOverlay from '@/components/home/sections/WorldOverlay.vue'
 
-interface Contour {
-  d: string
-  weight: number
-  opacity: number
-  width: number
+/** 与全屏地图共用同一组路径：点开就是这张图放大 */
+const LAYERS = contourLayers()
+
+const worldOpen = ref(false)
+const origin = ref<{ x: number; y: number } | null>(null)
+
+function openWorld(e: MouseEvent) {
+  // 键盘触发时 clientX/Y 为 0，用图形中心作为扩散起点
+  const r = (e.currentTarget as HTMLElement).getBoundingClientRect()
+  origin.value =
+    e.clientX || e.clientY
+      ? { x: e.clientX, y: e.clientY }
+      : { x: r.left + r.width / 2, y: r.top + r.height / 2 }
+  worldOpen.value = true
 }
 
-/** 椭圆 + 多频正弦扰动，生成闭合等高线 */
-function contour(seed: number, rx: number, ry: number, wobble: number): string {
-  const steps = 96
-  let d = ''
-  for (let i = 0; i <= steps; i++) {
-    const t = (i / steps) * Math.PI * 2
-    const r =
-      1 +
-      wobble * Math.sin(3 * t + seed) +
-      wobble * 0.55 * Math.sin(5 * t - seed * 1.7) +
-      wobble * 0.3 * Math.sin(7 * t + seed * 0.6)
-    const x = 500 + Math.cos(t) * rx * r
-    const y = 240 + Math.sin(t) * ry * r
-    d += (i === 0 ? 'M' : 'L') + x.toFixed(1) + ' ' + y.toFixed(1)
-  }
-  return d + 'Z'
-}
-
-const LAYERS: Contour[] = Array.from({ length: 7 }, (_, i) => {
-  const k = i / 6 // 0 = 最外圈
-  const seed = i * 0.7 + 0.4
-  return {
-    d: contour(seed, 400 - k * 240, 200 - k * 118, 0.11 - k * 0.03),
-    weight: 26 - i * 3, // 视差权重：外圈动得多
-    opacity: 0.16 + k * 0.5,
-    width: 0.8 + k * 0.7,
-  }
-})
-
-const stageRef = ref<HTMLDivElement | null>(null)
+const stageRef = ref<HTMLButtonElement | null>(null)
 const wrapRef = ref<HTMLElement | null>(null)
 const shown = ref(false)
 let raf = 0
@@ -126,7 +108,14 @@ onBeforeUnmount(() => {
         </dl>
       </div>
 
-      <div ref="stageRef" class="ct__stage" :class="{ 'is-shown': shown }">
+      <button
+        ref="stageRef"
+        type="button"
+        class="ct__stage"
+        :class="{ 'is-shown': shown }"
+        aria-label="展开完整世界地图"
+        @click="openWorld"
+      >
         <svg viewBox="0 0 1000 480" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
           <g
             v-for="(l, i) in LAYERS"
@@ -148,8 +137,14 @@ onBeforeUnmount(() => {
         <span class="ct__dot ct__dot--a" />
         <span class="ct__dot ct__dot--b" />
         <span class="ct__dot ct__dot--c" />
-      </div>
+        <span class="ct__expand" aria-hidden="true">
+          展开完整地图
+          <svg viewBox="0 0 14 14"><path d="M3 11L11 3M5 3h6v6" /></svg>
+        </span>
+      </button>
     </div>
+
+    <WorldOverlay :open="worldOpen" :origin="origin" @close="worldOpen = false" />
   </section>
 </template>
 
@@ -215,10 +210,62 @@ onBeforeUnmount(() => {
   font-variant-numeric: tabular-nums;
 }
 
-/* —— 图形区 —— */
+/* —— 图形区：整块可点，点开是全屏地图 —— */
 .ct__stage {
   position: relative;
+  display: block;
+  width: 100%;
   aspect-ratio: 1000 / 480;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: zoom-in;
+  border-radius: 8px;
+  -webkit-tap-highlight-color: transparent;
+}
+.ct__stage:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 10px;
+}
+
+/* 展开提示：默认不占视觉，悬停/聚焦才出现（不做药丸底） */
+.ct__expand {
+  position: absolute;
+  right: 4px;
+  bottom: 2px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  color: var(--primary-color);
+  opacity: 0;
+  transform: translateY(4px);
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
+  pointer-events: none;
+}
+.ct__expand svg {
+  width: 11px;
+  height: 11px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+}
+.ct__stage:hover .ct__expand,
+.ct__stage:focus-visible .ct__expand {
+  opacity: 1;
+  transform: none;
+}
+.ct__stage:hover .ct__layer,
+.ct__stage:focus-visible .ct__layer {
+  transition: filter 0.3s ease;
+  filter: brightness(1.14);
 }
 .ct__stage svg {
   width: 100%;
