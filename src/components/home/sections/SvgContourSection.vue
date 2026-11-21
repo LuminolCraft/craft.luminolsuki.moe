@@ -114,10 +114,10 @@ onBeforeUnmount(() => {
     <div class="ct__inner">
       <div class="ct__copy">
         <p class="ct__kicker">world / 地形</p>
-        <h2 class="ct__title">一块地，被挖了三年</h2>
+        <h2 class="ct__title">一张三年未重置的地图</h2>
         <p class="ct__lead">
-          纯净生存的地图没有重置过。出生点往北是运河，往东是红石试验田，往南是玩家自己拉起来的高铁。
-          这些线是等高线，也是这三年里被走过最多的地方。
+          出生点以北是运河，以东为红石试验田，以南是玩家自行修筑的高铁。
+          图中所绘为等高线，亦为三年来行迹最密之处。
         </p>
         <dl class="ct__stats">
           <div><dt>已开服</dt><dd>26 个月</dd></div>
