@@ -118,7 +118,8 @@ function themeToggle(e: MouseEvent) {
 
   // 动画进行中再次点击 → 单次切换方向（避免双重反转相互抵消）
   if (animatingRef.value && revealTween.value) {
-    revealTween.value.reversed() ? revealTween.value.play() : revealTween.value.reverse()
+    if (revealTween.value.reversed()) revealTween.value.play()
+    else revealTween.value.reverse()
     return
   }
 
@@ -147,7 +148,17 @@ function themeToggle(e: MouseEvent) {
   const encodedSvg = `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`
 
   // 主路径：View Transitions API
-  const startViewTransition: typeof document.startViewTransition | undefined = (document as any).startViewTransition
+  // View Transitions 还没进标准 lib.dom，用局部类型声明代替 any
+  type ViewTransitionLike = {
+    finished: Promise<void>
+    ready: Promise<void>
+    updateCallbackDone: Promise<void>
+    skipTransition: () => void
+  }
+  type ViewTransitionDoc = Document & {
+    startViewTransition?: (cb: () => void) => ViewTransitionLike
+  }
+  const startViewTransition = (document as ViewTransitionDoc).startViewTransition
   if (startViewTransition) {
     animatingRef.value = true
 
