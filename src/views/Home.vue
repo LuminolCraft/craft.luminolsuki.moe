@@ -16,9 +16,11 @@ import StatusSection from '@/components/home/sections/StatusSection.vue'
 import ConnectFlowCanvas from '@/components/home/sections/ConnectFlowCanvas.vue'
 import ShowcaseSection from '@/components/home/sections/ShowcaseSection.vue'
 import GallerySection from '@/components/home/sections/GallerySection.vue'
+import SvgContourSection from '@/components/home/sections/SvgContourSection.vue'
 import CompareSection from '@/components/home/sections/CompareSection.vue'
 import BansPublicSection from '@/components/home/sections/BansPublicSection.vue'
 import TeamSection from '@/components/home/sections/TeamSection.vue'
+import CanvasNetworkSection from '@/components/home/sections/CanvasNetworkSection.vue'
 import CtaSection from '@/components/home/sections/CtaSection.vue'
 import ScrollExpand from '@/components/bits/ScrollExpand.vue'
 import { shotAt } from '@/config/home-content'
@@ -43,8 +45,10 @@ onMounted(() => {
     <BansPublicSection />
     <ShowcaseSection />
     <GallerySection />
+    <SvgContourSection />
     <CompareSection />
     <TeamSection />
+    <CanvasNetworkSection />
     <section class="world-expand" aria-label="我们的世界">
       <ScrollExpand
         :src="shotAt(3)"
