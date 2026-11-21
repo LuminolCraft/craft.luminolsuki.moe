@@ -74,7 +74,7 @@ const { lang, toggleLang, t } = useI18n()
 const containerRef = ref<HTMLDivElement | null>(null)
 const { create, reduceMotion } = useGsap({ scope: containerRef })
 
-const isDark = ref(false)
+const isDark = ref(true)
 const overlayRef = ref<HTMLDivElement | null>(null)
 const appliedDark = ref(false)
 
@@ -90,7 +90,8 @@ function getCookie(name: string): string | null {
   return match ? decodeURIComponent(match[1] ?? '') : null
 }
 const stored = getCookie('theme')
-if (stored === 'dark') {
+// 默认深色：没存过、或存的是 dark 都走深色；只有显式选过 light 才切浅色
+if (stored !== 'light') {
   isDark.value = true
   appliedDark.value = true
 }

@@ -5,6 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="referrer" content="no-referrer" />
     <meta name="color-scheme" content="dark light">
+    <!-- 默认深色：在 CSS/JS 之前定主题，避免首屏先闪浅色。用户显式选过 light 时尊重 cookie。default-dark -->
+    <script>
+      (function () {
+        var m = document.cookie.match(/(?:^|; )theme=([^;]*)/);
+        var stored = m ? decodeURIComponent(m[1]) : null;
+        var dark = stored !== 'light';
+        document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+        document.documentElement.style.colorScheme = dark ? 'dark' : 'light';
+      })();
+    </script>
     <title>LuminolCraft 服务器 - 加入我们的冒险</title>
     
     <!-- 关键字体预加载 - 提升首屏渲染速度 -->
