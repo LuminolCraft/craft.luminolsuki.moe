@@ -1,91 +1,118 @@
 /**
- * 用户头像两段式取图测试。
+ * 用户头像测试：按 MC 角色名查皮肤（GET /api/v1/skin/:name）。
  *
  * 覆盖：
- * - media 头像接口命中（`<img>` 未 error）→ 直接用后端地址，不请求来源端点；
- * - media 接口无图（204 → `<img>` error）→ 取 `/media/avatar-source/:userId`：
- *   `skin` 是 http(s) 直链就直接用，否则当 uuid / 皮肤名套 mc-heads；
- * - 来源端点 204（用户无绑定 MC 账号）→ 用户名首字母占位；
- * - 兜底地址也加载失败 → 首字母，不再发请求。
+ * - 后端 type=name/uuid → 套 mc-heads（尺寸按 2 倍生成）；
+ * - 后端 type=url → 皮肤纹理裁「头 + 帽檐」，不渲染整张纹理；
+ * - 查不到（未绑定 / 网络异常）→ 首字母占位，不回退 mc-heads；
+ * - 没传 mcName → 不请求、直接首字母；
+ * - 图片 / 纹理加载失败 → 首字母占位。
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
+
+const { envelopeMock } = vi.hoisted(() => ({ envelopeMock: vi.fn() }))
+
+vi.mock('@/lib/api', () => ({ apiGetEnvelope: envelopeMock }))
+
+import { clearSkinCache } from '@/lib/skin'
 import UserAvatar from './UserAvatar.vue'
-import { API_BASE_URL } from '@/lib/api-base'
 
-/** 构造来源端点的 JSON 响应（统一信封）。 */
-function sourceResponse(data: Record<string, unknown>): Response {
-  return new Response(JSON.stringify({ success: true, data, requestId: 'req_test' }), {
-    status: 200,
-    headers: { 'content-type': 'application/json' },
-  })
-}
+afterEach(() => {
+  envelopeMock.mockReset()
+  clearSkinCache()
+  vi.unstubAllGlobals()
+})
 
-describe('UserAvatar 两段式取图', () => {
-  afterEach(() => {
-    vi.restoreAllMocks()
-  })
+describe('UserAvatar 按名查皮肤', () => {
+  it('type=name → mc-heads 头部图（尺寸 2 倍）', async () => {
+    envelopeMock.mockResolvedValue({ data: 'Notch', meta: { type: 'name' } })
 
-  it('media 命中时直接用后端头像，不请求来源端点', () => {
-    const fetchSpy = vi.spyOn(globalThis, 'fetch')
-    const wrapper = mount(UserAvatar, { props: { userId: 'u-1', name: 'Alice' } })
-
-    expect(wrapper.find('img').attributes('src')).toBe(`${API_BASE_URL}/api/v1/media/avatar/u-1`)
-    expect(fetchSpy).not.toHaveBeenCalled()
-  })
-
-  it('media 无图时，skin 为直链则直接使用该地址', async () => {
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-      sourceResponse({ uuid: 'uuid-1', name: 'Alice', skin: 'https://cdn.test/skin.png' }),
-    )
-    const wrapper = mount(UserAvatar, { props: { userId: 'u-1', name: 'Alice', size: 40 } })
-
-    await wrapper.find('img').trigger('error')
+    const wrapper = mount(UserAvatar, {
+      props: { mcName: 'Alice', name: 'Alice', size: 40 },
+    })
     await flushPromises()
 
-    expect(wrapper.find('img').attributes('src')).toBe('https://cdn.test/skin.png')
+    expect(envelopeMock).toHaveBeenCalledWith('/skin/Alice')
+    expect(wrapper.find('img').attributes('src')).toBe('https://mc-heads.net/avatar/Notch/80')
   })
 
-  it('skin 为 uuid 时套 mc-heads，尺寸按 2 倍', async () => {
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-      sourceResponse({ uuid: 'uuid-1', name: 'Alice', skin: 'skin-uuid-2' }),
-    )
-    const wrapper = mount(UserAvatar, { props: { userId: 'u-1', name: 'Alice', size: 40 } })
+  it('type=url → 裁头（帽檐 + 脸两层），不渲染原图', async () => {
+    envelopeMock.mockResolvedValue({
+      data: 'https://cdn.test/skin.png',
+      meta: { type: 'url' },
+    })
 
-    await wrapper.find('img').trigger('error')
+    const wrapper = mount(UserAvatar, {
+      props: { mcName: 'Bob', name: 'Bob', size: 40 },
+    })
     await flushPromises()
 
-    expect(wrapper.find('img').attributes('src')).toBe(
-      'https://mc-heads.net/avatar/skin-uuid-2/80',
-    )
+    expect(wrapper.find('img').exists()).toBe(false)
+    const head = wrapper.find('.user-avatar-head')
+    expect(head.exists()).toBe(true)
+    const style = head.attributes('style') ?? ''
+    expect(style).toContain('https://cdn.test/skin.png')
+    // jsdom 会把 `320px auto` 归一成 `320px`（单值时高度默认 auto，等价）
+    expect(style).toContain('background-size: 320px')
+    expect(style).toContain('-200px -40px')
   })
 
-  it('来源端点 204（无绑定账号）→ 首字母占位', async () => {
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(null, { status: 204 }))
-    const wrapper = mount(UserAvatar, { props: { userId: 'u-1', name: 'Alice' } })
+  it('查不到 → 首字母占位', async () => {
+    envelopeMock.mockRejectedValue({ code: 'MINECRAFT_ACCOUNT_NOT_FOUND' })
+
+    const wrapper = mount(UserAvatar, {
+      props: { mcName: 'Carol', name: 'Carol', size: 40 },
+    })
+    await flushPromises()
+
+    expect(wrapper.find('img').exists()).toBe(false)
+    expect(wrapper.text()).toBe('C')
+  })
+
+  it('没传 mcName → 不请求，直接首字母', async () => {
+    const wrapper = mount(UserAvatar, { props: { name: 'Dave', size: 40 } })
+    await flushPromises()
+
+    expect(envelopeMock).not.toHaveBeenCalled()
+    expect(wrapper.find('img').exists()).toBe(false)
+    expect(wrapper.text()).toBe('D')
+  })
+
+  it('图片加载失败 → 首字母占位', async () => {
+    envelopeMock.mockResolvedValue({ data: 'Notch', meta: { type: 'name' } })
+
+    const wrapper = mount(UserAvatar, {
+      props: { mcName: 'Eve', name: 'Eve', size: 40 },
+    })
+    await flushPromises()
 
     await wrapper.find('img').trigger('error')
     await flushPromises()
 
     expect(wrapper.find('img').exists()).toBe(false)
-    expect(wrapper.text()).toBe('A')
+    expect(wrapper.text()).toBe('E')
   })
 
-  it('兜底地址也失败 → 首字母，且不再继续发请求', async () => {
-    const fetchSpy = vi
-      .spyOn(globalThis, 'fetch')
-      .mockResolvedValue(sourceResponse({ uuid: 'uuid-1', name: 'Alice', skin: 'skin-uuid-2' }))
-    const wrapper = mount(UserAvatar, { props: { userId: 'u-1', name: 'Alice' } })
+  it('纹理加载失败 → 首字母占位（背景图不触发 error，靠预探测）', async () => {
+    envelopeMock.mockResolvedValue({
+      data: 'https://cdn.test/broken.png',
+      meta: { type: 'url' },
+    })
+    class FailingImage {
+      onerror: (() => void) | null = null
+      set src(_value: string) {
+        this.onerror?.()
+      }
+    }
+    vi.stubGlobal('Image', FailingImage)
 
-    await wrapper.find('img').trigger('error')
+    const wrapper = mount(UserAvatar, {
+      props: { mcName: 'Frank', name: 'Frank', size: 40 },
+    })
     await flushPromises()
-    expect(fetchSpy).toHaveBeenCalledTimes(1)
 
-    await wrapper.find('img').trigger('error')
-    await flushPromises()
-
-    expect(wrapper.find('img').exists()).toBe(false)
-    expect(wrapper.text()).toBe('A')
-    expect(fetchSpy).toHaveBeenCalledTimes(1)
+    expect(wrapper.find('.user-avatar-head').exists()).toBe(false)
+    expect(wrapper.text()).toBe('F')
   })
 })

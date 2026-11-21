@@ -10,11 +10,26 @@ import { API_BASE_URL } from '@/lib/api-base'
  * - 响应拦截器自动拆统一信封：成功返回 data，失败抛结构化 AppError（按 code 分支）
  * - 注意：/api/auth/*（Better Auth 原生格式）走 src/lib/auth-client.ts，不得用本客户端解析
  */
-export const apiClient = axios.create({
+const CLIENT_CONFIG = {
   baseURL: `${API_BASE_URL}/api/v1`,
   withCredentials: true,
   timeout: 15000,
-})
+}
+
+/** 统一错误归一：信封里的 error 优先，其余（无响应/网络错误）按 NETWORK_ERROR 兜底。 */
+function normalizeApiError(error: AxiosError<ErrorEnvelope>): AppError {
+  const envelope = error.response?.data
+  return envelope?.error
+    ? {
+        code: envelope.error.code,
+        message: envelope.error.message,
+        details: envelope.error.details,
+        requestId: envelope.requestId,
+      }
+    : { code: 'NETWORK_ERROR', message: error.message }
+}
+
+export const apiClient = axios.create(CLIENT_CONFIG)
 
 apiClient.interceptors.response.use(
   (response) => {
@@ -28,22 +43,31 @@ apiClient.interceptors.response.use(
     // 二进制/流式响应：直接返回原始数据
     return response.data as AxiosResponse
   },
-  (error: AxiosError<ErrorEnvelope>) => {
-    const envelope = error.response?.data
-
-    const appError: AppError = envelope?.error
-      ? {
-          code: envelope.error.code,
-          message: envelope.error.message,
-          details: envelope.error.details,
-          requestId: envelope.requestId,
-        }
-      : // 无响应/网络错误兜底
-        { code: 'NETWORK_ERROR', message: error.message }
-
-    return Promise.reject(appError)
-  },
+  (error: AxiosError<ErrorEnvelope>) => Promise.reject(normalizeApiError(error)),
 )
+
+/**
+ * 只做错误归一、**不拆信封**的客户端：给需要读取信封顶层字段的端点用
+ * （当前仅 `GET /skin/:name` 的 `type`）。
+ */
+const envelopeClient = axios.create(CLIENT_CONFIG)
+
+envelopeClient.interceptors.response.use(
+  (response) => response,
+  (error: AxiosError<ErrorEnvelope>) => Promise.reject(normalizeApiError(error)),
+)
+
+/**
+ * GET 并保留统一信封：返回 `data` 与整个信封（`meta`，含 `type` 等顶层字段）。
+ * 仅用于少数需要 meta 的端点；其余一律走 `api.*`。
+ */
+export async function apiGetEnvelope<T>(
+  url: string,
+): Promise<{ data: T; meta: Record<string, unknown> }> {
+  const response = await envelopeClient.get<Record<string, unknown>>(url)
+  const body = response.data ?? {}
+  return { data: body.data as T, meta: body }
+}
 
 /** multipart 上传附加选项 */
 export interface UploadOptions {

@@ -12,7 +12,7 @@
         <!-- 登录态用户头部区：对齐管理后台侧边栏 head（用户名 + 账号与安全，置于导航链接上方） -->
         <div v-if="auth.isAuthenticated" class="side-nav-user-head">
           <router-link to="/settings/profile" class="side-nav-user">
-            <UserAvatar :user-id="auth.me?.id" :name="auth.me?.username" :size="32" />
+            <UserAvatar :mc-name="selfMcName" :name="auth.me?.username" :size="32" />
             <span class="side-nav-user-name">{{ auth.me?.username }}</span>
           </router-link>
           <button type="button" class="side-nav-security" @click="router.push('/settings/security')">
@@ -121,7 +121,7 @@
             :title="auth.me?.username"
             :aria-label="auth.me?.username"
           >
-            <UserAvatar :user-id="auth.me?.id" :name="auth.me?.username" :size="24" />
+            <UserAvatar :mc-name="selfMcName" :name="auth.me?.username" :size="24" />
             <span class="nav-user-name">{{ auth.me?.username }}</span>
           </router-link>
           <button
@@ -243,12 +243,15 @@ import { appConfig } from '../config/app-config'
 import { useGsap } from '@/composables/useGsap'
 import { useAuthStore } from '@/stores/auth'
 import { useAuthorizationStore } from '@/stores/authorization'
+import { useSelfMinecraftName } from '@/composables/useSelfMinecraftName'
 
 const { t } = useI18n()
 const router = useRouter()
 const route = useRoute()
 const auth = useAuthStore()
 const authz = useAuthorizationStore()
+/** 主账号 MC 名：头像按名查皮肤（站点用户名允许中文，不能当 MC 名用） */
+const selfMcName = useSelfMinecraftName()
 
 const loggingOut = ref(false)
 

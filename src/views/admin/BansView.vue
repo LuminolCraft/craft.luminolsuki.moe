@@ -38,25 +38,53 @@
 
       <div v-if="dropOpen" class="search-drop">
         <button
-          v-for="c in candidates"
-          :key="c.id ?? c.uuid"
+          v-for="row in candRows"
+          :key="row.key"
           type="button"
           class="candidate"
-          @click="selectCandidate(c)"
+          @click="selectCandidate(row.c)"
         >
-          <span class="cand-avatar">{{ initialsOf(c.name) }}</span>
-          <span class="cand-main">
-            <span class="cand-name">{{ c.name }}</span>
-            <span class="cand-uuid">{{ c.uuid }}</span>
+          <span class="cand-avatar">
+            <img
+              v-if="row.url && !row.texture && !candAvatarFailed[row.key]"
+              :src="row.url"
+              :alt="row.c.name"
+              loading="lazy"
+              @error="candAvatarFailed[row.key] = true"
+            />
+            <span
+              v-else-if="row.url"
+              class="cand-avatar-head"
+              :style="skinHeadStyle(row.url, 27)"
+            />
+            <template v-else>{{ initialsOf(row.c.name) }}</template>
           </span>
-          <span class="cand-owner">{{ c.username || t('admin.bans.searchUnbound') }}</span>
-          <span v-if="c.activeBan" class="status-badge" data-status="active">
+          <span class="cand-main">
+            <span class="cand-name">{{ row.c.name }}</span>
+            <span class="cand-uuid">{{ row.c.uuid }}</span>
+          </span>
+          <span class="cand-owner">{{ row.c.username || t('admin.bans.searchUnbound') }}</span>
+          <span v-if="row.c.activeBan" class="status-badge" data-status="active">
             {{ t('admin.bans.searchBanned') }}
           </span>
         </button>
 
         <button v-if="uuidInput" type="button" class="candidate" @click="selectDirectUuid">
-          <span class="cand-avatar dim">#</span>
+          <span class="cand-avatar dim">
+            <img
+              v-if="uuidAvatarUrl && !uuidAvatarTexture && !uuidAvatarFailed"
+              :src="uuidAvatarUrl"
+              alt=""
+              loading="lazy"
+              @error="uuidAvatarFailed = true"
+            />
+            <span
+              v-else-if="uuidAvatarUrl && uuidAvatarTexture"
+              class="cand-avatar-head"
+              :style="skinHeadStyle(uuidAvatarUrl, 27)"
+            />
+            <template v-else>#</template>
+          </span>
           <span class="cand-main">
             <span class="cand-name">{{ t('admin.bans.directUuid') }}</span>
             <span class="cand-uuid">{{ uuidInput }}</span>
@@ -386,6 +414,9 @@ import { ProgressIndicator, ProgressRoot, SwitchRoot, SwitchThumb } from 'reka-u
 import HoldButton from '@/components/bits/HoldButton.vue'
 import { api, isAppError } from '@/lib/api'
 import { normalizePaged } from '@/lib/paged'
+import { skinAvatar, skinHeadStyle } from '@/lib/minecraft'
+import type { SkinAvatar } from '@/lib/minecraft'
+import { fetchSkinByName, type SkinLookup } from '@/lib/skin'
 import { API_BASE_URL } from '@/lib/api-base'
 import type {
   Ban,
@@ -528,6 +559,12 @@ const searchInputEl = ref<HTMLInputElement | null>(null)
 const dropOpen = ref(false)
 const searching = ref(false)
 const candidates = ref<BanTargetCandidate[]>([])
+/** 候选角色名 → 查询结果；只存成功，失败不落表（再次搜索会重试） */
+const candSkins = ref<Record<string, SkinLookup>>({})
+const candAvatarFailed = ref<Record<string, boolean>>({})
+/** 直接按 UUID 封时的解析名（用于按名查皮肤；查不到为空） */
+const uuidName = ref('')
+const uuidAvatarFailed = ref(false)
 
 const selected = ref<BanTargetCandidate | null>(null)
 const directUuid = ref('')
@@ -590,6 +627,47 @@ function initialsOf(name: string): string {
   return name.slice(0, 2).toUpperCase()
 }
 
+/** 候选行头像描述（按名查到的 skin 再套三态规则；查不到则为 null） */
+const candAvatars = computed(() => {
+  const map: Record<string, SkinAvatar> = {}
+  for (const c of candidates.value) {
+    const entry = candSkins.value[c.name]
+    // 显示尺寸 27px（.cand-avatar 1.7rem），mc-heads 取 2 倍即 54
+    const avatar = entry ? skinAvatar(entry.skin, entry.type, 54) : null
+    if (avatar) map[c.id ?? c.uuid] = avatar
+  }
+  return map
+})
+
+/** 候选行：拍平成模板直接可用的原始值 */
+const candRows = computed(() =>
+  candidates.value.map((c) => {
+    const key = c.id ?? c.uuid
+    const avatar = candAvatars.value[key] ?? null
+    return { c, key, url: avatar?.url ?? '', texture: avatar?.texture ?? false }
+  }),
+)
+
+/** 「直接按 UUID」行头像：先按 uuid 解析出角色名，再按名查皮肤 */
+const uuidAvatar = computed(() => {
+  const entry = candSkins.value[uuidName.value]
+  return entry ? skinAvatar(entry.skin, entry.type, 54) : null
+})
+const uuidAvatarUrl = computed(() => uuidAvatar.value?.url ?? '')
+const uuidAvatarTexture = computed(() => uuidAvatar.value?.texture ?? false)
+
+/** 并发按名查皮肤并写入本地映射（已成功的跳过；失败不落表，下次搜索重试） */
+async function loadSkins(names: string[]) {
+  await Promise.all(
+    names.map(async (name) => {
+      if (name in candSkins.value) return
+      const lookup = await fetchSkinByName(name)
+      if (!lookup) return
+      candSkins.value = { ...candSkins.value, [name]: lookup }
+    }),
+  )
+}
+
 let searchTimer: number | undefined
 
 // 输入即搜（防抖）：同时刷新「候选账号浮层」与「下方封禁列表」
@@ -607,7 +685,27 @@ watch(query, () => {
   const isUuid = UUID_RE.test(q)
   if (q === '' || isUuid) {
     candidates.value = []
+    uuidName.value = ''
+    uuidAvatarFailed.value = false
     searching.value = false
+    if (isUuid) {
+      // 后端对 uuid 精确命中（且 uuid 不触发 Mojang 兜底）：拿到角色名才能按名查皮肤。
+      // 快速连续输入时先发后到会覆盖新结果，故响应回来先比对当前输入。
+      const requested = q
+      void api
+        .get<{ items: BanTargetCandidate[] }>(`/admin/minecraft?q=${encodeURIComponent(q)}`)
+        .then((data) => {
+          if (query.value.trim() !== requested) return
+          const hit = (data.items ?? []).find(
+            (item) => item.uuid.toLowerCase() === q.toLowerCase(),
+          )
+          uuidName.value = hit?.name ?? ''
+          if (hit?.name) void loadSkins([hit.name])
+        })
+        .catch(() => {
+          if (query.value.trim() === requested) uuidName.value = ''
+        })
+    }
     void go(1)
     return
   }
@@ -623,12 +721,16 @@ async function runSearch(q: string) {
     const data = await api.get<{ items: BanTargetCandidate[] }>(
       `/admin/minecraft?q=${encodeURIComponent(q)}`,
     )
+    // 过期响应：输入已变，丢弃（防先发后到覆盖新候选）
+    if (query.value.trim() !== q) return
     candidates.value = data.items ?? []
+    void loadSkins(candidates.value.map((item) => item.name))
   } catch (e) {
+    if (query.value.trim() !== q) return
     candidates.value = []
     pageError.value = errorText(e)
   } finally {
-    searching.value = false
+    if (query.value.trim() === q) searching.value = false
   }
 }
 
@@ -1309,6 +1411,21 @@ onMounted(async () => {
   font-weight: 600;
   color: var(--primary-color);
   background: color-mix(in srgb, var(--primary-color) 16%, transparent);
+}
+
+.cand-avatar img {
+  width: 100%;
+  height: 100%;
+  border-radius: 6px;
+  object-fit: cover;
+  image-rendering: pixelated;
+}
+
+/* 皮肤纹理裁出的 2D 头像（帽檐 + 脸两层背景，样式由 skinHeadStyle 内联给出） */
+.cand-avatar-head {
+  width: 100%;
+  height: 100%;
+  border-radius: 6px;
 }
 
 .cand-avatar.dim {
