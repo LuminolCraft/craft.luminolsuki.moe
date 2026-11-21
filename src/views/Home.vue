@@ -44,24 +44,24 @@ onMounted(() => {
     <ConnectFlowCanvas />
     <SectionBreak
       motif="scale"
-      text="地址拿到了。下面这段是处理记录 —— 谁被处理、为什么、到什么时候解。"
+      text="进入之前先说清规矩：哪些行为会被处理，处理结果又如何公示。"
     />
     <BansPublicSection />
     <SectionBreak
       motif="dots"
-      text="处理记录到此为止。剩下的人，都在里面盖东西。"
+      text="处理记录止于此。余下的人，仍在其间建造。"
     />
     <ShowcaseSection />
     <GallerySection />
     <SectionBreak
       motif="contour"
-      text="上面这些截图，都拍自同一张没重置过的地图。"
+      text="以上截图均取自同一张地图 —— 自开服起，它未曾重置。"
     />
     <SvgContourSection />
     <SvgTimelineSection />
     <SectionBreak
       motif="wave"
-      text="十四个月之后，两张图从同一台机器上分开 —— 差别不在硬件。"
+      text="十四个月后，两张图从同一台机器上分出两条路，差别并不在硬件。"
     />
     <CompareSection />
     <TeamSection />
