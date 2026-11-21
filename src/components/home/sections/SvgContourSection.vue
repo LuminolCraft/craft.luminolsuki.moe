@@ -262,6 +262,14 @@ onBeforeUnmount(() => {
   opacity: 1;
   transform: none;
 }
+/* 触屏没有 hover，提示要常显，否则整块图看着不可点 */
+@media (hover: none) {
+  .ct__expand {
+    opacity: 0.8;
+    transform: none;
+  }
+}
+
 .ct__stage:hover .ct__layer,
 .ct__stage:focus-visible .ct__layer {
   transition: filter 0.3s ease;
