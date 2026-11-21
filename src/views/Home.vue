@@ -20,6 +20,7 @@ import SvgContourSection from '@/components/home/sections/SvgContourSection.vue'
 import SvgTimelineSection from '@/components/home/sections/SvgTimelineSection.vue'
 import CompareSection from '@/components/home/sections/CompareSection.vue'
 import BansPublicSection from '@/components/home/sections/BansPublicSection.vue'
+import SectionBreak from '@/components/home/sections/SectionBreak.vue'
 import TeamSection from '@/components/home/sections/TeamSection.vue'
 import CtaSection from '@/components/home/sections/CtaSection.vue'
 import ScrollExpand from '@/components/bits/ScrollExpand.vue'
@@ -41,11 +42,27 @@ onMounted(() => {
     <StatusSection />
     <!-- 看完在线状态，下一个问题就是「我怎么进」 -->
     <ConnectFlowCanvas />
+    <SectionBreak
+      motif="scale"
+      text="地址拿到了。下面这段是处理记录 —— 谁被处理、为什么、到什么时候解。"
+    />
     <BansPublicSection />
+    <SectionBreak
+      motif="dots"
+      text="处理记录到此为止。剩下的人，都在里面盖东西。"
+    />
     <ShowcaseSection />
     <GallerySection />
+    <SectionBreak
+      motif="contour"
+      text="上面这些截图，都拍自同一张没重置过的地图。"
+    />
     <SvgContourSection />
     <SvgTimelineSection />
+    <SectionBreak
+      motif="wave"
+      text="十四个月之后，两张图从同一台机器上分开 —— 差别不在硬件。"
+    />
     <CompareSection />
     <TeamSection />
     <section class="world-expand" aria-label="我们的世界">
