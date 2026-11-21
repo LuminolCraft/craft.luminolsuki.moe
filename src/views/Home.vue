@@ -13,7 +13,7 @@ import { onMounted, ref } from 'vue'
 import { useHomeReveal } from '@/composables/useHomeAnimations'
 import HeroSection from '@/components/home/sections/HeroSection.vue'
 import StatusSection from '@/components/home/sections/StatusSection.vue'
-import ConnectFlowSection from '@/components/home/sections/ConnectFlowSection.vue'
+import ConnectFlowCanvas from '@/components/home/sections/ConnectFlowCanvas.vue'
 import ShowcaseSection from '@/components/home/sections/ShowcaseSection.vue'
 import GallerySection from '@/components/home/sections/GallerySection.vue'
 import CompareSection from '@/components/home/sections/CompareSection.vue'
@@ -38,7 +38,7 @@ onMounted(() => {
     <HeroSection />
     <StatusSection />
     <!-- 看完在线状态，下一个问题就是「我怎么进」 -->
-    <ConnectFlowSection />
+    <ConnectFlowCanvas />
     <!-- 进服流程之后立刻给透明度：违规怎么处理、结果公开可查（脱敏） -->
     <BansPublicSection />
     <ShowcaseSection />
