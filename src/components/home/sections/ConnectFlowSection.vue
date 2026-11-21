@@ -60,10 +60,6 @@ const STEPS = [
         <div class="connect__meta">
           <span>v 26.3</span>
           <span class="connect__dot">·</span>
-          <span>Folia hard-fork</span>
-          <span class="connect__dot">·</span>
-          <span>白名单准入</span>
-          <span class="connect__dot">·</span>
           <span class="connect__live"><i aria-hidden="true" />ONLINE</span>
         </div>
 
