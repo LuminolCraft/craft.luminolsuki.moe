@@ -21,6 +21,7 @@ import SvgTimelineSection from '@/components/home/sections/SvgTimelineSection.vu
 import ChapterBridge from '@/components/home/sections/ChapterBridge.vue'
 import CompareSection from '@/components/home/sections/CompareSection.vue'
 import BansPublicSection from '@/components/home/sections/BansPublicSection.vue'
+import AftermathBridge from '@/components/home/sections/AftermathBridge.vue'
 import TeamSection from '@/components/home/sections/TeamSection.vue'
 import CtaSection from '@/components/home/sections/CtaSection.vue'
 import ScrollExpand from '@/components/bits/ScrollExpand.vue'
@@ -48,6 +49,8 @@ onMounted(() => {
       text="地址拿到了，先说清楚规矩：进来之后什么会被处理，处理结果又怎么公示。"
     />
     <BansPublicSection />
+    <!-- 处理记录 → 正常玩家：用点阵表达比例，再进世界展示 -->
+    <AftermathBridge />
     <ShowcaseSection />
     <GallerySection />
     <ChapterBridge
