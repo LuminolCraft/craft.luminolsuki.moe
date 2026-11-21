@@ -1,4 +1,3 @@
-<!-- eslint-disable vue/multi-word-component-names -->
 <template>
     <nav ref="navRef" :class="{ 'navbar-fixed': appConfig.navbarFixed }">
       <input type="checkbox" id="burger" class="burger-input" ref="burgerInput" @change="onBurgerChange">

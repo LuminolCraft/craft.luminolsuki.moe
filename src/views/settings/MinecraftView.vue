@@ -273,7 +273,7 @@ import { useToastStore } from '@/stores/toast'
 import { useGsap } from '@/composables/useGsap'
 import { errorToResetAt, isAppError } from '@/lib/api'
 import { skinAvatar, skinHeadStyle } from '@/lib/minecraft'
-import { fetchSkinByName } from '@/lib/skin'
+import { fetchSkinByName, type SkinLookup } from '@/lib/skin'
 import Shredder from '@/components/bits/Shredder.vue'
 import type { AccountLink, MinecraftAccount, MinecraftBindPending } from '@/types/nexus'
 
@@ -288,16 +288,17 @@ const listError = ref('')
 const accounts = computed(() => nexus.minecraftAccounts)
 
 // ---------- 头像：按角色名查皮肤（/me/minecraft 不下发 skin） ----------
-/** 角色名 → skin 串；undefined = 还没查，null = 查不到 */
-const skins = ref<Record<string, string | null>>({})
+/** 角色名 → 查询结果；只存成功，失败不落表（列表变化时才重查） */
+const skins = ref<Record<string, SkinLookup>>({})
 
 watch(
   accounts,
   (list) => {
     for (const acc of list) {
       if (acc.name in skins.value) continue
-      void fetchSkinByName(acc.name).then((skin) => {
-        skins.value = { ...skins.value, [acc.name]: skin }
+      void fetchSkinByName(acc.name).then((lookup) => {
+        if (!lookup) return
+        skins.value = { ...skins.value, [acc.name]: lookup }
       })
     }
   },
@@ -307,7 +308,8 @@ watch(
 /** 列表渲染行：拍平成模板直接可用的原始值（url 空 = 出首字母；texture = 皮肤纹理需裁头） */
 const rows = computed(() =>
   accounts.value.map((acc) => {
-    const avatar = skinAvatar(skins.value[acc.name], 48)
+    const entry = skins.value[acc.name]
+    const avatar = skinAvatar(entry?.skin ?? null, entry?.type, 48)
     return { acc, url: avatar?.url ?? '', texture: avatar?.texture ?? false }
   }),
 )

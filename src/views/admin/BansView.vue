@@ -416,7 +416,7 @@ import { api, isAppError } from '@/lib/api'
 import { normalizePaged } from '@/lib/paged'
 import { skinAvatar, skinHeadStyle } from '@/lib/minecraft'
 import type { SkinAvatar } from '@/lib/minecraft'
-import { fetchSkinByName } from '@/lib/skin'
+import { fetchSkinByName, type SkinLookup } from '@/lib/skin'
 import { API_BASE_URL } from '@/lib/api-base'
 import type {
   Ban,
@@ -559,8 +559,8 @@ const searchInputEl = ref<HTMLInputElement | null>(null)
 const dropOpen = ref(false)
 const searching = ref(false)
 const candidates = ref<BanTargetCandidate[]>([])
-/** 候选角色名 → skin 串（查不到为 null）；头像失败记录按候选 key 存 */
-const candSkins = ref<Record<string, string | null>>({})
+/** 候选角色名 → 查询结果；只存成功，失败不落表（再次搜索会重试） */
+const candSkins = ref<Record<string, SkinLookup>>({})
 const candAvatarFailed = ref<Record<string, boolean>>({})
 /** 直接按 UUID 封时的解析名（用于按名查皮肤；查不到为空） */
 const uuidName = ref('')
@@ -631,7 +631,9 @@ function initialsOf(name: string): string {
 const candAvatars = computed(() => {
   const map: Record<string, SkinAvatar> = {}
   for (const c of candidates.value) {
-    const avatar = skinAvatar(candSkins.value[c.name], 56)
+    const entry = candSkins.value[c.name]
+    // 显示尺寸 27px（.cand-avatar 1.7rem），mc-heads 取 2 倍即 54
+    const avatar = entry ? skinAvatar(entry.skin, entry.type, 54) : null
     if (avatar) map[c.id ?? c.uuid] = avatar
   }
   return map
@@ -647,17 +649,21 @@ const candRows = computed(() =>
 )
 
 /** 「直接按 UUID」行头像：先按 uuid 解析出角色名，再按名查皮肤 */
-const uuidAvatar = computed(() => skinAvatar(candSkins.value[uuidName.value], 56))
+const uuidAvatar = computed(() => {
+  const entry = candSkins.value[uuidName.value]
+  return entry ? skinAvatar(entry.skin, entry.type, 54) : null
+})
 const uuidAvatarUrl = computed(() => uuidAvatar.value?.url ?? '')
 const uuidAvatarTexture = computed(() => uuidAvatar.value?.texture ?? false)
 
-/** 并发按名查皮肤并写入本地映射（已查过的名字跳过，返回 null 也缓存） */
+/** 并发按名查皮肤并写入本地映射（已成功的跳过；失败不落表，下次搜索重试） */
 async function loadSkins(names: string[]) {
   await Promise.all(
     names.map(async (name) => {
       if (name in candSkins.value) return
-      const skin = await fetchSkinByName(name)
-      candSkins.value = { ...candSkins.value, [name]: skin }
+      const lookup = await fetchSkinByName(name)
+      if (!lookup) return
+      candSkins.value = { ...candSkins.value, [name]: lookup }
     }),
   )
 }
@@ -683,10 +689,13 @@ watch(query, () => {
     uuidAvatarFailed.value = false
     searching.value = false
     if (isUuid) {
-      // 后端对 uuid 精确命中（且 uuid 不触发 Mojang 兜底）：拿到角色名才能按名查皮肤
+      // 后端对 uuid 精确命中（且 uuid 不触发 Mojang 兜底）：拿到角色名才能按名查皮肤。
+      // 快速连续输入时先发后到会覆盖新结果，故响应回来先比对当前输入。
+      const requested = q
       void api
         .get<{ items: BanTargetCandidate[] }>(`/admin/minecraft?q=${encodeURIComponent(q)}`)
         .then((data) => {
+          if (query.value.trim() !== requested) return
           const hit = (data.items ?? []).find(
             (item) => item.uuid.toLowerCase() === q.toLowerCase(),
           )
@@ -694,7 +703,7 @@ watch(query, () => {
           if (hit?.name) void loadSkins([hit.name])
         })
         .catch(() => {
-          uuidName.value = ''
+          if (query.value.trim() === requested) uuidName.value = ''
         })
     }
     void go(1)
@@ -712,13 +721,16 @@ async function runSearch(q: string) {
     const data = await api.get<{ items: BanTargetCandidate[] }>(
       `/admin/minecraft?q=${encodeURIComponent(q)}`,
     )
+    // 过期响应：输入已变，丢弃（防先发后到覆盖新候选）
+    if (query.value.trim() !== q) return
     candidates.value = data.items ?? []
     void loadSkins(candidates.value.map((item) => item.name))
   } catch (e) {
+    if (query.value.trim() !== q) return
     candidates.value = []
     pageError.value = errorText(e)
   } finally {
-    searching.value = false
+    if (query.value.trim() === q) searching.value = false
   }
 }
 

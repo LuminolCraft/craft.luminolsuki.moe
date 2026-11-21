@@ -8,7 +8,7 @@
       @error="failed = true"
     />
     <span
-      v-else-if="avatarUrl && isTexture"
+      v-else-if="avatarUrl && isTexture && !textureFailed"
       class="user-avatar-head"
       :style="skinHeadStyle(avatarUrl, props.size)"
     />
@@ -18,15 +18,15 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { fetchSkinByName } from '@/lib/skin'
+import { fetchSkinByName, type SkinLookup } from '@/lib/skin'
 import { skinAvatar, skinHeadStyle } from '@/lib/minecraft'
 
 /**
  * 用户头像（只读展示）：按 MC 角色名向后端查皮肤（GET /api/v1/skin/:name）。
  *
- * - skin 为角色名 / UUID → mc-heads.net 头部图；
- * - skin 为图片 URL → 皮肤纹理，抠「头正面 + 帽檐」合成 2D 头像；
- * - 查不到（未绑定 / 401 / 网络异常）或图片加载失败 → 站点用户名首字母占位。
+ * - 后端给 `name` / `uuid` → mc-heads.net 头部图；
+ * - 后端给 `url` → 皮肤纹理，抠「头正面 + 帽檐」合成 2D 头像；
+ * - 查不到（未绑定 / 401 / 网络异常）或图片/纹理加载失败 → 站点用户名首字母占位。
  *
  * 站点用户名允许中文，与 MC 角色名不是一回事，所以 MC 名必须由调用方通过
  * `mcName` 传入；拿不到 MC 名时直接出首字母，不猜。
@@ -43,26 +43,48 @@ const props = withDefaults(
   { size: 40, alt: '' },
 )
 
-const skin = ref<string | null>(null)
+const lookup = ref<SkinLookup | null>(null)
 const failed = ref(false)
+const textureFailed = ref(false)
 
 watch(
   () => props.mcName,
   async (mcName) => {
     failed.value = false
-    skin.value = null
+    textureFailed.value = false
+    lookup.value = null
     if (!mcName) return
     const value = await fetchSkinByName(mcName)
     // 竞态防护：await 期间 mcName 可能已切换
-    if (props.mcName === mcName) skin.value = value
+    if (props.mcName === mcName) lookup.value = value
   },
   { immediate: true },
 )
 
 // 2 倍尺寸交给 mc-heads 生成，CSS 再缩到 size，避免高分屏发虚
-const avatar = computed(() => skinAvatar(skin.value, props.size * 2))
+const avatar = computed(() =>
+  skinAvatar(lookup.value?.skin ?? null, lookup.value?.type, props.size * 2),
+)
 const avatarUrl = computed(() => avatar.value?.url ?? '')
 const isTexture = computed(() => avatar.value?.texture ?? false)
+
+/**
+ * 背景图加载失败不会触发 error 事件，只能预探测：`Image` 命中浏览器缓存，不额外耗流量。
+ * 探测失败则回退首字母，与 `<img>` 分支行为一致。
+ */
+watch(
+  () => (avatar.value?.texture ? avatar.value.url : ''),
+  (url) => {
+    textureFailed.value = false
+    if (!url) return
+    const probe = new Image()
+    probe.onerror = () => {
+      if (avatar.value?.texture && avatar.value.url === url) textureFailed.value = true
+    }
+    probe.src = url
+  },
+)
+
 const sizePx = computed(() => `${props.size}px`)
 const fallbackFont = computed(() => `${Math.max(10, Math.round(props.size * 0.42))}px`)
 const initial = computed(() =>

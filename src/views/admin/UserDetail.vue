@@ -381,7 +381,7 @@ import { normalizeAdminUserDetail } from '@/lib/admin-user'
 import { normalizeBirthday, toDateInputValue } from '@/lib/birthday'
 import { checkUsernameReserved } from '@/lib/reserved-username'
 import { cleanUsernameInput, validateUsername as checkUsernameFormat } from '@/lib/username'
-import { skinAvatar, skinHeadStyle } from '@/lib/minecraft'
+import { inferSkinType, skinAvatar, skinHeadStyle } from '@/lib/minecraft'
 import { useAuthorizationStore } from '@/stores/authorization'
 import { useNexusStore } from '@/stores/nexus'
 import { useNotificationsStore } from '@/stores/notifications'
@@ -411,7 +411,9 @@ const mainMcName = computed(
 /** MC 账号列表：逐行解析头像地址（skin 空 → 出首字母，不再按名字猜图） */
 const mcRows = computed(() =>
   (user.value?.minecraftAccounts ?? []).map((acc) => {
-    const avatar = skinAvatar(acc.skin, 32)
+    // 管理端详情不下发 type，按值本地推断（规则与后端一致）
+    const skin = acc.skin?.trim() ?? ''
+    const avatar = skin ? skinAvatar(skin, inferSkinType(skin), 32) : null
     return { acc, url: avatar?.url ?? '', texture: avatar?.texture ?? false }
   }),
 )
