@@ -249,9 +249,10 @@ onBeforeUnmount(() => {
     transform 0.2s ease;
   pointer-events: none;
 }
-.ct__expand svg {
+.ct__expand > svg {
   width: 11px;
   height: 11px;
+  flex: none;
   fill: none;
   stroke: currentColor;
   stroke-width: 1.5;
@@ -275,7 +276,8 @@ onBeforeUnmount(() => {
   transition: filter 0.3s ease;
   filter: brightness(1.14);
 }
-.ct__stage svg {
+/* 必须限定直接子元素：否则这条会盖掉 .ct__expand 里的小箭头（同权重、在后面） */
+.ct__stage > svg {
   width: 100%;
   height: 100%;
   display: block;

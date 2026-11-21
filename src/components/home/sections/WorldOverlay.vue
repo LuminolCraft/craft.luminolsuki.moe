@@ -333,7 +333,7 @@ onBeforeUnmount(() => {
   margin: 0 auto;
   aspect-ratio: 1000 / 480;
 }
-.wo__map svg {
+.wo__map > svg {
   width: 100%;
   height: 100%;
   display: block;
