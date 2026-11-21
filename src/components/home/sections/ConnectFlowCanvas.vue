@@ -374,10 +374,6 @@ onBeforeUnmount(() => {
         </div>
       </div>
 
-      <p class="cf__note">
-        路径与粒子走 canvas 2D，两张卡的 DOM 就在上面（可选中、可被读屏读到）。加 <code>?hic=1</code> 打开
-        HTML-in-Canvas 实验路径：卡片会被 <code>drawElementImage()</code> 画进 canvas 本体（需 Chrome 157+）。
-      </p>
     </div>
   </section>
 </template>
@@ -541,22 +537,6 @@ onBeforeUnmount(() => {
 }
 .cf__node.is-trunk.is-lit {
   border-color: color-mix(in srgb, var(--text-color) 30%, transparent);
-}
-
-.cf__note {
-  margin: 16px 0 0;
-  font-size: 12px;
-  line-height: 1.7;
-  color: var(--text-secondary);
-  padding-left: 10px;
-  border-left: 2px solid color-mix(in srgb, var(--primary-color) 35%, transparent);
-}
-.cf__note code {
-  font-family: var(--font-mono);
-  font-size: 11.5px;
-  padding: 1px 5px;
-  border-radius: 3px;
-  background: color-mix(in srgb, var(--text-color) 6%, transparent);
 }
 
 @media (max-width: 900px) {

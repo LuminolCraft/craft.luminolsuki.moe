@@ -18,10 +18,8 @@ import ShowcaseSection from '@/components/home/sections/ShowcaseSection.vue'
 import GallerySection from '@/components/home/sections/GallerySection.vue'
 import SvgContourSection from '@/components/home/sections/SvgContourSection.vue'
 import SvgTimelineSection from '@/components/home/sections/SvgTimelineSection.vue'
-import ChapterBridge from '@/components/home/sections/ChapterBridge.vue'
 import CompareSection from '@/components/home/sections/CompareSection.vue'
 import BansPublicSection from '@/components/home/sections/BansPublicSection.vue'
-import AftermathBridge from '@/components/home/sections/AftermathBridge.vue'
 import TeamSection from '@/components/home/sections/TeamSection.vue'
 import CtaSection from '@/components/home/sections/CtaSection.vue'
 import ScrollExpand from '@/components/bits/ScrollExpand.vue'
@@ -43,34 +41,12 @@ onMounted(() => {
     <StatusSection />
     <!-- 看完在线状态，下一个问题就是「我怎么进」 -->
     <ConnectFlowCanvas />
-    <ChapterBridge
-      kicker="part two"
-      motif="dots"
-      text="地址拿到了，先说清楚规矩：进来之后什么会被处理，处理结果又怎么公示。"
-    />
     <BansPublicSection />
-    <!-- 处理记录 → 正常玩家：用点阵表达比例，再进世界展示 -->
-    <AftermathBridge />
     <ShowcaseSection />
     <GallerySection />
-    <ChapterBridge
-      kicker="part three"
-      motif="contour"
-      text="上面这些截图，都拍自同一张地图 —— 它三年没重置。"
-    />
     <SvgContourSection />
     <SvgTimelineSection />
-    <ChapterBridge
-      kicker="part four"
-      motif="wave"
-      text="十四个月过去，两张图从同一台机器上分出来。差别不在硬件。"
-    />
     <CompareSection />
-    <ChapterBridge
-      kicker="part five"
-      motif="dots"
-      text="图上每一处改动，都是人做的。"
-    />
     <TeamSection />
     <section class="world-expand" aria-label="我们的世界">
       <ScrollExpand
