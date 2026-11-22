@@ -6,7 +6,7 @@
 
     <template v-else-if="user">
       <header class="detail-head">
-        <UserAvatar :user-id="user.id" :name="user.username" :size="56" />
+        <UserAvatar :mc-name="mainMcName" :name="user.username" :size="56" />
         <div class="detail-head-info">
           <h1 class="detail-title">{{ user.username }}</h1>
           <p class="detail-email">
@@ -58,29 +58,38 @@
         <h2 class="section-title">{{ t('admin.users.mcAccountsTitle') }}</h2>
         <p v-if="!user.minecraftAccounts?.length" class="dim">{{ t('admin.users.mcAccountsEmpty') }}</p>
         <ul v-else class="mc-mini-list">
-          <li v-for="acc in user.minecraftAccounts" :key="acc.id" class="mc-mini">
+          <li v-for="row in mcRows" :key="row.acc.id" class="mc-mini">
             <img
+              v-if="row.url && !row.texture"
               class="mc-mini-skin"
-              :src="mcAvatarUrl(acc, 32)"
-              :alt="acc.name"
+              :src="row.url"
+              :alt="row.acc.name"
               loading="lazy"
               width="32"
               height="32"
             />
-            <span class="mc-mini-name">{{ acc.name }}</span>
-            <!-- 主号标记：main_alt owner 端（无关联时最早绑定账号）；已封禁：账号 uuid 的有效封禁摘要，理由悬停可见 -->
-            <span v-if="acc.isMain" class="mc-mini-tag main">{{ t('admin.userDetail.mainAccountTag') }}</span>
             <span
-              v-if="acc.activeBan"
+              v-else-if="row.url"
+              class="mc-mini-skin mc-mini-skin-head"
+              :style="skinHeadStyle(row.url, 32)"
+            />
+            <span v-else class="mc-mini-skin mc-mini-skin-letter">
+              {{ row.acc.name.charAt(0).toUpperCase() }}
+            </span>
+            <span class="mc-mini-name">{{ row.acc.name }}</span>
+            <!-- 主号标记：main_alt owner 端（无关联时最早绑定账号）；已封禁：账号 uuid 的有效封禁摘要，理由悬停可见 -->
+            <span v-if="row.acc.isMain" class="mc-mini-tag main">{{ t('admin.userDetail.mainAccountTag') }}</span>
+            <span
+              v-if="row.acc.activeBan"
               class="mc-mini-tag banned"
-              :title="t('admin.userDetail.bannedTagTip', { reason: acc.activeBan.reason })"
+              :title="t('admin.userDetail.bannedTagTip', { reason: row.acc.activeBan.reason })"
             >{{ t('admin.userDetail.bannedTag') }}</span>
-            <span class="mc-mini-uuid">{{ acc.uuid }}</span>
+            <span class="mc-mini-uuid">{{ row.acc.uuid }}</span>
             <button
               type="button"
               class="mc-mini-unbind"
-              :disabled="forceUnbindingId === acc.id"
-              @click="onForceUnbind(acc)"
+              :disabled="forceUnbindingId === row.acc.id"
+              @click="onForceUnbind(row.acc)"
             >
               {{ t('admin.userDetail.forceUnbind') }}
             </button>
@@ -372,7 +381,7 @@ import { normalizeAdminUserDetail } from '@/lib/admin-user'
 import { normalizeBirthday, toDateInputValue } from '@/lib/birthday'
 import { checkUsernameReserved } from '@/lib/reserved-username'
 import { cleanUsernameInput, validateUsername as checkUsernameFormat } from '@/lib/username'
-import { mcAvatarUrl } from '@/lib/minecraft'
+import { inferSkinType, skinAvatar, skinHeadStyle } from '@/lib/minecraft'
 import { useAuthorizationStore } from '@/stores/authorization'
 import { useNexusStore } from '@/stores/nexus'
 import { useNotificationsStore } from '@/stores/notifications'
@@ -390,6 +399,24 @@ const { create, reduceMotion } = useGsap()
 const loading = ref(true)
 const loadError = ref('')
 const user = ref<AdminUserDetail | null>(null)
+
+/** 主账号 MC 名（头部头像按名查皮肤；站点用户名允许中文，不能当 MC 名用） */
+const mainMcName = computed(
+  () =>
+    user.value?.minecraftAccounts?.find((acc) => acc.isMain)?.name ??
+    user.value?.minecraftAccounts?.[0]?.name ??
+    '',
+)
+
+/** MC 账号列表：逐行解析头像地址（skin 空 → 出首字母，不再按名字猜图） */
+const mcRows = computed(() =>
+  (user.value?.minecraftAccounts ?? []).map((acc) => {
+    // 管理端详情不下发 type，按值本地推断（规则与后端一致）
+    const skin = acc.skin?.trim() ?? ''
+    const avatar = skin ? skinAvatar(skin, inferSkinType(skin), 32) : null
+    return { acc, url: avatar?.url ?? '', texture: avatar?.texture ?? false }
+  }),
+)
 
 // ---------- 角色管理 ----------
 const ALL_ROLES: NexusRoleName[] = ['user', 'moderator', 'admin', 'owner']
@@ -1070,6 +1097,23 @@ onMounted(async () => {
   height: 32px;
   border-radius: 5px;
   image-rendering: pixelated;
+}
+
+/* 皮肤纹理裁出的 2D 头像（帽檐 + 脸两层背景，样式由 skinHeadStyle 内联给出） */
+.mc-mini-skin-head {
+  display: block;
+}
+
+/* 查不到皮肤时的首字母占位（与 mc-mini-skin 同尺寸，避免行高跳动） */
+.mc-mini-skin-letter {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--primary-color);
+  background: color-mix(in srgb, var(--primary-color) 12%, transparent);
+  user-select: none;
 }
 
 .mc-mini-name {

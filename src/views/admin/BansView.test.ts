@@ -14,10 +14,15 @@ import { createI18n } from 'vue-i18n'
 import BansView from './BansView.vue'
 import zh from '@/i18n/locales/zh'
 
-const { getMock, postMock } = vi.hoisted(() => ({ getMock: vi.fn(), postMock: vi.fn() }))
+const { getMock, postMock, envelopeMock } = vi.hoisted(() => ({
+  getMock: vi.fn(),
+  postMock: vi.fn(),
+  envelopeMock: vi.fn(),
+}))
 
 vi.mock('@/lib/api', () => ({
   api: { get: getMock, post: postMock, patch: vi.fn(), upload: vi.fn() },
+  apiGetEnvelope: envelopeMock,
   isAppError: (error: unknown) => typeof error === 'object' && error !== null && 'code' in error,
 }))
 
@@ -92,6 +97,11 @@ function urlsWhere(re: RegExp): string[] {
 }
 
 async function mountView() {
+  // 头像：/skin/:name → 信封 { data: '<名字>Skin', meta: { type: 'name' } }
+  envelopeMock.mockImplementation(async (url: string) => {
+    const name = decodeURIComponent(String(url).replace('/skin/', ''))
+    return { data: `${name}Skin`, meta: { type: 'name' } }
+  })
   const wrapper = mount(BansView, { global: { plugins: [i18n] } })
   await flushPromises()
   return wrapper
@@ -132,6 +142,10 @@ describe('BansView 搜索框新建封禁', () => {
     // 候选入浮层，点选后拉影响面
     const item = wrapper.find('.candidate')
     expect(item.exists()).toBe(true)
+    // 候选头像：按名查到的 skin 套 mc-heads（27px 展示 × 2 = 54）
+    expect(item.find('img').attributes('src')).toBe(
+      'https://mc-heads.net/avatar/NotchSkin/54',
+    )
     await item.trigger('click')
     await flushPromises()
 
@@ -178,8 +192,10 @@ describe('BansView 搜索框新建封禁', () => {
     vi.advanceTimersByTime(300)
     await flushPromises()
 
-    // UUID 形态不触发角色名搜索
-    expect(urlsWhere(/\/admin\/minecraft/)).toHaveLength(0)
+    // UUID 形态不做角色名搜索，只额外查一次 uuid 精确命中（拿角色名查皮肤）
+    const uuidLookups = urlsWhere(/\/admin\/minecraft/)
+    expect(uuidLookups).toHaveLength(1)
+    expect(uuidLookups[0]).toContain(`q=${UNBOUND_UUID}`)
 
     await wrapper.find('.candidate').trigger('click')
     await flushPromises()
@@ -259,5 +275,48 @@ describe('BansView 搜索框新建封禁', () => {
     const [, payload] = postMock.mock.calls[0] as [string, Record<string, unknown>]
     expect(payload.minecraftUuid).toBe(UNBOUND_UUID)
     expect(payload.minecraftAccountId).toBeUndefined()
+  })
+
+  it('快速切换 UUID：先发后到的旧响应不覆盖头像', async () => {
+    let releaseFirst: () => void = () => {}
+    const firstResponse = new Promise<void>((resolve) => {
+      releaseFirst = resolve
+    })
+    let minecraftCalls = 0
+    getMock.mockImplementation(async (url: string) => {
+      if (url.startsWith('/admin/bans?')) return EMPTY_PAGE
+      if (url.startsWith('/admin/minecraft')) {
+        minecraftCalls += 1
+        if (minecraftCalls === 1) {
+          await firstResponse
+          return {
+            items: [
+              { ...CANDIDATE, id: null, uuid: UNBOUND_UUID, name: 'FirstPlayer', userId: null, username: null },
+            ],
+          }
+        }
+        return {
+          items: [
+            { ...CANDIDATE, id: null, uuid: ALT_UUID, name: 'SecondPlayer', userId: null, username: null },
+          ],
+        }
+      }
+      throw new Error(`未预期的请求：${url}`)
+    })
+
+    const wrapper = await mountView()
+
+    await wrapper.find('.search-input').setValue(UNBOUND_UUID)
+    await flushPromises()
+    await wrapper.find('.search-input').setValue(ALT_UUID)
+    await flushPromises()
+
+    // 旧请求此刻才返回；输入已经变了，必须被丢弃
+    releaseFirst()
+    await flushPromises()
+
+    const img = wrapper.find('.cand-avatar img')
+    expect(img.exists()).toBe(true)
+    expect(img.attributes('src')).toContain('SecondPlayerSkin')
   })
 })

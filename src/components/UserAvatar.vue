@@ -1,11 +1,16 @@
 <template>
   <span class="user-avatar" :style="{ width: sizePx, height: sizePx }">
     <img
-      v-if="!failed && userId"
-      :src="displayUrl"
+      v-if="avatarUrl && !isTexture && !failed"
+      :src="avatarUrl"
       :alt="alt"
       loading="lazy"
-      @error="onImgError"
+      @error="failed = true"
+    />
+    <span
+      v-else-if="avatarUrl && isTexture && !textureFailed"
+      class="user-avatar-head"
+      :style="skinHeadStyle(avatarUrl, props.size)"
     />
     <span v-else class="user-avatar-fallback" :style="{ fontSize: fallbackFont }">{{ initial }}</span>
   </span>
@@ -13,26 +18,24 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { API_BASE_URL } from '@/lib/api-base'
-import { mcAvatarUrl } from '@/lib/minecraft'
+import { fetchSkinByName, type SkinLookup } from '@/lib/skin'
+import { skinAvatar, skinHeadStyle } from '@/lib/minecraft'
 
 /**
- * 用户头像（只读展示），两段式取图：
+ * 用户头像（只读展示）：按 MC 角色名向后端查皮肤（GET /api/v1/skin/:name）。
  *
- * 1. 首选 GET /api/v1/media/avatar/:userId —— MC 插件推送的真实游戏内皮肤
- *    （主账号口径，KV 瞬时缓存）。命中直接显示。
- * 2. 该接口无头像时返回 204 → `<img>` error → 取 GET /api/v1/media/avatar-source/:userId
- *    返回的主账号 { uuid, name, skin } 走 mc-heads 兜底：`skin` 本身是 http(s)
- *    图片地址就直接用，否则当 uuid / 皮肤名套 `mc-heads.net/avatar/<id>/<size>`。
- *    这样没进过服、插件还没推过头像的玩家也能看到近似头像。
- * 3. 兜底也失败 → 用户名首字母占位。
+ * - 后端给 `name` / `uuid` → mc-heads.net 头部图；
+ * - 后端给 `url` → 皮肤纹理，抠「头正面 + 帽檐」合成 2D 头像；
+ * - 查不到（未绑定 / 401 / 网络异常）或图片/纹理加载失败 → 站点用户名首字母占位。
  *
- * 约束（spec 减负②）：media 接口 URL 绝不附加时间戳等缓存穿透参数，
- * 让后端 s-maxage 边缘缓存生效。
+ * 站点用户名允许中文，与 MC 角色名不是一回事，所以 MC 名必须由调用方通过
+ * `mcName` 传入；拿不到 MC 名时直接出首字母，不猜。
  */
 const props = withDefaults(
   defineProps<{
-    userId?: string | null
+    /** MC 角色名（主账号），空则直接首字母占位 */
+    mcName?: string | null
+    /** 站点用户名，仅用于首字母与 alt */
     name?: string
     size?: number
     alt?: string
@@ -40,59 +43,54 @@ const props = withDefaults(
   { size: 40, alt: '' },
 )
 
+const lookup = ref<SkinLookup | null>(null)
 const failed = ref(false)
-/** 兜底地址（皮肤直链或 mc-heads）：只有 media 接口无头像后才会填上。 */
-const fallbackUrl = ref<string | null>(null)
+const textureFailed = ref(false)
 
-// userId 变化时重置失败态与兜底地址（切换用户场景）
 watch(
-  () => props.userId,
-  () => {
+  () => props.mcName,
+  async (mcName) => {
     failed.value = false
-    fallbackUrl.value = null
+    textureFailed.value = false
+    lookup.value = null
+    if (!mcName) return
+    const value = await fetchSkinByName(mcName)
+    // 竞态防护：await 期间 mcName 可能已切换
+    if (props.mcName === mcName) lookup.value = value
+  },
+  { immediate: true },
+)
+
+// 2 倍尺寸交给 mc-heads 生成，CSS 再缩到 size，避免高分屏发虚
+const avatar = computed(() =>
+  skinAvatar(lookup.value?.skin ?? null, lookup.value?.type, props.size * 2),
+)
+const avatarUrl = computed(() => avatar.value?.url ?? '')
+const isTexture = computed(() => avatar.value?.texture ?? false)
+
+/**
+ * 背景图加载失败不会触发 error 事件，只能预探测：`Image` 命中浏览器缓存，不额外耗流量。
+ * 探测失败则回退首字母，与 `<img>` 分支行为一致。
+ */
+watch(
+  () => (avatar.value?.texture ? avatar.value.url : ''),
+  (url) => {
+    textureFailed.value = false
+    if (!url) return
+    const probe = new Image()
+    probe.onerror = () => {
+      if (avatar.value?.texture && avatar.value.url === url) textureFailed.value = true
+    }
+    probe.src = url
   },
 )
 
-/** 稳定 URL：仅由 userId 决定，保证 CDN 命中 */
-const avatarUrl = computed(() => `${API_BASE_URL}/api/v1/media/avatar/${props.userId}`)
-const displayUrl = computed(() => fallbackUrl.value ?? avatarUrl.value)
-
 const sizePx = computed(() => `${props.size}px`)
 const fallbackFont = computed(() => `${Math.max(10, Math.round(props.size * 0.42))}px`)
-const initial = computed(() => (props.name?.trim()?.[0] ?? '?').toUpperCase())
+const initial = computed(() =>
+  (props.name?.trim()?.[0] ?? props.mcName?.trim()?.[0] ?? '?').toUpperCase(),
+)
 const alt = computed(() => props.alt || props.name || 'avatar')
-
-async function onImgError(): Promise<void> {
-  // 兜底地址也加载失败 → 直接首字母，不再发请求
-  if (fallbackUrl.value) {
-    failed.value = true
-    return
-  }
-  const url = await resolveFallback(props.userId)
-  if (url) fallbackUrl.value = url
-  else failed.value = true
-}
-
-/** 向后端要主账号的皮肤身份，再拼第三方头像地址；任何异常都视为「无兜底」。 */
-async function resolveFallback(userId: string | null | undefined): Promise<string | null> {
-  if (!userId) return null
-  try {
-    const res = await fetch(`${API_BASE_URL}/api/v1/media/avatar-source/${userId}`)
-    if (!res.ok || res.status === 204) return null
-    const body = (await res.json()) as {
-      data?: { uuid?: string | null; name?: string | null; skin?: string | null }
-    }
-    const d = body?.data
-    if (!d || (!d.skin && !d.name && !d.uuid)) return null
-    // 2 倍尺寸交给 mc-heads 生成，CSS 再缩到 size，避免高分屏发虚
-    return mcAvatarUrl(
-      { uuid: d.uuid ?? '', name: d.name ?? '', skin: d.skin ?? null },
-      props.size * 2,
-    )
-  } catch {
-    return null
-  }
-}
 </script>
 
 <style scoped>
@@ -111,6 +109,12 @@ async function resolveFallback(userId: string | null | undefined): Promise<strin
   height: 100%;
   object-fit: cover;
   image-rendering: pixelated;
+}
+
+/* 皮肤纹理裁出的 2D 头像：背景两层（帽檐 + 脸），铺满容器 */
+.user-avatar-head {
+  width: 100%;
+  height: 100%;
 }
 
 .user-avatar-fallback {

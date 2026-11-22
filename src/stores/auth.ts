@@ -2,6 +2,7 @@ import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 import { api } from '@/lib/api'
 import { authClient, toAppError } from '@/lib/auth-client'
+import { clearSkinCache } from '@/lib/skin'
 import { resolveInternalPath } from '@/utils/internalPath'
 import { useAuthorizationStore } from '@/stores/authorization'
 import { useNexusStore } from '@/stores/nexus'
@@ -80,6 +81,7 @@ export const useAuthStore = defineStore('auth', () => {
     // 授权态与业务数据缓存随登录态一并清空（均为仅内存缓存）
     useAuthorizationStore().reset()
     useNexusStore().reset()
+    clearSkinCache()
     // 登出/会话失效：断开站内通知 WS 长连接并停止重连（幂等，未连接时为空操作）
     useNotificationsStore().disconnect()
   }
