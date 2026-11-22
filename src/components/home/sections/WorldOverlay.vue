@@ -14,21 +14,7 @@
 -->
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
-import {
-  COAST_D,
-  FORESTS_D,
-  ISLANDS_D,
-  JUNGLE_D,
-  RIVERS,
-  SAKURA_D,
-  SAVANNA_D,
-  SEA_CONTOURS,
-  SEA_D,
-  SHALLOW_D,
-  SNOW_D,
-  WATERS_D,
-  contourLayers,
-} from '@/lib/contour'
+import { contourLayers } from '@/lib/contour'
 import { LANDMARKS, type Landmark } from '@/config/world-map'
 import { lenisInstances } from '@/utils/lenisInstances'
 
@@ -85,7 +71,7 @@ function onPoiClick(e: PointerEvent, id: string) {
 const cardStyle = computed(() => {
   const p = active.value
   if (!p) return {}
-  return { left: `${(p.x / 1000) * 100}%`, top: `${(p.y / 800) * 100}%` }
+  return { left: `${(p.x / 1000) * 100}%`, top: `${(p.y / 480) * 100}%` }
 })
 
 /** 道路由出生点辐射出去：以出生点为锚，不写死坐标 */
@@ -96,6 +82,9 @@ function road(p: Landmark): string {
   const my = (SPAWN.y + p.y) / 2 - 26
   return `M ${SPAWN.x} ${SPAWN.y} Q ${mx.toFixed(1)} ${my.toFixed(1)} ${p.x} ${p.y}`
 }
+
+const RIVER = 'M 158 192 C 300 240 332 360 462 388 S 644 426 704 458'
+const RAIL = 'M 300 168 C 384 238 432 318 480 350'
 
 function lockScroll(lock: boolean) {
   if (lock) {
@@ -184,176 +173,94 @@ onBeforeUnmount(() => {
       </header>
 
       <div class="wo__body">
-        <div class="wo__stagewrap">
-          <div class="wo__map">
-            <svg viewBox="0 0 1000 800" preserveAspectRatio="xMidYMid meet" role="img" aria-label="世界地图">
-              <defs>
-                <radialGradient id="wo-sea-grad" cx="48%" cy="44%" r="72%">
-                  <stop offset="0" stop-color="#5ab4ff" stop-opacity="0.085" />
-                  <stop offset="0.62" stop-color="#5ab4ff" stop-opacity="0.05" />
-                  <stop offset="1" stop-color="#5ab4ff" stop-opacity="0" />
-                </radialGradient>
-                <clipPath id="wo-sea">
-                  <path :d="SEA_D" fill-rule="evenodd" />
-                </clipPath>
-                <clipPath id="wo-land">
-                  <path :d="COAST_D" />
-                  <path v-for="(d, i) in ISLANDS_D" :key="`clip-${i}`" :d="d" />
-                </clipPath>
-                <pattern id="wo-dot-forest" width="9" height="9" patternUnits="userSpaceOnUse">
-                  <circle cx="2.2" cy="2.2" r="1.05" fill="#4f9d7a" fill-opacity="0.34" />
-                  <circle cx="6.6" cy="6.4" r="0.75" fill="#4f9d7a" fill-opacity="0.24" />
-                </pattern>
-                <pattern id="wo-dot-jungle" width="8" height="8" patternUnits="userSpaceOnUse">
-                  <circle cx="2" cy="2" r="1.1" fill="#63b96a" fill-opacity="0.36" />
-                  <circle cx="6" cy="5.6" r="0.8" fill="#63b96a" fill-opacity="0.26" />
-                </pattern>
-                <pattern id="wo-dot-savanna" width="10" height="7" patternUnits="userSpaceOnUse">
-                  <path d="M1 3.5h4.5" stroke="#c7a75c" stroke-opacity="0.34" stroke-width="1" stroke-linecap="round" />
-                </pattern>
-                <pattern id="wo-dot-sakura" width="8" height="8" patternUnits="userSpaceOnUse">
-                  <circle cx="2" cy="2" r="1.15" fill="#f2a7c3" fill-opacity="0.5" />
-                  <circle cx="6" cy="5.6" r="0.8" fill="#f2a7c3" fill-opacity="0.36" />
-                </pattern>
-                <pattern id="wo-dot-snow" width="10" height="7" patternUnits="userSpaceOnUse">
-                  <path d="M1 3.5h5" stroke="#dfe8f5" stroke-opacity="0.45" stroke-width="1" stroke-linecap="round" />
-                </pattern>
-              </defs>
+        <div class="wo__map">
+          <svg viewBox="0 0 1000 480" preserveAspectRatio="xMidYMid meet" role="img" aria-label="世界地图">
+            <g class="wo__iso">
+              <path
+                v-for="(l, i) in LAYERS"
+                :key="i"
+                :d="l.d"
+                pathLength="1"
+                fill="none"
+                :stroke="`color-mix(in srgb, var(--primary-color) ${Math.round(l.opacity * 100)}%, transparent)`"
+                :stroke-width="l.width"
+                stroke-linejoin="round"
+                :style="{ '--d': `${i * 0.09}s` }"
+              />
+            </g>
 
-              <!-- 海与陆：海面底色 → 近岸浅海带 → 陆地 → 地表类型（统一裁进陆地轮廓） -->
-              <path :d="SEA_D" class="wo__sea" fill-rule="evenodd" />
-              <path :d="SHALLOW_D" class="wo__shallow" fill-rule="evenodd" />
-              <path :d="COAST_D" class="wo__land" />
-              <path v-for="(d, i) in ISLANDS_D" :key="`islefill-${i}`" :d="d" class="wo__land is-isle" />
+            <!-- 水系与轨交：手写贝塞尔，不随视口重算 -->
+            <path :d="RIVER" class="wo__river" />
+            <path :d="RAIL" class="wo__rail" />
 
-              <g clip-path="url(#wo-land)">
-                <!-- 底色层整体轻微模糊：biome 之间过渡自然的边缘，不露拼贴感 -->
-                <g class="wo__biome">
-                  <path v-for="(d, i) in FORESTS_D" :key="`f-${i}`" :d="d" class="wo__forest" />
-                  <path v-for="(d, i) in JUNGLE_D" :key="`j-${i}`" :d="d" class="wo__jungle" />
-                  <path v-for="(d, i) in SAVANNA_D" :key="`v-${i}`" :d="d" class="wo__savanna" />
-                  <path v-for="(d, i) in SAKURA_D" :key="`s-${i}`" :d="d" class="wo__sakura" />
-                  <path v-for="(d, i) in SNOW_D" :key="`n-${i}`" :d="d" class="wo__snow" />
-                </g>
-                <path v-for="(d, i) in FORESTS_D" :key="`fd-${i}`" :d="d" fill="url(#wo-dot-forest)" stroke="none" />
-                <path v-for="(d, i) in JUNGLE_D" :key="`jd-${i}`" :d="d" fill="url(#wo-dot-jungle)" stroke="none" />
-                <path
-                  v-for="(d, i) in SAVANNA_D"
-                  :key="`vd-${i}`"
-                  :d="d"
-                  fill="url(#wo-dot-savanna)"
-                  stroke="none"
-                />
-                <path v-for="(d, i) in SAKURA_D" :key="`sd-${i}`" :d="d" fill="url(#wo-dot-sakura)" stroke="none" />
-                <path v-for="(d, i) in SNOW_D" :key="`nd-${i}`" :d="d" fill="url(#wo-dot-snow)" stroke="none" />
-              </g>
+            <!-- 出生点向各地标的路径 -->
+            <path v-for="p in LANDMARKS.slice(1)" :key="`r-${p.id}`" :d="road(p)" class="wo__road" />
 
-              <!-- 等深线：裁到海面，不压陆地 -->
-              <g clip-path="url(#wo-sea)">
-                <path v-for="(d, i) in SEA_CONTOURS" :key="`sc-${i}`" :d="d" class="wo__sealine" />
-              </g>
-
-              <path :d="COAST_D" class="wo__coast" />
-              <path v-for="(d, i) in ISLANDS_D" :key="`isle-${i}`" :d="d" class="wo__coast is-isle" />
-              <path v-for="(d, i) in WATERS_D" :key="`lake-${i}`" :d="d" class="wo__lake" />
-
-              <g class="wo__iso">
-                <path
-                  v-for="(l, i) in LAYERS"
-                  :key="i"
-                  :d="l.d"
-                  pathLength="1"
-                  fill="none"
-                  :stroke="
-                    l.tone === 'water'
-                      ? `color-mix(in srgb, #5ab4ff ${Math.round(l.opacity * 100)}%, transparent)`
-                      : `color-mix(in srgb, var(--primary-color) ${Math.round(l.opacity * 100)}%, transparent)`
-                  "
-                  :stroke-width="l.width"
-                  stroke-linejoin="round"
-                  :style="{ '--d': `${i * 0.05}s` }"
-                />
-              </g>
-
-              <!-- 水系：手写贝塞尔，不随视口重算 -->
-              <path v-for="(d, i) in RIVERS" :key="`river-${i}`" :d="d" class="wo__river" />
-
-              <!-- 出生点向各地标的路径 -->
-              <path v-for="p in LANDMARKS.slice(1)" :key="`r-${p.id}`" :d="road(p)" class="wo__road" />
-
-              <g
-                v-for="(p, i) in LANDMARKS"
-                :key="p.id"
-                class="wo__poi"
-                :class="{ 'is-active': activeId === p.id }"
-                :style="{ '--d': `${0.24 + i * 0.05}s` }"
-                role="button"
-                tabindex="0"
-                :aria-label="`${p.name}：${p.note}`"
-                @click="onPoiClick($event, p.id)"
-                @pointerenter="onPoiEnter($event, p.id)"
-                @pointerleave="onPoiLeave($event, p.id)"
-                @focus="hoverId = p.id"
-                @blur="hoverId = hoverId === p.id ? null : hoverId"
-                @keydown.enter.prevent="togglePin(p.id)"
-                @keydown.space.prevent="togglePin(p.id)"
+            <g
+              v-for="(p, i) in LANDMARKS"
+              :key="p.id"
+              class="wo__poi"
+              :class="{ 'is-active': activeId === p.id }"
+              :style="{ '--d': `${0.24 + i * 0.05}s` }"
+              role="button"
+              tabindex="0"
+              :aria-label="`${p.name}：${p.note}`"
+              @click="onPoiClick($event, p.id)"
+              @pointerenter="onPoiEnter($event, p.id)"
+              @pointerleave="onPoiLeave($event, p.id)"
+              @focus="hoverId = p.id"
+              @blur="hoverId = hoverId === p.id ? null : hoverId"
+              @keydown.enter.prevent="togglePin(p.id)"
+              @keydown.space.prevent="togglePin(p.id)"
+            >
+              <circle :cx="p.x" :cy="p.y" r="13" class="wo__poi-hit" />
+              <circle :cx="p.x" :cy="p.y" r="3.4" class="wo__poi-core" />
+              <text
+                :x="p.x + (p.side === 'left' ? -13 : 13)"
+                :y="p.y + 4"
+                :text-anchor="p.side === 'left' ? 'end' : 'start'"
               >
-                <circle :cx="p.x" :cy="p.y" r="13" class="wo__poi-hit" />
-                <circle :cx="p.x" :cy="p.y" r="3.4" class="wo__poi-core" />
-                <text
-                  :x="p.x + (p.side === 'left' ? -13 : 13)"
-                  :y="p.y + 4"
-                  :text-anchor="p.side === 'left' ? 'end' : 'start'"
-                >
-                  {{ p.name }}
-                </text>
-              </g>
-            </svg>
+                {{ p.name }}
+              </text>
+            </g>
+          </svg>
 
-            <Transition name="wo-card">
-              <div
-                v-if="active"
-                class="wo__card"
-                :class="{ 'is-flip': active.x > 700 }"
-                :style="cardStyle"
-                aria-live="polite"
-              >
-                <span class="wo__card-tag">{{ active.tag }}</span>
-                <b class="wo__card-name">{{ active.name }}</b>
-                <p class="wo__card-note">{{ active.note }}</p>
-              </div>
-            </Transition>
-          </div>
+          <Transition name="wo-card">
+            <div
+              v-if="active"
+              class="wo__card"
+              :class="{ 'is-flip': active.x > 720 }"
+              :style="cardStyle"
+              aria-live="polite"
+            >
+              <span class="wo__card-tag">{{ active.tag }}</span>
+              <b class="wo__card-name">{{ active.name }}</b>
+              <p class="wo__card-note">{{ active.note }}</p>
+            </div>
+          </Transition>
         </div>
 
-        <aside class="wo__aside">
-          <div class="wo__legend" aria-hidden="true">
-            <span><i class="is-water" />水系 · 近岸浅海</span>
-            <span><i class="is-block is-forest" />林地</span>
-            <span><i class="is-block is-jungle" />丛林</span>
-            <span><i class="is-block is-savanna" />金合欢</span>
-            <span><i class="is-block is-sakura" />樱花林</span>
-            <span><i class="is-block is-snow" />雪山</span>
-            <span><i class="is-road" />出生点辐射的路径</span>
-          </div>
+        <div class="wo__legend" aria-hidden="true">
+          <span><i class="is-water" />水系</span>
+          <span><i class="is-rail" />轨交</span>
+          <span><i class="is-road" />出生点辐射的路径</span>
+        </div>
 
-          <ul class="wo__list">
-            <li v-for="p in LANDMARKS" :key="p.id">
-              <button
-                type="button"
-                :class="{ 'is-active': activeId === p.id }"
-                :aria-expanded="activeId === p.id"
-                @click="togglePin(p.id)"
-              >
-                <i aria-hidden="true" />
-                <span class="wo__list-name">{{ p.name }}</span>
-                <span class="wo__list-tag">{{ p.tag }}</span>
-              </button>
-            </li>
-          </ul>
+        <ul class="wo__list">
+          <li v-for="p in LANDMARKS" :key="p.id">
+            <button
+              type="button"
+              :class="{ 'is-active': activeId === p.id }"
+              :aria-expanded="activeId === p.id"
+              @click="togglePin(p.id)"
+            >
+              <i aria-hidden="true" />
+              {{ p.name }}
+            </button>
+          </li>
+        </ul>
 
-          <p class="wo__foot">地形按实际俯视图绘制；标注为社区主要建筑，位置以游戏内为准。</p>
-        </aside>
+        <p class="wo__foot">坐标为示意，实际位置以游戏内为准；地标清单仍在补充。</p>
       </div>
     </div>
   </Teleport>
@@ -439,100 +346,31 @@ onBeforeUnmount(() => {
   }
 }
 
-/* —— 主体：左侧地图，右侧索引 —— */
+/* —— 主体 —— */
 .wo__body {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: 18px 32px 22px;
+  padding: 20px 32px 28px;
   display: flex;
-  align-items: stretch;
-  gap: 26px;
-}
-.wo__stagewrap {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  align-items: center;
+  flex-direction: column;
   justify-content: center;
+  gap: 14px;
+  /* 地图、图例、索引共用一列宽：既有 1360 的上限，也按视口高度反推，
+     避免大屏上地图下面空出一大片。宽高比固定为 1000:480，卡片百分比定位才仍准。 */
+  --stage-w: min(100%, 1360px, calc((100dvh - 320px) * 2.08333));
 }
 .wo__map {
   position: relative;
-  /* 地图是 1000:800 的近方形：宽度由可用高度反推，避免上下空一片。
-     宽高比必须与 viewBox 一致，卡片百分比定位才准。 */
-  width: min(100%, calc((100dvh - 170px) * 1.25));
+  width: var(--stage-w);
   margin: 0 auto;
-  aspect-ratio: 1000 / 800;
+  aspect-ratio: 1000 / 480;
 }
 .wo__map > svg {
   width: 100%;
   height: 100%;
   display: block;
-  /* 海底等高线向外扩，越界部分裁掉，免得漏到侧栏上 */
-  overflow: hidden;
-}
-
-/* —— 地形骨架 —— */
-.wo__land {
-  fill: color-mix(in srgb, var(--primary-color) 9%, transparent);
-  stroke: none;
-}
-.wo__land.is-isle {
-  fill: color-mix(in srgb, var(--primary-color) 8%, transparent);
-}
-.wo__sealine {
-  fill: none;
-  stroke: color-mix(in srgb, #5ab4ff 16%, transparent);
-  stroke-width: 1;
-}
-.wo__coast {
-  fill: none;
-  stroke: color-mix(in srgb, var(--primary-color) 62%, transparent);
-  stroke-width: 1.5;
-  filter: drop-shadow(0 0 7px color-mix(in srgb, var(--primary-color) 26%, transparent));
-  stroke-linejoin: round;
-}
-.wo__coast.is-isle {
-  stroke: color-mix(in srgb, var(--primary-color) 34%, transparent);
-  stroke-width: 1;
-}
-.wo__lake {
-  fill: color-mix(in srgb, #5ab4ff 9%, transparent);
-  stroke: color-mix(in srgb, #5ab4ff 34%, transparent);
-  stroke-width: 1.1;
-}
-.wo__sea {
-  /* 径向渐变到透明：海有存在感，又不出现贴图方块边 */
-  fill: url(#wo-sea-grad);
-  stroke: none;
-}
-.wo__shallow {
-  fill: color-mix(in srgb, #5ab4ff 6%, transparent);
-  stroke: none;
-}
-/* 底色整体轻微模糊，biome 交界不露硬边 */
-.wo__biome {
-  filter: blur(5px);
-}
-.wo__forest {
-  fill: color-mix(in srgb, #4f9d7a 4.5%, transparent);
-  stroke: none;
-}
-.wo__jungle {
-  fill: color-mix(in srgb, #63b96a 5%, transparent);
-  stroke: none;
-}
-.wo__savanna {
-  fill: color-mix(in srgb, #c7a75c 5%, transparent);
-  stroke: none;
-}
-.wo__sakura {
-  fill: color-mix(in srgb, #f2a7c3 6%, transparent);
-  stroke: none;
-}
-.wo__snow {
-  fill: color-mix(in srgb, #dfe8f5 6%, transparent);
-  stroke: none;
+  overflow: visible;
 }
 
 .wo__iso path {
@@ -547,9 +385,16 @@ onBeforeUnmount(() => {
 
 .wo__river {
   fill: none;
-  stroke: color-mix(in srgb, #5ab4ff 55%, transparent);
-  stroke-width: 2.8;
+  stroke: color-mix(in srgb, #5ab4ff 42%, transparent);
+  stroke-width: 2.2;
   stroke-linecap: round;
+}
+.wo__rail {
+  fill: none;
+  stroke: color-mix(in srgb, #f0b45a 48%, transparent);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-dasharray: 8 6;
 }
 .wo__road {
   fill: none;
@@ -659,23 +504,13 @@ onBeforeUnmount(() => {
   opacity: 0;
 }
 
-/* —— 右侧栏：图例 + 索引 + 说明 —— */
-.wo__aside {
-  width: 302px;
-  flex: none;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  min-height: 0;
-  overflow-y: auto;
-  padding-bottom: 2px;
-}
-
 /* —— 图例 —— */
 .wo__legend {
   display: flex;
-  flex-direction: column;
-  gap: 9px;
+  flex-wrap: wrap;
+  gap: 18px;
+  width: var(--stage-w);
+  margin: 0 auto;
   font-family: var(--font-mono);
   font-size: 10.5px;
   letter-spacing: 0.06em;
@@ -691,29 +526,12 @@ onBeforeUnmount(() => {
   height: 0;
   border-top: 1.5px solid currentColor;
 }
-.wo__legend i.is-block {
-  width: 10px;
-  height: 7px;
-  border: 0;
-  border-radius: 2px;
-}
-.wo__legend i.is-forest {
-  background: color-mix(in srgb, #4f9d7a 55%, transparent);
-}
-.wo__legend i.is-jungle {
-  background: color-mix(in srgb, #63b96a 58%, transparent);
-}
-.wo__legend i.is-savanna {
-  background: color-mix(in srgb, #c7a75c 58%, transparent);
-}
-.wo__legend i.is-sakura {
-  background: color-mix(in srgb, #f2a7c3 60%, transparent);
-}
-.wo__legend i.is-snow {
-  background: color-mix(in srgb, #dfe8f5 50%, transparent);
-}
 .wo__legend i.is-water {
   color: color-mix(in srgb, #5ab4ff 60%, transparent);
+}
+.wo__legend i.is-rail {
+  color: color-mix(in srgb, #f0b45a 60%, transparent);
+  border-top-style: dashed;
 }
 .wo__legend i.is-road {
   color: color-mix(in srgb, var(--text-color) 30%, transparent);
@@ -723,11 +541,12 @@ onBeforeUnmount(() => {
 /* —— 索引 —— */
 .wo__list {
   list-style: none;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 8px;
-  margin: 0;
+  margin: 0 auto;
   padding: 0;
+  width: var(--stage-w);
 }
 .wo__list li {
   list-style: none;
@@ -757,24 +576,9 @@ onBeforeUnmount(() => {
   background: color-mix(in srgb, var(--primary-color) 65%, transparent);
   flex: none;
 }
-.wo__list-name {
-  flex: 1;
-  min-width: 0;
-}
-.wo__list-tag {
-  font-family: var(--font-mono);
-  font-size: 9.5px;
-  letter-spacing: 0.08em;
-  color: var(--text-secondary);
-  opacity: 0.75;
-}
 .wo__list button.is-active {
   border-color: color-mix(in srgb, var(--primary-color) 55%, transparent);
   color: var(--primary-color);
-}
-.wo__list button.is-active .wo__list-tag {
-  color: var(--primary-color);
-  opacity: 0.85;
 }
 @media (hover: hover) {
   .wo__list button:hover {
@@ -784,35 +588,11 @@ onBeforeUnmount(() => {
 }
 
 .wo__foot {
-  margin: 0;
+  width: var(--stage-w);
+  margin: 0 auto;
   font-size: 11.5px;
-  line-height: 1.7;
   color: var(--text-secondary);
   opacity: 0.8;
-}
-
-@media (max-width: 980px) {
-  .wo__body {
-    flex-direction: column;
-    gap: 16px;
-  }
-  .wo__stagewrap {
-    flex: none;
-  }
-  .wo__aside {
-    width: 100%;
-    flex: none;
-    overflow: visible;
-  }
-  .wo__legend {
-    flex-direction: row;
-    flex-wrap: wrap;
-    gap: 16px;
-  }
-  .wo__list {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
 }
 
 @media (max-width: 860px) {
@@ -826,19 +606,23 @@ onBeforeUnmount(() => {
     padding: 14px 18px 22px;
   }
   .wo__map {
-    width: 100%;
+    aspect-ratio: 1000 / 700;
   }
-  /* 地图整体缩小，地标文字跟着缩会看不清 —— 按 user unit 放大字号与圆点 */
+  /* 地图整体缩到三分之一，地标文字跟着缩会看不清 —— 按 user unit 放大字号与圆点 */
   .wo__poi text {
-    font-size: 24px;
+    font-size: 26px;
     stroke-width: 6px;
   }
   .wo__poi-core {
-    r: 6px;
+    r: 7px;
   }
   .wo__poi-hit {
-    r: 20px;
+    r: 22px;
   }
+  .wo__list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  /* 窄屏放不下浮动卡：压到地图底部，卡片不挡地标 */
   /* 窄屏放不下浮动卡：贴到地图底部，整宽、不溢出地图框 */
   .wo__card,
   .wo__card.is-flip {
