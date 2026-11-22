@@ -303,6 +303,13 @@ const routes = [
       }
     ]
   },
+  // Three.js 世界球的三版示例对照页（临时，不进导航；选定后删除本路由与 GlobeLab.vue）
+  {
+    path: '/lab/globe',
+    name: 'GlobeLab',
+    component: () => import('../views/GlobeLab.vue'),
+    meta: { title: '世界球示例 - LuminolCraft', description: 'Three.js 世界球的三版实现对照。' }
+  },
   // 403 视图：独立于 /admin 布局，不带 requiresPermission，避免守卫循环
   {
     path: '/admin/forbidden',
