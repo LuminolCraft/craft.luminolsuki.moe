@@ -120,7 +120,7 @@ text-decoration: none;
 transition: transform 0.25s,box-shadow 0.25s,background 0.25s;
 cursor: pointer;
 border: none;
-font-family: var(--font-main);
+font-family: var(--font-primary);
 }
 
 .back-to-home:hover {

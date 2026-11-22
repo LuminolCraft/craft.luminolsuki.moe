@@ -1145,7 +1145,7 @@ onMounted(async () => {
 .mc-mini-uuid {
   font-size: 0.74rem;
   color: var(--text-secondary);
-  font-family: ui-monospace, monospace;
+  font-family: var(--font-primary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

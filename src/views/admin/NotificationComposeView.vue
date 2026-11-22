@@ -336,7 +336,7 @@ onMounted(() => {
   margin-left: auto;
   font-size: 0.7rem;
   color: var(--text-secondary);
-  font-family: ui-monospace, monospace;
+  font-family: var(--font-primary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

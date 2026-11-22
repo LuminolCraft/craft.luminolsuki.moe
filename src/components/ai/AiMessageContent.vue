@@ -76,7 +76,7 @@ const blocks = computed(() => parseAiMarkdown(props.content))
   border-radius: 8px;
   background: var(--border-color, rgba(128, 128, 128, 0.14));
   overflow-x: auto;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-family: var(--font-primary);
   font-size: 0.8125rem;
   line-height: 1.55;
   white-space: pre-wrap;

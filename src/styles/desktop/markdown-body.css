@@ -215,7 +215,7 @@ html[data-theme='dark'] .markdown-body blockquote {
 
 /* ========== 代码 ========== */
 .markdown-body code {
-  font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace);
+  font-family: var(--font-primary);
   font-size: 0.875em;
   background: var(--glass-bg, rgba(158, 148, 216, 0.1));
   color: var(--primary-color, #a78bfa);

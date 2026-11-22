@@ -105,7 +105,7 @@
 .td-target .target-uuid {
   display: block;
   margin-top: 0.1rem;
-  font-family: var(--font-mono, ui-monospace, monospace);
+  font-family: var(--font-primary);
   font-size: 0.68rem;
   color: var(--text-secondary);
   overflow: hidden;

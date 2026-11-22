@@ -1353,7 +1353,7 @@ onMounted(async () => {
   border: 1px solid var(--border-color);
   border-radius: 5px;
   padding: 0.05rem 0.4rem;
-  font-family: var(--font-mono, ui-monospace, monospace);
+  font-family: var(--font-primary);
 }
 
 .search-state {
@@ -1446,7 +1446,7 @@ onMounted(async () => {
 }
 
 .cand-uuid {
-  font-family: var(--font-mono, ui-monospace, monospace);
+  font-family: var(--font-primary);
   font-size: 0.7rem;
   color: var(--text-secondary);
   overflow: hidden;

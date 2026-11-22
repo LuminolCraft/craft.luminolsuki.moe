@@ -272,7 +272,7 @@ onMounted(() => {
 
 .boot-pixel__label {
   color: #b9aaff;
-  font: 500 12px/16px ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  font: 500 12px/16px var(--font-primary);
   letter-spacing: 0.3em;
 }
 

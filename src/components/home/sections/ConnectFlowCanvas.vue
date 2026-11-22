@@ -257,7 +257,8 @@ function render(dt: number) {
   // 徽标
   ctx.setTransform(scale, 0, 0, scale, 0, 0)
   ctx.textAlign = 'center'
-  ctx.font = '600 12px -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif'
+  ctx.font =
+    '600 12px "MiSans VF", MiSans, -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif'
   if (badgeOn.has('pb')) {
     ctx.fillStyle = '#a78bfa'
     ctx.fillText('可以玩了', 948, 114)

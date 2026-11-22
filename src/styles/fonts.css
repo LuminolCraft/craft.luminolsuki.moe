@@ -27,11 +27,12 @@
     --font-primary: 'MiSans VF', 'MiSans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial, sans-serif;
     
     /* ---- 等宽字体栈 (Monospace) ---- */
-    /* 基于 Vercel Geist Mono，使用系统等宽字体作为替代 */
-    --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Consolas, 'Liberation Mono', Menlo, Monaco, 'Courier New', monospace;
-    
+    /* 全站单一字体：等宽 token 直接指向主字体栈，不再回退系统等宽字体 */
+    --font-mono: var(--font-primary);
+
     /* ---- 备用字体栈 ---- */
-    --font-fallback: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    /* 同样收敛到 MiSans，避免任何情况下掉回系统字体 */
+    --font-fallback: var(--font-primary);
     
     /* ===========================================
        Vercel 排版层级系统 (Typography Scale)
@@ -449,7 +450,7 @@ body {
     }
     
     .font-mono {
-        font-family: ui-monospace, SFMono-Regular, 'SF Mono', Consolas, 'Liberation Mono', Menlo, Monaco, 'Courier New', monospace;
+        font-family: 'MiSans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial, sans-serif;
     }
 }
 

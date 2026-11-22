@@ -957,7 +957,7 @@ onMounted(async () => {
 }
 
 .mc-input.mono {
-  font-family: ui-monospace, monospace;
+  font-family: var(--font-primary);
   font-size: 0.85rem;
 }
 

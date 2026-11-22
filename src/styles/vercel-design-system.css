@@ -76,7 +76,7 @@
 
     /* ---- 排版系统 (Typography) ---- */
     --vercel-font-family: 'MiSans VF', 'MiSans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
-    --vercel-mono-family: ui-monospace, SFMono-Regular, 'SF Mono', Consolas, 'Liberation Mono', Menlo, monospace;
+    --vercel-mono-family: var(--font-primary);
 
     /* 三层权重系统 */
     --vercel-weight-normal: 400;

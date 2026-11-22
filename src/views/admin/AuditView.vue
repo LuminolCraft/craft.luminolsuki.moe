@@ -576,7 +576,7 @@ onMounted(async () => {
 }
 
 .mono-dim {
-  font-family: ui-monospace, monospace;
+  font-family: var(--font-primary);
   font-size: 0.78rem;
 }
 
@@ -662,7 +662,7 @@ onMounted(async () => {
   border: 1px solid var(--border-color);
   border-radius: 6px;
   background: var(--surface-color, transparent);
-  font-family: ui-monospace, monospace;
+  font-family: var(--font-primary);
   font-size: 0.74rem;
   line-height: 1.45;
   white-space: pre-wrap;
@@ -704,7 +704,7 @@ onMounted(async () => {
 
 .archive-key {
   font-size: 0.8rem;
-  font-family: ui-monospace, monospace;
+  font-family: var(--font-primary);
   color: var(--text-color);
   overflow: hidden;
   text-overflow: ellipsis;

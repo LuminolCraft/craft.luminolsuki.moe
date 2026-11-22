@@ -29,7 +29,7 @@ defineProps<{ tokens: InlineToken[] }>()
   padding: 0.1em 0.35em;
   border-radius: 4px;
   background: var(--border-color, rgba(128, 128, 128, 0.18));
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-family: var(--font-primary);
   font-size: 0.92em;
 }
 
