@@ -11,7 +11,21 @@
 -->
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from 'vue'
-import { contourLayers } from '@/lib/contour'
+import {
+  COAST_D,
+  FORESTS_D,
+  ISLANDS_D,
+  JUNGLE_D,
+  RIVERS,
+  SAKURA_D,
+  SAVANNA_D,
+  SEA_CONTOURS,
+  SEA_D,
+  SHALLOW_D,
+  SNOW_D,
+  WATERS_D,
+  contourLayers,
+} from '@/lib/contour'
 import WorldOverlay from '@/components/home/sections/WorldOverlay.vue'
 
 /** 与全屏地图共用同一组路径：点开就是这张图放大 */
@@ -98,13 +112,13 @@ onBeforeUnmount(() => {
         <p class="ct__kicker">world / 地形</p>
         <h2 class="ct__title">一张三年未重置的地图</h2>
         <p class="ct__lead">
-          出生点以北是运河，以东为红石试验田，以南是玩家自行修筑的高铁。
+          出生点在北面的丘陵上，往东是一整片金合欢，向南是大河与丛林。
           图中所绘为等高线，亦为三年来行迹最密之处。
         </p>
         <dl class="ct__stats">
           <div><dt>已开服</dt><dd>26 个月</dd></div>
           <div><dt>地图重置</dt><dd>0 次</dd></div>
-          <div><dt>建筑存档</dt><dd>12.8 万块</dd></div>
+          <div><dt>建筑存档</dt><dd>100GB+</dd></div>
         </dl>
       </div>
 
@@ -116,19 +130,81 @@ onBeforeUnmount(() => {
         aria-label="展开完整世界地图"
         @click="openWorld"
       >
-        <svg viewBox="0 0 1000 480" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+        <svg viewBox="0 0 1000 800" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+          <defs>
+            <radialGradient id="ct-sea-grad" cx="48%" cy="44%" r="72%">
+              <stop offset="0" stop-color="#5ab4ff" stop-opacity="0.085" />
+              <stop offset="0.62" stop-color="#5ab4ff" stop-opacity="0.05" />
+              <stop offset="1" stop-color="#5ab4ff" stop-opacity="0" />
+            </radialGradient>
+            <clipPath id="ct-sea">
+              <path :d="SEA_D" fill-rule="evenodd" />
+            </clipPath>
+            <clipPath id="ct-land">
+              <path :d="COAST_D" />
+              <path v-for="(d, i) in ISLANDS_D" :key="`clip-${i}`" :d="d" />
+            </clipPath>
+            <pattern id="ct-dot-forest" width="9" height="9" patternUnits="userSpaceOnUse">
+              <circle cx="2.2" cy="2.2" r="1.05" fill="#4f9d7a" fill-opacity="0.34" />
+              <circle cx="6.6" cy="6.4" r="0.75" fill="#4f9d7a" fill-opacity="0.24" />
+            </pattern>
+            <pattern id="ct-dot-jungle" width="8" height="8" patternUnits="userSpaceOnUse">
+              <circle cx="2" cy="2" r="1.1" fill="#63b96a" fill-opacity="0.36" />
+              <circle cx="6" cy="5.6" r="0.8" fill="#63b96a" fill-opacity="0.26" />
+            </pattern>
+            <pattern id="ct-dot-savanna" width="10" height="7" patternUnits="userSpaceOnUse">
+              <path d="M1 3.5h4.5" stroke="#c7a75c" stroke-opacity="0.34" stroke-width="1" stroke-linecap="round" />
+            </pattern>
+            <pattern id="ct-dot-sakura" width="8" height="8" patternUnits="userSpaceOnUse">
+              <circle cx="2" cy="2" r="1.15" fill="#f2a7c3" fill-opacity="0.5" />
+              <circle cx="6" cy="5.6" r="0.8" fill="#f2a7c3" fill-opacity="0.36" />
+            </pattern>
+            <pattern id="ct-dot-snow" width="10" height="7" patternUnits="userSpaceOnUse">
+              <path d="M1 3.5h5" stroke="#dfe8f5" stroke-opacity="0.45" stroke-width="1" stroke-linecap="round" />
+            </pattern>
+          </defs>
+          <!-- 海岸线与地形：和全屏地图同一份骨架 -->
+          <g data-weight="18" class="ct__layer">
+            <path :d="SEA_D" class="ct__sea" fill-rule="evenodd" />
+            <path :d="SHALLOW_D" class="ct__shallow" fill-rule="evenodd" />
+            <path :d="COAST_D" class="ct__land" />
+            <path v-for="(d, i) in ISLANDS_D" :key="`if-${i}`" :d="d" class="ct__land is-isle" />
+            <g clip-path="url(#ct-land)">
+              <path v-for="(d, i) in FORESTS_D" :key="`f-${i}`" :d="d" class="ct__forest" />
+              <path v-for="(d, i) in FORESTS_D" :key="`fd-${i}`" :d="d" fill="url(#ct-dot-forest)" stroke="none" />
+              <path v-for="(d, i) in JUNGLE_D" :key="`j-${i}`" :d="d" class="ct__jungle" />
+              <path v-for="(d, i) in JUNGLE_D" :key="`jd-${i}`" :d="d" fill="url(#ct-dot-jungle)" stroke="none" />
+              <path v-for="(d, i) in SAVANNA_D" :key="`v-${i}`" :d="d" class="ct__savanna" />
+              <path v-for="(d, i) in SAVANNA_D" :key="`vd-${i}`" :d="d" fill="url(#ct-dot-savanna)" stroke="none" />
+              <path v-for="(d, i) in SAKURA_D" :key="`s-${i}`" :d="d" class="ct__sakura" />
+              <path v-for="(d, i) in SAKURA_D" :key="`sd-${i}`" :d="d" fill="url(#ct-dot-sakura)" stroke="none" />
+              <path v-for="(d, i) in SNOW_D" :key="`n-${i}`" :d="d" class="ct__snow" />
+              <path v-for="(d, i) in SNOW_D" :key="`nd-${i}`" :d="d" fill="url(#ct-dot-snow)" stroke="none" />
+            </g>
+            <g clip-path="url(#ct-sea)">
+              <path v-for="(d, i) in SEA_CONTOURS" :key="`sc-${i}`" :d="d" class="ct__sealine" />
+            </g>
+            <path :d="COAST_D" class="ct__coast" />
+            <path v-for="(d, i) in ISLANDS_D" :key="`i-${i}`" :d="d" class="ct__coast is-isle" />
+            <path v-for="(d, i) in WATERS_D" :key="`w-${i}`" :d="d" class="ct__lake" />
+            <path v-for="(d, i) in RIVERS" :key="`r-${i}`" :d="d" class="ct__river" />
+          </g>
           <g
             v-for="(l, i) in LAYERS"
             :key="i"
             :data-weight="l.weight"
             class="ct__layer"
-            :style="{ '--d': `${i * 0.11}s` }"
+            :style="{ '--d': `${i * 0.045}s` }"
           >
             <path
               :d="l.d"
               pathLength="1"
               fill="none"
-              :stroke="`color-mix(in srgb, var(--primary-color) ${Math.round(l.opacity * 100)}%, transparent)`"
+              :stroke="
+                l.tone === 'water'
+                  ? `color-mix(in srgb, #5ab4ff ${Math.round(l.opacity * 100)}%, transparent)`
+                  : `color-mix(in srgb, var(--primary-color) ${Math.round(l.opacity * 100)}%, transparent)`
+              "
               :stroke-width="l.width"
               stroke-linejoin="round"
             />
@@ -215,7 +291,9 @@ onBeforeUnmount(() => {
   position: relative;
   display: block;
   width: 100%;
-  aspect-ratio: 1000 / 480;
+  max-width: 560px;
+  justify-self: end;
+  aspect-ratio: 1000 / 800;
   padding: 0;
   border: 0;
   background: none;
@@ -281,11 +359,73 @@ onBeforeUnmount(() => {
   width: 100%;
   height: 100%;
   display: block;
-  overflow: visible;
+  /* 海底等高线外扩到画布外，裁掉免得漏出图形区 */
+  overflow: hidden;
 }
 .ct__layer {
   transform: translate3d(0, 0, 0);
   will-change: transform;
+}
+.ct__land {
+  fill: color-mix(in srgb, var(--primary-color) 9%, transparent);
+  stroke: none;
+}
+.ct__land.is-isle {
+  fill: color-mix(in srgb, var(--primary-color) 8%, transparent);
+}
+.ct__sealine {
+  fill: none;
+  stroke: color-mix(in srgb, #5ab4ff 16%, transparent);
+  stroke-width: 1;
+}
+.ct__coast {
+  fill: none;
+  stroke: color-mix(in srgb, var(--primary-color) 52%, transparent);
+  stroke-width: 1.4;
+  stroke-linejoin: round;
+}
+.ct__coast.is-isle {
+  stroke: color-mix(in srgb, var(--primary-color) 32%, transparent);
+  stroke-width: 1;
+}
+.ct__lake {
+  fill: color-mix(in srgb, #5ab4ff 9%, transparent);
+  stroke: color-mix(in srgb, #5ab4ff 32%, transparent);
+  stroke-width: 1.1;
+}
+.ct__sea {
+  fill: url(#ct-sea-grad);
+  stroke: none;
+}
+.ct__shallow {
+  fill: color-mix(in srgb, #5ab4ff 6%, transparent);
+  stroke: none;
+}
+.ct__forest {
+  fill: color-mix(in srgb, #4f9d7a 4.5%, transparent);
+  stroke: none;
+}
+.ct__jungle {
+  fill: color-mix(in srgb, #63b96a 5%, transparent);
+  stroke: none;
+}
+.ct__savanna {
+  fill: color-mix(in srgb, #c7a75c 5%, transparent);
+  stroke: none;
+}
+.ct__sakura {
+  fill: color-mix(in srgb, #f2a7c3 6%, transparent);
+  stroke: none;
+}
+.ct__snow {
+  fill: color-mix(in srgb, #dfe8f5 6%, transparent);
+  stroke: none;
+}
+.ct__river {
+  fill: none;
+  stroke: color-mix(in srgb, #5ab4ff 55%, transparent);
+  stroke-width: 2.8;
+  stroke-linecap: round;
 }
 .ct__layer path {
   stroke-dasharray: 1;

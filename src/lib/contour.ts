@@ -1,8 +1,13 @@
 /**
  * 等高线路径生成。
  *
- * 首页小图和全屏地图用的是同一套算法与同一组种子 —— 点开的图就是那张图放大，
- * 不是另画一张，所以抽到这里共用。
+ * 首页小图和全屏地图用的是同一套算法与同一组地形数据 —— 点开的图就是那张图放大。
+ * 地形控制点按实际俯视地图描摹（2026-11 的全图截图）：西侧临海、北面雪岭、
+ * 中央高地（出生点所在）、东南大湾、南部林地与外海小岛。比例 1000 × 800。
+ *
+ * 画法参照地形图：海岸线定轮廓 → 沿海向内收出阶地 → 高地团簇叠同心环 →
+ * 内陆水面单独成环。环与环只做极小幅度的低频抖动（< 2 user unit），
+ * 保证同心且不互相穿插，排线才干净。
  */
 
 export interface ContourLayer {
@@ -11,35 +16,208 @@ export interface ContourLayer {
   weight: number
   opacity: number
   width: number
+  /** land = 主色系（高地环），water = 蓝色系（内陆水系环） */
+  tone: 'land' | 'water'
 }
 
-/** 椭圆 + 多频正弦扰动，生成闭合等高线 */
-export function contourPath(seed: number, rx: number, ry: number, wobble: number, steps = 96): string {
-  let d = ''
-  for (let i = 0; i <= steps; i++) {
-    const t = (i / steps) * Math.PI * 2
-    const r =
-      1 +
-      wobble * Math.sin(3 * t + seed) +
-      wobble * 0.55 * Math.sin(5 * t - seed * 1.7) +
-      wobble * 0.3 * Math.sin(7 * t + seed * 0.6)
-    const x = 500 + Math.cos(t) * rx * r
-    const y = 240 + Math.sin(t) * ry * r
-    d += (i === 0 ? 'M' : 'L') + x.toFixed(1) + ' ' + y.toFixed(1)
+type Pt = [number, number]
+
+/** 闭合平滑曲线：Catmull-Rom 转三次贝塞尔，控制点即形状骨架 */
+function closedSmooth(pts: Pt[]): string {
+  const n = pts.length
+  let d = `M ${pts[0]![0].toFixed(1)} ${pts[0]![1].toFixed(1)}`
+  for (let i = 0; i < n; i++) {
+    const p0 = pts[(i - 1 + n) % n]!
+    const p1 = pts[i]!
+    const p2 = pts[(i + 1) % n]!
+    const p3 = pts[(i + 2) % n]!
+    const c1x = p1[0] + (p2[0] - p0[0]) / 6
+    const c1y = p1[1] + (p2[1] - p0[1]) / 6
+    const c2x = p2[0] - (p3[0] - p1[0]) / 6
+    const c2y = p2[1] - (p3[1] - p1[1]) / 6
+    d += ` C ${c1x.toFixed(1)} ${c1y.toFixed(1)} ${c2x.toFixed(1)} ${c2y.toFixed(1)} ${p2[0].toFixed(1)} ${p2[1].toFixed(1)}`
   }
-  return d + 'Z'
+  return d + ' Z'
 }
 
-/** 7 层同心等高线，k=0 为最外圈 */
-export function contourLayers(count = 7): ContourLayer[] {
-  return Array.from({ length: count }, (_, i) => {
-    const k = i / (count - 1)
-    const seed = i * 0.7 + 0.4
-    return {
-      d: contourPath(seed, 400 - k * 240, 200 - k * 118, 0.11 - k * 0.03),
-      weight: 26 - i * 3,
-      opacity: 0.16 + k * 0.5,
-      width: 0.8 + k * 0.7,
+/** 控制点向质心收缩 scale —— 同一形状的同心环，抖动取两个低频正弦叠加 */
+function shrink(pts: Pt[], scale: number, seed: number, wobble: number): Pt[] {
+  const cx = pts.reduce((s, p) => s + p[0], 0) / pts.length
+  const cy = pts.reduce((s, p) => s + p[1], 0) / pts.length
+  return pts.map(([x, y], i) => {
+    const wx = Math.sin(seed + i * 1.1) * 0.72 + Math.sin(seed * 1.7 + i * 2.3) * 0.28
+    const wy = Math.cos(seed * 1.3 + i * 1.1) * 0.72 + Math.cos(seed * 2.1 + i * 2.3) * 0.28
+    return [cx + (x - cx) * scale + wx * wobble, cy + (y - cy) * scale + wy * wobble]
+  })
+}
+
+/* —— 地形骨架（1000 × 800 坐标，描自实际地图） —— */
+
+/** 主大陆海岸线 */
+const COAST_PTS: Pt[] = [
+  [100, 110], [178, 62], [300, 38], [430, 28], [560, 24], [680, 22], [770, 12], [860, 18],
+  [930, 60], [950, 140], [938, 200], [915, 255], [872, 310], [884, 372], [864, 420], [788, 452],
+  [700, 462], [618, 470], [572, 512], [556, 570], [580, 628], [622, 678], [652, 706],
+  [560, 720], [470, 700], [400, 690], [330, 684], [250, 692], [188, 660], [140, 610],
+  [104, 528], [82, 430], [72, 320], [78, 215],
+]
+
+/** 外海小岛 */
+const ISLANDS: Pt[][] = [
+  [[906, 526], [950, 546], [938, 592], [896, 566]],
+  [[950, 624], [992, 638], [974, 680], [946, 656]],
+  [[58, 712], [96, 710], [106, 740], [64, 746]],
+  [[640, 660], [670, 672], [652, 690]],
+]
+
+/** 内陆水面（闭合湖面 / 湾） */
+const WATERS: Pt[][] = [
+  [[428, 86], [468, 76], [502, 98], [482, 130], [440, 122]],
+  [[150, 240], [195, 225], [225, 255], [190, 290], [150, 275]],
+]
+
+/** 开放水道：按实际河道描的三条主河（西河、北河、中央南河） */
+export const RIVERS: string[] = [
+  // 西河：西侧林间穿出，先东折西再向东，汇入中央水网
+  'M 150 190 C 200 202 244 200 268 226 C 288 248 262 268 252 282 C 244 296 268 306 300 312 C 348 322 396 336 424 352 C 438 360 448 364 456 366',
+  // 北河：从北面下来，绕中央高地东缘折回，与西河交汇
+  'M 450 40 C 452 78 458 104 468 122 C 482 146 512 154 540 164 C 566 174 578 200 572 226 C 566 250 556 262 566 278 C 578 296 610 302 638 290 C 656 282 666 292 664 308 C 660 326 630 344 596 354 C 556 364 510 366 474 366',
+  // 中央南河：中部下切，向东南入海
+  'M 456 366 C 456 392 458 410 464 424 C 476 442 496 450 512 462 C 530 476 540 492 550 508 C 566 528 596 546 632 560 C 672 576 702 594 726 612',
+]
+
+/** 林地（闭合区域，渲染时铺点阵纹理）。控制点贴海岸内侧，实际渲染另有陆地 clip */
+const FORESTS: Pt[][] = [
+  [
+    [104, 80], [190, 58], [280, 66], [330, 102], [336, 168], [292, 224], [206, 246],
+    [132, 228], [100, 168],
+  ],
+  [
+    [96, 300], [186, 290], [262, 320], [300, 380], [296, 470], [258, 552], [184, 592],
+    [116, 560], [88, 470], [86, 372],
+  ],
+  [
+    [340, 330], [430, 306], [520, 322], [584, 376], [600, 452], [560, 520], [476, 560],
+    [396, 536], [342, 462],
+  ],
+  [[762, 336], [840, 330], [866, 376], [810, 404], [760, 382]],
+]
+
+/** 樱花林：西北主片 + 出生点周围零散几片 */
+const SAKURA: Pt[][] = [
+  [[318, 46], [396, 38], [466, 46], [492, 70], [470, 92], [404, 100], [338, 86], [310, 64]],
+  [[416, 156], [468, 148], [500, 172], [492, 206], [440, 212], [412, 184]],
+  [[436, 252], [476, 246], [496, 268], [470, 290], [438, 282]],
+]
+
+/** 雪山：东北角主峰与北面小片 */
+const SNOW: Pt[][] = [
+  [[800, 26], [856, 20], [888, 44], [872, 72], [816, 78], [792, 54]],
+  [[734, 116], [772, 112], [792, 136], [764, 156], [732, 140]],
+]
+
+/** 丛林：南部中央一大片（含三处凸起） */
+const JUNGLE: Pt[][] = [
+  [
+    [402, 342], [470, 318], [540, 332], [598, 368], [658, 352], [704, 336], [734, 368],
+    [712, 414], [668, 452], [626, 470], [590, 516], [534, 538], [478, 508], [430, 468],
+    [398, 408],
+  ],
+]
+
+/** 金合欢：中央偏东北主块 + 东南沿岸一条 */
+const SAVANNA: Pt[][] = [
+  [
+    [560, 120], [626, 104], [700, 112], [744, 146], [740, 206], [700, 258], [672, 306],
+    [620, 330], [572, 296], [556, 236], [540, 180],
+  ],
+  [[736, 282], [810, 290], [880, 310], [918, 340], [898, 372], [838, 384], [776, 366], [736, 330]],
+]
+
+/** 高地团簇：北岭雪原、中央高地（出生点）、西南林地（东南台地由金合欢色块表达，不重复叠环） */
+const HIGHLANDS: Pt[][] = [
+  [
+    [150, 118], [262, 72], [420, 60], [560, 54], [700, 68], [818, 88], [878, 158],
+    [818, 208], [678, 190], [520, 168], [360, 178], [218, 188],
+  ],
+  [
+    [362, 172], [432, 132], [520, 150], [580, 200], [568, 270], [500, 310], [420, 300], [352, 250],
+  ],
+  [
+    [152, 420], [240, 400], [320, 450], [310, 540], [230, 588], [152, 540],
+  ],
+]
+
+/* —— 对外输出 —— */
+
+export const COAST_D = closedSmooth(COAST_PTS)
+export const ISLANDS_D = ISLANDS.map((p) => closedSmooth(p))
+export const WATERS_D = WATERS.map((p) => closedSmooth(p))
+export const FORESTS_D = FORESTS.map((p, i) => closedSmooth(shrink(p, 1, i * 1.7 + 0.2, 11)))
+export const SAKURA_D = SAKURA.map((p, i) => closedSmooth(shrink(p, 1, i * 1.3 + 1.1, 5)))
+export const SNOW_D = SNOW.map((p, i) => closedSmooth(shrink(p, 1, i * 1.5 + 0.7, 4)))
+export const JUNGLE_D = JUNGLE.map((p, i) => closedSmooth(shrink(p, 1, i * 1.3 + 0.9, 12)))
+export const SAVANNA_D = SAVANNA.map((p, i) => closedSmooth(shrink(p, 1, i * 1.9 + 0.4, 13)))
+
+/** 近岸浅海带：外扩一圈的海岸 + 反序海岸，evenodd 填充即成环带 */
+export const SHALLOW_D = `${closedSmooth(shrink(COAST_PTS, 1.058, 0.9, 2.6))} ${closedSmooth(
+  [...COAST_PTS].reverse(),
+)}`
+
+/** 等深线：右侧开阔海域的几道弧线，让海不空 */
+export const SEA_CONTOURS: string[] = [
+  'M 776 292 C 856 312 930 322 1000 328',
+  'M 790 372 C 872 392 940 402 1000 406',
+  'M 792 462 C 876 482 946 492 1000 496',
+  'M 792 556 C 866 572 930 582 1000 588',
+  'M 700 640 C 790 660 890 668 1000 672',
+]
+
+/** 海面：整张画布减去陆地（evenodd），海洋有底色才不显得缺角 */
+export const SEA_D = `M 0 0 H 1000 V 800 H 0 Z ${closedSmooth([...COAST_PTS].reverse())}`
+
+/** 沿海阶地 + 各高地同心环 + 内陆水环，由外向内逐层加深 */
+export function contourLayers(): ContourLayer[] {
+  const layers: ContourLayer[] = []
+
+  // 沿海阶地：只取海岸形状的收缩，给整块陆地一个基本等高骨架
+  ;[0.958, 0.906, 0.853, 0.799].forEach((s, k) => {
+    layers.push({
+      d: closedSmooth(shrink(COAST_PTS, s, 0.4 + k * 0.55, 2.2)),
+      weight: 22 - k * 2,
+      opacity: 0.15 + k * 0.06,
+      width: 0.85,
+      tone: 'land',
+    })
+  })
+
+  // 团簇越大，环越密；中央高地（出生点）最细
+  const spec = [
+    { pts: HIGHLANDS[0]!, rings: 5, wobble: 3.4 },
+    { pts: HIGHLANDS[1]!, rings: 4, wobble: 2.4 },
+    { pts: HIGHLANDS[2]!, rings: 4, wobble: 2.6 },
+  ]
+  spec.forEach(({ pts, rings, wobble }, m) => {
+    for (let k = 0; k < rings; k++) {
+      const t = k / (rings - 1)
+      layers.push({
+        d: closedSmooth(shrink(pts, 1 - t * 0.76, m * 1.9 + k * 0.47, wobble)),
+        weight: 18 - t * 12,
+        opacity: 0.24 + t * 0.6,
+        width: 1 + t * 0.6,
+        tone: 'land',
+      })
     }
   })
+
+  WATERS.forEach((pts, i) => {
+    layers.push({
+      d: closedSmooth(shrink(pts, 0.72, i * 2 + 0.3, 1.2)),
+      weight: 6,
+      opacity: 0.2,
+      width: 0.8,
+      tone: 'water',
+    })
+  })
+  return layers
 }
