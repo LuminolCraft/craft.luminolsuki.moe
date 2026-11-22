@@ -104,7 +104,7 @@ onBeforeUnmount(() => {
         <dl class="ct__stats">
           <div><dt>已开服</dt><dd>26 个月</dd></div>
           <div><dt>地图重置</dt><dd>0 次</dd></div>
-          <div><dt>建筑存档</dt><dd>12.8 万块</dd></div>
+          <div><dt>建筑存档</dt><dd>100 GB+</dd></div>
         </dl>
       </div>
 

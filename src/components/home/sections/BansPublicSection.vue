@@ -109,7 +109,7 @@ onMounted(async () => {
             或任何可被冒用的身份信息。
           </p>
         </div>
-        <a class="bans-public__more" href="/rules">查看服务器规则</a>
+        <a class="bans-public__more" href="/SimpleRules">查看服务器规则</a>
       </header>
 
       <div class="lp-card bans-public__panel" data-reveal>
