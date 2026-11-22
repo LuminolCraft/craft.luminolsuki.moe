@@ -104,30 +104,34 @@ onBeforeUnmount(() => {
         </p>
       </header>
 
-      <div class="tl__stage" :class="{ 'is-shown': shown }">
-        <svg class="tl__svg" viewBox="0 0 1000 400" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-          <path :d="PATH_D" class="tl__rail" />
-          <path ref="pathRef" :d="PATH_D" class="tl__rail tl__rail--live" pathLength="1" />
-          <g class="tl__years">
-            <!-- 年份贴在它开始的那一行旁边，而不是整图两端 -->
-            <text x="72" y="96">2025</text>
-            <text x="72" y="186">2026</text>
-            <line x1="66" y1="102" x2="66" y2="184" class="tl__year-line" />
-          </g>
-        </svg>
+      <!-- 窄屏不缩字号、只给横向滚动：卡片按 1000 单位画布排布，缩窄只会互相压住 -->
+      <p class="tl__swipe" aria-hidden="true">左右滑动查看</p>
+      <div class="tl__scroller">
+        <div class="tl__stage" :class="{ 'is-shown': shown }">
+          <svg class="tl__svg" viewBox="0 0 1000 400" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+            <path :d="PATH_D" class="tl__rail" />
+            <path ref="pathRef" :d="PATH_D" class="tl__rail tl__rail--live" pathLength="1" />
+            <g class="tl__years">
+              <!-- 年份贴在它开始的那一行旁边，而不是整图两端 -->
+              <text x="72" y="96">2025</text>
+              <text x="72" y="186">2026</text>
+              <line x1="66" y1="102" x2="66" y2="184" class="tl__year-line" />
+            </g>
+          </svg>
 
-        <div
-          v-for="(p, i) in placed"
-          :key="p.e.date"
-          class="tl__node"
-          :class="{ 'is-up': p.up }"
-          :style="{ left: `${p.x / 10}%`, top: `${p.y / 4}%`, '--i': String(i) }"
-        >
-          <span class="tl__dot" />
-          <div class="tl__card">
-            <span class="tl__date">{{ p.e.date.slice(2).replace('-', '.') }}</span>
-            <b class="tl__name">{{ p.e.title }}</b>
-            <span class="tl__tag">{{ p.e.tag }}</span>
+          <div
+            v-for="(p, i) in placed"
+            :key="p.e.date"
+            class="tl__node"
+            :class="{ 'is-up': p.up }"
+            :style="{ left: `${p.x / 10}%`, top: `${p.y / 4}%`, '--i': String(i) }"
+          >
+            <span class="tl__dot" />
+            <div class="tl__card">
+              <span class="tl__date">{{ p.e.date.slice(2).replace('-', '.') }}</span>
+              <b class="tl__name">{{ p.e.title }}</b>
+              <span class="tl__tag">{{ p.e.tag }}</span>
+            </div>
           </div>
         </div>
       </div>
@@ -174,9 +178,33 @@ onBeforeUnmount(() => {
   margin: 0 0 36px;
 }
 
+/* 横向滚动容器：画布不够宽时不压缩字号，只出滚动条 */
+.tl__scroller {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 10px;
+  margin-bottom: -10px;
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--primary-color) 45%, transparent) transparent;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+}
+.tl__scroller::-webkit-scrollbar {
+  height: 4px;
+}
+.tl__scroller::-webkit-scrollbar-track {
+  background: transparent;
+}
+.tl__scroller::-webkit-scrollbar-thumb {
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--primary-color) 40%, transparent);
+}
+
 .tl__stage {
   position: relative;
   aspect-ratio: 1000 / 400;
+  /* 卡片是按 1000 单位画布排的 HTML，撑到 1000px 以下就会互相压字 */
+  min-width: 1000px;
 }
 .tl__svg {
   width: 100%;
@@ -304,6 +332,15 @@ onBeforeUnmount(() => {
   text-decoration: none;
   border-bottom: 1px solid color-mix(in srgb, var(--primary-color) 40%, transparent);
 }
+.tl__swipe {
+  display: none;
+  margin: 0 0 8px;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  color: var(--text-secondary);
+  opacity: 0.75;
+}
 
 @media (max-width: 900px) {
   .tl {
@@ -312,12 +349,12 @@ onBeforeUnmount(() => {
   .tl__wrap {
     padding: 0 20px;
   }
-  /* 窄屏把卡片压成只留日期与标题 */
-  .tl__tag {
-    display: none;
+  .tl__swipe {
+    display: block;
   }
-  .tl__name {
-    font-size: 11.5px;
+  /* 顶上那一段画布是空的（第一条线在 110 单位处），窄屏把它收掉，图不至于悬空 */
+  .tl__stage {
+    margin-top: -30px;
   }
 }
 @media (prefers-reduced-motion: reduce) {
