@@ -9,6 +9,8 @@
   2. 等高线与首页共用 lib/contour —— 同一组种子，所以点开就是原图放大；
   3. 地标用 SVG <g> + tabindex，键盘 Tab 也能选中；地名标签带描边，压在等高线上仍可读；
   4. Lenis 全局实例在打开期间 stop()，关闭恢复 —— 否则滚轮会滚到背后的首页。
+  5. 详情卡两种入口：鼠标悬停地标 → 移开即消；下方索引 → 点击锁定 / 再点收起。
+     触屏没有悬停，点击地标直接切换锁定。
 -->
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
@@ -34,14 +36,36 @@ const shown = ref(false)
 const circle = ref(0)
 const ox = ref(0)
 const oy = ref(0)
-const activeId = ref<string | null>(null)
+/** 指针悬停的地标（临时）与点击锁定的地标（常驻） */
+const hoverId = ref<string | null>(null)
+const pinnedId = ref<string | null>(null)
 const closeBtn = ref<HTMLButtonElement | null>(null)
 
 const rootRef = ref<HTMLDivElement | null>(null)
 let hideTimer = 0
 let prevOverflow = ''
 
+const activeId = computed(() => hoverId.value ?? pinnedId.value)
 const active = computed(() => LANDMARKS.find((l) => l.id === activeId.value) ?? null)
+
+/** 用指针类型判断有没有悬停能力：比 matchMedia 可靠，也就能分辨触屏 */
+function onPoiEnter(e: PointerEvent, id: string) {
+  if (e.pointerType === 'mouse') hoverId.value = id
+}
+
+function onPoiLeave(e: PointerEvent, id: string) {
+  if (e.pointerType === 'mouse' && hoverId.value === id) hoverId.value = null
+}
+
+function togglePin(id: string) {
+  pinnedId.value = pinnedId.value === id ? null : id
+}
+
+/** 桌面光靠悬停就行，点击留给触屏/笔：点一下锁定，再点收起 */
+function onPoiClick(e: PointerEvent, id: string) {
+  if (e.pointerType === 'mouse') return
+  togglePin(id)
+}
 
 /** 卡片贴在地标旁；靠右的地标把卡片翻到左侧，避免出界 */
 const cardStyle = computed(() => {
@@ -88,7 +112,8 @@ watch(
       circle.value = Math.ceil(
         Math.hypot(Math.max(ox.value, window.innerWidth - ox.value), Math.max(oy.value, window.innerHeight - oy.value)),
       )
-      activeId.value = null
+      hoverId.value = null
+      pinnedId.value = null
       mounted.value = true
       lockScroll(true)
       document.addEventListener('keydown', onKey)
@@ -137,7 +162,7 @@ onBeforeUnmount(() => {
           <h2 id="wo-title" class="wo__title">世界地图</h2>
         </div>
         <div class="wo__tools">
-          <p class="wo__hint">点击地标查看来历 · Esc 关闭</p>
+          <p class="wo__hint">悬停地标查看来历 · Esc 关闭</p>
           <button ref="closeBtn" type="button" class="wo__close" aria-label="关闭地图" @click="emit('close')">
             <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13" /></svg>
           </button>
@@ -177,11 +202,13 @@ onBeforeUnmount(() => {
               role="button"
               tabindex="0"
               :aria-label="`${p.name}：${p.note}`"
-              @click="activeId = activeId === p.id ? null : p.id"
-              @pointerenter="activeId = p.id"
-              @focus="activeId = p.id"
-              @keydown.enter.prevent="activeId = p.id"
-              @keydown.space.prevent="activeId = p.id"
+              @click="onPoiClick($event, p.id)"
+              @pointerenter="onPoiEnter($event, p.id)"
+              @pointerleave="onPoiLeave($event, p.id)"
+              @focus="hoverId = p.id"
+              @blur="hoverId = hoverId === p.id ? null : hoverId"
+              @keydown.enter.prevent="togglePin(p.id)"
+              @keydown.space.prevent="togglePin(p.id)"
             >
               <circle :cx="p.x" :cy="p.y" r="13" class="wo__poi-hit" />
               <circle :cx="p.x" :cy="p.y" r="3.4" class="wo__poi-core" />
@@ -221,8 +248,8 @@ onBeforeUnmount(() => {
             <button
               type="button"
               :class="{ 'is-active': activeId === p.id }"
-              @click="activeId = p.id"
-              @pointerenter="activeId = p.id"
+              :aria-expanded="activeId === p.id"
+              @click="togglePin(p.id)"
             >
               <i aria-hidden="true" />
               {{ p.name }}
@@ -324,12 +351,15 @@ onBeforeUnmount(() => {
   padding: 20px 32px 28px;
   display: flex;
   flex-direction: column;
+  justify-content: center;
   gap: 14px;
+  /* 地图、图例、索引共用一列宽：既有 1360 的上限，也按视口高度反推，
+     避免大屏上地图下面空出一大片。宽高比固定为 1000:480，卡片百分比定位才仍准。 */
+  --stage-w: min(100%, 1360px, calc((100dvh - 320px) * 2.08333));
 }
 .wo__map {
   position: relative;
-  width: 100%;
-  max-width: 1180px;
+  width: var(--stage-w);
   margin: 0 auto;
   aspect-ratio: 1000 / 480;
 }
@@ -430,7 +460,8 @@ onBeforeUnmount(() => {
   border-radius: 6px;
   border: 1px solid color-mix(in srgb, var(--primary-color) 32%, var(--border-color));
   background: color-mix(in srgb, var(--background-color) 86%, var(--primary-color));
-  box-shadow:/n    0 18px 40px -22px color-mix(in srgb, #000 78%, transparent),
+  box-shadow:
+    0 18px 40px -22px color-mix(in srgb, #000 78%, transparent),
     0 0 0 3px color-mix(in srgb, var(--background-color) 70%, transparent);
   transform: translate(24px, -50%);
   pointer-events: none;
@@ -475,8 +506,7 @@ onBeforeUnmount(() => {
   display: flex;
   flex-wrap: wrap;
   gap: 18px;
-  width: 100%;
-  max-width: 1180px;
+  width: var(--stage-w);
   margin: 0 auto;
   font-family: var(--font-mono);
   font-size: 10.5px;
@@ -513,8 +543,7 @@ onBeforeUnmount(() => {
   gap: 8px;
   margin: 0 auto;
   padding: 0;
-  width: 100%;
-  max-width: 1180px;
+  width: var(--stage-w);
 }
 .wo__list li {
   list-style: none;
@@ -556,7 +585,7 @@ onBeforeUnmount(() => {
 }
 
 .wo__foot {
-  max-width: 1180px;
+  width: var(--stage-w);
   margin: 0 auto;
   font-size: 11.5px;
   color: var(--text-secondary);
