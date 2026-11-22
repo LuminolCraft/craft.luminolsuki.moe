@@ -133,7 +133,7 @@ onMounted(async () => {
   flex: 0 0 auto;
   margin-bottom: 6px;
   font-size: 12.5px;
-  font-family: var(--font-mono);
+  font-family: var(--font-primary);
   color: var(--primary-color);
   text-decoration: none;
   border-bottom: 1px solid color-mix(in srgb, var(--primary-color) 40%, transparent);
