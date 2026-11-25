@@ -15,8 +15,8 @@
  * 用法：
  *   FFMPEG_CORE_URL=https://.../ffmpeg-core.js \
  *   FFMPEG_CORE_WASM_URL=https://.../ffmpeg-core.wasm \
- *   FFMPEG_CORE_SHA256_URL=<ffmpeg-core.js 的 sha256> \
- *   FFMPEG_CORE_WASM_SHA256_URL=<ffmpeg-core.wasm 的 sha256> \
+ *   FFMPEG_CORE_SHA256=<ffmpeg-core.js 的 sha256> \
+ *   FFMPEG_CORE_WASM_SHA256=<ffmpeg-core.wasm 的 sha256> \
  *   node scripts/fetch-ffmpeg-core.mjs
  *
  * 已有产物时直接跳过（本地编译过就无需下载）。缺失且未配置 URL 时：
