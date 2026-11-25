@@ -71,8 +71,14 @@ export const useAuthorizationStore = defineStore('authorization', () => {
     return roles.value.includes(role)
   }
 
-  /** 任一角色命中即 true（管理后台入口/守卫用：与后端 requireAdmin 的角色语义对齐） */
-  function hasAnyRole(candidates: string[]): boolean {
+  /**
+   * 任一角色命中即为真（管理后台入口 / 路由守卫用，与后端 requireAdmin 的角色语义对齐）。
+   *
+   * 参数是 `readonly string[]`：角色常量表（ADMIN_CONSOLE_ROLES / REPORT_*_ROLES）
+   * 都是 `as const` 只读元组，传进来必须能被接受，否则 `vue-tsc --build` 报 TS2345
+   * （`--noEmit` 走根 tsconfig 只跑 references，查不出这类错）。
+   */
+  function hasAnyRole(candidates: readonly string[]): boolean {
     return candidates.some((r) => roles.value.includes(r))
   }
 
