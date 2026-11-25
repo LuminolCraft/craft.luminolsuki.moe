@@ -77,6 +77,35 @@ export interface UploadOptions {
   filename?: string
   /** 上传进度回调（0-100；responseTotal 未知时不回调） */
   onProgress?: (percent: number) => void
+  /** 取消信号（关闭面板 / 切换目标时中止在途上传） */
+  signal?: AbortSignal
+}
+
+/**
+ * 上传专用超时：120 秒。
+ *
+ * 全局 15s 是给普通 JSON 请求的；5MiB 附件在 1Mbps 上行需要 ~42s，用 15s
+ * 会让移动网络下的上传必然 NETWORK_ERROR。超时按"整包传输"计，不按"最后一个
+ * 字节"，因此给足余量。
+ */
+const UPLOAD_TIMEOUT_MS = 120_000
+
+/** 上传重试次数（网络错误 / 5xx 才重试；4xx 立即失败，避免无意义重放） */
+const UPLOAD_MAX_ATTEMPTS = 3
+/** 退避间隔（毫秒）：1s / 3s */
+const UPLOAD_RETRY_DELAYS_MS = [1000, 3000]
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+/** 判断错误是否值得重试：无响应、超时、5xx 可重试；4xx（含 401/403/409/413/429）不重试 */
+function isRetryableUploadError(error: unknown): boolean {
+  const e = error as { code?: string; status?: number; response?: { status?: number } }
+  const status = e?.response?.status ?? e?.status
+  if (typeof status === 'number') return status >= 500
+  // 无状态码：网络错误 / 超时
+  return e?.code === 'NETWORK_ERROR' || e?.code === 'ECONNABORTED' || e?.code === 'ERR_NETWORK'
 }
 
 /** 类型化请求门面：拦截器已解包信封，调用方直接拿到 data */
@@ -95,25 +124,55 @@ export const api = {
   },
   /**
    * multipart 文件上传。不要手动设 Content-Type——由浏览器自动生成含 boundary 的头。
-   * 用途：管理端封禁证据上传（POST /admin/bans/:id/evidence），支持附加文本字段
-   * 与 axios onUploadProgress 进度（重编码后的队列项按 0-100 汇报）。
+   *
+   * 与普通请求的差异（都踩过）：
+   * - **独立超时 120s**：全局 15s 会卡死移动网络下的 5MiB 上传；
+   * - **可取消**：传 `options.signal`，关闭浮层时中止，避免"面板已关、上传完成后
+   *   把结果 append 到别的列表"；
+   * - **可重试**：仅对网络错误 / 5xx 退避重试 3 次，4xx 立即失败（409 槽位冲突、
+   *   413 超限重放没有意义）。
+   *
+   * 每次重试都重建 FormData：body 是一次性的，复用会发送空包。
    */
-  upload<T>(url: string, file: File | Blob, options: UploadOptions = {}, fieldName = 'file'): Promise<T> {
-    const form = new FormData()
-    if (options.filename) {
-      form.append(fieldName, file, options.filename)
-    } else {
-      form.append(fieldName, file)
+  async upload<T>(
+    url: string,
+    file: File | Blob,
+    options: UploadOptions = {},
+    fieldName = 'file',
+  ): Promise<T> {
+    let lastError: unknown
+    for (let attempt = 0; attempt < UPLOAD_MAX_ATTEMPTS; attempt++) {
+      if (attempt > 0) {
+        const delay = UPLOAD_RETRY_DELAYS_MS[attempt - 1] ?? 3000
+        await sleep(delay)
+        options.onProgress?.(0)
+      }
+      try {
+        const form = new FormData()
+        if (options.filename) {
+          form.append(fieldName, file, options.filename)
+        } else {
+          form.append(fieldName, file)
+        }
+        for (const [key, value] of Object.entries(options.fields ?? {})) {
+          form.append(key, value)
+        }
+        return (await apiClient.post(url, form, {
+          timeout: UPLOAD_TIMEOUT_MS,
+          signal: options.signal,
+          onUploadProgress: (event) => {
+            if (!options.onProgress || !event.total) return
+            options.onProgress(Math.min(100, Math.round((event.loaded / event.total) * 100)))
+          },
+        })) as T
+      } catch (error) {
+        // 主动取消：不重试，原样抛出
+        if (options.signal?.aborted) throw error
+        lastError = error
+        if (!isRetryableUploadError(error)) throw error
+      }
     }
-    for (const [key, value] of Object.entries(options.fields ?? {})) {
-      form.append(key, value)
-    }
-    return apiClient.post(url, form, {
-      onUploadProgress: (event) => {
-        if (!options.onProgress || !event.total) return
-        options.onProgress(Math.min(100, Math.round((event.loaded / event.total) * 100)))
-      },
-    }) as Promise<T>
+    throw lastError
   },
 }
 

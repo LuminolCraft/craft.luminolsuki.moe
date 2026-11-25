@@ -437,6 +437,7 @@ import {
   type EvidenceFailureReason,
 } from '@/lib/evidence-image'
 import {
+  EVIDENCE_MAX_BYTES,
   EVIDENCE_UPLOAD_CONFIG,
   loadEvidenceOverrides,
   saveEvidenceOverrides,
@@ -913,9 +914,11 @@ async function onSaveEdit() {
 }
 
 // ---------- 证据：上传队列与压缩参数 ----------
-const EVIDENCE_MAX_BYTES = 5 * 1024 * 1024
-// 与 evidence-image 的 MIME 路由一致（含 GIF：走 ffmpeg 转动画 AVIF）
-const ACCEPT_TYPES = 'image/jpeg,image/png,image/webp,image/avif,image/gif,video/mp4,video/webm'
+// 上限来自 config 单一来源（与后端 SECURITY_POLICY.evidenceMaxBytes 对齐），
+// 不再在本文件手抄一份——三处手抄必然漂移。
+// ACCEPT_TYPES 与 evidence-image 的 MIME 路由一致（含 GIF / MOV：走 ffmpeg 转动画 AVIF）
+const ACCEPT_TYPES =
+  'image/jpeg,image/png,image/webp,image/avif,image/gif,video/mp4,video/webm,video/quicktime'
 
 /** 重编码失败原因 → i18n key（UI 直接展示） */
 const REASON_KEYS: Record<EvidenceFailureReason, string> = {
