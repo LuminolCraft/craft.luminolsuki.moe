@@ -92,10 +92,16 @@ RUN git clone --depth 1 --branch "$FFMPEG_VERSION" https://github.com/FFmpeg/FFm
 # 但该 flag 会让 emcc 去下 sdl2 port，提前 build 掉避免链接阶段才失败。
 RUN embuilder build sdl2
 
+# 两处对上游脚本的修正：
+# - sed 删掉 -lpostproc：上游无条件链它，而 libpostproc 属 GPL 组件（需 --enable-gpl
+#   才编）。本项目不启用 GPL、也用不到 postproc，去掉后产物仍是 LGPL。
+# - -O3：ffmpeg-wasm.sh 自身不带优化级别，默认 -O0 的 libaom 编码会慢数倍。
 RUN mkdir -p /ffmpeg/dist/esm \
     && cp /ffmpegwasm/build/ffmpeg-wasm.sh /ffmpeg/build-wasm.sh \
+    && sed -i '/lpostproc/d' /ffmpeg/build-wasm.sh \
     && cd /ffmpeg && bash build-wasm.sh \
          -laom -lm \
+         -O3 \
          -sEXPORT_ES6 \
          -o dist/esm/ffmpeg-core.js
 
