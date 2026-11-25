@@ -72,7 +72,7 @@ export const useAuthorizationStore = defineStore('authorization', () => {
   }
 
   /** 任一角色命中即 true（管理后台入口/守卫用：与后端 requireAdmin 的角色语义对齐） */
-  function hasAnyRole(candidates: string[]): boolean {
+  function hasAnyRole(candidates: readonly string[]): boolean {
     return candidates.some((r) => roles.value.includes(r))
   }
 

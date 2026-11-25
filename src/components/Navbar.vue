@@ -54,7 +54,16 @@
           <router-link to="/settings/security">
             {{ t('settings.nav.security') }}
           </router-link>
-          <router-link v-if="authz.hasAnyRole(['admin', 'owner'])" to="/admin/users">
+          <router-link to="/report">
+            {{ t('reports.nav.report') }}
+          </router-link>
+          <router-link to="/me/reports">
+            {{ t('reports.nav.mine') }}
+          </router-link>
+          <router-link v-if="authz.canManageReports()" to="/community/reports">
+            {{ t('reports.nav.community') }}
+          </router-link>
+          <router-link v-if="authz.hasAnyRole(ADMIN_CONSOLE_ROLES)" to="/admin/users">
             {{ t('auth.nav.admin') }}
           </router-link>
           <button type="button" class="side-nav-logout" :disabled="loggingOut" @click="onDrawerLogout">
@@ -108,8 +117,14 @@
         <template v-if="auth.isAuthenticated">
           <!-- 站内通知铃铛：登录态显示（WS 生命周期由 auth store 接线驱动，本组件零网络逻辑） -->
           <NotificationBell />
+          <router-link to="/report" class="nav-link">
+            {{ t('reports.nav.report') }}
+          </router-link>
+          <router-link v-if="authz.canManageReports()" to="/community/reports" class="nav-link">
+            {{ t('reports.nav.community') }}
+          </router-link>
           <router-link
-            v-if="authz.hasAnyRole(['admin', 'owner'])"
+            v-if="authz.hasAnyRole(ADMIN_CONSOLE_ROLES)"
             to="/admin/users"
             class="nav-link nav-auth-admin"
           >
@@ -242,7 +257,7 @@ import NotificationBell from './NotificationBell.vue'
 import { appConfig } from '../config/app-config'
 import { useGsap } from '@/composables/useGsap'
 import { useAuthStore } from '@/stores/auth'
-import { useAuthorizationStore } from '@/stores/authorization'
+import { ADMIN_CONSOLE_ROLES, useAuthorizationStore } from '@/stores/authorization'
 import { useSelfMinecraftName } from '@/composables/useSelfMinecraftName'
 
 const { t } = useI18n()

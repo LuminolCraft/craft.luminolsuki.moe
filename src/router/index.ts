@@ -254,6 +254,38 @@ const routes = [
       }
     ]
   },
+  // ---------- 举报（玩家侧 + 社区管理） ----------
+  {
+    path: '/report',
+    name: 'ReportCreate',
+    component: () => import('../views/reports/ReportCreateView.vue'),
+    meta: {
+      requiresAuth: true,
+      og: { title: '举报违规 - LuminolCraft', description: '提交玩家违规举报，附证据与说明。' },
+    },
+  },
+  {
+    path: '/me/reports',
+    name: 'MyReports',
+    component: () => import('../views/reports/MyReportsView.vue'),
+    meta: {
+      requiresAuth: true,
+      og: { title: '我的举报 - LuminolCraft', description: '查看自己提交的举报与处理结果。' },
+    },
+  },
+  {
+    // 社区管理独立于 /admin：/admin 父组按 admin/owner 整组拦截，而 staff 也要
+    // 进举报队列。放进 /admin 会让 staff 走不进去，或被迫放宽整个后台的入口。
+    path: '/community/reports',
+    name: 'CommunityReports',
+    component: () => import('../views/reports/CommunityReportsView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresRoles: ['staff', 'moderator', 'admin', 'owner'],
+      og: { title: '举报处理 - LuminolCraft', description: '查看举报队列、投票与处置。' },
+    },
+  },
+
   // ---------- 管理后台（独立控制台布局壳，沉浸式无站点导航） ----------
   {
     path: '/admin',
@@ -379,6 +411,19 @@ router.beforeEach(async (to) => {
 
   // ---------- 权限守卫（仅前端体验优化，真实裁决永远在后端 API） ----------
   // authorization 未就绪（网络失败）时重试一次；无权限 → 403 视图，不踢回登录。
+  // 角色型守卫（如社区管理的 staff+）：与 requiresPermission 并列，
+  // 用于「一批角色都能进、权限键又不适合表达」的场景。
+  const requiredRoles = to.meta.requiresRoles as string[] | undefined
+  if (requiredRoles && requiredRoles.length > 0) {
+    const authz = useAuthorizationStore()
+    if (!authz.loaded) {
+      await authz.fetchAuthorization()
+    }
+    if (!authz.hasAnyRole(requiredRoles)) {
+      return { path: '/admin/forbidden', query: { from: to.fullPath } }
+    }
+  }
+
   const requiredPermission = to.meta.requiresPermission as string | undefined
   if (requiredPermission) {
     const authz = useAuthorizationStore()
