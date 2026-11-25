@@ -71,6 +71,7 @@ RUN test -f /opt/lib/libaom.a && test -f /opt/include/aom/aom.h
 # ---------- 2) FFmpeg（只启用证据链路需要的组件） ----------
 RUN git clone --depth 1 --branch "$FFMPEG_VERSION" https://github.com/FFmpeg/FFmpeg.git /ffmpeg \
     && cp /ffmpegwasm/build/ffmpeg.sh /ffmpeg/build.sh \
+    && mkdir -p /ffmpeg/src \
     && cp -r /ffmpegwasm/src/bind /ffmpegwasm/src/fftools /ffmpeg/src/ \
     && cd /ffmpeg && bash build.sh \
          --disable-everything \
