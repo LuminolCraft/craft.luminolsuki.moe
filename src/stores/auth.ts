@@ -119,27 +119,43 @@ export const useAuthStore = defineStore('auth', () => {
    * 应用启动初始化（v1 文档 §8）：
    * Better Auth Session 存在 → 拉取 /api/v1/me 建立业务登录态；无 Session → 未登录。
    */
+  /**
+   * 应用启动初始化（v1 文档 §8）。
+   *
+   * 两个约束（都修过 bug）：
+   * 1. **in-flight 去重**：公开路由的 fire-and-forget 初始化与随后受保护路由的
+   *    `await initialize()` 会并发，"首屏打两遍 get-session + /me"。
+   * 2. **失败不置 initialized**：此前 `finally` 无条件置 true，一次网络抖动就把
+   *    全站判成未登录且永不再重试（必须手动刷新）；现在只有拿到确定结果
+   *    （有 Session 且 /me 成功，或明确无 Session）才置 true。
+   */
+  let initPromise: Promise<void> | null = null
+
   async function initialize() {
     if (initialized.value) return
+    if (initPromise) return initPromise
+    initPromise = doInitialize().finally(() => {
+      initPromise = null
+    })
+    return initPromise
+  }
+
+  async function doInitialize() {
     loading.value = true
     try {
       const { data } = await authClient.getSession()
       if (data?.session && data?.user) {
-        try {
-          await fetchCurrentUser()
-          // 登录态建立后拉取授权信息（失败不影响导航，守卫会兜底重试）
-          await useAuthorizationStore().fetchAuthorization()
-        } catch {
-          /* /me 网络异常：不清 Session 态，由页面内部自行处理 */
-        }
+        await fetchCurrentUser()
+        // 授权拉取失败不阻断初始化（fetchAuthorization 内部已把 loaded 置 false）
+        await useAuthorizationStore().fetchAuthorization()
       } else {
         clearAuthState()
       }
+      initialized.value = true
     } catch {
-      /* get-session 网络异常：不清态、不阻塞导航 */
+      // get-session 或 /me 网络异常：保持 initialized=false，下次导航重试
     } finally {
       loading.value = false
-      initialized.value = true
     }
   }
 
@@ -153,6 +169,8 @@ export const useAuthStore = defineStore('auth', () => {
       callbackURL: window.location.origin + resolveInternalPath(redirect, '/'),
     })
     if (error) throw toAppError(error)
+    // 换账号：先清掉上一个账号的授权缓存，避免拉取失败时残留旧角色
+    useAuthorizationStore().reset()
     await fetchCurrentUser()
     await useAuthorizationStore().fetchAuthorization()
     broadcastAuthChange()
@@ -216,6 +234,8 @@ export const useAuthStore = defineStore('auth', () => {
       const { data } = await authClient.getSession()
       if (data?.session && data?.user) {
         try {
+          // 跨标签页可能已换账号：先清授权缓存再重取
+          useAuthorizationStore().reset()
           await fetchCurrentUser()
           await useAuthorizationStore().fetchAuthorization()
         } catch {
