@@ -8,6 +8,8 @@ import { EVIDENCE_UPLOAD_CONFIG, resolveAvifParams, resolveWebpParams } from '@/
 import {
   canEncodeInBrowser,
   detectAvifKind,
+  frameGridSize,
+  planFrameTimes,
   planLadder,
   prepareEvidenceFile,
   randomSetId,
@@ -235,5 +237,67 @@ describe('随机命名', () => {
     expect(a).toMatch(/^[A-Za-z0-9_-]{6,64}$/)
     expect(b).toMatch(/^[A-Za-z0-9_-]{6,64}$/)
     expect(a).not.toBe(b)
+  })
+})
+
+describe('视频抽帧（不依赖 ffmpeg 的原生路径）', () => {
+  it('抽帧时间点均匀落在 (0, duration) 开区间内，避开首尾', () => {
+    const times = planFrameTimes(90)
+    expect(times.length).toBe(9)
+    expect(Math.min(...times)).toBeGreaterThan(0)
+    expect(Math.max(...times)).toBeLessThan(90)
+    // 单调递增
+    for (let i = 1; i < times.length; i++) {
+      expect(times[i] as number).toBeGreaterThan(times[i - 1] as number)
+    }
+    // 90 秒 / 10 等分 → 第一帧 9 秒
+    expect(times[0]).toBeCloseTo(9, 5)
+  })
+
+  it('时长无效或过短时退化为单帧，不抛错', () => {
+    expect(planFrameTimes(Number.NaN)).toEqual([0])
+    expect(planFrameTimes(0)).toEqual([0])
+    expect(planFrameTimes(0.4)).toEqual([0])
+  })
+
+  it('抽帧数量受 maxFrames 约束且不超过 9', () => {
+    expect(planFrameTimes(120, 3).length).toBe(3)
+    expect(planFrameTimes(120, 99).length).toBe(9)
+    expect(planFrameTimes(120, 0).length).toBe(1)
+  })
+
+  it('网格尺寸：1 帧单格、9 帧 3×3，且宽高随列数变化', () => {
+    const one = frameGridSize(1)
+    expect(one.cols).toBe(1)
+    expect(one.rows).toBe(1)
+
+    const nine = frameGridSize(9)
+    expect(nine.cols).toBe(3)
+    expect(nine.rows).toBe(3)
+    // 3 列 3 行：3*480 + 4*8
+    expect(nine.width).toBe(3 * 480 + 4 * 8)
+    expect(nine.height).toBe(3 * 270 + 4 * 8)
+
+    const two = frameGridSize(2)
+    expect(two.cols).toBe(2)
+    expect(two.rows).toBe(1)
+
+    // 超过上限时按 9 帧算，不会因调用方传错而无限放大画布
+    expect(frameGridSize(50).rows).toBe(3)
+  })
+})
+
+describe('体积预算常量与后端上限的一致性', () => {
+  it('编码收敛目标必须小于后端 5MiB 硬上限', () => {
+    // 回归：曾把 targetBytes 设成 10MiB，产物被判"达标"后仍被后端 413
+    expect(EVIDENCE_UPLOAD_CONFIG.video.targetBytes).toBeLessThan(5 * 1024 * 1024)
+  })
+
+  it('阶梯轮数足够走完 CRF 区间（步长 5、30→55 需 5 轮）', () => {
+    expect(EVIDENCE_UPLOAD_CONFIG.video.maxLadderRounds).toBeGreaterThanOrEqual(5)
+  })
+
+  it('输入上限不小于 10MiB（否则手机短视频会被直接拒收）', () => {
+    expect(EVIDENCE_UPLOAD_CONFIG.maxEncodeInputBytes).toBeGreaterThanOrEqual(10 * 1024 * 1024)
   })
 })

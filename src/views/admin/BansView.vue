@@ -385,6 +385,14 @@
               </template>
               <template v-else>
                 <span class="queue-error">{{ t(item.errorKey || 'admin.common.errGeneric') }}</span>
+                <button
+                  type="button"
+                  class="link-btn"
+                  :disabled="uploading"
+                  @click="retryItem(item)"
+                >
+                  {{ t('admin.bans.evidenceRetry') }}
+                </button>
               </template>
             </div>
             <ProgressRoot
@@ -926,6 +934,7 @@ const REASON_KEYS: Record<EvidenceFailureReason, string> = {
   too_large: 'admin.bans.evidenceReasonTooLarge',
   environment: 'admin.bans.evidenceReasonEnvironment',
   ffmpeg_missing: 'admin.bans.evidenceFfmpegMissing',
+  no_video_track: 'admin.bans.evidenceReasonNoVideoTrack',
   output_too_large: 'admin.bans.evidenceTooLarge',
   encode_failed: 'admin.bans.evidenceReasonEncodeFailed',
 }
@@ -962,6 +971,13 @@ const previewUrl = ref('')
 const queue = ref<QueueItem[]>([])
 let queueSeq = 0
 const uploading = ref(false)
+/**
+ * 当前上传会话的取消句柄。
+ *
+ * 关闭弹窗或切到别的封禁时必须中止在途请求：否则旧上传完成后会把结果 append
+ * 到**新面板**的证据列表（串证据），预览请求回来时也已无人校验归属。
+ */
+let uploadAbort: AbortController | null = null
 const uploadingId = ref(0)
 const uploadDone = ref(0)
 const uploadTotal = ref(0)
@@ -1016,7 +1032,9 @@ function resetSettings() {
 // ---------- 弹窗生命周期 ----------
 function openEvidence(ban: Ban) {
   evidenceBan.value = ban
-  evidenceList.value = []
+  // 后端列表/详情视图**已经**返回 evidence[]，此前这里硬清空导致历史证据永远
+  // 显示"暂无证据"，只有本次会话刚上传的才可见。
+  evidenceList.value = [...(ban.evidence ?? [])]
   queue.value = []
   previewUrl.value = ''
   uploadError.value = ''
@@ -1030,6 +1048,9 @@ function openEvidence(ban: Ban) {
 }
 
 function closeEvidence() {
+  // 中止在途上传与后续重试（幂等）
+  uploadAbort?.abort()
+  uploadAbort = null
   if (previewUrl.value) URL.revokeObjectURL(previewUrl.value)
   previewUrl.value = ''
   evidenceBan.value = null
@@ -1167,6 +1188,18 @@ async function processItem(item: QueueItem) {
   item.status = 'ready'
 }
 
+/**
+ * 失败项重试：原地重新编码一次。
+ *
+ * 此前 `failed` 是终态——blob 还在但永远不参与上传，也没有任何按钮能拉回
+ * `ready`，弱网下用户只能"删掉重选"。这里直接重跑 processItem（它会把
+ * status 置回 compressing 并重建产物）。
+ */
+function retryItem(item: QueueItem) {
+  if (uploading.value) return
+  void processItem(item)
+}
+
 function queueItemBusy(item: QueueItem): boolean {
   return item.status === 'compressing' || uploadingId.value === item.id
 }
@@ -1204,11 +1237,17 @@ async function onUpload() {
     uploadTotal.value = targets.length
     const banId = evidenceBan.value.id
     const succeeded: QueueItem[] = []
+    const controller = new AbortController()
+    uploadAbort = controller
     for (const item of targets) {
+      // 每一轮都确认面板还停在同一封禁上：中途切目标就停手，不要把旧目标的
+      // 证据写进新面板（也避免用户已关闭面板却继续跑完整条队列）
+      if (controller.signal.aborted || evidenceBan.value?.id !== banId) break
       uploadingId.value = item.id
       item.progress = 0
       try {
         const evidence = await api.upload<BanEvidence>(`/admin/bans/${banId}/evidence`, item.blob!, {
+          signal: controller.signal,
           filename: item.name,
           // 拆帧序列携带 setId + setIndex（multipart 文本字段）；单产出不传 = 单元素集合
           fields: item.setId
@@ -1221,7 +1260,9 @@ async function onUpload() {
             item.progress = p
           },
         })
-        evidenceList.value = [...evidenceList.value, evidence]
+        if (evidenceBan.value?.id === banId) {
+          evidenceList.value = [...evidenceList.value, evidence]
+        }
         succeeded.push(item)
       } catch (e) {
         // 单张失败标记原因继续其余
@@ -1235,6 +1276,7 @@ async function onUpload() {
     // 全部结束：成功项清出队列（已进证据列表），失败项保留供查看/重试
     queue.value = queue.value.filter((i) => !succeeded.includes(i))
   } finally {
+    uploadAbort = null
     uploading.value = false
     uploadTotal.value = 0
   }
