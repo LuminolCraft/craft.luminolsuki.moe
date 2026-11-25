@@ -107,6 +107,15 @@ export interface Ban {
   /** 管理端列表专用：createdBy 解析出的用户名（非用户命名空间或用户已删时为 null） */
   createdByName?: string | null
   revokedBy?: string | null
+  /**
+   * 该封禁是否仍然生效（后端按 expires_at / revoked_at 计算后下发）。
+   * 前端此前自行按时间重算——规则一致但属重复实现，直接用后端的。
+   */
+  active?: boolean
+  /** 该封禁的证据列表（后端列表 / 详情视图已附带，避免进弹窗再拉一次） */
+  evidence?: BanEvidence[]
+  /** 目标 MC 账号的当前角色名（改名后与 minecraftUsername 快照不同） */
+  minecraftCurrentName?: string | null
 }
 
 /** 创建封禁入参（POST /admin/bans）；expiresAt 省略 = 永久。

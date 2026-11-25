@@ -32,6 +32,7 @@ export type EvidenceFailureReason =
   | 'environment' // 缺 createImageBitmap / OffscreenCanvas 等编码能力
   | 'ffmpeg_missing' // ffmpeg wasm 核心未部署或加载失败（仅影响视频/GIF 项）
   | 'output_too_large' // 重编码产物仍超过 5MiB 上传上限
+  | 'no_video_track' // 视频里没有画面轨（纯音频 / 解码失败），抽帧不可行
   | 'encode_failed' // 编码器抛错 / 产物为空
 
 export interface EvidenceEncodedItem {
@@ -72,13 +73,18 @@ class FfmpegCoreMissingError extends Error {
  * 的提示永远不出现，用户只能逐项失败后才知道。这里改为同时校验 content-type
  * 是 JavaScript（含 text/javascript、application/javascript）。
  */
+let ffmpegProbeResult: boolean | null = null
+
 export async function probeFfmpegCore(): Promise<boolean> {
+  if (ffmpegProbeResult !== null) return ffmpegProbeResult
   try {
     const res = await fetch(`${FFMPEG_CORE_BASE}ffmpeg-core.js`, { method: 'HEAD' })
     if (!res.ok) return false
     const type = (res.headers.get('content-type') || '').toLowerCase()
-    return type.includes('javascript')
+    ffmpegProbeResult = type.includes('javascript')
+    return ffmpegProbeResult
   } catch {
+    ffmpegProbeResult = false
     return false
   }
 }
@@ -293,18 +299,38 @@ async function avifFrameCount(buffer: ArrayBuffer): Promise<number> {
 }
 
 /** 逐帧解码动画 AVIF → ImageData[]（每帧独立重编码，丢动效） */
+/**
+ * 拆帧上限：20 帧。
+ *
+ * 一帧 1080p 的 ImageData 是 ~8MB（1920×1080×4B），300 帧的长动图会直接吃掉
+ * 2.4GB —— 移动端必崩。20 帧足够表达"发生了什么"（每帧还会各占一个上传请求，
+ * 太多也会撞限流）。超出部分直接丢弃，调用方按 items.length 如实展示。
+ */
+const MAX_ANIMATED_FRAMES = 20
+
+/**
+ * 解码动画 AVIF 的帧序列。
+ *
+ * 单帧解码失败只跳过该帧、不整组失败：此前的实现把整个循环放在一个 try 里，
+ * 第 50 帧坏掉会让前面 49 帧已编码的成果全部丢掉。
+ */
 async function decodeAvifFrames(buffer: ArrayBuffer): Promise<ImageData[]> {
   const decoder = new ImageDecoder({ data: buffer, type: 'image/avif' })
+  const frames: ImageData[] = []
   try {
     await decoder.tracks.ready
-    const count = decoder.tracks.selectedTrack?.frameCount ?? 1
-    const frames: ImageData[] = []
+    const total = decoder.tracks.selectedTrack?.frameCount ?? 1
+    const count = Math.min(total, MAX_ANIMATED_FRAMES)
     for (let i = 0; i < count; i++) {
-      const { image } = await decoder.decode({ frameIndex: i })
       try {
-        frames.push(frameToImageData(image))
-      } finally {
-        image.close()
+        const { image } = await decoder.decode({ frameIndex: i })
+        try {
+          frames.push(frameToImageData(image))
+        } finally {
+          image.close()
+        }
+      } catch {
+        // 坏帧跳过（缺帧比整组失败好）
       }
     }
     return frames
@@ -524,6 +550,176 @@ async function videoDimensions(file: Blob): Promise<{ width: number; height: num
   })
 }
 
+/** 抽帧网格的列数与单格尺寸（3 列，480×270 单格 → 3×3 时约 1464×880） */
+const FRAME_GRID_COLS = 3
+const FRAME_CELL_WIDTH = 480
+const FRAME_CELL_HEIGHT = 270
+const FRAME_CELL_GAP = 8
+/** 最多抽 9 帧：再多对reviewer 没增量，只徒增体积 */
+const FRAME_GRID_MAX = 9
+/** 单次 seek 的超时：视频卡住时不能把整条队列挂死 */
+const SEEK_TIMEOUT_MS = 5000
+const METADATA_TIMEOUT_MS = 8000
+
+/**
+ * 计算抽帧时间点（纯函数，便于单测）。
+ *
+ * 均匀落在 (0, duration) 开区间内：0 秒往往是黑帧/片头，duration 处 seek 在
+ * 部分容器上不触发 `seeked`，两头都要避开。无有效时长时退化为单个 0 秒。
+ */
+export function planFrameTimes(duration: number, maxFrames = FRAME_GRID_MAX): number[] {
+  const safeDuration = Number.isFinite(duration) && duration > 0 ? duration : 0
+  if (safeDuration < 1) return [0]
+  const count = Math.max(1, Math.min(maxFrames, FRAME_GRID_MAX))
+  const times: number[] = []
+  for (let i = 0; i < count; i++) {
+    times.push((safeDuration * (i + 1)) / (count + 1))
+  }
+  return times
+}
+
+/** 计算网格画布尺寸（纯函数）：列数按帧数收敛，行数向上取整。 */
+export function frameGridSize(
+  frameCount: number,
+): { cols: number; rows: number; width: number; height: number } {
+  const count = Math.max(1, Math.min(frameCount, FRAME_GRID_MAX))
+  const cols = Math.min(FRAME_GRID_COLS, count)
+  const rows = Math.ceil(count / cols)
+  return {
+    cols,
+    rows,
+    width: cols * FRAME_CELL_WIDTH + (cols + 1) * FRAME_CELL_GAP,
+    height: rows * FRAME_CELL_HEIGHT + (rows + 1) * FRAME_CELL_GAP,
+  }
+}
+
+/** 秒 → mm:ss（烧在帧角上，便于处置时定位时间点） */
+function formatSeconds(seconds: number): string {
+  const total = Math.max(0, Math.floor(seconds))
+  const mm = String(Math.floor(total / 60)).padStart(2, '0')
+  const ss = String(total % 60).padStart(2, '0')
+  return `${mm}:${ss}`
+}
+
+/** 等待事件或超时（事件先到则清掉定时器，避免泄漏） */
+function waitForEvent(target: EventTarget, event: string, timeoutMs: number): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      target.removeEventListener(event, onDone)
+      reject(new Error(`timeout waiting ${event}`))
+    }, timeoutMs)
+    function onDone() {
+      clearTimeout(timer)
+      resolve()
+    }
+    target.addEventListener(event, onDone, { once: true })
+  })
+}
+
+/**
+ * 视频 → 原生抽帧合成一张证据图（**不依赖 ffmpeg wasm**）。
+ *
+ * 为什么需要这条路：自建 ffmpeg 核心（25–35MB，需 emsdk 从源码编译）在本项目
+ * 从未入库，缺核心时视频路径 100% 返回 `ffmpeg_missing` —— 等于视频证据从来没
+ * 可用过。把"能用"押在一个 35MB 的构建产物上不划算，而浏览器**本来就能解码
+ * 视频**：`<video>` + canvas 取帧，硬件解码、零下载、移动端也能跑。
+ *
+ * 产物是**一张静态 AVIF 网格**（最多 9 帧，每帧角上烧时间戳），不是动画：
+ * - 对处置更有用——一眼看完整个时间线，不用等动画播完；
+ * - 体积可控（一般几十到几百 KB），不会撞后端 5MiB 上限；
+ * - 顺带剥掉音频（证据只需要画面）。
+ *
+ * 有声有画的长视频仍可走 ffmpeg 路径（核心存在时优先用它出动画 AVIF）。
+ */
+async function prepareVideoViaFrames(
+  file: File | Blob,
+  hooks?: PrepareHooks,
+): Promise<EvidenceResult> {
+  const url = URL.createObjectURL(file)
+  const video = document.createElement('video')
+  video.muted = true
+  video.playsInline = true
+  video.preload = 'metadata'
+  video.src = url
+
+  try {
+    await waitForEvent(video, 'loadedmetadata', METADATA_TIMEOUT_MS)
+
+    const duration = Number.isFinite(video.duration) ? video.duration : 0
+    if (!video.videoWidth || !video.videoHeight) return { ok: false, reason: 'no_video_track' }
+
+    const times = planFrameTimes(duration)
+    const { cols, width, height } = frameGridSize(times.length)
+    const canvas = document.createElement('canvas')
+    canvas.width = width
+    canvas.height = height
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return { ok: false, reason: 'environment' }
+    ctx.fillStyle = '#0b0b0f'
+    ctx.fillRect(0, 0, canvas.width, canvas.height)
+
+    for (let i = 0; i < times.length; i++) {
+      const t = times[i] as number
+      video.currentTime = t
+      // seeked 可能因关键帧稀疏而延迟；超时视为该帧失败，继续其余帧
+      await waitForEvent(video, 'seeked', SEEK_TIMEOUT_MS)
+      hooks?.onProgress?.(Math.round(((i + 1) / times.length) * 90))
+
+      const col = i % cols
+      const row = Math.floor(i / cols)
+      const dx = FRAME_CELL_GAP + col * (FRAME_CELL_WIDTH + FRAME_CELL_GAP)
+      const dy = FRAME_CELL_GAP + row * (FRAME_CELL_HEIGHT + FRAME_CELL_GAP)
+
+      // cover 适配：保持比例填满单元格，多出来的部分裁掉
+      const scale = Math.max(FRAME_CELL_WIDTH / video.videoWidth, FRAME_CELL_HEIGHT / video.videoHeight)
+      const sw = FRAME_CELL_WIDTH / scale
+      const sh = FRAME_CELL_HEIGHT / scale
+      const sx = (video.videoWidth - sw) / 2
+      const sy = (video.videoHeight - sh) / 2
+      ctx.drawImage(video, sx, sy, sw, sh, dx, dy, FRAME_CELL_WIDTH, FRAME_CELL_HEIGHT)
+
+      // 时间戳：半透明底 + 白字，压在任何画面上都可读
+      const label = formatSeconds(t)
+      ctx.font = '600 20px ui-sans-serif, system-ui, sans-serif'
+      const textWidth = ctx.measureText(label).width
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.65)'
+      ctx.fillRect(dx + 8, dy + 8, textWidth + 14, 30)
+      ctx.fillStyle = '#ffffff'
+      ctx.fillText(label, dx + 15, dy + 30)
+    }
+
+    hooks?.onProgress?.(95)
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+    const blob = await encodeAvifWithinBudget(imageData, resolveAvifParams(null))
+    if (blob.size > EVIDENCE_MAX_BYTES) return { ok: false, reason: 'output_too_large' }
+    hooks?.onProgress?.(100)
+    return { ok: true, items: [{ blob, originalSize: file.size, encodedSize: blob.size }] }
+  } catch {
+    return { ok: false, reason: 'encode_failed' }
+  } finally {
+    video.removeAttribute('src')
+    video.load()
+    URL.revokeObjectURL(url)
+  }
+}
+
+/**
+ * GIF 无 ffmpeg 时的降级：取首帧转静态 AVIF。
+ *
+ * 动图会丢动效，但比"直接拒绝"好——调用方会把这一项标为已就绪，用户在
+ * UI 上看到的是静态图。浏览器对 GIF 的 `createImageBitmap` 只返回首帧。
+ */
+async function prepareGifFirstFrame(file: File | Blob): Promise<EvidenceResult> {
+  try {
+    const imageData = await imageDataFromFile(file)
+    const blob = await encodeAvifWithinBudget(imageData, resolveAvifParams(null))
+    if (blob.size > EVIDENCE_MAX_BYTES) return { ok: false, reason: 'output_too_large' }
+    return { ok: true, items: [{ blob, originalSize: file.size, encodedSize: blob.size }] }
+  } catch {
+    return { ok: false, reason: 'encode_failed' }
+  }
+}
+
 async function prepareMediaViaFfmpeg(
   file: File | Blob,
   hooks?: PrepareHooks,
@@ -625,14 +821,22 @@ export async function prepareEvidenceFile(
           return { ok: true, items: [{ blob, originalSize: file.size, encodedSize: blob.size }] }
         }
         const frames = await decodeAvifFrames(buffer)
+        if (frames.length === 0) return { ok: false, reason: 'encode_failed' }
         const items: EvidenceEncodedItem[] = []
         for (let i = 0; i < frames.length; i++) {
           hooks?.onProgress?.(Math.round(((i + 1) / frames.length) * 100))
           const frame = frames[i]
           if (!frame) continue
-          const blob = await encodeAvif(frame, avifParams)
-          items.push({ blob, originalSize: file.size, encodedSize: blob.size })
+          try {
+            // 每帧单独兜体积：单帧超限就跳过，不让它把整组上传拖挂
+            const blob = await encodeAvifWithinBudget(frame, avifParams)
+            if (blob.size > EVIDENCE_MAX_BYTES) continue
+            items.push({ blob, originalSize: file.size, encodedSize: blob.size })
+          } catch {
+            // 单帧编码失败跳过
+          }
         }
+        if (items.length === 0) return { ok: false, reason: 'encode_failed' }
         return { ok: true, items }
       }
 
@@ -643,8 +847,13 @@ export async function prepareEvidenceFile(
       // iPhone 录屏是 .mov / quicktime；m4v 是部分安卓相机的容器。两者的
       // demuxer 在自建 ffmpeg 核心里已启用（--enable-demuxer=mov），
       // 之前只是 MIME 白名单没放行。
-      case 'video/quicktime':
-        return await prepareMediaViaFfmpeg(file, hooks)
+      case 'video/quicktime': {
+        // 核心存在 → 走 ffmpeg 出动画 AVIF（保动效）；核心缺失 → 原生抽帧兜底。
+        // 后者不下载任何 wasm，浏览器硬解视频，移动端也能跑。
+        if (await probeFfmpegCore()) return await prepareMediaViaFfmpeg(file, hooks)
+        if (type === 'image/gif') return await prepareGifFirstFrame(file)
+        return await prepareVideoViaFrames(file, hooks)
+      }
 
       default:
         return { ok: false, reason: 'unsupported_type' }
