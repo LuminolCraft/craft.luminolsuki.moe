@@ -40,11 +40,29 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN git clone --depth 1 --branch "$FFMPEGWASM_REF" https://github.com/ffmpegwasm/ffmpeg.wasm /ffmpegwasm
 
 # ---------- 1) libaom（AV1 编码器） ----------
-# aom 的 CMake 不带 pkg-config 是常态，ffmpeg 的 configure 又强依赖 pkg-config 探测，
-# 所以这里补一份 aom.pc（值必须真实，否则链接阶段找不到 -laom）。
+# 不复用 upstream 的 build/aom.sh：它不传 -DCMAKE_BUILD_TYPE，而 aom 的
+# build/cmake/compiler_tests.cmake 会执行 `string(TOUPPER ${CMAKE_BUILD_TYPE} config)`，
+# 变量为空时参数不足直接 CMake Error（"Configuring incomplete"）。显式给 Release 即可。
+#
+# aom 的 CMake 也不产出 pkg-config 文件，而 ffmpeg 的 configure 靠 pkg-config 探测
+# libaom，所以另外 COPY 一份 aom.pc 进去（值必须真实，否则链接阶段找不到 -laom）。
 RUN git clone --depth 1 --branch "$AOM_VERSION" https://aomedia.googlesource.com/aom /aom \
-    && cp /ffmpegwasm/build/aom.sh /aom/build.sh \
-    && cd /aom && bash build.sh
+    && mkdir -p /aom/cmbuild && cd /aom/cmbuild \
+    && emcmake cmake .. \
+         -DCMAKE_BUILD_TYPE=Release \
+         -DCMAKE_INSTALL_PREFIX="$INSTALL_DIR" \
+         -DCMAKE_TOOLCHAIN_FILE="$EM_TOOLCHAIN_FILE" \
+         -DBUILD_SHARED_LIBS=0 \
+         -DAOM_TARGET_CPU=generic \
+         -DCONFIG_RUNTIME_CPU_DETECT=0 \
+         -DCONFIG_WEBM_IO=0 \
+         -DENABLE_DOCS=0 \
+         -DENABLE_TESTS=0 \
+         -DENABLE_EXAMPLES=0 \
+         -DENABLE_TOOLS=0 \
+         -DAOM_EXTRA_C_FLAGS="-I$INSTALL_DIR/include" \
+         -DAOM_EXTRA_CXX_FLAGS="-I$INSTALL_DIR/include" \
+    && emmake make -j"$(nproc)" install
 
 COPY aom.pc /opt/lib/pkgconfig/aom.pc
 
