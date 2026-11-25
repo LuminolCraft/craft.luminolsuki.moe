@@ -52,3 +52,8 @@ BACKEND-PRIVATE.md
 
 # 本地 agent 技能目录（私有，严禁入库）
 .dsh/
+
+# ffmpeg wasm 核心（约 25–35MB 二进制）：构建期由 scripts/fetch-ffmpeg-core.mjs
+# 拉取并校验 sha256，不入版本库——公开仓库不该背这个体积。
+public/ffmpeg/
+.ffmpeg-build/

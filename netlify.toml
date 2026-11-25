@@ -32,6 +32,13 @@
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
 
+# ffmpeg wasm 核心（视频证据转码用，约 25–35MB）。文件名不含内容哈希，靠版本
+# 目录/文件名区分；全局 no-cache 会让每次打开上传面板都重新校验并下载一遍。
+[[headers]]
+  for = "/ffmpeg/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
 [[headers]]
   for = "/favicon.ico"
   [headers.values]
