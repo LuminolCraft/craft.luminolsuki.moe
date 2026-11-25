@@ -1,25 +1,14 @@
-# 构建 ffmpeg wasm 核心（含 libaom-av1 编码器 + AVIF muxer）。
+# 构建 ffmpeg wasm 核心（libaom-av1 编码器 + avif muxer）。
 #
-# 为什么在 CI 里编：这个产物 25–35MB，需要 emsdk + cmake + make 从源码编译
-# libaom 与 FFmpeg 7（脚本见 scripts/build-ffmpeg-core.sh）。开发机不必具备
-# 这套工具链；编一次、传到 Release，之后 `scripts/fetch-ffmpeg-core.mjs` 在
-# 构建期按 URL 拉取并校验 sha256 即可。
+# 为什么在 CI 里编：产物约 25–40MB，需要 emsdk + cmake + Docker 从源码编 libaom 与
+# FFmpeg（详见 scripts/ffmpeg-core/Dockerfile）。开发机不必具备工具链；编一次传到
+# Release，之后 scripts/fetch-ffmpeg-core.mjs 在构建期按 URL 拉取并校验 sha256。
 #
 # 触发：
-# - 手动（Actions → build-ffmpeg-core → Run workflow）
-# - 打 tag `ffmpeg-core-v*`（会自动把两个文件挂到同名 Release）
+# - 手动（Actions → build-ffmpeg-core → Run workflow），产物为 artifact；
+# - 打 tag `ffmpeg-core-v*`，额外把两个文件挂到同名 Release，供构建期直接下载。
 #
-# 产物用法（二选一）：
-# 1. 发布为 Release 后，在 Netlify 环境变量里配：
-#      FFMPEG_CORE_URL=https://github.com/<owner>/<repo>/releases/download/<tag>/ffmpeg-core.js
-#      FFMPEG_CORE_WASM_URL=.../ffmpeg-core.wasm
-#      FFMPEG_CORE_SHA256=<summary 里的 sha256>
-#      FFMPEG_CORE_WASM_SHA256=<summary 里的 sha256>
-#      FFMPEG_CORE_STRICT=1   # 缺核心就让构建失败，避免"分支存在但从未可用"
-# 2. 或下载 artifact，把两个文件放进 public/ffmpeg/（该目录不进版本库）。
-#
-# 注意：核心是单线程构建（-sUSE_PTHREADS=0），因此**不需要** COOP/COEP 响应头。
-# 若改成多线程，必须同时配 COOP/COEP，否则会被 mc-heads 头像与外部字体打断。
+# 注意：核心是单线程构建（FFMPEG_ST=1），因此**不需要** COOP/COEP 响应头。
 name: build-ffmpeg-core
 
 on:
@@ -34,53 +23,21 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    # 从源码编 libaom + FFmpeg，首次约 30–60 分钟
+    # 编 libaom + FFmpeg 是重活：冷缓存约 30–50 分钟
     timeout-minutes: 180
-
-    env:
-      EMSDK_VERSION: '3.1.74'
-      FFMPEG_VERSION: '7.1.1'
-      LIBAOM_VERSION: 'v3.9.1'
-      # 单线程核心：无需 SharedArrayBuffer，也就不需要 COOP/COEP
-      SINGLE_THREAD: '1'
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install build tools
+      - name: Show docker version
         run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends \
-            build-essential cmake git python3 pkg-config
-          cmake --version
-          make --version | head -1
+          docker version --format '{{.Server.Version}}'
+          docker buildx version
 
-      - name: Cache emsdk
-        id: cache-emsdk
-        uses: actions/cache@v4
-        with:
-          path: ${{ github.workspace }}/emsdk
-          key: emsdk-${{ env.EMSDK_VERSION }}-${{ runner.os }}
-
-      - name: Install emsdk
-        if: steps.cache-emsdk.outputs.cache-hit != 'true'
-        run: |
-          git clone --depth 1 https://github.com/emscripten-core/emsdk.git emsdk
-          cd emsdk
-          ./emsdk install "${EMSDK_VERSION}"
-          ./emsdk activate "${EMSDK_VERSION}"
-
-      - name: Activate emsdk
-        run: |
-          source emsdk/emsdk_env.sh
-          emcc --version | head -2
-
-      - name: Build ffmpeg core (libaom + FFmpeg + avif muxer)
-        run: |
-          export EMSDK_PATH="${GITHUB_WORKSPACE}/emsdk"
-          export FFMPEG_VERSION LIBAOM_VERSION SINGLE_THREAD
-          bash scripts/build-ffmpeg-core.sh
+      # 构建脚本与 CI 完全同源：本地 `bash scripts/build-ffmpeg-core.sh` 跑的是同一条命令
+      - name: Build ffmpeg core (libaom + avif muxer)
+        run: bash scripts/build-ffmpeg-core.sh
 
       - name: Verify artifacts
         run: |
@@ -88,12 +45,11 @@ jobs:
           ls -lh public/ffmpeg/
           test -s public/ffmpeg/ffmpeg-core.js
           test -s public/ffmpeg/ffmpeg-core.wasm
-          # 核心必须真的包含 avif muxer 与 libaom 编码器，否则视频会"编译成功但不可用"
-          if ! grep -qa 'libaom-av1' public/ffmpeg/ffmpeg-core.wasm; then
-            echo "::error::ffmpeg-core.wasm 不含 libaom-av1 编码器，AVIF 转码不可用"
-            exit 1
-          fi
-          echo "含 libaom-av1 编码器 ✅"
+          # 核心必须真的包含 avif muxer 与 libaom 编码器，否则会「编译成功但不可用」
+          grep -qa 'libaom-av1' public/ffmpeg/ffmpeg-core.wasm
+          # avif muxer 的符号名就藏在 wasm 字符串表里，缺了前端 AVIF 输出必失败
+          grep -qa 'avif' public/ffmpeg/ffmpeg-core.wasm
+          echo "含 libaom-av1 编码器与 avif muxer ✅"
 
       - name: Compute checksums
         id: checksums
@@ -114,32 +70,34 @@ jobs:
           {
             echo "## ffmpeg core 构建完成"
             echo
-            echo "| 文件 | sha256 |"
-            echo "|---|---|"
-            echo "| \`ffmpeg-core.js\` | \`${{ steps.checksums.outputs.js }}\` |"
-            echo "| \`ffmpeg-core.wasm\` | \`${{ steps.checksums.outputs.wasm }}\` |"
+            echo "| 文件 | 大小 | sha256 |"
+            echo "|---|---|---|"
+            echo "| \`ffmpeg-core.js\` | $(du -h public/ffmpeg/ffmpeg-core.js | cut -f1) | \`${{ steps.checksums.outputs.js }}\` |"
+            echo "| \`ffmpeg-core.wasm\` | $(du -h public/ffmpeg/ffmpeg-core.wasm | cut -f1) | \`${{ steps.checksums.outputs.wasm }}\` |"
             echo
-            echo "配到 Netlify 环境变量（构建期自动拉取并校验）："
-            echo
+            echo "### 用法 A：配 Netlify 环境变量（构建期自动下载）"
             echo '```'
-            echo "FFMPEG_CORE_URL=<release 或任意直链>/ffmpeg-core.js"
-            echo "FFMPEG_CORE_WASM_URL=<release 或任意直链>/ffmpeg-core.wasm"
+            echo "FFMPEG_CORE_URL=<直链>/ffmpeg-core.js"
+            echo "FFMPEG_CORE_WASM_URL=<直链>/ffmpeg-core.wasm"
             echo "FFMPEG_CORE_SHA256=${{ steps.checksums.outputs.js }}"
             echo "FFMPEG_CORE_WASM_SHA256=${{ steps.checksums.outputs.wasm }}"
             echo "FFMPEG_CORE_STRICT=1"
             echo '```'
+            echo
+            echo "### 用法 B：直接下 artifact，把两个文件放进 public/ffmpeg/"
+            echo "artifact 名：\`ffmpeg-core-${{ github.run_id }}\`（页面底部 Artifacts 区）"
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ffmpeg-core-${{ env.FFMPEG_VERSION }}-${{ env.SINGLE_THREAD == '1' && 'st' || 'mt' }}
+          name: ffmpeg-core-${{ github.run_id }}
           path: |
             public/ffmpeg/ffmpeg-core.js
             public/ffmpeg/ffmpeg-core.wasm
             public/ffmpeg/checksums.txt
           retention-days: 30
-          # 两个文件合计 25–35MB，压缩收益不大，但保持默认 zip 便于一次下载
+          # 两个文件合计 25–40MB，压缩收益不大，但保持默认 zip 便于一次下载
           compression-level: 0
 
       - name: Attach to release
@@ -152,6 +110,6 @@ jobs:
             public/ffmpeg/checksums.txt
           name: ffmpeg core ${{ github.ref_name }}
           body: |
-            FFmpeg ${{ env.FFMPEG_VERSION }} + libaom ${{ env.LIBAOM_VERSION }}（AVIF muxer，单线程）。
-            用法见 README / scripts/fetch-ffmpeg-core.mjs；sha256 见 checksums.txt。
+            FFmpeg ${{ env.FFMPEG_VERSION || 'n5.1.4' }} + libaom（AVIF muxer，单线程）。
+            sha256 见 checksums.txt；用法见 scripts/fetch-ffmpeg-core.mjs。
           fail_on_unmatched_files: true

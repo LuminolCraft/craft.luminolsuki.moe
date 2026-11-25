@@ -1,146 +1,62 @@
 #!/usr/bin/env bash
 #
-# 构建 ffmpeg 7.x wasm 核心（含 libaom-av1 编码器 + AVIF muxer）。
+# 构建 ffmpeg wasm 核心（libaom-av1 编码器 + avif muxer），产物写入 public/ffmpeg/。
 #
-# 产物 vendored 约定：把构建出的 ffmpeg-core.js / ffmpeg-core.wasm 拷贝到
-# public/ffmpeg/，运行时由 src/lib/evidence-image.ts 按固定路径 /ffmpeg/ffmpeg-core.js
-# 懒加载（Worker 内动态 import）。核心文件缺失/加载失败时，视频与 GIF 队列项
-# 会以结构化失败原因 ffmpeg_missing 呈现，图片路径不受影响。
+# 产物用途：src/lib/evidence-image.ts 的「GIF / MP4 / WebM → 动画 AVIF」路径。
+# 核心缺失时该路径返回 ffmpeg_missing，并自动降级为原生抽帧（静态 AVIF 证据图）。
 #
-# 依赖：emsdk（本仓库不随附）。安装并激活后通过 EMSDK_PATH 指向其根目录：
-#   git clone https://github.com/emscripten-core/emsdk.git ~/emsdk
-#   ~/emsdk/emsdk install 3.1.74 && ~/emsdk/emsdk activate 3.1.74
+# 为什么走 Docker：@ffmpeg/ffmpeg 0.12 的 core 必须由 ffmpegwasm 官方那套构建产出
+# （修补过的 fftools + bind.js 胶水 + 只导出 _ffmpeg/_malloc/_abort），自己用 emcc
+# 链静态库得不到可加载的模块。详见 scripts/ffmpeg-core/Dockerfile 顶部说明。
+#
+# 依赖：Docker（含 buildx）。本机没有也能用——CI 的 build-ffmpeg-core workflow
+# 会跑同一条命令，产物挂到 Release 后由构建期自动下载（见 scripts/fetch-ffmpeg-core.mjs）。
+#
 # 用法：
-#   EMSDK_PATH=~/emsdk bash scripts/build-ffmpeg-core.sh
-#
-# 线程模式说明：默认构建单线程核心（-sUSE_PTHREADS=0），无需部署 COOP/COEP 响应头，
-# 管理端低频上传场景足够；如需多线程加速，把 SINGLE_THREAD=0 并给站点配置：
-#   Cross-Origin-Opener-Policy: same-origin
-#   Cross-Origin-Embedder-Policy: require-corp
+#   bash scripts/build-ffmpeg-core.sh
+#   FFMPEGWASM_REF=v0.12.10 AOM_VERSION=v3.6.1 bash scripts/build-ffmpeg-core.sh
 set -euo pipefail
 
-SINGLE_THREAD=${SINGLE_THREAD:-1}
-FFMPEG_VERSION=${FFMPEG_VERSION:-7.1.1}
-LIBAOM_VERSION=${LIBAOM_VERSION:-v3.9.1}
-EMSDK_PATH=${EMSDK_PATH:-"$HOME/emsdk"}
-
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
-BUILD_DIR="$ROOT_DIR/.ffmpeg-build"
 OUT_DIR="$ROOT_DIR/public/ffmpeg"
+CONTEXT_DIR="$ROOT_DIR/scripts/ffmpeg-core"
 
-# ---------- 0) emsdk 环境 ----------
-if [ ! -f "$EMSDK_PATH/emsdk_env.sh" ]; then
-  echo "未找到 emsdk（$EMSDK_PATH）。请先安装，或用 EMSDK_PATH 指向其根目录。" >&2
+if ! command -v docker >/dev/null 2>&1; then
+  echo "未找到 docker。本地构建需要 Docker；也可以用 CI（Actions → build-ffmpeg-core）。" >&2
   exit 1
 fi
-# shellcheck disable=SC1091
-source "$EMSDK_PATH/emsdk_env.sh"
-emcc --check
 
-mkdir -p "$BUILD_DIR" "$OUT_DIR"
+TMP_DIR="$(mktemp -d)"
+trap 'rm -rf "$TMP_DIR"' EXIT
 
-# ---------- 1) libaom → wasm 静态库 ----------
-if [ ! -f "$BUILD_DIR/libaom-install/lib/libaom.a" ]; then
-  if [ ! -d "$BUILD_DIR/libaom" ]; then
-    git clone --depth 1 --branch "$LIBAOM_VERSION" https://github.com/jbeich/aom.git "$BUILD_DIR/libaom"
-  fi
-  mkdir -p "$BUILD_DIR/libaom/build"
-  cd "$BUILD_DIR/libaom/build"
-  emconfigure cmake .. \
-    -DCMAKE_INSTALL_PREFIX="$BUILD_DIR/libaom-install" \
-    -DCMAKE_BUILD_TYPE=Release \
-    -DBUILD_SHARED_LIBS=0 \
-    -DENABLE_TESTS=0 \
-    -DENABLE_TOOLS=0 \
-    -DENABLE_EXAMPLES=0 \
-    -DENABLE_DOCS=0 \
-    -DENABLE_UNIT_TESTS=0 \
-    -DENABLE_NASM=0 \
-    -DCONFIG_PIC=1 \
-    -DCMAKE_C_FLAGS="-O3"
-  emmake make -j"$(nproc)"
-  emmake make install
-else
-  echo "libaom 已构建，跳过"
+ARGS=()
+[ -n "${FFMPEGWASM_REF:-}" ] && ARGS+=(--build-arg "FFMPEGWASM_REF=$FFMPEGWASM_REF")
+[ -n "${AOM_VERSION:-}" ] && ARGS+=(--build-arg "AOM_VERSION=$AOM_VERSION")
+
+echo "构建 ffmpeg 核心（首次约 30–50 分钟，之后有层缓存会快很多）…"
+docker buildx build \
+  --file "$CONTEXT_DIR/Dockerfile" \
+  --output "type=local,dest=$TMP_DIR" \
+  "${ARGS[@]}" \
+  "$CONTEXT_DIR"
+
+mkdir -p "$OUT_DIR"
+cp "$TMP_DIR/ffmpeg-core.js" "$OUT_DIR/ffmpeg-core.js"
+cp "$TMP_DIR/ffmpeg-core.wasm" "$OUT_DIR/ffmpeg-core.wasm"
+
+# 自检：编进去了才算可用（Dockerfile 里已查一次，这里防产物被替换/截断）
+if ! grep -qa 'libaom-av1' "$OUT_DIR/ffmpeg-core.wasm"; then
+  echo "产物不含 libaom-av1 编码器，AVIF 转码不可用。" >&2
+  exit 1
 fi
 
-# ---------- 2) ffmpeg configure + make ----------
-if [ ! -d "$BUILD_DIR/ffmpeg" ]; then
-  git clone --depth 1 --branch "n$FFMPEG_VERSION" https://github.com/FFmpeg/FFmpeg.git "$BUILD_DIR/ffmpeg"
-fi
-cd "$BUILD_DIR/ffmpeg"
-
-if [ "$SINGLE_THREAD" = "1" ]; then
-  THREAD_FLAGS="--disable-pthreads --disable-w32threads --disable-threads"
-  PTHREAD_CFLAGS=""
-else
-  THREAD_FLAGS="--enable-pthreads"
-  PTHREAD_CFLAGS="-sUSE_PTHREADS=1 -sPTHREAD_POOL_SIZE=4"
-fi
-
-emconfigure ./configure \
-  --cc=emcc \
-  --cxx=em++ \
-  --ar=emar \
-  --ranlib=emranlib \
-  --nm=llvm-nm \
-  --target-os=none \
-  --arch=x86_32 \
-  --cpu=generic \
-  --enable-cross-compile \
-  --disable-asm \
-  --disable-stripping \
-  --disable-programs \
-  --disable-doc \
-  --disable-debug \
-  --disable-network \
-  --disable-autodetect \
-  --disable-everything \
-  --enable-avcodec --enable-avformat --enable-avutil --enable-swscale --enable-swresample \
-  --enable-libaom \
-  --enable-encoder=libaom-av1 \
-  --enable-muxer=avif \
-  --enable-demuxer=mov,matroska,webm,gif \
-  --enable-decoder=h264,hevc,vp8,vp9,av1,gif \
-  --enable-protocol=file \
-  --enable-filter=fps --enable-filter=scale --enable-filter=null --enable-filter=format \
-  $THREAD_FLAGS \
-  --extra-cflags="-O3 $PTHREAD_CFLAGS" \
-  --extra-cxxflags="-O3 $PTHREAD_CFLAGS" \
-  --extra-ldflags="$PTHREAD_CFLAGS -sALLOW_MEMORY_GROWTH=1"
-
-emmake make -j"$(nproc)"
-
-# ---------- 3) 链接 wasm 核心（ESM 模块化产物） ----------
-if [ "$SINGLE_THREAD" = "1" ]; then
-  LINK_FLAGS="-sENVIRONMENT=worker -sALLOW_MEMORY_GROWTH=1"
-else
-  LINK_FLAGS="-sENVIRONMENT=worker,web -sUSE_PTHREADS=1 -sPTHREAD_POOL_SIZE=4 -sALLOW_MEMORY_GROWTH=1"
-fi
-
-emcc -o "$OUT_DIR/ffmpeg-core.js" \
-  -I. \
-  -O3 \
-  -sEXPORT_ES6=1 \
-  -sMODULARIZE=1 \
-  -sEXPORT_NAME=createFFmpegCore \
-  -sINITIAL_MEMORY=33554432 \
-  -sMAXIMUM_MEMORY=2147483648 \
-  -sEXPORTED_RUNTIME_METHODS='[cwrap,ccall,FS,setValue,writeAsciiToMemory]' \
-  -sFILESYSTEM=1 \
-  $LINK_FLAGS \
-  libavcodec/libavcodec.a \
-  libavformat/libavformat.a \
-  libavutil/libavutil.a \
-  libswscale/libswscale.a \
-  libswresample/libswresample.a \
-  "$BUILD_DIR/libaom-install/lib/libaom.a" \
-  -lm
-
-# ---------- 4) 产物核对与部署说明 ----------
-ls -lh "$OUT_DIR"
-echo "构建完成："
+ls -lh "$OUT_DIR/ffmpeg-core.js" "$OUT_DIR/ffmpeg-core.wasm"
+echo
+echo "完成。两个文件已写入 public/ffmpeg/（该目录不进版本库）："
 echo "  $OUT_DIR/ffmpeg-core.js"
 echo "  $OUT_DIR/ffmpeg-core.wasm"
-echo "两个文件已直接写入 public/ffmpeg/（vendored），随站点静态资源一起部署即可；"
-echo "运行时按 /ffmpeg/ffmpeg-core.js 懒加载，缺失时视频/GIF 队列项将提示核心未就绪。"
+echo
+echo "若要给 CI/Netlify 用，把它们上传到 Release，再配置："
+echo "  FFMPEG_CORE_URL / FFMPEG_CORE_WASM_URL"
+echo "  FFMPEG_CORE_SHA256 / FFMPEG_CORE_WASM_SHA256"
+echo "  FFMPEG_CORE_STRICT=1"
