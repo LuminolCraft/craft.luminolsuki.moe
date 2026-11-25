@@ -419,7 +419,9 @@ const mcRows = computed(() =>
 )
 
 // ---------- 角色管理 ----------
-const ALL_ROLES: NexusRoleName[] = ['user', 'moderator', 'admin', 'owner']
+// 顺序即 RBAC 层级：staff 在 user 之上、moderator 之下（只读治理：看举报 / 投票 /
+// 看举报附件，不能封禁、不能改角色）。后端 AssignRoleSchema 已接受 staff。
+const ALL_ROLES: NexusRoleName[] = ['user', 'staff', 'moderator', 'admin', 'owner']
 const selectedRole = ref<NexusRoleName>('user')
 const assigning = ref(false)
 const revokingRole = ref('')
