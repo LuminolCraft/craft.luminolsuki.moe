@@ -8,6 +8,10 @@
  * + FFmpeg 7.1.1，产物 25–35MB），不适合进版本库（公开仓库不该背这个体积），
  * 因此改为构建期拉取。
  *
+ * 核心怎么来：`.github/workflows/build-ffmpeg-core.yml`（手动触发或打
+ * `ffmpeg-core-v*` tag）在 ubuntu-latest 上用 emsdk 编一次 libaom + FFmpeg 7，
+ * 产物挂到 Release。把 Release 直链配到下面前四个环境变量即可。
+ *
  * 用法：
  *   FFMPEG_CORE_URL=https://.../ffmpeg-core.js \
  *   FFMPEG_CORE_WASM_URL=https://.../ffmpeg-core.wasm \
