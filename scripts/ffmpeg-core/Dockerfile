@@ -81,7 +81,11 @@ RUN git clone --depth 1 --branch "$FFMPEG_VERSION" https://github.com/FFmpeg/FFm
          --enable-demuxer=mov,matroska,webm,gif,image2 \
          --enable-decoder=h264,hevc,vp8,vp9,av1,gif,png,mjpeg \
          --enable-protocol=file \
-         --enable-filter=fps,scale,format,null
+         --enable-filter=buffer,buffersink,aformat,anull,atrim,format,fps,scale,null,trim,aresample
+# ↑ buffer / buffersink 不可省：ffmpeg CLI 建图必须靠它们作为源与汇，--disable-everything
+#   会把它们一并关掉，运行时表现为 "Cannot create buffer source"。aformat/anull/atrim/
+#   format/null/trim 是 configure 里 ffmpeg_select 点名要的（我们 --disable-programs，
+#   拿不到那套自动 select，只能手写）。
 
 # ---------- 3) 链接 wasm 核心（ESM，@ffmpeg/ffmpeg 0.12 要 ESM） ----------
 # ffmpeg-wasm.sh 里硬编码了 -sUSE_SDL=2；虽然本项目 --disable-programs 用不到 SDL，

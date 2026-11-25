@@ -482,6 +482,9 @@ export async function transcodeToAnimatedAvif(
       const code = await ffmpeg.exec([
         '-i',
         inputName,
+        // 丢掉音轨。证据只需要画面，而 avif muxer 本身不支持音频；不显式 -an 时
+        // ffmpeg 会为输入里的音轨挑默认编码器，核心若没编音频编码器就直接失败。
+        '-an',
         '-vf',
         `fps=${current.fps},scale=${current.width}:${current.height}`,
         '-c:v',
