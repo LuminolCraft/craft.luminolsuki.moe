@@ -14,6 +14,8 @@
  * （jsdom 无编码器）也不会在 import 阶段炸掉。
  */
 import {
+  EVIDENCE_MAX_BYTES,
+  EVIDENCE_TARGET_BYTES,
   EVIDENCE_UPLOAD_CONFIG,
   resolveAvifParams,
   resolveWebpParams,
@@ -62,11 +64,20 @@ class FfmpegCoreMissingError extends Error {
   }
 }
 
-/** 轻量探测核心文件是否已部署到 public/ffmpeg/（用于弹窗提前提示，不发大请求） */
+/**
+ * 轻量探测核心文件是否已部署到 `public/ffmpeg/`（用于弹窗提前提示，不发大请求）。
+ *
+ * 不能只看 `res.ok`：站点用 `/* → /index.html 200` 做 SPA 兜底，**缺失的
+ * /ffmpeg/ffmpeg-core.js 也会返回 200**（内容是 HTML），于是"核心未就绪"
+ * 的提示永远不出现，用户只能逐项失败后才知道。这里改为同时校验 content-type
+ * 是 JavaScript（含 text/javascript、application/javascript）。
+ */
 export async function probeFfmpegCore(): Promise<boolean> {
   try {
     const res = await fetch(`${FFMPEG_CORE_BASE}ffmpeg-core.js`, { method: 'HEAD' })
-    return res.ok
+    if (!res.ok) return false
+    const type = (res.headers.get('content-type') || '').toLowerCase()
+    return type.includes('javascript')
   } catch {
     return false
   }
@@ -170,6 +181,82 @@ async function encodeAvif(imageData: ImageData, params: EvidenceAvifParams): Pro
   const blob = new Blob([buffer], { type: 'image/avif' })
   if (blob.size === 0) throw new Error('avif encoder produced empty output')
   return blob
+}
+
+/** 静帧质量阶梯：默认参数仍超预算时逐级降质量，最多两档（再多画质不可接受） */
+const STATIC_AVIF_QUALITY_FALLBACKS = [40, 32] as const
+const STATIC_WEBP_QUALITY_FALLBACKS = [65, 50] as const
+
+/**
+ * 静帧 AVIF 编码 + 体积预算收敛。
+ *
+ * 之前静帧路径完全没有体积校验（`output_too_large` 是个从未产生的死类型），
+ * 超大图或开启 lossless 时会完整编码一遍才被调用方以 5MiB 拒绝——玩家侧白等
+ * 白耗电。这里在编码后就按 4.5MiB 逐级降质量；仍超则交由调用方返回
+ * `output_too_large`。
+ */
+async function encodeAvifWithinBudget(
+  imageData: ImageData,
+  params: EvidenceAvifParams,
+): Promise<Blob> {
+  let blob = await encodeAvif(imageData, params)
+  for (const quality of STATIC_AVIF_QUALITY_FALLBACKS) {
+    if (blob.size <= EVIDENCE_TARGET_BYTES) break
+    blob = await encodeAvif(imageData, {
+      ...params,
+      // lossless 会忽略 quality，必须显式关掉才能进入体积阶梯
+      lossless: false,
+      quality: Math.min(params.quality, quality),
+    })
+  }
+  return blob
+}
+
+/** 静帧 WebP 编码 + 体积预算收敛（同 AVIF，只降 quality）。 */
+async function encodeWebpWithinBudget(
+  imageData: ImageData,
+  params: EvidenceWebpParams,
+): Promise<Blob> {
+  let blob = await encodeWebp(imageData, params)
+  for (const quality of STATIC_WEBP_QUALITY_FALLBACKS) {
+    if (blob.size <= EVIDENCE_TARGET_BYTES) break
+    blob = await encodeWebp(imageData, { quality: Math.min(params.quality, quality) })
+  }
+  return blob
+}
+
+/** 后缀 → MIME 兜底表（部分安卓选择器 / 三方 App 分享过来的 File.type 为空） */
+const EXTENSION_MIME_MAP: Record<string, string> = {
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  png: 'image/png',
+  webp: 'image/webp',
+  avif: 'image/avif',
+  gif: 'image/gif',
+  mp4: 'video/mp4',
+  m4v: 'video/mp4',
+  webm: 'video/webm',
+  mov: 'video/quicktime',
+}
+
+/**
+ * 归一化输入 MIME。
+ *
+ * 处理三件真实世界的破事：
+ * - `image/jpg`（非标准写法，但确实有上传源这么标）；
+ * - `image/apng`（动图 PNG，取首帧即可，走 PNG 路径）；
+ * - `File.type` 为空（安卓选择器 / 微信分享）→ 按扩展名兜底。
+ * 注意 `.mov`（iPhone 录屏）是 ffmpeg 路径能处理的，之前 MIME 白名单没放行。
+ */
+function normalizeInputMime(file: File | Blob): string {
+  const raw = (file.type || '').toLowerCase()
+  if (raw === 'image/jpg') return 'image/jpeg'
+  if (raw === 'image/apng') return 'image/png'
+  if (raw) return raw
+  const name = (file as File).name ?? ''
+  const dot = name.lastIndexOf('.')
+  if (dot < 0) return ''
+  return EXTENSION_MIME_MAP[name.slice(dot + 1).toLowerCase()] ?? ''
 }
 
 async function encodeWebp(imageData: ImageData, params: EvidenceWebpParams): Promise<Blob> {
@@ -379,6 +466,10 @@ export async function transcodeToAnimatedAvif(
         String(current.preset),
         '-pix_fmt',
         'yuv420p',
+        // -y 不可省：阶梯第二轮写的是同一个 out.avif，MEMFS 里已存在，
+        // ffmpeg 在非 tty 下遇到已存在文件会直接 "File exists. Exiting."
+        // 并以非 0 退出，降分辨率 / 降帧率两级永远走不到。
+        '-y',
         outputName,
       ])
       if (code !== 0) throw new Error(`ffmpeg exec failed (exit ${code})`)
@@ -495,7 +586,8 @@ export async function prepareEvidenceFile(
   if (file.size > cfg.maxEncodeInputBytes) return { ok: false, reason: 'too_large' }
   if (!canEncodeInBrowser()) return { ok: false, reason: 'environment' }
 
-  const type = file.type.toLowerCase()
+  // 归一化：image/jpg、image/apng、空 type（安卓/微信分享）都要能进对应分支
+  const type = normalizeInputMime(file)
   const avifParams = resolveAvifParams(overrides)
   const webpParams = resolveWebpParams(overrides)
 
@@ -505,7 +597,8 @@ export async function prepareEvidenceFile(
       case 'image/jpeg':
       case 'image/png': {
         const imageData = await imageDataFromFile(file)
-        const blob = await encodeAvif(imageData, avifParams)
+        const blob = await encodeAvifWithinBudget(imageData, avifParams)
+        if (blob.size > EVIDENCE_MAX_BYTES) return { ok: false, reason: 'output_too_large' }
         return { ok: true, items: [{ blob, originalSize: file.size, encodedSize: blob.size }] }
       }
 
@@ -513,7 +606,9 @@ export async function prepareEvidenceFile(
       case 'image/webp': {
         const { decode } = await import('@jsquash/webp')
         const imageData = await decode(await blobToArrayBuffer(file))
-        const blob = await encodeWebp(imageData, webpParams)
+        if (!imageData) return { ok: false, reason: 'encode_failed' }
+        const blob = await encodeWebpWithinBudget(imageData, webpParams)
+        if (blob.size > EVIDENCE_MAX_BYTES) return { ok: false, reason: 'output_too_large' }
         return { ok: true, items: [{ blob, originalSize: file.size, encodedSize: blob.size }] }
       }
 
@@ -525,7 +620,8 @@ export async function prepareEvidenceFile(
           const { decode } = await import('@jsquash/avif')
           const imageData = await decode(buffer)
           if (!imageData) return { ok: false, reason: 'encode_failed' }
-          const blob = await encodeAvif(imageData, avifParams)
+          const blob = await encodeAvifWithinBudget(imageData, avifParams)
+          if (blob.size > EVIDENCE_MAX_BYTES) return { ok: false, reason: 'output_too_large' }
           return { ok: true, items: [{ blob, originalSize: file.size, encodedSize: blob.size }] }
         }
         const frames = await decodeAvifFrames(buffer)
@@ -544,6 +640,10 @@ export async function prepareEvidenceFile(
       case 'image/gif':
       case 'video/mp4':
       case 'video/webm':
+      // iPhone 录屏是 .mov / quicktime；m4v 是部分安卓相机的容器。两者的
+      // demuxer 在自建 ffmpeg 核心里已启用（--enable-demuxer=mov），
+      // 之前只是 MIME 白名单没放行。
+      case 'video/quicktime':
         return await prepareMediaViaFfmpeg(file, hooks)
 
       default:

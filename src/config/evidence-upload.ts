@@ -44,11 +44,42 @@ export interface EvidenceUploadConfig {
   video: EvidenceVideoParams
 }
 
+/**
+ * 后端单文件上限：5 MiB（`SECURITY_POLICY.evidenceMaxBytes`）。
+ * 前端只做**预检**，真实裁决在后端；两处数值必须一致，否则用户会白等一次
+ * 编码才被 413 拒绝。
+ */
+export const EVIDENCE_MAX_BYTES = 5 * 1024 * 1024
+
+/**
+ * 前端编码的**收敛目标**：4.5 MiB。
+ *
+ * 必须小于后端上限，给 multipart 头与 boundary 留余量。此前取 10 MiB 是个
+ * 硬错误——产物被判"达标"后照样被后端 413，白耗一轮转码与流量。
+ */
+export const EVIDENCE_TARGET_BYTES = 4_718_592 // 4.5 MiB
+
 export const EVIDENCE_UPLOAD_CONFIG: EvidenceUploadConfig = {
   avif: { quality: 50, speed: 6, lossless: false },
   webp: { quality: 80 },
-  maxEncodeInputBytes: 10 * 1024 * 1024,
-  video: { fps: 60, minHeight: 720, targetBytes: 10 * 1024 * 1024, maxLadderRounds: 3 },
+  /**
+   * 浏览器内可编码的输入上限：20 MiB。
+   *
+   * 超过这个体积再解码会把移动端主线程拖死（一张 12MP 图解码后约 48MB，
+   * 视频还要叠一份 MEMFS 副本）。手机 1080p 录屏约 1 分钟到这个量级，
+   * 更长的请玩家裁剪或改用外链。
+   */
+  maxEncodeInputBytes: 20 * 1024 * 1024,
+  video: {
+    // 24fps：手机编码耗时与体积近乎减半，证据可读性足够（60 是过度配置）
+    fps: 24,
+    // 降分辨率下限 480p：长视频唯一能压进 4.5MiB 的出口
+    minHeight: 480,
+    targetBytes: EVIDENCE_TARGET_BYTES,
+    // 阶梯轮数：CRF 30→55 步长 5 需 5 轮才走完第①级，3 轮时降分辨率/降帧率
+    // 是死代码。10 轮给到"CRF 走完 + 降分辨率 + 降 fps"的完整空间。
+    maxLadderRounds: 10,
+  },
 }
 
 /**
