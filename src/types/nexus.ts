@@ -177,7 +177,12 @@ export interface BanEvidence {
 
 // ---------- 管理端·用户 ----------
 
-export type NexusRoleName = 'user' | 'moderator' | 'admin' | 'owner'
+/**
+ * 后端 RBAC 角色名（0007 + 0027 种子）。
+ * staff 为只读治理角色：可看举报 / 投票 / 看举报附件，不能封禁、不能改角色、
+ * 不能读封禁证据；moderator 及以上自动继承 staff 能力。
+ */
+export type NexusRoleName = 'user' | 'staff' | 'moderator' | 'admin' | 'owner'
 
 /** 用户列表项（GET /admin/users） */
 export interface AdminUserListItem {
@@ -262,4 +267,119 @@ export interface AuditArchive {
   key: string
   size?: number
   lastModified?: number
+}
+
+// ---------- 举报（/me/reports · /reports · /admin/reports/:id/resolve） ----------
+
+/**
+ * 举报类型。与后端 `report.schema.ts` 的 ReportCategory 一一对应，
+ * 也是 `reports.category` 的 CHECK 取值。
+ */
+export type ReportCategory = 'cheat' | 'steal' | 'grief' | 'insult' | 'spam' | 'exploit' | 'other'
+
+/** 举报状态：pending 待处理 / banned 已封禁 / rejected 已驳回 */
+export type ReportStatus = 'pending' | 'banned' | 'rejected'
+
+/** 投票结论（仅供处置参考，无约束力） */
+export type ReportVerdict = 'violation' | 'no_violation'
+
+/** 票数汇总 */
+export interface ReportVoteTally {
+  violation: number
+  noViolation: number
+}
+
+/** 举报附件元数据（三个视图共用；后端不返回 object_key） */
+export interface ReportEvidence {
+  id: string
+  filename: string
+  contentType: string
+  size: number
+  setId: string
+  setIndex: number
+  createdAt: number
+}
+
+/** 我的举报（`GET /me/reports`）：**不含**投票、内部备注、目标 uuid */
+export interface MyReport {
+  id: string
+  targetPlayerName: string
+  category: ReportCategory
+  description: string
+  linkUrl: string | null
+  status: ReportStatus
+  banId: string | null
+  /** 对举报人可见的结案说明 */
+  resolutionMessage: string | null
+  createdAt: number
+  resolvedAt: number | null
+  evidence: ReportEvidence[]
+}
+
+/** staff 视图：多举报人用户名与票数汇总，仍不含 uuid / 内部备注 / 逐票明细 */
+export interface StaffReport extends MyReport {
+  reporterUsername: string
+  reporterAccountDeleted: boolean
+  voteTally: ReportVoteTally
+}
+
+/** 逐票明细项（仅 moderator+ 视图返回） */
+export interface ReportVoteDetail {
+  voterUsername: string
+  voterDeleted: boolean
+  verdict: ReportVerdict
+  note: string | null
+  createdAt: number
+  updatedAt: number
+}
+
+/** moderator 视图：staff 视图 + 目标 uuid / 内部备注 / 处置人 / 逐票明细 */
+export interface ModeratorReport extends StaffReport {
+  targetMinecraftUuid: string | null
+  targetMinecraftAccountId: string | null
+  resolutionNote: string | null
+  resolvedBy: string | null
+  votes: ReportVoteDetail[]
+}
+
+/**
+ * 前端待上传的附件产物（EvidenceDrop 编码后交给父页面上传）。
+ * 单张为 setId/setIndex 均 undefined；拆帧序列共享 setId、setIndex 递增。
+ */
+export interface ReportEvidenceItem {
+  blob: Blob
+  /** 上传文件名（服务端只作展示元数据） */
+  name: string
+  setId?: string
+  setIndex?: number
+}
+
+/** 提交举报入参（不含 uuid / accountId：目标由服务端按名字解析） */
+export interface CreateReportInput {
+  targetPlayerName: string
+  category: ReportCategory
+  description: string
+  linkUrl?: string
+}
+
+/** 处置入参：封禁或驳回 */
+export interface ResolveReportInput {
+  action: 'ban' | 'reject'
+  type?: 'website' | 'minecraft' | 'chat'
+  reason?: string
+  expiresAt?: number
+  /** 举报单未快照到 MC 账号时显式指定目标（须与举报对象同名） */
+  minecraftAccountId?: string
+  minecraftUuid?: string
+  note?: string
+  message?: string
+}
+
+/** 处置结果 */
+export interface ResolveReportResult {
+  ok: true
+  status: 'banned' | 'rejected'
+  banId: string | null
+  /** 目标已有生效封禁时为 true（banId 指向既有封禁，未新建） */
+  deduped: boolean
 }

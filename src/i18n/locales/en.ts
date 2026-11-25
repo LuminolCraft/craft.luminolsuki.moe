@@ -1,4 +1,138 @@
 export default {
+  "reports": {
+    "nav": {
+      "report": "Report",
+      "mine": "My reports",
+      "community": "Community"
+    },
+    "submitted": "Report submitted. You will be notified about the outcome.",
+    "common": {
+      "loading": "Loading…",
+      "prev": "Previous",
+      "next": "Next",
+      "refresh": "Refresh",
+      "close": "Close"
+    },
+    "status": {
+      "pending": "In review",
+      "banned": "Banned",
+      "rejected": "Rejected"
+    },
+    "category": {
+      "cheat": "Cheating",
+      "steal": "Theft",
+      "grief": "Griefing",
+      "insult": "Harassment",
+      "spam": "Spam",
+      "exploit": "Exploit",
+      "other": "Other"
+    },
+    "create": {
+      "title": "Report a player",
+      "subtitle": "Include time, location and what happened. Abusive reports are logged.",
+      "target": "Player name",
+      "targetPlaceholder": "Minecraft username",
+      "targetHint": "3-16 letters, digits or underscores",
+      "category": "Category",
+      "description": "What happened",
+      "descriptionPlaceholder": "Describe the incident: when, where, what the player did",
+      "descriptionHint": "At least 10 characters",
+      "evidence": "Evidence (optional)",
+      "evidenceHint": "Up to 3 screenshots or short clips; images are re-encoded locally",
+      "link": "External link (optional)",
+      "linkHint": "Upload the video elsewhere and paste the link; must start with https://",
+      "submit": "Submit report",
+      "submitting": "Submitting…",
+      "retryEvidence": "Retry attachments",
+      "privacy": "Attachments are visible to you and community staff only; attachments of resolved reports are purged after 90 days."
+    },
+    "mine": {
+      "title": "My reports",
+      "subtitle": "Track the reports you submitted",
+      "empty": "No reports yet",
+      "resolution": "Outcome",
+      "evidenceCount": "{n} attachment(s)",
+      "evidenceKept": "Attachments of resolved reports are purged after 90 days"
+    },
+    "evidence": {
+      "pick": "Choose files",
+      "hint": "Drop or paste here, up to {max}",
+      "video": "Video",
+      "ready": "Ready",
+      "frames": "split into {n} frames",
+      "queued": "Queued",
+      "retry": "Retry",
+      "remove": "Remove",
+      "processing": "Compressing, keep this page open…",
+      "reason": {
+        "unsupported_type": "Unsupported format; use a screenshot or a common video format",
+        "too_large": "File too large; trim or compress it first",
+        "environment": "This browser cannot encode locally; please use a recent Chrome or Edge",
+        "ffmpeg_missing": "Video processing is unavailable; use an image or an external link",
+        "output_too_large": "Still larger than 5MB after compression; trim it first",
+        "encode_failed": "Processing failed; retry or use another file"
+      }
+    },
+    "errors": {
+      "duplicate": "Your report against this player is still under review",
+      "rateLimited": "Too many submissions; try again later",
+      "validation": "Some fields are invalid",
+      "generic": "Submission failed; try again later",
+      "evidencePartial": "Report submitted, but {n} attachment(s) failed to upload"
+    }
+  },
+  "community": {
+    "reports": {
+      "title": "Report queue",
+      "subtitle": "Review reports, vote and resolve. Votes are advisory only.",
+      "allStatus": "All statuses",
+      "searchPlaceholder": "Search by player name",
+      "empty": "No reports match the filter",
+      "colTarget": "Player",
+      "colCategory": "Category",
+      "colReporter": "Reporter",
+      "colVotes": "Violation / None",
+      "colStatus": "Status",
+      "colTime": "Submitted",
+      "deletedAccount": "deleted",
+      "violation": "Violation",
+      "noViolation": "No violation",
+      "description": "Description",
+      "externalLink": "Open external link",
+      "evidence": "Attachments ({n})",
+      "noEvidence": "No attachments",
+      "vote": "Vote",
+      "voteNotePlaceholder": "One-line reason (optional)",
+      "voteViolation": "Violation",
+      "voteNoViolation": "No violation",
+      "voteAdvisory": "Votes are advisory: they never trigger a ban automatically.",
+      "voteDetails": "Individual votes",
+      "verdict": {
+        "violation": "Violation",
+        "no_violation": "No violation"
+      },
+      "internalNote": "Internal note",
+      "resolve": "Resolve",
+      "actionReject": "Reject (no action)",
+      "actionBan": "Ban",
+      "banType": "Ban type",
+      "banSite": "Website ban",
+      "banChat": "Chat ban",
+      "banReason": "Reason",
+      "banDays": "Duration in days",
+      "banDaysHint": "0 means permanent",
+      "targetUuid": "Target UUID (unbound players only)",
+      "targetUuidHint": "Leave empty when the report is linked to a site account",
+      "resolveNote": "Internal note (staff only)",
+      "resolveMessage": "Message to the reporter",
+      "resolveMessageHint": "Sent with the resolution notification",
+      "confirm": "Confirm",
+      "resolved": "Resolved",
+      "resolvedDeduped": "Resolved (target already had an active ban)",
+      "targetUnresolved": "This report is not linked to a site account; paste the target UUID",
+      "voted": "Vote recorded"
+    }
+  },
   "404": {
     "description": "Oops! The page you're looking for doesn't exist.",
     "backhome": "Go back to home"

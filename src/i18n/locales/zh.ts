@@ -1,4 +1,138 @@
 export default {
+  "reports": {
+    "nav": {
+      "report": "举报",
+      "mine": "我的举报",
+      "community": "社区管理"
+    },
+    "submitted": "举报已提交，处理结果会通知你",
+    "common": {
+      "loading": "加载中…",
+      "prev": "上一页",
+      "next": "下一页",
+      "refresh": "刷新",
+      "close": "关闭"
+    },
+    "status": {
+      "pending": "处理中",
+      "banned": "已封禁",
+      "rejected": "已驳回"
+    },
+    "category": {
+      "cheat": "外挂 / 作弊",
+      "steal": "偷窃 / 抢占物品",
+      "grief": "破坏建筑",
+      "insult": "辱骂 / 骚扰",
+      "spam": "刷屏 / 广告",
+      "exploit": "利用漏洞",
+      "other": "其它"
+    },
+    "create": {
+      "title": "举报违规玩家",
+      "subtitle": "请尽量写清时间、地点、经过。恶意举报会被记录。",
+      "target": "被举报玩家名",
+      "targetPlaceholder": "Minecraft 角色名",
+      "targetHint": "3–16 位字母、数字或下划线，与游戏内角色名一致",
+      "category": "违规类型",
+      "description": "情况说明",
+      "descriptionPlaceholder": "说清发生了什么：时间、地点、对方做了什么、影响是什么",
+      "descriptionHint": "至少 10 个字",
+      "evidence": "证据（可选）",
+      "evidenceHint": "可上传截图或短视频，最多 3 个；图片会自动转码压缩",
+      "link": "外部链接（可选）",
+      "linkHint": "视频放到 B 站 / 图床后填链接，必须以 https:// 开头",
+      "submit": "提交举报",
+      "submitting": "提交中…",
+      "retryEvidence": "重传附件",
+      "privacy": "附件仅举报人与社区管理人员可见；已处置的举报附件 90 天后自动清理。"
+    },
+    "mine": {
+      "title": "我的举报",
+      "subtitle": "查看自己提交的举报与处理结果",
+      "empty": "还没有提交过举报",
+      "resolution": "处理结果",
+      "evidenceCount": "附件 {n} 个",
+      "evidenceKept": "已处置的举报附件 90 天后自动清理"
+    },
+    "evidence": {
+      "pick": "选择文件",
+      "hint": "拖拽或粘贴到此处，最多 {max} 个",
+      "video": "视频",
+      "ready": "已就绪",
+      "frames": "拆为 {n} 帧",
+      "queued": "排队中",
+      "retry": "重试",
+      "remove": "移除",
+      "processing": "正在压缩，请勿关闭页面…",
+      "reason": {
+        "unsupported_type": "不支持这种格式，请用截图或常见视频格式",
+        "too_large": "文件太大，请裁剪或压缩后再试",
+        "environment": "当前浏览器不支持浏览器内压缩，请换最新版 Chrome / Edge",
+        "ffmpeg_missing": "视频处理组件未就绪，请改用图片或外链",
+        "output_too_large": "压缩后仍然超过 5MB，请裁剪后再试",
+        "encode_failed": "处理失败，请重试或换一个文件"
+      }
+    },
+    "errors": {
+      "duplicate": "你对这个玩家的举报还在处理中，无需重复提交",
+      "rateLimited": "提交太频繁，请稍后再试",
+      "validation": "填写内容不合法，请检查后重试",
+      "generic": "提交失败，请稍后重试",
+      "evidencePartial": "举报已提交，但有 {n} 个附件上传失败"
+    }
+  },
+  "community": {
+    "reports": {
+      "title": "举报处理",
+      "subtitle": "查看举报队列、投票与处置。投票仅作参考，不自动触发处罚。",
+      "allStatus": "全部状态",
+      "searchPlaceholder": "按玩家名搜索",
+      "empty": "没有符合条件的举报",
+      "colTarget": "被举报玩家",
+      "colCategory": "类型",
+      "colReporter": "举报人",
+      "colVotes": "违规 / 不违规",
+      "colStatus": "状态",
+      "colTime": "提交时间",
+      "deletedAccount": "已注销",
+      "violation": "违规",
+      "noViolation": "不违规",
+      "description": "情况说明",
+      "externalLink": "打开外部链接",
+      "evidence": "附件（{n}）",
+      "noEvidence": "没有附件",
+      "vote": "投票",
+      "voteNotePlaceholder": "一句话理由（可选）",
+      "voteViolation": "投违规",
+      "voteNoViolation": "投不违规",
+      "voteAdvisory": "投票无约束力：够票也不会自动封号，最终由管理员决定。",
+      "voteDetails": "逐票明细",
+      "verdict": {
+        "violation": "违规",
+        "no_violation": "不违规"
+      },
+      "internalNote": "内部备注",
+      "resolve": "处置",
+      "actionReject": "驳回（不处罚）",
+      "actionBan": "封禁",
+      "banType": "封禁类型",
+      "banSite": "网站封禁",
+      "banChat": "聊天封禁",
+      "banReason": "封禁理由",
+      "banDays": "封禁天数",
+      "banDaysHint": "填 0 表示永久",
+      "targetUuid": "目标 UUID（仅未绑定玩家需要）",
+      "targetUuidHint": "举报已绑定本站账号时留空；未绑定时粘贴完整 UUID",
+      "resolveNote": "内部备注（仅管理人员可见）",
+      "resolveMessage": "给举报人的说明",
+      "resolveMessageHint": "会随结案通知发给举报人",
+      "confirm": "确认处置",
+      "resolved": "已处置",
+      "resolvedDeduped": "已处置（该目标已有生效封禁，沿用既有封禁）",
+      "targetUnresolved": "该举报未绑定本站账号，请粘贴目标 UUID 后再试",
+      "voted": "投票已记录"
+    }
+  },
   "404": {
     "description": "恭喜！您找到了隐藏页面，凭此页面截图可以找管理员兑换神秘奖励。",
     "backhome": "返回主页"
